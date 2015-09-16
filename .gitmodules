@@ -1,0 +1,15 @@
+[submodule "flowdock-rest"]
+	path = flowdock-rest
+	url = git@github.com:futurice/haskell-flowdock-rest
+[submodule "ansi-pretty"]
+	path = ansi-pretty
+	url = git@github.com:futurice/haskell-ansi-pretty
+[submodule "flowdock-grep"]
+	path = flowdock-grep
+	url = git@github.com:futurice/haskell-flowdock-grep
+[submodule "flowdock-cli"]
+	path = flowdock-cli
+	url = git@github.com:futurice/haskell-flowdock-cli.git
+[submodule "monad-http"]
+	path = monad-http
+	url = git@github.com:futurice/haskell-monad-http.git
