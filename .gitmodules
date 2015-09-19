@@ -13,3 +13,6 @@
 [submodule "monad-http"]
 	path = monad-http
 	url = git@github.com:futurice/haskell-monad-http.git
+[submodule "postgresql-simple-url"]
+	path = postgresql-simple-url
+	url = git@github.com:futurice/postgresql-simple-url.git

@@ -4,6 +4,7 @@ packages:
 - flowdock-grep/
 - flowdock-rest/
 - monad-http/
+- postgresql-simple-url/
 extra-deps:
 - binary-orphans-0.1.1.0
 - binary-tagged-0.1.1.0
