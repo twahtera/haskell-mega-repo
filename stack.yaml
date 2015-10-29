@@ -17,11 +17,13 @@ packages:
     git: https://github.com/phadej/servant-JuicyPixels.git
     commit: fbb55f435d8892c020fa366c2c86bcecbcdaef18
 extra-deps:
+- aeson-extra-0.2.1.0
 - binary-orphans-0.1.1.0
-- ratio-int-0.1.2
 - binary-tagged-0.1.1.0
+- file-embed-0.0.9
 - friday-0.2.2.0
 - path-0.5.2
+- ratio-int-0.1.2
 - servant-0.4.4.5
 - servant-docs-0.4.4.5
 - servant-server-0.4.4.5
