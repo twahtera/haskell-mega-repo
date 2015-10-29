@@ -16,3 +16,9 @@
 [submodule "postgresql-simple-url"]
 	path = postgresql-simple-url
 	url = git@github.com:futurice/postgresql-simple-url.git
+[submodule "futulogo"]
+	path = futulogo
+	url = git@github.com:futurice/haskell-futulogo.git
+[submodule "servant-cache"]
+	path = servant-cache
+	url = git@github.com:futurice/haskell-servant-cache.git
