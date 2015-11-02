@@ -2,6 +2,8 @@
 
 > Sometimes you need to make a change across the package boundaries
 
+![dependency graph](https://raw.githubusercontent.com/futurice/haskell-mega-repo/master/deps.png)
+
 ## Maintaining
 
 ### Tracking the master
