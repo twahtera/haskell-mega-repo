@@ -22,3 +22,6 @@
 [submodule "servant-cache"]
 	path = servant-cache
 	url = git@github.com:futurice/haskell-servant-cache.git
+[submodule "favicon-app"]
+	path = favicon-app
+	url = git@github.com:futurice/favicon-app.git

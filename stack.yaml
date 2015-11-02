@@ -1,5 +1,6 @@
 packages:
 - ansi-pretty/
+- favicon-app/
 - flowdock-cli/
 - flowdock-grep/
 - flowdock-rest/

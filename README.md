@@ -17,3 +17,9 @@ stack test
 ```
 wc */src/**/*.hs
 ```
+
+### Update deps graph
+
+```
+stack dot | dot -Tpng -o deps.png 
+```
