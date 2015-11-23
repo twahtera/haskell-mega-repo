@@ -1,0 +1,32 @@
+packages:
+- ansi-pretty/
+- favicon-app/
+- flowdock-cli/
+- flowdock-grep/
+- flowdock-rest/
+- futulogo/
+- monad-http/
+- postgresql-simple-url/
+- servant-cache/
+- location:
+    git: https://github.com/TomMD/friday-juicypixels.git
+    commit: e4f9b085d8c8c3c838a3461ffeae50078d7b9ffd
+- location:
+    git: https://github.com/phadej/JuicyPixels-util.git
+    commit: e810933bd7d35773fa8ec9957094493cf430b8ad
+extra-deps:
+- aeson-extra-0.2.2.0
+- binary-orphans-0.1.1.0
+- binary-tagged-0.1.1.0
+- file-embed-0.0.9
+- friday-0.2.2.0
+- path-0.5.2
+- ratio-int-0.1.2
+- servant-0.4.4.5
+- servant-docs-0.4.4.5
+- servant-JuicyPixels-0.3.0.0
+- servant-lucid-0.4.4.5
+- servant-server-0.4.4.5
+- servant-yaml-0.1.0.0
+resolver: lts-2.22
+flags: {}

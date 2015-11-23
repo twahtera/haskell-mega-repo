@@ -11,7 +11,7 @@
 ```
 git submodule foreach git checkout master
 git submodule foreach git pull
-stack test
+STACK_YAML=stack-lts-3.yaml stack test --pedantic
 ```
 
 ### Rough stats

@@ -49,6 +49,8 @@ greens =
     , "conduit"
     , "containers"
     , "contravariant"
+    , "connection"
+    , "convertible"
     ]
 
 main :: IO ()
