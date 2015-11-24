@@ -5,6 +5,7 @@ packages:
 - flowdock-grep/
 - flowdock-rest/
 - futulogo/
+- haxl-typed/
 - monad-http/
 - postgresql-simple-url/
 - servant-cache/
@@ -17,6 +18,7 @@ packages:
     commit: e810933bd7d35773fa8ec9957094493cf430b8ad
 extra-deps:
 - friday-0.2.2.0
+- haxl-0.3.0.0
 - ratio-int-0.1.2
 - servant-JuicyPixels-0.3.0.0
 - servant-lucid-0.4.4.5
