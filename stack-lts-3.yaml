@@ -8,6 +8,7 @@ packages:
 - monad-http/
 - postgresql-simple-url/
 - servant-cache/
+- servant-status/
 - location:
     git: https://github.com/TomMD/friday-juicypixels.git
     commit: e4f9b085d8c8c3c838a3461ffeae50078d7b9ffd
