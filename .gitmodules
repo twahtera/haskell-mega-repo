@@ -28,3 +28,6 @@
 [submodule "servant-status"]
 	path = servant-status
 	url = git@github.com:futurice/haskell-servant-status.git
+[submodule "haxl-typed"]
+	path = haxl-typed
+	url = git@github.com:futurice/haskell-haxl-typed.git
