@@ -27,4 +27,4 @@
 	url = git@github.com:futurice/favicon-app.git
 [submodule "servant-status"]
 	path = servant-status
-	url = https://github.com/futurice/haskell-servant-status.git
+	url = git@github.com:futurice/haskell-servant-status.git
