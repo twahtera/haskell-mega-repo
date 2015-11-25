@@ -1,5 +1,6 @@
 packages:
 - ansi-pretty/
+- base64-bytestring-type/
 - favicon-app/
 - flowdock-cli/
 - flowdock-grep/

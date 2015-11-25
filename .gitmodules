@@ -31,3 +31,6 @@
 [submodule "haxl-typed"]
 	path = haxl-typed
 	url = git@github.com:futurice/haskell-haxl-typed.git
+[submodule "base64-bytestring-type"]
+	path = base64-bytestring-type
+	url = git@github.com:futurice/haskell-base64-bytestring-type.git
