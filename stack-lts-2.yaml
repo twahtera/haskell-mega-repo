@@ -5,6 +5,7 @@ packages:
 - flowdock-cli/
 - flowdock-grep/
 - flowdock-rest/
+- fum-client/
 - futulogo/
 - haxl-typed/
 - monad-http/
@@ -30,6 +31,7 @@ extra-deps:
 - servant-lucid-0.4.4.5
 - servant-server-0.4.4.5
 - servant-yaml-0.1.0.0
+- strict-base-types-0.4.0
 resolver: lts-2.22
 flags:
   hashable-time:
