@@ -37,3 +37,6 @@
 [submodule "planmill-client"]
 	path = planmill-client
 	url = git@github.com:futurice/haskell-planmill-client.git
+[submodule "fum-client"]
+	path = fum-client
+	url = git@github.com:futurice/haskell-fum-client.git
