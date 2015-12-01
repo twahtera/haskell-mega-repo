@@ -23,7 +23,7 @@ wc */src/**/*.hs
 ### Update deps graph
 
 ```
-stack dot | dot -Tpng -o deps.png 
+stack dot | dot -Tpng -o deps.png
 ```
 
 ## Futurice Haskell Guidelines
@@ -48,6 +48,11 @@ GHCs (currently usually *7.10.2*).
 See [ghccaniuse](http://damianfral.github.io/ghcaniuse/). Don't use extensions,
 which aren't supported by three or four GHC releases, i.e. using `DataKinds`
 and other type-system extensions are ok (required by e.g. `servant` anyway).
+
+For applications, new and straight-forward extensions like `DeriveAnyClass`,
+`PartialTypeSignatures`, or upcoming `ApplicativeDo`, `StrictData` or
+`SignatureSections` are ok as well. However, their usage isn't an end in
+itself.
 
 Also of `TupleSections` and `RecordWildCards` are ok.
 
