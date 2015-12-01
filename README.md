@@ -26,6 +26,18 @@ wc */src/**/*.hs
 stack dot | dot -Tpng -o deps.png
 ```
 
+### LTS version bumps
+
+```
+git submodule foreach git checkout master
+vim -p $(find . -name stack-lts-3.yaml)
+STACK_YAML=stack-lts-3.yaml stack test --pedantic
+# Or if really want to test each package separately
+export STACK_YAML=stack-lts-3.yaml
+for i in favicon-app flowdock-grep; do echo $i; cd $i; stack test --pedantic; cd ..; done
+# Commit each package changes...
+```
+
 ## Futurice Haskell Guidelines
 
 ### Definitions
