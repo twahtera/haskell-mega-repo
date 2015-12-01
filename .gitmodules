@@ -34,3 +34,6 @@
 [submodule "base64-bytestring-type"]
 	path = base64-bytestring-type
 	url = git@github.com:futurice/haskell-base64-bytestring-type.git
+[submodule "planmill-client"]
+	path = planmill-client
+	url = git@github.com:futurice/haskell-planmill-client.git

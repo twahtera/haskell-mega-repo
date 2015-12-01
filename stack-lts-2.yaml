@@ -8,6 +8,7 @@ packages:
 - futulogo/
 - haxl-typed/
 - monad-http/
+- planmill-client/
 - postgresql-simple-url/
 - servant-cache/
 - servant-status/
@@ -19,7 +20,9 @@ extra-deps:
 - binary-orphans-0.1.1.0
 - binary-tagged-0.1.1.0
 - file-embed-0.0.9
+- hashable-time-0.2
 - haxl-0.3.0.0
+- monad-time-0.1
 - path-0.5.2
 - servant-0.4.4.5
 - servant-docs-0.4.4.5
@@ -28,4 +31,6 @@ extra-deps:
 - servant-server-0.4.4.5
 - servant-yaml-0.1.0.0
 resolver: lts-2.22
-flags: {}
+flags:
+  hashable-time:
+    old-locale: true
