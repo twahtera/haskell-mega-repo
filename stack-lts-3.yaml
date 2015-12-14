@@ -19,11 +19,13 @@ packages:
 extra-deps:
 - hashable-time-0.2
 - haxl-0.3.0.0
+- iso8601-time-0.1.4
 - monad-time-0.1
 - monadcryptorandom-0.7.0 # LTS3 has 0.6.0
+- regex-applicative-text-0.1.0.0
 - servant-JuicyPixels-0.3.0.0
 - servant-lucid-0.4.4.5
 - servant-yaml-0.1.0.0
 - strict-base-types-0.4.0
-resolver: lts-3.16
+resolver: lts-3.18
 flags: {}

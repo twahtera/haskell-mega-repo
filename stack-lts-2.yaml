@@ -17,14 +17,16 @@ packages:
     git: https://github.com/phadej/JuicyPixels-util.git
     commit: e810933bd7d35773fa8ec9957094493cf430b8ad
 extra-deps:
-- aeson-extra-0.2.2.0
+- aeson-extra-0.2.3.0
 - binary-orphans-0.1.1.0
 - binary-tagged-0.1.1.0
 - file-embed-0.0.9
 - hashable-time-0.2
 - haxl-0.3.0.0
+- iso8601-time-0.1.4
 - monad-time-0.1
 - path-0.5.2
+- regex-applicative-text-0.1.0.0
 - servant-0.4.4.5
 - servant-docs-0.4.4.5
 - servant-JuicyPixels-0.3.0.0
@@ -36,3 +38,5 @@ resolver: lts-2.22
 flags:
   hashable-time:
     old-locale: true
+  iso8601-time:
+    new-time: false

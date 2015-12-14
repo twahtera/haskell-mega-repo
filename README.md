@@ -14,6 +14,12 @@ git submodule foreach git pull
 STACK_YAML=stack-lts-3.yaml stack test --pedantic
 ```
 
+### Package dependencies
+
+```
+packdeps **/*.cabal
+```
+
 ### Rough stats
 
 ```

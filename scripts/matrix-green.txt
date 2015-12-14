@@ -1,0 +1,22 @@
+HUnit
+JuicyPixels         # unnecessary cabal >=1.14
+JuicyPixels-util
+MonadRandom
+QuickCheck
+SHA
+StateVar
+adjunctions
+aeson
+aeson-extra
+aeson-pretty
+ansi-pretty
+ansi-terminal
+appar
+array
+asn1-encoding
+asn1-parse
+cryptohash-cryptoapi
+
+# Old versions fail
+conduit-extra
+cmdargs
