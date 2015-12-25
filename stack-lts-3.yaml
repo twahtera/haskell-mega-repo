@@ -7,6 +7,7 @@ packages:
 - flowdock-rest/
 - fum-client/
 - futulogo/
+- github-legacy/
 - haxl-typed/
 - monad-http/
 - planmill-client/
@@ -16,6 +17,9 @@ packages:
 - location:
     git: https://github.com/phadej/JuicyPixels-util.git
     commit: e810933bd7d35773fa8ec9957094493cf430b8ad
+- location:
+    git: https://github.com/jwiegley/github.git
+    commit: c626d432c070cbbc36ff69e8ca508af93a832694
 extra-deps:
 - hashable-time-0.2
 - haxl-0.3.0.0
