@@ -43,3 +43,6 @@
 [submodule "github-legacy"]
 	path = github-legacy
 	url = git@github.com:futurice/haskell-github-legacy.git
+[submodule "avatar-app"]
+	path = avatar-app
+	url = git@github.com:futurice/avatar-app.git
