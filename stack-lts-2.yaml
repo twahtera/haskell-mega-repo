@@ -9,6 +9,7 @@ packages:
 - fum-client/
 - futulogo/
 - github-legacy/
+- haxl-fxtra/
 - haxl-typed/
 - monad-http/
 - planmill-client/
@@ -49,6 +50,7 @@ extra-deps:
 - servant-server-0.4.4.5
 - servant-yaml-0.1.0.0
 - strict-base-types-0.4.0
+- type-list-0.3.0.2
 resolver: lts-2.22
 flags:
   hashable-time:
