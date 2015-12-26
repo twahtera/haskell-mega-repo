@@ -46,3 +46,6 @@
 [submodule "avatar-app"]
 	path = avatar-app
 	url = git@github.com:futurice/avatar-app.git
+[submodule "haxl-fxtra"]
+	path = haxl-fxtra
+	url = git@github.com:futurice/haskell-haxl-fxtra.git
