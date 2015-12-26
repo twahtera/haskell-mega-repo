@@ -2,6 +2,7 @@ packages:
 - ansi-pretty/
 - avatar-app/
 - base64-bytestring-type/
+- contacts-api/
 - favicon-app/
 - flowdock-cli/
 - flowdock-grep/
@@ -21,7 +22,7 @@ packages:
     commit: e810933bd7d35773fa8ec9957094493cf430b8ad
 - location:
     git: https://github.com/jwiegley/github.git
-    commit: c626d432c070cbbc36ff69e8ca508af93a832694
+    commit: 6c126a170a826cc34ebba2f4a0f8403125f6bc64
 extra-deps:
 - carray-0.1.6.1
 - fft-0.1.8.2
