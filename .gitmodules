@@ -49,3 +49,6 @@
 [submodule "haxl-fxtra"]
 	path = haxl-fxtra
 	url = git@github.com:futurice/haskell-haxl-fxtra.git
+[submodule "contacts-api"]
+	path = contacts-api
+	url = git@github.com:futurice/contacts-api.git
