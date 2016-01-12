@@ -25,6 +25,7 @@ packages:
     commit: 6c126a170a826cc34ebba2f4a0f8403125f6bc64
 extra-deps:
 - carray-0.1.6.1
+- composition-extra-2.0.0
 - fft-0.1.8.2
 - hashable-time-0.2
 - haxl-0.3.0.0

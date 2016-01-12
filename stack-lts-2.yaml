@@ -33,6 +33,7 @@ extra-deps:
 - binary-orphans-0.1.3.0
 - binary-tagged-0.1.3.0
 - carray-0.1.6.1
+- composition-extra-2.0.0
 - fft-0.1.8.2
 - file-embed-0.0.9
 - hashable-time-0.2
