@@ -1,3 +1,4 @@
+resolver: lts-2.22
 packages:
 - ansi-pretty/
 - avatar-app/
@@ -18,8 +19,8 @@ packages:
 - servant-cache/
 - servant-status/
 - location:
-    git: https://github.com/jwiegley/github.git
-    commit: 6c126a170a826cc34ebba2f4a0f8403125f6bc64
+    git: https://github.com/phadej/github.git
+    commit: 7f63755b299f907f5dd064ba53ce4662270808df
 # We might not need this when JuicyPixels-3.2.7 is out
 - location:
     git: https://github.com/phadej/JuicyPixels-util.git
@@ -38,24 +39,37 @@ extra-deps:
 - file-embed-0.0.9
 - hashable-time-0.2
 - haxl-0.3.0.0
+- http-link-header-1.0.1
 - iso8601-time-0.1.4
 - ix-shapable-0.1.0
 - JuicyPixels-scale-dct-0.1.1.0
 - monad-time-0.1
 - path-0.5.2
 - regex-applicative-text-0.1.0.0
-- servant-0.4.4.5
-- servant-blaze-0.4.4.5
-- servant-docs-0.4.4.5
+- servant-0.4.4.6
+- servant-blaze-0.4.4.6
+- servant-docs-0.4.4.6
 - servant-JuicyPixels-0.3.0.0
-- servant-lucid-0.4.4.5
-- servant-server-0.4.4.5
+- servant-lucid-0.4.4.6
+- servant-server-0.4.4.6
 - servant-yaml-0.1.0.0
 - strict-base-types-0.4.0
 - type-list-0.3.0.2
-resolver: lts-2.22
 flags:
   hashable-time:
     old-locale: true
   iso8601-time:
     new-time: false
+  fum-client:
+    aeson-compat: false
+  github:
+    aeson-compat: false
+  flowdock-rest:
+    aeson-compat: false
+  servant-status:
+    aeson-compat: false
+  avatar-app:
+    aeson-compat: false
+  planmill-client:
+    aeson-compat: false
+
