@@ -1,3 +1,4 @@
+resolver: lts-3.21
 packages:
 - ansi-pretty/
 - avatar-app/
@@ -21,10 +22,11 @@ packages:
     git: https://github.com/phadej/JuicyPixels-util.git
     commit: e810933bd7d35773fa8ec9957094493cf430b8ad
 - location:
-    git: https://github.com/jwiegley/github.git
-    commit: 6c126a170a826cc34ebba2f4a0f8403125f6bc64
+    git: https://github.com/phadej/github.git
+    commit: 7f63755b299f907f5dd064ba53ce4662270808df
 extra-deps:
 - carray-0.1.6.1
+- composition-extra-2.0.0
 - fft-0.1.8.2
 - hashable-time-0.2
 - haxl-0.3.0.0
@@ -40,7 +42,17 @@ extra-deps:
 - servant-yaml-0.1.0.0
 - strict-base-types-0.4.0
 - type-list-0.3.0.2
-# not yet in LTS3
-- binary-orphans-0.1.3.0
-resolver: lts-3.18
-flags: {}
+- http-link-header-1.0.1
+flags:
+  fum-client:
+    aeson-compat: false
+  github:
+    aeson-compat: false
+  flowdock-rest:
+    aeson-compat: false
+  servant-status:
+    aeson-compat: false
+  avatar-app:
+    aeson-compat: false
+  planmill-client:
+    aeson-compat: false
