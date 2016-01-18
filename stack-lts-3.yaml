@@ -1,4 +1,4 @@
-resolver: lts-3.21
+resolver: lts-3.22
 packages:
 - ansi-pretty/
 - avatar-app/
