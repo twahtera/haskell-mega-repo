@@ -20,7 +20,7 @@ packages:
 - servant-status/
 - location:
     git: https://github.com/phadej/github.git
-    commit: 7c0712fc587dae0a50b08ebbd0bad00cece41161
+    commit: 1300af2a7ce5554a32d745e4b3284a2a50876a04
 # We might not need this when JuicyPixels-3.2.7 is out
 - location:
     git: https://github.com/phadej/JuicyPixels-util.git
