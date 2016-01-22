@@ -23,7 +23,7 @@ packages:
     commit: e810933bd7d35773fa8ec9957094493cf430b8ad
 - location:
     git: https://github.com/phadej/github.git
-    commit: 1300af2a7ce5554a32d745e4b3284a2a50876a04
+    commit: dc8b0eb017052989704b5e3844f5a331542208e3
 extra-deps:
 - carray-0.1.6.1
 - composition-extra-2.0.0
