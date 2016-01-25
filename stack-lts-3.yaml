@@ -18,16 +18,15 @@ packages:
 - postgresql-simple-url/
 - servant-cache/
 - servant-status/
+- spice-stats/
 - location:
     git: https://github.com/phadej/JuicyPixels-util.git
     commit: e810933bd7d35773fa8ec9957094493cf430b8ad
-- location:
-    git: https://github.com/phadej/github.git
-    commit: dc8b0eb017052989704b5e3844f5a331542208e3
 extra-deps:
 - carray-0.1.6.1
 - composition-extra-2.0.0
 - fft-0.1.8.2
+- github-0.14.0
 - hashable-time-0.2
 - haxl-0.3.0.0
 - iso8601-time-0.1.4

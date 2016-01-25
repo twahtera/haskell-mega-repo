@@ -52,3 +52,6 @@
 [submodule "contacts-api"]
 	path = contacts-api
 	url = git@github.com:futurice/contacts-api.git
+[submodule "spice-stats"]
+	path = spice-stats
+	url = git@github.com:futurice/spice-stats.git
