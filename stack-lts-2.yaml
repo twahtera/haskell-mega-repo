@@ -19,9 +19,6 @@ packages:
 - servant-cache/
 - servant-status/
 - spice-stats/
-- location:
-    git: https://github.com/phadej/github.git
-    commit: 11e8fc367eb8540d3295c5ec7e58b7f95290fdda
 # We might not need this when JuicyPixels-3.2.7 is out
 - location:
     git: https://github.com/phadej/JuicyPixels-util.git
@@ -38,6 +35,7 @@ extra-deps:
 - composition-extra-2.0.0
 - fft-0.1.8.2
 - file-embed-0.0.9
+- github-0.14.0
 - hashable-time-0.2
 - haxl-0.3.0.0
 - http-link-header-1.0.1
