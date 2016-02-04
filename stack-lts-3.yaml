@@ -19,9 +19,6 @@ packages:
 - servant-cache/
 - servant-status/
 - spice-stats/
-- location:
-    git: https://github.com/phadej/JuicyPixels-util.git
-    commit: e810933bd7d35773fa8ec9957094493cf430b8ad
 extra-deps:
 - carray-0.1.6.1
 - composition-extra-2.0.0
@@ -31,6 +28,7 @@ extra-deps:
 - haxl-0.3.0.0
 - iso8601-time-0.1.4
 - ix-shapable-0.1.0
+- JuicyPixels-3.2.7
 - JuicyPixels-scale-dct-0.1.1.0
 - monad-time-0.1
 - monadcryptorandom-0.7.0 # LTS3 has 0.6.0

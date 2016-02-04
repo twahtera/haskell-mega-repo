@@ -19,14 +19,6 @@ packages:
 - servant-cache/
 - servant-status/
 - spice-stats/
-# We might not need this when JuicyPixels-3.2.7 is out
-- location:
-    git: https://github.com/phadej/JuicyPixels-util.git
-    commit: e810933bd7d35773fa8ec9957094493cf430b8ad
-# Until JuicyPixels-3.2.7 is out
-- location:
-    git: https://github.com/Twinside/Juicy.Pixels.git
-    commit: 1aac6904e64a74f4e679ad9aa4efa02132e4bc0d
 extra-deps:
 - aeson-extra-0.2.3.0
 - binary-orphans-0.1.3.0
@@ -41,6 +33,7 @@ extra-deps:
 - http-link-header-1.0.1
 - iso8601-time-0.1.4
 - ix-shapable-0.1.0
+- JuicyPixels-3.2.7
 - JuicyPixels-scale-dct-0.1.1.0
 - monad-time-0.1
 - path-0.5.2
