@@ -23,7 +23,7 @@ extra-deps:
 - carray-0.1.6.1
 - composition-extra-2.0.0
 - fft-0.1.8.2
-- github-0.14.0
+- github-0.14.1
 - hashable-time-0.2
 - haxl-0.3.0.0
 - iso8601-time-0.1.4

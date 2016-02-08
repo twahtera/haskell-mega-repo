@@ -20,7 +20,7 @@ packages:
 - servant-status/
 - spice-stats/
 extra-deps:
-- github-0.14.0
+- github-0.14.1
 - JuicyPixels-3.2.7
 - servant-lucid-0.4.4.6
 flags: {}

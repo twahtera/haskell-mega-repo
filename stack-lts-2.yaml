@@ -27,7 +27,7 @@ extra-deps:
 - composition-extra-2.0.0
 - fft-0.1.8.2
 - file-embed-0.0.9
-- github-0.14.0
+- github-0.14.1
 - hashable-time-0.2
 - haxl-0.3.0.0
 - http-link-header-1.0.1
