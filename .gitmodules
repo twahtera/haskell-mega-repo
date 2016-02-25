@@ -55,3 +55,6 @@
 [submodule "spice-stats"]
 	path = spice-stats
 	url = git@github.com:futurice/spice-stats.git
+[submodule "futurice-prelude"]
+	path = futurice-prelude
+	url = git@github.com:futurice/haskell-futurice-prelude.git
