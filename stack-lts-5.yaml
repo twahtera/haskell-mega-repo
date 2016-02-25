@@ -1,4 +1,4 @@
-resolver: lts-5.1
+resolver: lts-5.4
 packages:
 - ansi-pretty/
 - avatar-app/
@@ -21,6 +21,4 @@ packages:
 - spice-stats/
 extra-deps:
 - servant-lucid-0.4.4.6
-# not yet in LTS5
-- github-0.14.1
 flags: {}
