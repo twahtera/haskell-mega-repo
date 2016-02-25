@@ -26,12 +26,13 @@ extra-deps:
 - github-0.14.1
 - hashable-time-0.2
 - haxl-0.3.0.0
+- http-link-header-1.0.1
 - iso8601-time-0.1.4
 - ix-shapable-0.1.0
 - JuicyPixels-3.2.7
 - JuicyPixels-scale-dct-0.1.1.0
 - monad-time-0.1
-- monadcryptorandom-0.7.0 # LTS3 has 0.6.0
+- monadcryptorandom-0.7.0
 - regex-applicative-text-0.1.0.0
 - servant-blaze-0.4.4.5
 - servant-JuicyPixels-0.3.0.0
@@ -39,17 +40,16 @@ extra-deps:
 - servant-yaml-0.1.0.0
 - strict-base-types-0.4.0
 - type-list-0.3.0.2
-- http-link-header-1.0.1
 flags:
+  avatar-app:
+    aeson-compat: false
+  flowdock-rest:
+    aeson-compat: false
   fum-client:
     aeson-compat: false
   github:
     aeson-compat: false
-  flowdock-rest:
+  planmill-client:
     aeson-compat: false
   servant-status:
-    aeson-compat: false
-  avatar-app:
-    aeson-compat: false
-  planmill-client:
     aeson-compat: false
