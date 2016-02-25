@@ -35,6 +35,7 @@ extra-deps:
 - ix-shapable-0.1.0
 - JuicyPixels-3.2.7
 - JuicyPixels-scale-dct-0.1.1.0
+- lattices-1.5.0
 - monad-time-0.1
 - path-0.5.2
 - regex-applicative-text-0.1.0.0
@@ -47,22 +48,23 @@ extra-deps:
 - servant-yaml-0.1.0.0
 - strict-base-types-0.4.0
 - type-list-0.3.0.2
-- servant-lucid-0.4.4.6
+- universe-base-1.0.2.1
+- universe-instances-base-1.0
+- universe-reverse-instances-1.0
 flags:
-  hashable-time:
-    old-locale: true
-  iso8601-time:
-    new-time: false
+  avatar-app:
+    aeson-compat: false
+  flowdock-rest:
+    aeson-compat: false
   fum-client:
     aeson-compat: false
   github:
     aeson-compat: false
-  flowdock-rest:
+  hashable-time:
+    old-locale: true
+  iso8601-time:
+    new-time: false
+  planmill-client:
     aeson-compat: false
   servant-status:
     aeson-compat: false
-  avatar-app:
-    aeson-compat: false
-  planmill-client:
-    aeson-compat: false
-
