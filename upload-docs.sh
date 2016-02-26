@@ -1,6 +1,7 @@
 #!/bin/sh
 
 . env-postgres-osx.sh
+. venv/bin/activate
 
 set -ex
 
