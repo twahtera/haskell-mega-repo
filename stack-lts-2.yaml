@@ -9,6 +9,7 @@ packages:
 - flowdock-grep/
 - flowdock-rest/
 - fum-client/
+- futuhours-api/
 - futulogo/
 - futurice-prelude/
 - github-legacy/
@@ -20,6 +21,10 @@ packages:
 - servant-cache/
 - servant-status/
 - spice-stats/
+- location:
+    git: https://github.com/phadej/servant-swagger-ui.git
+    commit: 5f484f10d2182f917b0c3c094daee5d6e54e8a4e
+  extra-dep: true
 extra-deps:
 - aeson-compat-0.3.1.0
 - aeson-extra-0.3.1.1
@@ -33,6 +38,8 @@ extra-deps:
 - composition-extra-2.0.0
 - conduit-extra-1.1.11
 - control-monad-omega-0.3.1
+- dependent-map-0.2.1.0
+- dependent-sum-0.3.2.1
 - exceptions-0.8.2.1
 - fft-0.1.8.2
 - file-embed-0.0.9
@@ -66,10 +73,12 @@ extra-deps:
 - semigroupoids-5.0.1
 - servant-0.5
 - servant-blaze-0.5
+- servant-cassava-0.5
 - servant-docs-0.5
 - servant-JuicyPixels-0.3.0.1
 - servant-lucid-0.5
 - servant-server-0.5
+- servant-swagger-1.0.3
 - strict-base-types-0.4.0
 - swagger2-2.0.2
 - time-locale-compat-0.1.1.1
@@ -77,12 +86,15 @@ extra-deps:
 - transformers-0.4.3.0
 - transformers-compat-0.5.1.4
 - type-list-0.3.0.2
+- tz-0.1.0.1
+- tzdata-0.1.20150810.0
 - universe-base-1.0.2.1
 - universe-instances-base-1.0
 - universe-reverse-instances-1.0
 - unix-time-0.3.6
 - vector-binary-instances-0.2.3.1
 - vector-instances-3.3.1
+- wai-cors-0.2.4
 - wai-extra-3.0.14.3
 - yaml-0.8.12
 flags:

@@ -58,3 +58,6 @@
 [submodule "futurice-prelude"]
 	path = futurice-prelude
 	url = git@github.com:futurice/haskell-futurice-prelude.git
+[submodule "futuhours-api"]
+	path = futuhours-api
+	url = https://github.com/futurice/futuhours-api.git
