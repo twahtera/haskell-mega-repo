@@ -27,7 +27,7 @@ install:
   $HOME/.stack-work-cache/installplan.txt; fi;
 script:
 - if [ "$PEDANTIC" = "YES" ]; then export STACKOPTS=--pedantic; fi
-- stack --no-terminal --skip-ghc-check build --test $STACKOPTS
+- stack -j 1 --no-terminal --skip-ghc-check build --test $STACKOPTS
 - stack --no-terminal --skip-ghc-check sdist
 matrix:
   fast_finish: true
