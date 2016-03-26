@@ -61,3 +61,6 @@
 [submodule "futuhours-api"]
 	path = futuhours-api
 	url = https://github.com/futurice/futuhours-api.git
+[submodule "proxy-app"]
+	path = proxy-app
+	url = https://github.com/futurice/proxy-app.git
