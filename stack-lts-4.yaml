@@ -18,6 +18,7 @@ packages:
 - monad-http/
 - planmill-client/
 - postgresql-simple-url/
+- proxy-app/
 - servant-cache/
 - servant-status/
 - spice-stats/
@@ -40,6 +41,7 @@ extra-deps:
 - servant-0.5
 - servant-blaze-0.5
 - servant-cassava-0.5
+- servant-client-0.5
 - servant-docs-0.5
 - servant-JuicyPixels-0.3.0.1
 - servant-lucid-0.5
