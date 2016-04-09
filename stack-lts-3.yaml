@@ -24,7 +24,7 @@ packages:
 - spice-stats/
 - location:
     git: https://github.com/phadej/servant-swagger-ui.git
-    commit: 5f484f10d2182f917b0c3c094daee5d6e54e8a4e
+    commit: 8b9cb0164879aab73ab32bdfeebf6eac39a6ad3b
   extra-dep: true
 extra-deps:
 - aeson-compat-0.3.1.0
@@ -33,8 +33,8 @@ extra-deps:
 - carray-0.1.6.1
 - composition-extra-2.0.0
 - control-monad-omega-0.3.1
-- dependent-sum-0.3.2.1
 - dependent-map-0.2.1.0
+- dependent-sum-0.3.2.1
 - fft-0.1.8.2
 - generics-sop-0.2.1.0
 - generics-sop-lens-0.1.1.0
@@ -51,14 +51,14 @@ extra-deps:
 - monadcryptorandom-0.7.0
 - recursion-schemes-4.1.2
 - regex-applicative-text-0.1.0.0
-- servant-0.5
-- servant-blaze-0.5
-- servant-cassava-0.5
-- servant-client-0.5
-- servant-docs-0.5
-- servant-JuicyPixels-0.3.0.1
-- servant-lucid-0.5
-- servant-server-0.5
+- servant-0.6
+- servant-blaze-0.6
+- servant-cassava-0.6
+- servant-client-0.6
+- servant-docs-0.6
+- servant-JuicyPixels-0.3.0.2
+- servant-lucid-0.6
+- servant-server-0.6
 - servant-swagger-1.0.3
 - strict-base-types-0.4.0
 - swagger2-2.0.2

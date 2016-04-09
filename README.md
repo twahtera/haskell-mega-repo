@@ -11,7 +11,7 @@
 ```
 git submodule foreach git checkout master
 git submodule foreach git pull
-STACK_YAML=stack-lts-3.yaml stack test --pedantic
+STACK_YAML=stack-lts-5.yaml stack test --pedantic
 ```
 
 ### Package dependencies
