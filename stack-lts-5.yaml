@@ -1,4 +1,4 @@
-resolver: lts-5.4
+resolver: lts-5.15
 packages:
 - ansi-pretty/
 - avatar-app/
@@ -28,32 +28,19 @@ packages:
   extra-dep: true
 extra-deps:
 - aeson-0.11.1.4
-- base-compat-0.9.1
-- base-orphans-0.5.4
 - base-prelude-1
-- binary-tagged-0.1.4.0
-- conduit-extra-1.1.13.1
 - control-monad-omega-0.3.1
-- fast-logger-2.4.6
 - generics-sop-lens-0.1.1.0
-- hspec-2.2.3
-- hspec-core-2.2.3
-- hspec-discover-2.2.3
 - http2-1.6.0
 - monad-http-0.2.0.0
-- postgresql-simple-0.5.1.3
-- servant-0.6
-- servant-blaze-0.6
-- servant-cassava-0.6
-- servant-client-0.6
-- servant-docs-0.6
-- servant-JuicyPixels-0.3.0.2
-- servant-lucid-0.6
-- servant-server-0.6
+- servant-0.6.1
+- servant-blaze-0.6.1
+- servant-cassava-0.6.1
+- servant-client-0.6.1
+- servant-docs-0.6.1
+- servant-lucid-0.6.1
+- servant-server-0.6.1
 - servant-swagger-1.0.3
 - swagger2-2.0.2
-- vector-binary-instances-0.2.3.2
-- wai-extra-3.0.15.1
-- wai-logger-2.2.7
 - warp-3.2.6
 flags: {}
