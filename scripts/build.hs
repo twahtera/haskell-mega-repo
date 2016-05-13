@@ -16,6 +16,10 @@ type Executable = Text
 apps :: [(Image, Executable)]
 apps =
     [ ("avatar", "avatar-server")
+    , ("contacts-api", "contacts-server")
+    , ("favicon", "favicon")
+    , ("spice-stats", "spice-stats-server")
+    , ("futuhours-api", "futuhours-api-server")
     ]
 
 main :: IO ()
