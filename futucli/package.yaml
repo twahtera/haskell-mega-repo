@@ -1,0 +1,59 @@
+name: futucli
+version: 0.1.0.0
+synopsis: Various commands as old good command line tool
+description: Various commands as old good command line tool
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/haskell-mega-repo
+category: Web
+tested-with: GHC==7.8.4, GHC==7.10.2
+extra-source-files:
+- README.md
+
+ghc-options: -Wall
+
+library:
+  source-dirs: src
+  dependencies:
+    - aeson
+    - base >=4.7   && <4.9
+    - base-compat
+    - base64-bytestring
+    - binary
+    - bytestring
+    - case-insensitive
+    - containers
+    - crypto-api
+    - DRBG
+    - entropy
+    - exceptions
+    - fum-client
+    - futurice-prelude
+    - github >=0.15.0
+    - http-client
+    - http-client-tls
+    - lattices >=1.4.1
+    - lens
+    - monad-http
+    - monad-logger
+    - monadcryptorandom
+    - mtl
+    - optparse-applicative
+    - planmill-client
+    - regex-applicative-text
+    - tagged
+    - text
+    - time
+    - transformers
+    - unordered-containers
+    - vector
+    - yaml
+
+executables:
+  futucli:
+    source-dirs: cli
+    main: Main.hs
+    dependencies:
+      - base
+      - futucli

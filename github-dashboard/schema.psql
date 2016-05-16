@@ -1,0 +1,5 @@
+create table githubdashboard.repos (
+  owner TEXT NOT NULL,
+  repo TEXT NOT NULL,
+  PRIMARY KEY (owner, repo)
+);
