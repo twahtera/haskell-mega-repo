@@ -1,0 +1,82 @@
+name: github-dashboard
+version: 0.0.0.0
+synopsis: Show open github issues and pull requests across repositories
+description: ...
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/haskell-mega-repo
+category: Web
+
+ghc-options: -Wall
+
+dependencies:
+  - base >= 4.7 && <4.9
+  - SHA
+  - aeson
+  - aeson-pretty
+  - ansi-pretty
+  - base64-bytestring
+  - bifunctors
+  - binary-orphans
+  - binary-tagged
+  - bytestring
+  - case-insensitive
+  - deepseq
+  - directory
+  - exceptions
+  - filepath
+  - futurice-prelude
+  - github >=0.15.0
+  - hashable >= 1.2
+  - http-client
+  - http-client-tls
+  - http-types
+  - futurice-foundation
+  - lens
+  - optparse-applicative
+  - regex-applicative
+  - regex-applicative-text
+  - friendly-time >=0.4 && <0.5
+  - regex-compat
+  - semigroups
+  - tagged
+  - text
+  - time
+  - transformers
+  - transformers-compat
+  - containers
+  - unordered-containers
+  - postgresql-simple
+  - postgresql-simple-url
+  - vector
+  - swagger2 >= 2.0.2
+  # Servant
+  - resource-pool
+  - either
+  - servant >=0.6 && <0.7
+  - servant-status
+  - servant-cache
+  - servant-lucid
+  - lucid
+  - servant-server
+  - servant-docs
+  - markdown
+  - futulogo
+  - servant-blaze
+  - stm
+  - blaze-html
+  - wai
+  - warp
+  - gitrev
+
+library:
+  source-dirs: src
+
+executables:
+  github-dashboard-server:
+    main: Main.hs
+    source-dirs: srv
+    ghc-options: -Wall -threaded
+    dependencies:
+      - github-dashboard

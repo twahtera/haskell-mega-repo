@@ -9,10 +9,12 @@ packages:
 - flowdock-grep/
 - flowdock-rest/
 - fum-client/
+- futucli/
 - futuhours-api/
 - futulogo/
+- futurice-foundation/
 - futurice-prelude/
-- github-legacy/
+- github-dashboard/
 - haxl-fxtra/
 - haxl-typed/
 - monad-http/
@@ -23,8 +25,12 @@ packages:
 - servant-status/
 - spice-stats/
 - location:
+    git: https://github.com/phadej/github.git
+    commit: eb610e6b105ea108e6e11be7dd2429ea10ade48c
+  extra-dep: true
+- location:
     git: https://github.com/phadej/servant-swagger-ui.git
-    commit: 8b9cb0164879aab73ab32bdfeebf6eac39a6ad3b
+    commit: 314dedd21b8b0c907a386abbbb208455762581eb
   extra-dep: true
 extra-deps:
 - aeson-0.9.0.1
@@ -35,16 +41,18 @@ extra-deps:
 - binary-tagged-0.1.4.0
 - conduit-extra-1.1.13.1
 - control-monad-omega-0.3.1
+- cryptonite-0.15
 - fast-logger-2.4.6
+- friendly-time-0.4
 - generics-sop-0.2.1.0
 - generics-sop-lens-0.1.1.0
-- github-0.14.1
 - hspec-2.2.3
 - hspec-core-2.2.3
 - hspec-discover-2.2.3
 - http2-1.6.0
 - JuicyPixels-3.2.7
 - linear-1.20.4
+- lucid-foundation-0.0.2.1
 - monad-http-0.2.0.0
 - postgresql-simple-0.5.1.3
 - recursion-schemes-4.1.2
@@ -58,6 +66,7 @@ extra-deps:
 - servant-server-0.6
 - servant-swagger-1.0.3
 - swagger2-2.0.2
+- tls-1.3.8
 - vector-binary-instances-0.2.3.2
 - wai-3.2.1
 - wai-extra-3.0.15.1

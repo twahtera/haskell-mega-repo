@@ -9,10 +9,12 @@ packages:
 - flowdock-grep/
 - flowdock-rest/
 - fum-client/
+- futucli/
 - futuhours-api/
 - futulogo/
+- futurice-foundation/
 - futurice-prelude/
-- github-legacy/
+- github-dashboard/
 - haxl-fxtra/
 - haxl-typed/
 - monad-http/
@@ -23,15 +25,21 @@ packages:
 - servant-status/
 - spice-stats/
 - location:
+    git: https://github.com/phadej/github.git
+    commit: eb610e6b105ea108e6e11be7dd2429ea10ade48c
+  extra-dep: true
+- location:
     git: https://github.com/phadej/servant-swagger-ui.git
-    commit: 8b9cb0164879aab73ab32bdfeebf6eac39a6ad3b
+    commit: 314dedd21b8b0c907a386abbbb208455762581eb
   extra-dep: true
 extra-deps:
 - aeson-0.11.1.4
 - base-prelude-1
 - control-monad-omega-0.3.1
+- friendly-time-0.4
 - generics-sop-lens-0.1.1.0
 - http2-1.6.0
+- lucid-foundation-0.0.2.1
 - monad-http-0.2.0.0
 - servant-0.6.1
 - servant-blaze-0.6.1
