@@ -1,0 +1,92 @@
+name: planmill-client
+version: 0.1.0.0
+synopsis: PlanMill API
+description: |
+  Bindings to <https://online.planmill.com/pmtrial/schemas/v1_5/index.html PlanMill API 1.5>.
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/haskell-planmill-client
+category: Web
+tested-with: GHC==7.8.4, GHC==7.10.2
+extra-source-files:
+- README.md
+
+ghc-options: -Wall -fcontext-stack=40
+
+dependencies:
+  - base                  >=4.7     && <4.9
+  - base-compat           >=0.6     && <0.10
+  - aeson                 >=0.8     && <0.12
+  - aeson-compat          >=0.3.0.0 && <0.4
+  - aeson-extra           >=0.3.0.0 && <0.4
+  - time-parsers
+  - ansi-pretty           >=0.1.2 && <0.2
+  - ansi-wl-pprint
+  - base64-bytestring
+  - binary
+  - binary-orphans        >=0.1.3.0 && <0.2
+  - binary-tagged
+  - byteable
+  - bytestring
+  - composition-extra
+  - constraints
+  - containers
+  - cryptohash
+  - deepseq
+  - DRBG
+  - entropy
+  - exceptions
+  - futurice-prelude      >=0.1.8.0
+  - generics-sop
+  - hashable
+  - hashable-time
+  - intervals
+  - http-client           >=0.4   && <0.5
+  - http-client-tls       >=0.2.2 && <0.3
+  - http-types
+  - lens
+  - monad-http
+  - monad-logger
+  - monad-time
+  - monadcryptorandom >=0.7.0
+  - mtl
+  - operational
+  - reflection >= 2 && <2.3
+  - regex-applicative-text
+  - semigroups
+  - text                  >=1.2   && <1.3
+  - time
+  - time-locale-compat
+  - transformers
+  - unordered-containers
+  - vector                >=0.10  && <0.12
+
+library:
+  source-dirs: src
+
+tests:
+  test:
+    main: Tests.hs
+    source-dirs: test
+    dependencies:
+      - planmill-client
+      - tasty
+      - tasty-quickcheck
+      - file-embed
+  integration:
+    main: Integration.hs
+    source-dirs: integration
+    dependencies:
+      - planmill-client
+
+executables:
+  planmill-client:
+    main: Main.hs
+    source-dirs: cli
+    dependencies:
+      - planmill-client
+      - optparse-applicative
+      - SHA
+      - unordered-containers
+      - yaml

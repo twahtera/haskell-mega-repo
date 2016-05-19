@@ -1,0 +1,252 @@
+{-# LANGUAGE OverloadedStrings #-}
+-- |
+-- Copyright : (c) 2015 Futurice Oy
+-- License   : BSD3
+-- Maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+module PlanMill.Endpoints (
+    -- * Absences
+    absences,
+    absencesFromInterval,
+    absence,
+    -- * Accounts
+    accounts,
+    -- * Actions
+    actions,
+    -- * Assignments
+    projectAssignments,
+    reportableAssignments,
+    -- * Capacity calendars
+    capacitycalendars,
+    userCapacity,
+    -- * Contacts
+    contacts,
+    -- * Enumerations
+    enumerations,
+    -- * Exit criteria
+    exitcriteria,
+    -- * Me
+    me,
+    -- * Projects
+    project,
+    projects,
+    -- * Tasks
+    task,
+    projectTasks,
+    -- * Teams
+    team,
+    teams,
+    -- * Timereports
+    timereport,
+    timereports,
+    timereportsFor,
+    timereportsFromInterval,
+    timereportsFromIntervalFor,
+    addTimereport,
+    -- * Users
+    user,
+    users,
+    userTimeBalance,
+    ) where
+
+import PlanMill.Internal.Prelude
+import Prelude                   ()
+
+import GHC.TypeLits (KnownSymbol, symbolVal)
+
+import PlanMill.Types
+
+import qualified Data.Text          as T
+import qualified Data.Text.Encoding as TE
+
+-- | Get a list of absences.
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#absences_get>
+absences :: PlanMill Absences
+absences = planMillGet $ t "absences"
+
+-- | Get a list of absences from specified time interval.
+absencesFromInterval :: ResultInterval -> PlanMill Absences
+absencesFromInterval ri =
+    planMillPagedGetQs qs $ t "absences"
+  where
+    qs = intervalToQueryString ri
+
+-- | View details of single absence
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#absences__id__get>
+absence :: AbsenceId -> PlanMill Absence
+absence i = planMillGet $ t "absenses" // i
+
+-- | Get a list of accounts
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#accounts_get>
+accounts :: PlanMill Accounts
+accounts = planMillGet $ t "/accounts"
+
+-- | View details of single me.
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#me_get>
+me :: PlanMill Me
+me = planMillGet $ t "me"
+
+-- | Get a list of projects
+--
+-- See <vttps://online.planmill.com/pmtrial/schemas/v1_5/index.html#projects_get>
+projects :: PlanMill Projects
+projects = planMillPagedGet $ t "projects"
+
+-- | A single project in PlanMill
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#projects__id__get>
+project :: ProjectId -> PlanMill Project
+project i = planMillGet $ t "projects" // i
+
+-- | Get a list of teams
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#teams_get>
+teams :: PlanMill Teams
+teams = planMillPagedGet $ t "teams"
+
+-- | A single team in PlanMill
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#teams__id__get>
+team :: TeamId -> PlanMill Team
+team i = planMillGet $ t "teams" // i
+
+-- | Get a list of users
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#users_get>
+users :: PlanMill Users
+users = planMillPagedGet $ t "users"
+
+-- | A single user in PlanMill
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#users__id__get>
+user :: UserId -> PlanMill User
+user i = planMillGet $ t "users" // i
+
+-- | A single timebalance in PlanMill. This is a read-only item
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#users__id__timebalance_get>
+userTimeBalance :: UserId -> PlanMill TimeBalance
+userTimeBalance i = planMillGet $ t "users" // i // t "timebalance"
+
+-- | Add a new timereport to PlanMill or update existing (if id is given).
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#timereports_post>
+--
+-- TODO: separate /create/ and /update/
+addTimereport :: NewTimereport -> PlanMill (Inserted Timereport)
+addTimereport tr = planMillPost tr $ t "timereports"
+
+-- | A single timereport in PlanMill.
+--
+-- <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#timereports__id__get>
+timereport :: TimereportId -> PlanMill Timereport
+timereport i = planMillGet $ t "timereports" // i
+
+-- | Get a list of timereports.
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#timereports_get>
+timereports :: PlanMill Timereports
+timereports = planMillPagedGetQs [] $ t "timereports"
+
+timereportsFor :: UserId -> PlanMill Timereports
+timereportsFor (Ident uid) =
+    planMillPagedGetQs qs' $ t "timereports"
+  where
+    qs' :: QueryString
+    qs' = [ ("person", Just . fromString $ show uid)
+          ]
+
+-- | Get a list of timereports from specified interval.
+timereportsFromInterval :: ResultInterval -> PlanMill Timereports
+timereportsFromInterval ri =
+    planMillPagedGetQs qs $ t "timereports"
+  where
+    qs = intervalToQueryString ri
+
+timereportsFromIntervalFor :: ResultInterval -> UserId -> PlanMill Timereports
+timereportsFromIntervalFor ri (Ident uid) =
+    planMillPagedGetQs (qs ++ qs') $ t "timereports"
+  where
+    qs :: QueryString
+    qs = intervalToQueryString ri
+    qs' :: QueryString
+    qs' = [ ("person", Just . fromString $ show uid)
+          ]
+
+-- | View details of single task.
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#tasks__id__get>
+--
+-- TODO: seems to return 500 for most tasks
+task :: TaskId -> PlanMill Task
+task i = planMillGet $ t "tasks" // i
+
+-- | Please note that this data model might change and might be inconsistent with the schema right now.
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#projects__id__tasks_get>
+projectTasks :: ProjectId -> PlanMill Tasks
+projectTasks pid = planMillPagedGet $ t "projects" // pid // t "tasks"
+
+-- | Get a list of exitcriteria
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#exitcriteria>
+exitcriteria :: PlanMill ExitCriteria
+exitcriteria = planMillGet $ t "exitcriteria"
+
+-- | Get a list of contacts
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#contacts_get>
+contacts :: PlanMill Contacts
+contacts = planMillGet $ t "contacts"
+
+-- | Get a list of capacitycalendars
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#capacitycalendars_get>
+capacitycalendars :: PlanMill CapacityCalendars
+capacitycalendars = planMillGet $ t "capacitycalendars"
+
+-- |
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#users__id__capacity_get>
+userCapacity :: Interval Day -> UserId -> PlanMill UserCapacities
+userCapacity interval uid = planMillGetQs qs $ t "users" // uid // t "capacity"
+  where
+    qs = flip elimInterval interval $ \a b ->
+        [ ("start",  Just . fromString . showPlanmillUTCTime $ UTCTime a 0)
+        , ("finish", Just . fromString . showPlanmillUTCTime $ UTCTime b 0)
+        ]
+
+-- | Get a list of assignments
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#projects__id__assignments_get>
+projectAssignments :: ProjectId -> PlanMill Assignments
+projectAssignments i = planMillGet $ t "projects" // i // t "assignments"
+
+-- | A single user's reportable assignments in PlanMill.
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#users__id__reportableassignments_get>
+reportableAssignments :: UserId -> PlanMill ReportableAssignments
+reportableAssignments i = planMillGet $ t "users" // i // t "reportableassignments"
+
+-- | Get a list of actions
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#actions_get>
+actions :: PlanMill Actions
+actions = planMillGet $ t "actions"
+
+-- | View details of single enumeration.
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#enumerations_get>
+enumerations :: KnownSymbol k => Proxy k -> PlanMill (EnumDesc k)
+enumerations p = planMillGetQs qs $ t "enumerations"
+  where qs = [ ("name", Just . TE.encodeUtf8 $ T.pack $ symbolVal p) ]
+
+-------------------------------------------------------------------------------
+-- Utilities
+-------------------------------------------------------------------------------
+
+t :: Text -> Text
+t = id

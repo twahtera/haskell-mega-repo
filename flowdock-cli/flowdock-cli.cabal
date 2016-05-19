@@ -1,0 +1,49 @@
+-- This file has been generated from package.yaml by hpack version 0.8.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           flowdock-cli
+version:        0.0.0.0
+synopsis:       Example cli tool for flowdock-rest
+description:    Example cli tool for flowdock-rest
+category:       Web
+homepage:       https://github.com/futurice/haskell-flowdock-cli#readme
+bug-reports:    https://github.com/futurice/haskell-flowdock-cli/issues
+author:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+
+source-repository head
+  type: git
+  location: https://github.com/futurice/haskell-flowdock-cli
+
+executable flowdock-cli
+  main-is: Main.hs
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      base >= 4.7 && <4.9
+    , base-compat
+    , aeson
+    , aeson-pretty
+    , ansi-pretty
+    , base64-bytestring
+    , bytestring
+    , deepseq
+    , directory
+    , exceptions
+    , hashable >= 1.2
+    , http-client
+    , http-client-tls
+    , lens
+    , monad-http
+    , tagged
+    , text
+    , optparse-applicative
+    , transformers
+    , flowdock-rest >= 0.1
+  default-language: Haskell2010

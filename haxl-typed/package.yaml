@@ -1,0 +1,25 @@
+name: haxl-typed
+version: 0.1.0.0
+synopsis: Typed Haxl interface
+description: Typed Haxl interface
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/haskell-haxl-typed
+category: Web
+tested-with: GHC==7.8.4, GHC==7.10.2
+extra-source-files:
+- README.md
+
+ghc-options: -Wall
+
+dependencies:
+  - base             >=4.7     && <4.9
+  - base-compat      >=0.9.1   && <0.10
+  - exceptions       >=0.8.0.2 && <0.9
+  - futurice-prelude >=0.1.5.0 && <0.2
+  - haxl             >=0.3.1.0 && <0.4
+  - tagged           >=0.7.3   && <0.9
+
+library:
+  source-dirs: src

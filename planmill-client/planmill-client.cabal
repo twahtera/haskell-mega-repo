@@ -1,0 +1,297 @@
+-- This file has been generated from package.yaml by hpack version 0.13.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           planmill-client
+version:        0.1.0.0
+synopsis:       PlanMill API
+description:    Bindings to <https://online.planmill.com/pmtrial/schemas/v1_5/index.html PlanMill API 1.5>.
+category:       Web
+homepage:       https://github.com/futurice/haskell-planmill-client#readme
+bug-reports:    https://github.com/futurice/haskell-planmill-client/issues
+author:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
+license:        BSD3
+license-file:   LICENSE
+tested-with:    GHC==7.8.4, GHC==7.10.2
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/futurice/haskell-planmill-client
+
+library
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -fcontext-stack=40
+  build-depends:
+      base                  >=4.7     && <4.9
+    , base-compat           >=0.6     && <0.10
+    , aeson                 >=0.8     && <0.12
+    , aeson-compat          >=0.3.0.0 && <0.4
+    , aeson-extra           >=0.3.0.0 && <0.4
+    , time-parsers
+    , ansi-pretty           >=0.1.2 && <0.2
+    , ansi-wl-pprint
+    , base64-bytestring
+    , binary
+    , binary-orphans        >=0.1.3.0 && <0.2
+    , binary-tagged
+    , byteable
+    , bytestring
+    , composition-extra
+    , constraints
+    , containers
+    , cryptohash
+    , deepseq
+    , DRBG
+    , entropy
+    , exceptions
+    , futurice-prelude      >=0.1.8.0
+    , generics-sop
+    , hashable
+    , hashable-time
+    , intervals
+    , http-client           >=0.4   && <0.5
+    , http-client-tls       >=0.2.2 && <0.3
+    , http-types
+    , lens
+    , monad-http
+    , monad-logger
+    , monad-time
+    , monadcryptorandom >=0.7.0
+    , mtl
+    , operational
+    , reflection >= 2 && <2.3
+    , regex-applicative-text
+    , semigroups
+    , text                  >=1.2   && <1.3
+    , time
+    , time-locale-compat
+    , transformers
+    , unordered-containers
+    , vector                >=0.10  && <0.12
+  exposed-modules:
+      Control.Monad.CryptoRandom.Extra
+      Control.Monad.PlanMill
+      PlanMill
+      PlanMill.Auth
+      PlanMill.Classes
+      PlanMill.Endpoints
+      PlanMill.Enumerations
+      PlanMill.Eval
+      PlanMill.Internal
+      PlanMill.Internal.Prelude
+      PlanMill.Operational
+      PlanMill.Test
+      PlanMill.Types
+      PlanMill.Types.Absence
+      PlanMill.Types.Account
+      PlanMill.Types.Action
+      PlanMill.Types.Assignment
+      PlanMill.Types.Auth
+      PlanMill.Types.CapacityCalendar
+      PlanMill.Types.Cfg
+      PlanMill.Types.Contact
+      PlanMill.Types.Enumeration
+      PlanMill.Types.Error
+      PlanMill.Types.ExitCriteria
+      PlanMill.Types.Identifier
+      PlanMill.Types.Inserted
+      PlanMill.Types.MaybeNumberText
+      PlanMill.Types.Me
+      PlanMill.Types.Meta
+      PlanMill.Types.Project
+      PlanMill.Types.ReportableAssignment
+      PlanMill.Types.Request
+      PlanMill.Types.ResultInterval
+      PlanMill.Types.ResultOrder
+      PlanMill.Types.Task
+      PlanMill.Types.TimeBalance
+      PlanMill.Types.Timereport
+      PlanMill.Types.UOffset
+      PlanMill.Types.UrlPart
+      PlanMill.Types.User
+      PlanMill.Types.UserCapacity
+  default-language: Haskell2010
+
+executable planmill-client
+  main-is: Main.hs
+  hs-source-dirs:
+      cli
+  ghc-options: -Wall -fcontext-stack=40
+  build-depends:
+      base                  >=4.7     && <4.9
+    , base-compat           >=0.6     && <0.10
+    , aeson                 >=0.8     && <0.12
+    , aeson-compat          >=0.3.0.0 && <0.4
+    , aeson-extra           >=0.3.0.0 && <0.4
+    , time-parsers
+    , ansi-pretty           >=0.1.2 && <0.2
+    , ansi-wl-pprint
+    , base64-bytestring
+    , binary
+    , binary-orphans        >=0.1.3.0 && <0.2
+    , binary-tagged
+    , byteable
+    , bytestring
+    , composition-extra
+    , constraints
+    , containers
+    , cryptohash
+    , deepseq
+    , DRBG
+    , entropy
+    , exceptions
+    , futurice-prelude      >=0.1.8.0
+    , generics-sop
+    , hashable
+    , hashable-time
+    , intervals
+    , http-client           >=0.4   && <0.5
+    , http-client-tls       >=0.2.2 && <0.3
+    , http-types
+    , lens
+    , monad-http
+    , monad-logger
+    , monad-time
+    , monadcryptorandom >=0.7.0
+    , mtl
+    , operational
+    , reflection >= 2 && <2.3
+    , regex-applicative-text
+    , semigroups
+    , text                  >=1.2   && <1.3
+    , time
+    , time-locale-compat
+    , transformers
+    , unordered-containers
+    , vector                >=0.10  && <0.12
+    , planmill-client
+    , optparse-applicative
+    , SHA
+    , unordered-containers
+    , yaml
+  other-modules:
+      Caching
+      MonadPretty
+  default-language: Haskell2010
+
+test-suite integration
+  type: exitcode-stdio-1.0
+  main-is: Integration.hs
+  hs-source-dirs:
+      integration
+  ghc-options: -Wall -fcontext-stack=40
+  build-depends:
+      base                  >=4.7     && <4.9
+    , base-compat           >=0.6     && <0.10
+    , aeson                 >=0.8     && <0.12
+    , aeson-compat          >=0.3.0.0 && <0.4
+    , aeson-extra           >=0.3.0.0 && <0.4
+    , time-parsers
+    , ansi-pretty           >=0.1.2 && <0.2
+    , ansi-wl-pprint
+    , base64-bytestring
+    , binary
+    , binary-orphans        >=0.1.3.0 && <0.2
+    , binary-tagged
+    , byteable
+    , bytestring
+    , composition-extra
+    , constraints
+    , containers
+    , cryptohash
+    , deepseq
+    , DRBG
+    , entropy
+    , exceptions
+    , futurice-prelude      >=0.1.8.0
+    , generics-sop
+    , hashable
+    , hashable-time
+    , intervals
+    , http-client           >=0.4   && <0.5
+    , http-client-tls       >=0.2.2 && <0.3
+    , http-types
+    , lens
+    , monad-http
+    , monad-logger
+    , monad-time
+    , monadcryptorandom >=0.7.0
+    , mtl
+    , operational
+    , reflection >= 2 && <2.3
+    , regex-applicative-text
+    , semigroups
+    , text                  >=1.2   && <1.3
+    , time
+    , time-locale-compat
+    , transformers
+    , unordered-containers
+    , vector                >=0.10  && <0.12
+    , planmill-client
+  default-language: Haskell2010
+
+test-suite test
+  type: exitcode-stdio-1.0
+  main-is: Tests.hs
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -fcontext-stack=40
+  build-depends:
+      base                  >=4.7     && <4.9
+    , base-compat           >=0.6     && <0.10
+    , aeson                 >=0.8     && <0.12
+    , aeson-compat          >=0.3.0.0 && <0.4
+    , aeson-extra           >=0.3.0.0 && <0.4
+    , time-parsers
+    , ansi-pretty           >=0.1.2 && <0.2
+    , ansi-wl-pprint
+    , base64-bytestring
+    , binary
+    , binary-orphans        >=0.1.3.0 && <0.2
+    , binary-tagged
+    , byteable
+    , bytestring
+    , composition-extra
+    , constraints
+    , containers
+    , cryptohash
+    , deepseq
+    , DRBG
+    , entropy
+    , exceptions
+    , futurice-prelude      >=0.1.8.0
+    , generics-sop
+    , hashable
+    , hashable-time
+    , intervals
+    , http-client           >=0.4   && <0.5
+    , http-client-tls       >=0.2.2 && <0.3
+    , http-types
+    , lens
+    , monad-http
+    , monad-logger
+    , monad-time
+    , monadcryptorandom >=0.7.0
+    , mtl
+    , operational
+    , reflection >= 2 && <2.3
+    , regex-applicative-text
+    , semigroups
+    , text                  >=1.2   && <1.3
+    , time
+    , time-locale-compat
+    , transformers
+    , unordered-containers
+    , vector                >=0.10  && <0.12
+    , planmill-client
+    , tasty
+    , tasty-quickcheck
+    , file-embed
+  default-language: Haskell2010

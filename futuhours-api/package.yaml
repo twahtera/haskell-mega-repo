@@ -1,0 +1,101 @@
+name: futuhours-api
+version: 0.1.0.0
+synopsis: Futuhours API
+description: New and fancy
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/futuhours-api
+category: Web
+tested-with: GHC==7.8.4, GHC==7.10.3
+extra-source-files:
+- README.md
+
+ghc-options: -Wall
+
+library:
+  source-dirs: src
+  dependencies:
+    - base                  >=4.7   && <4.9
+    - aeson                 >=0.8   && <0.12
+    - aeson-compat          >=0.3.1 && <0.4
+    - aeson-extra           >=0.3.1 && <0.4
+    - ad
+    - async >=2.0.2 && <2.2
+    - base-compat
+    - binary
+    - binary-tagged
+    - blaze-html
+    - bytestring
+    - cassava
+    - containers
+    - dependent-map >=0.2.1.0 && <0.3
+    - dependent-sum
+    - either
+    - ekg
+    - ekg-core
+    - exceptions
+    - fum-client
+    - futulogo
+    - futurice-prelude >=0.1.9.0
+    - generics-sop >=0.2.1.0 && <0.3
+    - generics-sop-lens >=0.1.0.0 && <0.2
+    - hashable
+    - haxl                  >=0.3   && <0.4
+    - haxl-fxtra
+    - haxl-typed
+    - http-client
+    - http-client-tls
+    - intervals
+    - lattices >=1.4.1
+    - lens
+    - linear >=1.20.4
+    - lucid
+    - markdown
+    - monad-http
+    - monad-logger
+    - MonadRandom
+    - mtl
+    - operational
+    - parsec
+    - planmill-client
+    - postgresql-simple
+    - postgresql-simple-url
+    - QuickCheck
+    - quickcheck-instances
+    - reflection
+    - regex-applicative-text
+    - resource-pool
+    - semigroups
+    - servant >=0.6 && <0.7
+    - servant-blaze
+    - servant-cache
+    - servant-cassava
+    - servant-docs
+    - servant-lucid
+    - servant-server
+    - servant-status
+    - servant-swagger
+    - servant-swagger-ui
+    - stm
+    - swagger2
+    - text
+    - time
+    - time-parsers
+    - transformers
+    - tz
+    - unordered-containers
+    - vector
+    - wai
+    - wai-middleware-metrics
+    - wai-cors
+    - warp
+
+executables:
+  futuhours-api-server:
+    ghc-options: -threaded
+    main: Main.hs
+    source-dirs: srv
+    dependencies:
+      - base
+      - futuhours-api

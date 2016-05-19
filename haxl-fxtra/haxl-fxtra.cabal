@@ -1,0 +1,61 @@
+-- This file has been generated from package.yaml by hpack version 0.13.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           haxl-fxtra
+version:        0.0.0.0
+synopsis:       Futurice extras for Haxl
+description:    Mostly bindings to various datasources
+category:       Web
+homepage:       https://github.com/futurice/haskell-haxl-fxtra#readme
+bug-reports:    https://github.com/futurice/haskell-haxl-fxtra/issues
+author:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
+license:        BSD3
+license-file:   LICENSE
+tested-with:    GHC==7.8.4, GHC==7.10.2
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/futurice/haskell-haxl-fxtra
+
+library
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      base                  >=4.7      && <4.9
+    , base-compat           >=0.6.0    && <0.10
+    , haxl                  >=0.3      && <0.4
+    , http-client           >=0.4.18.1 && <0.5
+    , http-client-tls       >=0.2.2    && <0.3
+    , text                  >=1.2.0.6  && <1.3
+    , hashable              >=1.2.3.3  && <1.3
+    , parallel-io           >=0.3.3    && <0.4
+    , github                >=0.14.0
+    , fum-client
+    , flowdock-rest         >=0.2.0.0
+    , bytestring
+    , exceptions
+    , vector
+    , bifunctors
+    , tagged
+    , haxl-typed
+  exposed-modules:
+      Flowdock.Haxl
+      Flowdock.TyHaxl
+      FUM.Haxl
+      FUM.TyHaxl
+      Github.Haxl
+      Github.TyHaxl
+      Haxl.Extra.HttpDataSource
+      Haxl.Extra.IODataSource
+      Haxl.Extra.LogDataSource
+      Haxl.Typed.HttpDataSource
+      Haxl.Typed.LogDataSource
+  default-language: Haskell2010

@@ -16,48 +16,9 @@
 [submodule "postgresql-simple-url"]
 	path = postgresql-simple-url
 	url = git@github.com:futurice/postgresql-simple-url.git
-[submodule "futulogo"]
-	path = futulogo
-	url = git@github.com:futurice/haskell-futulogo.git
-[submodule "servant-cache"]
-	path = servant-cache
-	url = git@github.com:futurice/haskell-servant-cache.git
-[submodule "favicon-app"]
-	path = favicon-app
-	url = git@github.com:futurice/favicon-app.git
-[submodule "servant-status"]
-	path = servant-status
-	url = git@github.com:futurice/haskell-servant-status.git
-[submodule "haxl-typed"]
-	path = haxl-typed
-	url = git@github.com:futurice/haskell-haxl-typed.git
 [submodule "base64-bytestring-type"]
 	path = base64-bytestring-type
 	url = git@github.com:futurice/haskell-base64-bytestring-type.git
-[submodule "planmill-client"]
-	path = planmill-client
-	url = git@github.com:futurice/haskell-planmill-client.git
-[submodule "fum-client"]
-	path = fum-client
-	url = git@github.com:futurice/haskell-fum-client.git
-[submodule "avatar-app"]
-	path = avatar-app
-	url = git@github.com:futurice/avatar-app.git
-[submodule "haxl-fxtra"]
-	path = haxl-fxtra
-	url = git@github.com:futurice/haskell-haxl-fxtra.git
-[submodule "contacts-api"]
-	path = contacts-api
-	url = git@github.com:futurice/contacts-api.git
-[submodule "spice-stats"]
-	path = spice-stats
-	url = git@github.com:futurice/spice-stats.git
 [submodule "futurice-prelude"]
 	path = futurice-prelude
 	url = git@github.com:futurice/haskell-futurice-prelude.git
-[submodule "futuhours-api"]
-	path = futuhours-api
-	url = https://github.com/futurice/futuhours-api.git
-[submodule "proxy-app"]
-	path = proxy-app
-	url = https://github.com/futurice/proxy-app.git

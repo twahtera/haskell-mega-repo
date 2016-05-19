@@ -1,0 +1,78 @@
+name: spice-stats
+version: 0.0.0.0
+synopsis: Realm of Chilicorn
+description: OmgLolKek
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/haskell-spice-stats
+category: Web
+
+ghc-options: -Wall
+
+dependencies:
+  - base >= 4.7 && <4.9
+  - SHA
+  - aeson
+  - aeson-pretty
+  - ansi-pretty
+  - base64-bytestring
+  - bifunctors
+  - binary-orphans
+  - binary-tagged
+  - bytestring
+  - case-insensitive
+  - deepseq
+  - directory
+  - exceptions
+  - filepath
+  - futurice-prelude
+  - github
+  - hashable >= 1.2
+  - http-client
+  - http-client-tls
+  - http-types
+  - lens
+  - optparse-applicative
+  - regex-applicative
+  - regex-applicative-text
+  - regex-compat
+  - semigroups
+  - tagged
+  - text
+  - transformers
+  - transformers-compat
+  - unordered-containers
+  - vector
+  - flowdock-rest
+  # Servant
+  - either
+  - servant >=0.6 && <0.7
+  - servant-status
+  - servant-cache
+  - servant-server
+  - servant-docs
+  - markdown
+  - futulogo
+  - servant-blaze
+  - stm
+  - blaze-html
+  - wai
+  - warp
+  - gitrev
+
+library:
+  source-dirs: src
+
+executables:
+  spice-stats:
+    main: Main.hs
+    source-dirs: cli
+    dependencies:
+      - spice-stats
+  spice-stats-server:
+    main: Main.hs
+    source-dirs: srv
+    ghc-options: -Wall -threaded
+    dependencies:
+      - spice-stats

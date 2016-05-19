@@ -1,0 +1,63 @@
+name: proxy-app
+version: 0.1.0.0
+synopsis: Proxy app
+description: Make a proxy of everything
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/proxy-app
+category: Web
+tested-with: GHC==7.8.4, GHC==7.10.3
+extra-source-files:
+- README.md
+
+ghc-options: -Wall
+
+library:
+  source-dirs: src
+  dependencies:
+    - base                  >=4.7   && <4.9
+    - aeson                 >=0.8   && <0.12
+    - base-compat
+    - aeson-compat          >=0.3.0.0 && <0.4
+    - bifunctors
+    - blaze-html
+    - bytestring
+    - cassava
+    - either
+    - futuhours-api
+    - futulogo
+    - futurice-prelude
+    - http-client
+    - http-client-tls
+    - lens
+    - markdown
+    - semigroups
+    - servant >=0.6 && <0.7
+    - servant-blaze
+    - servant-cache
+    - servant-cassava
+    - servant-client
+    - servant-docs
+    - servant-server
+    - servant-status
+    - servant-swagger
+    - servant-swagger-ui
+    - stm
+    - swagger2
+    - text
+    - time
+    - transformers
+    - unordered-containers
+    - vector
+    - wai
+    - warp
+
+executables:
+  proxy-app-server:
+    ghc-options: -threaded
+    main: Main.hs
+    source-dirs: srv
+    dependencies:
+      - base
+      - proxy-app
