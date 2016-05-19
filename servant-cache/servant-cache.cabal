@@ -1,0 +1,128 @@
+-- This file has been generated from package.yaml by hpack version 0.11.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           servant-cache
+version:        0.2.0.0
+synopsis:       Servant cache
+description:    Cache servant API endpoints
+category:       Web
+homepage:       https://github.com/futurice/haskell-servant-cache#readme
+bug-reports:    https://github.com/futurice/haskell-servant-cache/issues
+author:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
+license:        BSD3
+license-file:   LICENSE
+tested-with:    GHC==7.8.4, GHC==7.10.2
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/futurice/haskell-servant-cache
+
+library
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      base            >=4.7      && <4.9
+    , base-compat     >=0.6.0    && <0.10
+    , blaze-builder   >=0.4.0.1  && <0.5
+    , bytestring      >=0.10.4.0 && <0.11
+    , hashable        >=1.2.3.3  && <1.3
+    , http-types      >=0.8.6    && <0.10
+    , servant         >=0.5      && <0.7
+    , servant-docs    >=0.5      && <0.7
+    , servant-server  >=0.5      && <0.7
+    , stm             >=2.4.4    && <2.5
+    , stm-containers  >=0.2.9    && <0.3
+    , tagged          >=0.7.3    && <0.9
+    , time            >=1.4.2    && <1.6
+    , wai             >=3.0.3.0  && <3.3
+    , async
+    , either
+    , transformers
+    , transformers-compat
+    , monad-control
+    , transformers-base
+    , list-t
+  exposed-modules:
+      Servant.Cache
+      Servant.Cache.Class
+      Servant.Cache.Internal.Cacheable
+      Servant.Cache.Internal.DynMap
+      Servant.Cache.Internal.HasCachedServer
+      Servant.Cache.Internal.HList
+  default-language: Haskell2010
+
+test-suite example
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  hs-source-dirs:
+      example
+  ghc-options: -Wall
+  build-depends:
+      base            >=4.7      && <4.9
+    , base-compat     >=0.6.0    && <0.10
+    , blaze-builder   >=0.4.0.1  && <0.5
+    , bytestring      >=0.10.4.0 && <0.11
+    , hashable        >=1.2.3.3  && <1.3
+    , http-types      >=0.8.6    && <0.10
+    , servant         >=0.5      && <0.7
+    , servant-docs    >=0.5      && <0.7
+    , servant-server  >=0.5      && <0.7
+    , stm             >=2.4.4    && <2.5
+    , stm-containers  >=0.2.9    && <0.3
+    , tagged          >=0.7.3    && <0.9
+    , time            >=1.4.2    && <1.6
+    , wai             >=3.0.3.0  && <3.3
+    , async
+    , either
+    , transformers
+    , transformers-compat
+    , monad-control
+    , transformers-base
+    , list-t
+    , servant-cache
+    , servant-lucid >=0.5 && <0.7
+    , lucid
+    , text
+    , warp
+  default-language: Haskell2010
+
+test-suite unit-tests
+  type: exitcode-stdio-1.0
+  main-is: Tests.hs
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -threaded
+  build-depends:
+      base            >=4.7      && <4.9
+    , base-compat     >=0.6.0    && <0.10
+    , blaze-builder   >=0.4.0.1  && <0.5
+    , bytestring      >=0.10.4.0 && <0.11
+    , hashable        >=1.2.3.3  && <1.3
+    , http-types      >=0.8.6    && <0.10
+    , servant         >=0.5      && <0.7
+    , servant-docs    >=0.5      && <0.7
+    , servant-server  >=0.5      && <0.7
+    , stm             >=2.4.4    && <2.5
+    , stm-containers  >=0.2.9    && <0.3
+    , tagged          >=0.7.3    && <0.9
+    , time            >=1.4.2    && <1.6
+    , wai             >=3.0.3.0  && <3.3
+    , async
+    , either
+    , transformers
+    , transformers-compat
+    , monad-control
+    , transformers-base
+    , list-t
+    , servant-cache
+    , tasty
+    , tasty-hunit
+  default-language: Haskell2010

@@ -1,0 +1,42 @@
+name: favicon
+version: 0.1.0.0
+synopsis: Generate Futurice favicons
+description: Fancy icons!
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/favicon-app
+category: Web
+tested-with: GHC==7.8.4, GHC==7.10.2
+extra-source-files:
+- README.md
+
+ghc-options: -Wall
+
+dependencies:
+- base >=4.7 && <4.9
+- JuicyPixels
+- base-compat
+- futulogo
+- lucid
+- semigroups
+- servant >=0.6 && <0.7
+- servant-cache
+- servant-docs
+- servant-JuicyPixels >=0.3.0.0
+- servant-lucid
+- servant-server
+- servant-status
+- stm
+- text
+- time
+- transformers
+- transformers-compat
+- wai
+- warp
+
+executables:
+  favicon:
+    main: Main.hs
+    ghc-options: -threaded
+    source-dirs: src/

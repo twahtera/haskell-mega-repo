@@ -1,0 +1,116 @@
+-- This file has been generated from package.yaml by hpack version 0.13.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           contacts
+version:        0.1.0.0
+synopsis:       Contacts api
+description:    New and fancy
+category:       Web
+homepage:       https://github.com/futurice/contacts-api#readme
+bug-reports:    https://github.com/futurice/contacts-api/issues
+author:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
+license:        BSD3
+license-file:   LICENSE
+tested-with:    GHC==7.8.4, GHC==7.10.2
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/futurice/contacts-api
+
+flag aeson-compat
+  manual: True
+  default: True
+
+library
+  hs-source-dirs:
+      src
+  ghc-options: -Wall  -fcontext-stack=30
+  build-depends:
+      base                  >=4.7   && <4.9
+    , aeson                 >=0.8   && <0.12
+    , base-compat
+    , bifunctors
+    , binary-orphans
+    , binary-tagged
+    , bytestring
+    , containers
+    , cryptohash
+    , deepseq
+    , directory
+    , exceptions
+    , file-embed >=0.0.9
+    , filepath
+    , flowdock-rest >=0.2
+    , fum-client
+    , futurice-prelude
+    , futulogo
+    , github >= 0.14
+    , gitrev
+    , hashable
+    , haxl                  >=0.3   && <0.4
+    , haxl-fxtra
+    , haxl-typed
+    , http-client           >=0.4   && <0.5
+    , http-client-tls       >=0.2.2 && <0.3
+    , http-types
+    , JuicyPixels
+    , JuicyPixels-scale-dct
+    , lens
+    , lucid
+    , parallel-io
+    , rfc5051
+    , semigroups
+    , servant >=0.6 && <0.7
+    , servant-cache
+    , servant-docs
+    , servant-JuicyPixels
+    , servant-lucid
+    , servant-server
+    , servant-status
+    , SHA
+    , stm
+    , stm-containers
+    , strict-base-types >=0.4
+    , tagged
+    , text                  >=1.2   && <1.3
+    , time
+    , transformers
+    , transformers-compat
+    , type-list >=0.3.0.2
+    , unordered-containers
+    , vector                >=0.10  && <0.12
+    , wai
+    , warp
+  if flag(aeson-compat)
+    build-depends:
+        aeson-compat >=0.3.0.0 && <0.4
+  if !flag(aeson-compat)
+    build-depends:
+        aeson-extra  >=0.2.2.0 && <0.3
+  exposed-modules:
+      Futurice.App.Contacts
+      Futurice.App.Contacts.API
+      Futurice.App.Contacts.Cached
+      Futurice.App.Contacts.Config
+      Futurice.App.Contacts.Logic
+      Futurice.App.Contacts.Orphans
+      Futurice.App.Contacts.Types
+      Futurice.App.Contacts.Types.Tri
+  default-language: Haskell2010
+
+executable contacts-server
+  main-is: Main.hs
+  hs-source-dirs:
+      srv
+  ghc-options: -Wall  -fcontext-stack=30 -threaded
+  build-depends:
+      base
+    , contacts
+  default-language: Haskell2010
