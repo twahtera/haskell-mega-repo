@@ -24,7 +24,7 @@ library:
     - blaze-html
     - bytestring
     - cassava
-    - either
+    - env-config
     - futuhours-api
     - futulogo
     - futurice-prelude

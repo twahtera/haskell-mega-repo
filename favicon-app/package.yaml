@@ -15,9 +15,10 @@ ghc-options: -Wall
 
 dependencies:
 - base >=4.7 && <4.9
-- JuicyPixels
 - base-compat
 - futulogo
+- futurice-prelude
+- JuicyPixels
 - lucid
 - semigroups
 - servant >=0.6 && <0.7

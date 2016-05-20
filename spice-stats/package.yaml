@@ -24,6 +24,7 @@ dependencies:
   - case-insensitive
   - deepseq
   - directory
+  - env-config
   - exceptions
   - filepath
   - futurice-prelude

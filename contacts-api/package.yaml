@@ -32,6 +32,7 @@ library:
     - cryptohash
     - deepseq
     - directory
+    - env-config
     - exceptions
     - file-embed >=0.0.9
     - filepath

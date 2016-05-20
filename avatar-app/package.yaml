@@ -27,6 +27,7 @@ library:
     - blaze-html
     - bytestring
     - either
+    - env-config
     - futulogo
     - futurice-prelude
     - gitrev >=1.0.0

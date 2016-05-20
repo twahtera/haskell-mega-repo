@@ -45,18 +45,19 @@ module Futurice.App.FutuHours.Types (
 import Futurice.Prelude
 import Prelude          ()
 
-import Control.Arrow     (first)
-import Data.Aeson.Extra  (FromJSON (..), M, ToJSON (..), Value (..), object,
-                          (.=))
-import Data.Csv          (DefaultOrdered (..), FromRecord (..), ToField (..),
-                          ToNamedRecord (..))
-import Data.GADT.Compare ((:~:) (..), GCompare (..), GEq (..), GOrdering (..))
-import Data.Swagger      (ToParamSchema, ToSchema (..))
-import Futurice.Generics (sopDeclareNamedSchema, sopHeaderOrder, sopParseJSON,
-                          sopParseRecord, sopToJSON, sopToNamedRecord)
+import Control.Arrow      (first)
+import Data.Aeson.Extra   (FromJSON (..), M, ToJSON (..), Value (..), object,
+                           (.=))
+import Data.Csv           (DefaultOrdered (..), FromRecord (..), ToField (..),
+                           ToNamedRecord (..))
+import Data.GADT.Compare  ((:~:) (..), GCompare (..), GEq (..), GOrdering (..))
+import Data.Swagger       (ToParamSchema, ToSchema (..))
+import Futurice.EnvConfig (FromEnvVar (..))
+import Futurice.Generics  (sopDeclareNamedSchema, sopHeaderOrder, sopParseJSON,
+                           sopParseRecord, sopToJSON, sopToNamedRecord)
 import Lucid
-import Servant           (Capture, FromHttpApiData (..))
-import Servant.Docs      (DocCapture (..), ToCapture (..))
+import Servant            (Capture, FromHttpApiData (..))
+import Servant.Docs       (DocCapture (..), ToCapture (..))
 
 import qualified Data.Aeson                           as Aeson
 import qualified Data.Aeson.Types                     as Aeson
@@ -86,6 +87,12 @@ data Development
     = Development
     | Production
     deriving (Eq, Show)
+
+instance FromEnvVar Development where
+    fromEnvVar = fmap f . fromEnvVar
+      where
+        f True  = Development
+        f False = Production
 
 -------------------------------------------------------------------------------
 -- UserId - deprecated

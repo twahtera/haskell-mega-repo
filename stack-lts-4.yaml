@@ -4,6 +4,7 @@ packages:
 - avatar-app/
 - base64-bytestring-type/
 - contacts-api/
+- env-config/
 - favicon-app/
 - flowdock-cli/
 - flowdock-grep/

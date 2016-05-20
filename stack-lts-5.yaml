@@ -1,9 +1,10 @@
-resolver: lts-5.15
+resolver: lts-5.17
 packages:
 - ansi-pretty/
 - avatar-app/
 - base64-bytestring-type/
 - contacts-api/
+- env-config/
 - favicon-app/
 - flowdock-cli/
 - flowdock-grep/
