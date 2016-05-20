@@ -47,6 +47,7 @@ library
     , either
     , ekg
     , ekg-core
+    , env-config
     , exceptions
     , fum-client
     , futulogo

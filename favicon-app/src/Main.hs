@@ -5,19 +5,14 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TupleSections      #-}
 {-# LANGUAGE TypeOperators      #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Main (main) where
 
-import Prelude        ()
-import Prelude.Compat
+import Futurice.Prelude
+import Prelude          ()
 
 import Codec.Picture            (Image, PixelRGBA8)
 import Control.Concurrent.STM   (atomically)
 import Control.Monad            (forM_)
-import Data.Functor.Identity    (Identity)
-import Data.Maybe               (fromMaybe)
-import Data.Semigroup           ((<>))
-import Data.Typeable            (Typeable)
 import Futurice.Colour
 import Futurice.Logo
 import Lucid
@@ -31,7 +26,6 @@ import Servant.HTML.Lucid
 import Servant.JuicyPixels      (PNG)
 import System.Environment       (lookupEnv)
 import System.IO                (hPutStrLn, stderr)
-import Text.Read                (readMaybe)
 
 import qualified Data.Text                     as T
 import qualified Network.Wai.Handler.Warp      as Warp
@@ -84,14 +78,3 @@ indexPage :: Html ()
 indexPage = doctypehtml_ $ forM_ [minBound..maxBound] $ \colour ->
     let link = T.pack $ show $ safeLink api iconEndpoint colour
     in a_ [href_ link] $ img_ [src_ link]
-
-
--- Orphans
-
-deriving instance Typeable PixelRGBA8
-deriving instance Typeable Image
-deriving instance Typeable HtmlT
-
-#if !MIN_VERSION_transformers_compat(0,5,0)
-deriving instance Typeable Identity
-#endif

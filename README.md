@@ -30,6 +30,7 @@ wc */src/**/*.hs
 
 ```
 stack dot | dot -Tpng -o deps.png
+stack dot | tred | dot -Tpng -o deps.png
 ```
 
 ### LTS version bumps

@@ -38,6 +38,7 @@ library
     , case-insensitive
     , deepseq
     , directory
+    , env-config
     , exceptions
     , filepath
     , futurice-prelude
@@ -110,6 +111,7 @@ executable github-dashboard-server
     , case-insensitive
     , deepseq
     , directory
+    , env-config
     , exceptions
     , filepath
     , futurice-prelude
