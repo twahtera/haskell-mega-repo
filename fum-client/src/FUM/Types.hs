@@ -8,7 +8,6 @@ module FUM.Types where
 import Futurice.Prelude
 import Prelude          ()
 
-import Control.Lens (Lens')
 import Data.Aeson.Compat
 import Data.Aeson.Types  (Parser)
 

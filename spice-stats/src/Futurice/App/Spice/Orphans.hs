@@ -10,11 +10,8 @@ import Data.Aeson   (ToJSON (..), object, (.=))
 import Servant.Docs (ToSample (..))
 
 import qualified Chat.Flowdock.REST as FD
-import qualified GitHub             as GH
 
-instance AnsiPretty (GH.Name entity)
-instance AnsiPretty GH.Language
-
+-- | TODO: Use newtype in Spice for this
 instance ToJSON FD.Author where
     toJSON (FD.Author n e a) = object
         [ "name" .= n

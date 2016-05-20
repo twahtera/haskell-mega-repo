@@ -28,6 +28,7 @@ library:
     - bytestring
     - either
     - futulogo
+    - futurice-prelude
     - gitrev >=1.0.0
     - http-client
     - http-client-tls

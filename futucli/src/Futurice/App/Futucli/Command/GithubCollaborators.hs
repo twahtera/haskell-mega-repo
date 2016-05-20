@@ -8,7 +8,6 @@ module Futurice.App.Futucli.Command.GithubCollaborators (githubCollaborators) wh
 import Futurice.Prelude
 import Prelude          ()
 
-import Control.Lens            (Lens')
 import Control.Monad.Reader    (ReaderT (..))
 import GHC.Exts                (Constraint)
 import Network.HTTP.Client     (Manager, newManager)

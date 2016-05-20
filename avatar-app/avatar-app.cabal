@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.11.2.
+-- This file has been generated from package.yaml by hpack version 0.14.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -40,6 +40,7 @@ library
     , bytestring
     , either
     , futulogo
+    , futurice-prelude
     , gitrev >=1.0.0
     , http-client
     , http-client-tls

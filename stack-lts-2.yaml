@@ -63,6 +63,7 @@ extra-deps:
 - friendly-time-0.4
 - generics-sop-0.2.1.0
 - generics-sop-lens-0.1.1.0
+- hashable-1.2.4.0
 - hashable-time-0.2
 - haxl-0.3.1.0
 - hex-0.1.2

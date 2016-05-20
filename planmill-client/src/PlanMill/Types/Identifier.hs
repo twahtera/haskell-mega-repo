@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DeriveDataTypeable     #-}
 {-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeFamilies           #-}
@@ -16,7 +17,10 @@ module PlanMill.Types.Identifier (
 import PlanMill.Internal.Prelude
 import Prelude                   ()
 
-import Control.Lens (Lens')
+import qualified Data.Csv     as Csv
+import           Data.Swagger (ToSchema)
+
+import qualified Database.PostgreSQL.Simple.ToField as Postgres
 
 -- | Tagged identifier
 newtype Identifier a = Ident Word64
@@ -39,3 +43,14 @@ instance ToJSON (Identifier a) where
 -- | Identities with identifier.
 class HasIdentifier entity super | entity -> super where
     identifier :: Lens' entity (Identifier super)
+
+instance HasIdentifier (Identifier a) a where
+    identifier = lens id (flip const)
+
+instance Csv.ToField (Identifier a) where
+    toField (Ident x) = Csv.toField x
+
+instance ToSchema (Identifier a)
+
+instance Postgres.ToField (Identifier a) where
+    toField (Ident x) = Postgres.toField x

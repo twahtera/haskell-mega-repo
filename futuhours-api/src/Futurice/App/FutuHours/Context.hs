@@ -13,7 +13,6 @@ import Prelude          ()
 
 import Control.Concurrent.Async   (Async)
 import Control.Concurrent.STM     (TVar)
-import Control.Lens               (Lens', lens)
 import Control.Monad.Logger       (LogLevel (..), LoggingT, filterLogger,
                                    runStderrLoggingT)
 import Data.Dependent.Map         (DMap)

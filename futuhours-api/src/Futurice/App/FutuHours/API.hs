@@ -16,7 +16,6 @@ import Servant.HTML.Lucid
 import Servant.CSV.Cassava
 import Servant.Futurice
 
-import Futurice.App.FutuHours.Orphans ()
 import Futurice.App.FutuHours.Types
 
 type LegacyFutuhoursAPI =
