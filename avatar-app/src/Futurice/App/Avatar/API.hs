@@ -9,11 +9,9 @@
 module Futurice.App.Avatar.API where
 
 import Prelude        ()
-import Prelude.Compat
+import Futurice.Prelude
 
 import Codec.Picture   (DynamicImage)
-import Data.Text       (Text)
-import Data.Time       (UTCTime)
 import Futurice.Colour
 
 import Servant

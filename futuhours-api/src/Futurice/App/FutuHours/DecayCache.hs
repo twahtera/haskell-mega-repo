@@ -12,8 +12,6 @@ import qualified Data.Map                         as Map
 import qualified Database.PostgreSQL.Simple.Fxtra as Postgres
 import qualified PlanMill                         as PM
 
-import Futurice.App.FutuHours.Orphans ()
-
 type TableName = String
 
 data DecayCacheable a = DecayCacheable

@@ -9,16 +9,13 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Futurice.App.Avatar (defaultMain) where
 
-import Prelude        ()
-import Prelude.Compat
+import Prelude          ()
+import Futurice.Prelude 
 
 import Codec.Picture              (DynamicImage)
 import Control.Monad.Trans.Except (ExceptT (..), throwE)
 import Data.Bifunctor             (first)
-import Data.Maybe                 (fromMaybe)
-import Data.String                (fromString)
-import Data.Text                  (Text)
-import Data.Time                  (UTCTime, getCurrentTime)
+import Data.Time                  (getCurrentTime)
 import Development.GitRev         (gitHash)
 import Network.Wai
 import Servant
@@ -82,11 +79,11 @@ server ctx = pure "Hello from avatar app"
 
 -- | Server with docs and cache and status
 server' :: DynMapCache -> UTCTime -> String -> Ctx -> Server AvatarAPI'
-server' cache start hash ctx = serverAvatarApi cache start hash (server ctx)
+server' cache start hash' ctx = serverAvatarApi cache start hash' (server ctx)
 
 -- | Wai application
 app :: DynMapCache -> UTCTime -> String -> Ctx -> Application
-app cache start hash ctx = serve avatarApi' (server' cache  start hash ctx)
+app cache start hash' ctx = serve avatarApi' (server' cache  start hash' ctx)
 
 defaultMain :: IO ()
 defaultMain = do

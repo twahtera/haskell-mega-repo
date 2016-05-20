@@ -67,8 +67,6 @@ import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 import qualified PlanMill                             as PM
 
-import Futurice.App.FutuHours.Orphans ()
-
 -------------------------------------------------------------------------------
 -- Helpers
 -------------------------------------------------------------------------------

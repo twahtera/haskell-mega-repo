@@ -45,8 +45,6 @@ import Futurice.App.FutuHours.PlanMillUserIds (planMillUserIds)
 import Futurice.App.FutuHours.Precalc
 import Futurice.App.FutuHours.Types
 
-import Futurice.App.FutuHours.Orphans ()
-
 -- | API server
 server :: Ctx -> Server FutuHoursAPI
 server ctx = pure "Hello to futuhours api"

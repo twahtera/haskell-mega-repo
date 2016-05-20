@@ -15,20 +15,20 @@ extra-source-files:
 ghc-options: -Wall -fcontext-stack=40
 
 dependencies:
-  - base                  >=4.7     && <4.9
-  - base-compat           >=0.6     && <0.10
   - aeson                 >=0.8     && <0.12
   - aeson-compat          >=0.3.0.0 && <0.4
   - aeson-extra           >=0.3.0.0 && <0.4
-  - time-parsers
   - ansi-pretty           >=0.1.2 && <0.2
   - ansi-wl-pprint
+  - base                  >=4.7     && <4.9
+  - base-compat           >=0.6     && <0.10
   - base64-bytestring
   - binary
   - binary-orphans        >=0.1.3.0 && <0.2
   - binary-tagged
   - byteable
   - bytestring
+  - cassava
   - composition-extra
   - constraints
   - containers
@@ -41,10 +41,10 @@ dependencies:
   - generics-sop
   - hashable
   - hashable-time
-  - intervals
   - http-client           >=0.4   && <0.5
   - http-client-tls       >=0.2.2 && <0.3
   - http-types
+  - intervals
   - lens
   - monad-http
   - monad-logger
@@ -52,12 +52,15 @@ dependencies:
   - monadcryptorandom >=0.7.0
   - mtl
   - operational
+  - postgresql-simple
   - reflection >= 2 && <2.3
   - regex-applicative-text
   - semigroups
+  - swagger2
   - text                  >=1.2   && <1.3
   - time
   - time-locale-compat
+  - time-parsers
   - transformers
   - unordered-containers
   - vector                >=0.10  && <0.12

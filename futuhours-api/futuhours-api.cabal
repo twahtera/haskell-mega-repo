@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.13.0.
+-- This file has been generated from package.yaml by hpack version 0.14.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -114,7 +114,6 @@ library
       Futurice.App.FutuHours.Context
       Futurice.App.FutuHours.DecayCache
       Futurice.App.FutuHours.Endpoints
-      Futurice.App.FutuHours.Orphans
       Futurice.App.FutuHours.PlanMill
       Futurice.App.FutuHours.PlanMillCache
       Futurice.App.FutuHours.PlanmillCacheDataSource
