@@ -35,7 +35,7 @@ class Monad m => MonadInitHashDRBG m where
 
 -- | We might want have more precise instances later,
 -- but this is good for now.
-instance MonadIO m => MonadInitHashDRBG m where
+instance (Monad m, MonadIO m) => MonadInitHashDRBG m where
     mkHashDRBG = liftIO (instantiate <$> getE <*> getE <*> pure "HashDRBG")
       where getE = getEntropy 64
 

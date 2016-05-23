@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.8.0.
+-- This file has been generated from package.yaml by hpack version 0.14.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -26,7 +26,7 @@ executable flowdock-cli
       src
   ghc-options: -Wall
   build-depends:
-      base >= 4.7 && <4.9
+      base >= 4.7 && <4.10
     , base-compat
     , aeson
     , aeson-pretty

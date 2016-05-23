@@ -14,14 +14,14 @@ extra-source-files:
 ghc-options: -Wall
 
 dependencies:
-- base >=4.7 && <4.9
+- base >=4.7 && <4.10
 - base-compat
 - futulogo
 - futurice-prelude
 - JuicyPixels
 - lucid
 - semigroups
-- servant >=0.6 && <0.7
+- servant >=0.6 && <0.8
 - servant-cache
 - servant-docs
 - servant-JuicyPixels >=0.3.0.0
