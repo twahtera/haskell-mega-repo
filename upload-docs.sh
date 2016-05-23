@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# to install aws:
+# $ virtualenv venv
+# $ . ./venv/bin/activate
+# $ pip install awscli
+
 . env-postgres-osx.sh
 . venv/bin/activate
 
