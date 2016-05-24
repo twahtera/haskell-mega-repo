@@ -8,7 +8,9 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeOperators     #-}
-
+#if __GLASGOW_HASKELL__ >= 800
+{-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
+#endif
 -- | API endpoints
 module Futurice.App.FutuHours.Endpoints (
     Ctx(..),

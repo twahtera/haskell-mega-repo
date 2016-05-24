@@ -11,7 +11,7 @@ category: Web
 ghc-options: -Wall
 
 dependencies:
-  - base >= 4.7 && <4.9
+  - base >= 4.7 && <4.10
   - base-compat
   - aeson
   - aeson-pretty

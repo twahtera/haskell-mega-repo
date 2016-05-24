@@ -29,7 +29,7 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      base                  >=4.7   && <4.9
+      base                  >=4.7   && <4.10
     , aeson                 >=0.8   && <0.12
     , aeson-compat          >=0.3.1 && <0.4
     , aeson-extra           >=0.3.1 && <0.4
@@ -81,7 +81,7 @@ library
     , regex-applicative-text
     , resource-pool
     , semigroups
-    , servant >=0.6 && <0.7
+    , servant >=0.6 && <0.8
     , servant-blaze
     , servant-cache
     , servant-cassava

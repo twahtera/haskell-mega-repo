@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.11.2.
+-- This file has been generated from package.yaml by hpack version 0.14.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -29,19 +29,19 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      base            >=4.7      && <4.9
+      base            >=4.7      && <4.10
     , base-compat     >=0.6.0    && <0.10
     , blaze-builder   >=0.4.0.1  && <0.5
     , bytestring      >=0.10.4.0 && <0.11
     , hashable        >=1.2.3.3  && <1.3
     , http-types      >=0.8.6    && <0.10
-    , servant         >=0.5      && <0.7
-    , servant-docs    >=0.5      && <0.7
-    , servant-server  >=0.5      && <0.7
+    , servant         >=0.5      && <0.8
+    , servant-docs    >=0.5      && <0.8
+    , servant-server  >=0.5      && <0.8
     , stm             >=2.4.4    && <2.5
     , stm-containers  >=0.2.9    && <0.3
     , tagged          >=0.7.3    && <0.9
-    , time            >=1.4.2    && <1.6
+    , time            >=1.4.2    && <1.7
     , wai             >=3.0.3.0  && <3.3
     , async
     , either
@@ -66,19 +66,19 @@ test-suite example
       example
   ghc-options: -Wall
   build-depends:
-      base            >=4.7      && <4.9
+      base            >=4.7      && <4.10
     , base-compat     >=0.6.0    && <0.10
     , blaze-builder   >=0.4.0.1  && <0.5
     , bytestring      >=0.10.4.0 && <0.11
     , hashable        >=1.2.3.3  && <1.3
     , http-types      >=0.8.6    && <0.10
-    , servant         >=0.5      && <0.7
-    , servant-docs    >=0.5      && <0.7
-    , servant-server  >=0.5      && <0.7
+    , servant         >=0.5      && <0.8
+    , servant-docs    >=0.5      && <0.8
+    , servant-server  >=0.5      && <0.8
     , stm             >=2.4.4    && <2.5
     , stm-containers  >=0.2.9    && <0.3
     , tagged          >=0.7.3    && <0.9
-    , time            >=1.4.2    && <1.6
+    , time            >=1.4.2    && <1.7
     , wai             >=3.0.3.0  && <3.3
     , async
     , either
@@ -88,7 +88,7 @@ test-suite example
     , transformers-base
     , list-t
     , servant-cache
-    , servant-lucid >=0.5 && <0.7
+    , servant-lucid >=0.5 && <0.8
     , lucid
     , text
     , warp
@@ -101,19 +101,19 @@ test-suite unit-tests
       test
   ghc-options: -Wall -threaded
   build-depends:
-      base            >=4.7      && <4.9
+      base            >=4.7      && <4.10
     , base-compat     >=0.6.0    && <0.10
     , blaze-builder   >=0.4.0.1  && <0.5
     , bytestring      >=0.10.4.0 && <0.11
     , hashable        >=1.2.3.3  && <1.3
     , http-types      >=0.8.6    && <0.10
-    , servant         >=0.5      && <0.7
-    , servant-docs    >=0.5      && <0.7
-    , servant-server  >=0.5      && <0.7
+    , servant         >=0.5      && <0.8
+    , servant-docs    >=0.5      && <0.8
+    , servant-server  >=0.5      && <0.8
     , stm             >=2.4.4    && <2.5
     , stm-containers  >=0.2.9    && <0.3
     , tagged          >=0.7.3    && <0.9
-    , time            >=1.4.2    && <1.6
+    , time            >=1.4.2    && <1.7
     , wai             >=3.0.3.0  && <3.3
     , async
     , either

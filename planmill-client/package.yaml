@@ -12,7 +12,13 @@ tested-with: GHC==7.8.4, GHC==7.10.2
 extra-source-files:
 - README.md
 
-ghc-options: -Wall -fcontext-stack=40
+ghc-options: -Wall
+       
+when:
+- condition: impl(ghc >= 8.0)
+  ghc-options: -freduction-depth=100
+- condition: impl(ghc < 8.0)
+  ghc-options: -fcontext-stack=40
 
 dependencies:
   - aeson                 >=0.8     && <0.12
@@ -20,7 +26,7 @@ dependencies:
   - aeson-extra           >=0.3.0.0 && <0.4
   - ansi-pretty           >=0.1.2 && <0.2
   - ansi-wl-pprint
-  - base                  >=4.7     && <4.9
+  - base                  >=4.7     && <4.10
   - base-compat           >=0.6     && <0.10
   - base64-bytestring
   - binary

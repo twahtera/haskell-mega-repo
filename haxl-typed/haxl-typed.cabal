@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.13.0.
+-- This file has been generated from package.yaml by hpack version 0.14.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -29,7 +29,7 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      base             >=4.7     && <4.9
+      base             >=4.7     && <4.10
     , base-compat      >=0.9.1   && <0.10
     , exceptions       >=0.8.0.2 && <0.9
     , futurice-prelude >=0.1.5.0 && <0.2

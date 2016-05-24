@@ -33,7 +33,7 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      base                  >=4.7   && <4.9
+      base                  >=4.7   && <4.10
     , base-compat
     , bifunctors
     , blaze-html

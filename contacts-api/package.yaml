@@ -21,7 +21,7 @@ flags:
 library:
   source-dirs: src
   dependencies:
-    - base                  >=4.7   && <4.9
+    - base                  >=4.7   && <4.10
     - aeson                 >=0.8   && <0.12
     - base-compat
     - bifunctors
@@ -56,7 +56,7 @@ library:
     - parallel-io
     - rfc5051
     - semigroups
-    - servant >=0.6 && <0.7
+    - servant >=0.6 && <0.8
     - servant-cache
     - servant-docs
     - servant-JuicyPixels
@@ -72,7 +72,6 @@ library:
     - time
     - transformers
     - transformers-compat
-    - type-list >=0.3.0.2
     - unordered-containers
     - vector                >=0.10  && <0.12
     - wai

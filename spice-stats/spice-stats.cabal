@@ -25,7 +25,7 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      base >= 4.7 && <4.9
+      base >= 4.7 && <4.10
     , SHA
     , aeson
     , aeson-pretty
@@ -61,7 +61,7 @@ library
     , vector
     , flowdock-rest
     , either
-    , servant >=0.6 && <0.7
+    , servant >=0.6 && <0.8
     , servant-status
     , servant-cache
     , servant-server
@@ -89,7 +89,7 @@ executable spice-stats
       cli
   ghc-options: -Wall
   build-depends:
-      base >= 4.7 && <4.9
+      base >= 4.7 && <4.10
     , SHA
     , aeson
     , aeson-pretty
@@ -125,7 +125,7 @@ executable spice-stats
     , vector
     , flowdock-rest
     , either
-    , servant >=0.6 && <0.7
+    , servant >=0.6 && <0.8
     , servant-status
     , servant-cache
     , servant-server
@@ -147,7 +147,7 @@ executable spice-stats-server
       srv
   ghc-options: -Wall -Wall -threaded
   build-depends:
-      base >= 4.7 && <4.9
+      base >= 4.7 && <4.10
     , SHA
     , aeson
     , aeson-pretty
@@ -183,7 +183,7 @@ executable spice-stats-server
     , vector
     , flowdock-rest
     , either
-    , servant >=0.6 && <0.7
+    , servant >=0.6 && <0.8
     , servant-status
     , servant-cache
     , servant-server

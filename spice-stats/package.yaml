@@ -11,7 +11,7 @@ category: Web
 ghc-options: -Wall
 
 dependencies:
-  - base >= 4.7 && <4.9
+  - base >= 4.7 && <4.10
   - SHA
   - aeson
   - aeson-pretty
@@ -48,7 +48,7 @@ dependencies:
   - flowdock-rest
   # Servant
   - either
-  - servant >=0.6 && <0.7
+  - servant >=0.6 && <0.8
   - servant-status
   - servant-cache
   - servant-server
