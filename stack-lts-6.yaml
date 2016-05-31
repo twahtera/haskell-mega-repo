@@ -1,4 +1,4 @@
-resolver: lts-5.17
+resolver: lts-6.0
 packages:
 - ansi-pretty/
 - avatar-app/
@@ -31,24 +31,12 @@ packages:
     commit: eb610e6b105ea108e6e11be7dd2429ea10ade48c
   extra-dep: true
 extra-deps:
-- aeson-0.11.1.4
-- base-prelude-1
-- control-monad-omega-0.3.1
 - friendly-time-0.4
 - generics-sop-lens-0.1.1.0
 - github-0.15.0
-- http2-1.6.0
 - lucid-foundation-0.0.2.1
 - monad-http-0.2.0.0
-- servant-0.6.1
-- servant-blaze-0.6.1
-- servant-cassava-0.6.1
-- servant-client-0.6.1
-- servant-docs-0.6.1
-- servant-lucid-0.6.1
-- servant-server-0.6.1
-- servant-swagger-1.0.3
+- servant-swagger-1.1
 - servant-swagger-ui-0.1.0.2.1.4
-- swagger2-2.0.2
-- warp-3.2.6
+- swagger2-2.1
 flags: {}
