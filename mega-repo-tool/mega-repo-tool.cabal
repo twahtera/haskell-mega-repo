@@ -52,7 +52,7 @@ library
     , text
     , time
     , transformers
-    , turtle
+    , turtle >=1.2.8 && <1.3
     , unordered-containers
     , vector
     , yaml
@@ -60,6 +60,7 @@ library
       Futurice.App.MegaRepoTool
       Futurice.App.MegaRepoTool.Command.BuildDocker
       Futurice.App.MegaRepoTool.Command.ListSnapshotDependencies
+      Futurice.App.MegaRepoTool.Scripts
   default-language: Haskell2010
 
 executable mega-repo-tool
