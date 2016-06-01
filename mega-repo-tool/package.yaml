@@ -17,24 +17,20 @@ library:
   source-dirs: src
   dependencies:
     - aeson
+    - aeson-compat
     - base >=4.7   && <4.10
     - base-compat
-    - aeson-compat
     - bytestring
     - case-insensitive
     - containers
     - crypto-api
-    - DRBG
     - entropy
     - exceptions
+    - foldl
     - futurice-prelude
     - http-client
     - http-client-tls
     - lens
-    - monad-http
-    - monad-logger
-    - monadcryptorandom
-    - mtl
     - optparse-applicative
     - process
     - regex-applicative
@@ -43,6 +39,7 @@ library:
     - text
     - time
     - transformers
+    - turtle
     - unordered-containers
     - vector
     - yaml
