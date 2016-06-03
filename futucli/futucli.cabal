@@ -30,6 +30,9 @@ library
   ghc-options: -Wall
   build-depends:
       aeson
+    , aeson-compat
+    , aeson-extra >=0.3.2.0
+    , attoparsec
     , base >=4.7   && <4.10
     , base-compat
     , base64-bytestring
@@ -41,6 +44,7 @@ library
     , DRBG
     , entropy
     , exceptions
+    , flowdock-rest
     , fum-client
     , futurice-prelude
     , github >=0.15.0
@@ -65,6 +69,7 @@ library
   exposed-modules:
       Futurice.App.Futucli
       Futurice.App.Futucli.Cfg
+      Futurice.App.Futucli.Command.FlowdockFormat
       Futurice.App.Futucli.Command.FumGithubCheck
       Futurice.App.Futucli.Command.GeneratePassword
       Futurice.App.Futucli.Command.GithubCollaborators

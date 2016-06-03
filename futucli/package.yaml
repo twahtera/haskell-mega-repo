@@ -17,6 +17,9 @@ library:
   source-dirs: src
   dependencies:
     - aeson
+    - aeson-compat
+    - aeson-extra >=0.3.2.0
+    - attoparsec
     - base >=4.7   && <4.10
     - base-compat
     - base64-bytestring
@@ -28,6 +31,7 @@ library:
     - DRBG
     - entropy
     - exceptions
+    - flowdock-rest
     - fum-client
     - futurice-prelude
     - github >=0.15.0
