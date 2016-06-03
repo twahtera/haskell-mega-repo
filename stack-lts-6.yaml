@@ -35,8 +35,11 @@ extra-deps:
 - generics-sop-lens-0.1.1.0
 - github-0.15.0
 - lucid-foundation-0.0.2.1
+- managed-1.0.5
 - monad-http-0.2.0.0
+- postgresql-simple-0.5.2.0
 - servant-swagger-1.1
 - servant-swagger-ui-0.1.0.2.1.4
 - swagger2-2.1
+- turtle-1.2.8
 flags: {}

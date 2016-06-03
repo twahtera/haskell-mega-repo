@@ -1,18 +1,20 @@
-{-# LANGUAGE NoImplicitPrelude, OverloadedStrings #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.MegaRepoTool.Command.ListSnapshotDependencies (
     listSnapshotDependencies
     ) where
 
 import Futurice.Prelude
 
-import Data.Aeson.Compat (FromJSON (..), decode, withObject, (.:))
-import Data.Char         (isSpace)
-import Data.Maybe        (mapMaybe)
-import System.Process    (readProcess)
-import Network.HTTP.Client (parseUrl, requestHeaders, httpLbs, responseBody, newManager)
+import Data.Aeson.Compat       (FromJSON (..), decode, withObject, (.:))
+import Data.Char               (isSpace)
+import Data.Maybe              (mapMaybe)
+import Network.HTTP.Client     (httpLbs, newManager, parseUrl, requestHeaders,
+                                responseBody)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
+import System.Process          (readProcess)
 
-import qualified Data.Set        as Set
+import qualified Data.Set     as Set
 import qualified Data.Text.IO as T
 
 import Text.Regex.Applicative (anySym, match, psym)
@@ -53,7 +55,7 @@ listSnapshotDependencies = do
     snapshotBs <- responseBody <$> httpLbs req mgr
     snapshot <- getSnapshotPkgs <$> decode snapshotBs
     let inSnapshot = Set.intersection deps snapshot
-    traverse_ (T.putStrLn . pad . pkgName) inSnapshot 
+    traverse_ (T.putStrLn . pad . pkgName) inSnapshot
  where
     pad s = "  " <> s <> " \\"
     acceptJson = ("Accept", "application/json")

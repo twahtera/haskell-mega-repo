@@ -18,6 +18,7 @@ packages:
 - github-dashboard/
 - haxl-fxtra/
 - haxl-typed/
+- mega-repo-tool/
 - monad-http/
 - planmill-client/
 - postgresql-simple-url/
@@ -94,8 +95,10 @@ extra-deps:
 - http-streams-0.8.3.3
 - linear-1.20.5
 - lucid-foundation-0.0.2.1
+- managed-1.0.5
 - monad-http-0.2.0.0
 - mwc-random-monad-0.7.3.1
+- optional-args-1.0.1
 - placeholders-0.1
 - readable-0.3.1
 - reducers-3.12.2
@@ -104,9 +107,7 @@ extra-deps:
 - servant-swagger-ui-0.1.0.2.1.4
 - stm-containers-0.2.12
 - swagger2-2.1
-- tz-0.1.1.0
+- turtle-1.2.8
+- tz-0.1.1.1
 - wai-cors-0.2.4
 - wai-middleware-metrics-0.2.3
-flags:
-  tz:
-    template-haskell: false

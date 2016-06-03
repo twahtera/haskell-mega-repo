@@ -8,32 +8,34 @@
 
 ### Tracking the master
 
+Update external gitmodules:
+
 ```
 git submodule foreach git checkout master
 git submodule foreach git pull
-STACK_YAML=stack-lts-5.yaml stack test --pedantic
 ```
 
 ### Package dependencies
 
 ```
-packdeps **/*.cabal
+stack exec mega-repo-tool packdeps
 ```
 
 ### Rough stats
 
 ```
-wc */src/**/*.hs
+stack exec mega-repo-tool stats
 ```
 
 ### Update deps graph
 
 ```
-stack dot | dot -Tpng -o deps.png
-stack dot | tred | dot -Tpng -o deps.png
+stack exec mega-repo-tool dot
 ```
 
 ### LTS version bumps
+
+*outdated*
 
 ```
 git submodule foreach git checkout master

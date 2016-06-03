@@ -1,11 +1,11 @@
 #!/bin/sh
 
 # This script is used to build binaries inside the docker
-# See scripts/build.sh
+# See mega-repo-tool -h
 
 set -ex
 
-export STACK_YAML=stack-lts-5.yaml
+export STACK_YAML=stack-lts-6.yaml
 
 cd /app/src
 

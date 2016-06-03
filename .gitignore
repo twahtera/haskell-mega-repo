@@ -1,3 +1,6 @@
 .stack-work/
 venv/
 build/
+
+src/highlight.js
+src/style.css

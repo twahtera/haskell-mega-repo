@@ -1,14 +1,18 @@
-#!/usr/bin/env stack
--- stack --resolver=lts-5.15 runghc --package turtle --package text
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
+module Futurice.App.MegaRepoTool.Command.BuildDocker (
+    buildDocker
+    ) where
 
-import Turtle
+import Futurice.Prelude
+import Turtle           hiding ((<>))
+
 import Data.Foldable (for_)
-import System.IO (hClose, hFlush)
+import System.IO     (hClose, hFlush)
 
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
 import qualified Control.Foldl as Fold
+import qualified Data.Text     as T
+import qualified Data.Text.IO  as T
 
 type Image = Text
 type Executable = Text
@@ -20,12 +24,27 @@ apps =
     , ("favicon", "favicon")
     , ("spice-stats", "spice-stats-server")
     , ("futuhours-api", "futuhours-api-server")
+    , ("github-dashboard", "github-dashboard-server")
+    , ("proxy-app", "proxy-app-server")
     ]
 
-main :: IO ()
-main = do
+buildImage :: Text
+buildImage = "futurice/base-images:haskell-lts-6.0-1"
+
+buildCmd :: Text
+buildCmd = T.unwords
+    [ "docker run"
+    , "--rm"
+    , "--entrypoint /app/src/build-in-docker.sh"
+    , "-v $(pwd):/app/src"
+    , "-v $(pwd)/build:/app/bin"
+    , buildImage
+    ]
+
+buildDocker :: IO ()
+buildDocker = do
     -- Build binaries inside the docker
-    -- shells ("docker run --entrypoint /app/src/scripts/build-in-docker.sh --rm -v $(pwd):/app/src -v $(pwd)/build:/app/bin futurice/base-images:haskell-lts-5.15-1") empty
+    shells buildCmd mempty
 
     -- Get the hash of current commit
     githash <- fold (inshell "git log --pretty=format:'%h' -n 1" empty) $ Fold.lastDef "HEAD"
@@ -33,12 +52,12 @@ main = do
 
     print githash
 
-    for_ apps $ \(image, executable) -> sh $ do
+    for_ apps $ \(image, exe) -> sh $ do
         -- Write Dockerfile
-        let d = dockerfile executable
+        let dockerfile' = dockerfile exe 
         (file,handle) <- using $ mktemp "build" "Dockerfile"
         liftIO $ do
-            T.hPutStrLn handle d
+            T.hPutStrLn handle dockerfile'
             hFlush handle
             hClose handle
 
