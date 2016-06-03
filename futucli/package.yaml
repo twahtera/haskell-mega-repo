@@ -18,6 +18,7 @@ library:
   dependencies:
     - aeson
     - aeson-compat
+    - attoparsec
     - base >=4.7   && <4.10
     - base-compat
     - base64-bytestring
