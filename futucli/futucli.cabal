@@ -31,6 +31,7 @@ library
   build-depends:
       aeson
     , aeson-compat
+    , aeson-extra >=0.3.2.0
     , attoparsec
     , base >=4.7   && <4.10
     , base-compat

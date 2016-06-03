@@ -31,6 +31,8 @@ packages:
     commit: eb610e6b105ea108e6e11be7dd2429ea10ade48c
   extra-dep: true
 extra-deps:
+- aeson-compat-0.3.4.0
+- aeson-extra-0.3.2.0
 - friendly-time-0.4
 - generics-sop-lens-0.1.1.0
 - github-0.15.0

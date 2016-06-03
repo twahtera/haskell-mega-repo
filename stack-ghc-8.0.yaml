@@ -1,4 +1,4 @@
-resolver: nightly-2016-05-29
+flags: {}
 packages:
 - ansi-pretty/
 - avatar-app/
@@ -48,7 +48,7 @@ packages:
   extra-dep: true
 - location:
     git: https://github.com/phadej/aeson-extra.git
-    commit: 42f31f13743fb94dea2403fca94c14e3c593527f
+    commit: b2a191aec365abf4891285a8e03a308a9c9a64b2
   extra-dep: true
 - location:
     git: https://github.com/phadej/ekg-json.git
@@ -87,6 +87,7 @@ packages:
     commit: 7a5c389046e071bafe7d196378c678ced0ab985f
   extra-dep: true
 extra-deps:
+- aeson-compat-0.3.4.0
 - concurrent-extra-0.7.0.10
 - data-reify-0.6.1
 - ekg-core-0.1.1.1
@@ -111,3 +112,4 @@ extra-deps:
 - tz-0.1.1.1
 - wai-cors-0.2.4
 - wai-middleware-metrics-0.2.3
+resolver: nightly-2016-05-29
