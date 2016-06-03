@@ -15,6 +15,7 @@ import System.Environment  (lookupEnv)
 import qualified Options.Applicative as O
 
 import Futurice.App.Futucli.Cfg
+import Futurice.App.Futucli.Command.FlowdockFormat
 import Futurice.App.Futucli.Command.FumGithubCheck
 import Futurice.App.Futucli.Command.GeneratePassword
 import Futurice.App.Futucli.Command.GithubCollaborators
@@ -39,6 +40,7 @@ data Cmd
     | GithubCollaborators
     | GithubOldRepos Integer Int
     | GeneratePassword Int
+    | FlowdockFormat FilePath
     deriving Show
 
 planmillUserIdsOptions :: O.Parser Cmd
@@ -65,6 +67,10 @@ generatePasswordOptions :: O.Parser Cmd
 generatePasswordOptions = GeneratePassword
     <$> O.option O.auto (O.long "chars" <> O.metavar ":chars" <> O.help "Characters" <> O.value 32 <> O.showDefault)
 
+flowdockFormatOptions :: O.Parser Cmd
+flowdockFormatOptions = FlowdockFormat
+    <$> O.strArgument (O.metavar ":filename" <> O.help "Flowdock flow dump json") 
+
 optsParser :: O.Parser Cmd
 optsParser = O.subparser $ mconcat
     [ cmdParser "planmill-user-ids" planmillUserIdsOptions "List planmill user ids"
@@ -74,6 +80,7 @@ optsParser = O.subparser $ mconcat
     , cmdParser "github-collaborators" githubCollaboratorsOptions "List collaborators and repositories"
     , cmdParser "github-old-repos" githubOldReposOptions "List old github repositories"
     , cmdParser "generate-password" generatePasswordOptions "Generate random password"
+    , cmdParser "flowdock-format" flowdockFormatOptions "Prettify Flowdock flow dump"
     ]
   where
     cmdParser :: String -> O.Parser Cmd -> String -> O.Mod O.CommandFields Cmd
@@ -89,6 +96,7 @@ main' GithubCollaborators = githubCollaborators
 main' (GithubOldRepos days commits) =
     \cfg ->  githubOldRepos cfg days commits
 main' (GeneratePassword l) = const (generatePassword l)
+main' (FlowdockFormat fp) = flowdockFormat fp
 
 defaultMain :: IO ()
 defaultMain = do

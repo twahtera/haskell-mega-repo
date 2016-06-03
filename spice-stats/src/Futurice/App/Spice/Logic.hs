@@ -101,7 +101,7 @@ spiceStats mgr msgs auth =
     Stats butions butors <$> repos
   where
     cs :: [Contribution]
-    cs = msgs ^.. traverse . FD.msgContent . FD._MTDiscussion . discussionContribution
+    cs = msgs ^.. traverse . FD.msgContent . FD._MTDiscussion . _Just . discussionContribution
 
     butions   = V.fromList $ cs ^.. folded
     butors    = V.fromList . L.sort . L.nub $ butions ^.. traverse . contrAuthor . authorNameOrEmail
