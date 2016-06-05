@@ -3,7 +3,6 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
@@ -11,7 +10,6 @@
 module Futurice.App.FutuHours.Precalc where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Control.Monad.Logger       (logInfo, logWarn)
 import Control.Monad.Trans.Class  (MonadTrans (..))

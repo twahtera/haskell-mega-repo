@@ -77,6 +77,19 @@ itself.
 
 Also of `TupleSections` and `RecordWildCards` are ok.
 
+In fact we (should) use following set of `default-extensions`:
+
+```yaml
+  default-extensions:
+    - DeriveDataTypeable
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveGeneric
+    - DeriveTraversable
+    - NoImplicitPrelude
+    - ScopedTypeVariables
+```
+
 Don't use `UnicodeSyntax`.
 
 Use `CPP` sparingly. If you can get away with compat package (e.g.

@@ -6,7 +6,6 @@ module Data.Time.Fxtra (
     ) where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Data.Time
 import Data.Time.Zones (TZ, loadSystemTZ, timeZoneForUTCTime)

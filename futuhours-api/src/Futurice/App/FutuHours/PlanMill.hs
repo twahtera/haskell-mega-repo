@@ -4,12 +4,10 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE PolyKinds           #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators       #-}
 module Futurice.App.FutuHours.PlanMill (runHaxl) where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Haxl.Core                  (State)
 import Haxl.Typed

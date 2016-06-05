@@ -2,7 +2,6 @@
 {-# LANGUAGE ConstraintKinds   #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE KindSignatures    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE RecordWildCards   #-}
@@ -34,7 +33,6 @@ module Futurice.App.FutuHours.Endpoints (
     ) where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Control.Concurrent.STM           (readTVarIO)
 import Control.Monad.Trans.Except       (ExceptT)

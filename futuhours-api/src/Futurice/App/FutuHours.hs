@@ -3,14 +3,12 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fcontext-stack=30 #-}
 module Futurice.App.FutuHours (defaultMain) where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Control.Concurrent.Async    (async)
 import Futurice.AVar

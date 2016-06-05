@@ -1,14 +1,12 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE UndecidableInstances  #-}
 module Data.BinaryFromJSON (
     BinaryFromJSON,
     ) where
 
 import Futurice.Prelude hiding (lookup)
-import Prelude          ()
 
 import Data.Aeson                       (FromJSON)
 import Data.Binary.Tagged               (HasSemanticVersion, HasStructuralInfo)

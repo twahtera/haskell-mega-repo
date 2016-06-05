@@ -6,6 +6,7 @@ module Distribution.Server.Framework.Cron (
     addCronJob,
   ) where
 
+import Prelude
 import Control.Concurrent
 import Control.Exception
 import Control.Monad

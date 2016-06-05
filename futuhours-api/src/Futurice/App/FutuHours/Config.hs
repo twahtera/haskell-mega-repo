@@ -4,7 +4,6 @@ module Futurice.App.FutuHours.Config (
     ) where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Control.Monad.Logger       (LogLevel (..))
 import Database.PostgreSQL.Simple (ConnectInfo)

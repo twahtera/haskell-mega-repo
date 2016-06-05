@@ -1,9 +1,7 @@
 {-# LANGUAGE RecordWildCards     #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 module Futurice.App.FutuHours.Tools where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Control.Exception    (bracket)
 import Control.Monad.Random (evalRandIO)

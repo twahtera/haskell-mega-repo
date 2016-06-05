@@ -1,7 +1,6 @@
 module Futurice.App.FutuHours.PlanMillCache where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import qualified PlanMill as PM
 
