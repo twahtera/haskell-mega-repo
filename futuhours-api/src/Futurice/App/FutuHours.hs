@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -11,23 +12,23 @@ module Futurice.App.FutuHours (defaultMain) where
 import Futurice.Prelude
 
 import Control.Concurrent.Async    (async)
-import Futurice.AVar
 import Control.Concurrent.STM      (atomically, newTVarIO, writeTVar)
-import Control.Monad               (foldM, forM_)
+import Control.Monad               (foldM)
+import Control.Monad.Logger        (MonadLogger, runStderrLoggingT)
 import Data.Pool                   (createPool, withResource)
+import Data.Time                   (NominalDiffTime)
+import Futurice.AVar
+import Futurice.Periocron
 import Generics.SOP                (I (..), NP (..))
 import Network.Wai
+import Network.Wai.Metrics         (metrics, registerWaiMetrics)
 import Network.Wai.Middleware.Cors (simpleCors)
 import Servant
 import Servant.Cache.Class         (DynMapCache)
 import Servant.Futurice
 import System.IO                   (hPutStrLn, stderr)
-import System.Metrics              (registerGcMetrics, newStore)
+import System.Metrics              (newStore, registerGcMetrics)
 import System.Remote.Monitoring    (forkServerWith)
-import Network.Wai.Metrics         (registerWaiMetrics, metrics)
-
-import Distribution.Server.Framework.Cron (CronJob (..), JobFrequency (..),
-                                           addCronJob, newCron)
 
 import qualified Data.Dependent.Map            as DMap
 import qualified Database.PostgreSQL.Simple    as Postgres
@@ -72,12 +73,12 @@ server' cache ctx = futuriceApiServer cache futuhoursAPI (server ctx)
 app :: DynMapCache -> Ctx -> Application
 app cache ctx = simpleCors $ serve futuhoursAPI' (server' cache ctx)
 
-defaultableEndpoints :: [SomeDefaultableEndpoint]
+defaultableEndpoints :: [(NominalDiffTime, SomeDefaultableEndpoint)]
 defaultableEndpoints =
-    [ SDE powerAbsencesEndpoint
-    , SDE powerUsersEndpoint
-    , SDE missingHoursListEndpoint
-    , SDE balanceReportEndpoint
+    [ (15 * 60, SDE powerAbsencesEndpoint)
+    , (5  * 60, SDE powerUsersEndpoint)
+    , (21 * 60, SDE missingHoursListEndpoint)
+    , (31 * 60, SDE balanceReportEndpoint)
     ]
 
 ekg :: Int -> IO Middleware
@@ -118,7 +119,7 @@ defaultMain = do
           }
 
     precalcEndpoints <-
-        let f m (SDE de) = do
+        let f m (_, SDE de) = do
                 hPutStrLn stderr $ "Initialising " ++ show (defEndTag de)
                 a <- async (defEndDefaultParsedParam de >>= defEndAction de ctx'')
                 avar <- newAVarAsyncIO a
@@ -127,26 +128,37 @@ defaultMain = do
 
     let ctx = ctx'' { ctxPrecalcEndpoints = precalcEndpoints }
 
-    -- Cron
-    cron <- newCron ()
+    -- Periocron
+    let pmUsersJob :: Job
+        pmUsersJob = Job "Planmill users" $ do
+            planmillUserLookup' <- withResource postgresPool $ \conn ->
+                planMillUserIds ctx' conn cfgFumToken cfgFumBaseurl cfgFumList
+            atomically $ writeTVar planmillUserLookupTVar planmillUserLookup'
 
-    -- Cron: planmill users
+    let precalcJobs :: [(Job, Intervals)]
+        precalcJobs = flip map defaultableEndpoints $ \(interval, SDE de) ->
+            let label = show (defEndTag de) ^. packed
+                action = cronEndpoint de ctx
+                intervals = tail $ every interval
+            in (Job label action, intervals)
 
-    addCronJob cron $ CronJob "Planmill Users" (TestJobFrequency $ 7 * 60) True $ do
-        planmillUserLookup' <- withResource postgresPool $ \conn ->
-            planMillUserIds ctx' conn cfgFumToken cfgFumBaseurl cfgFumList
-        atomically $ writeTVar planmillUserLookupTVar planmillUserLookup'
+    let jobs = precalcJobs ++
+           [ (pmUsersJob, tail $ every $ 7 * 60)
+           ]
 
-    -- Cron: preprocessed endpoints
-    forM_ (zip defaultableEndpoints [13, 17, 19, 23]) $ \(SDE de, d) -> do
-        hPutStrLn stderr $ "Queueing cron " ++ show (defEndTag de)
-        addCronJob cron $ CronJob (show $ defEndTag de) (TestJobFrequency $ d * 60) True $
-            cronEndpoint de ctx
+    _ <- spawnPeriocron (Options runStderrLoggingT' 60) jobs
 
+    -- EKG
     metricsMiddleware <- ekg cfgEkgPort
 
     -- Startup
     cache <- DynMap.newIO
     let app' = metricsMiddleware $ app cache ctx
-    hPutStrLn stderr "Now I'll start the webservice"
+    hPutStrLn stderr $ "Now I'll start the webservice at port " ++ show cfgPort
     Warp.run cfgPort app'
+  where
+    -- Cannot eta-unexpand, breaks on GHC 7.8
+    runStderrLoggingT'
+        :: forall a. (forall m. (Applicative m, MonadLogger m, MonadIO m) => m a)
+        -> IO a
+    runStderrLoggingT' x = runStderrLoggingT x

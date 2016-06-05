@@ -1,7 +1,7 @@
 default: dev
 envs:
   dev:
-    PORT: "8081"
+    PORT: "8080"
     FUM_LISTNAME: employees
     FUM_BASEURL:
         secret: prod-fum-baseurl
