@@ -44,7 +44,7 @@ getConfig = Config
     <*> parseEnvVar "FUM_TOKEN"
     <*> parseEnvVar "FUM_BASEURL"
     <*> parseEnvVar "FUM_LISTNAME"
-    <*> parseEnvVarWithDefault "PORT" defaultPort
+    <*> parseDefaultPort
     <*> parseEnvVarWithDefault "DEVELOPMENT" Production
     <*> parseEnvVarWithDefault "LOGLEVEL" LevelInfo
-    <*> parseDefaultPort
+    <*> parseEnvVarWithDefault "EKG_PORT" 8081
