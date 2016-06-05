@@ -1,8 +1,6 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 module Futurice.App.FutuHours.DecayCache where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Data.Binary.Tagged  (taggedDecodeOrFail, taggedEncode)
 import Data.BinaryFromJSON (BinaryFromJSON)

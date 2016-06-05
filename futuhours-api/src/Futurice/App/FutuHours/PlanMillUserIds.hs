@@ -1,9 +1,9 @@
-{-# LANGUAGE OverloadedStrings, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
 -- | *TODO:* extract into common library
 module Futurice.App.FutuHours.PlanMillUserIds (planMillUserIds) where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Control.Lens                (_1)
 import Data.Maybe                  (mapMaybe)
@@ -18,9 +18,9 @@ import qualified Data.Vector         as V
 import qualified FUM
 import qualified PlanMill as PM
 
+import Futurice.App.FutuHours.Context
 import Futurice.App.FutuHours.PlanMill
 import Futurice.App.FutuHours.Types
-import Futurice.App.FutuHours.Context
 
 planMillUserIds
     :: (HasDevelopment env, HasPlanmillCfg env, HasLogLevel env)

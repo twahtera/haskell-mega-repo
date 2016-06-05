@@ -1,7 +1,5 @@
 {-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -43,7 +41,6 @@ module Futurice.App.FutuHours.Types (
     ) where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Control.Arrow      (first)
 import Data.Aeson.Extra   (FromJSON (..), M, ToJSON (..), Value (..), object,

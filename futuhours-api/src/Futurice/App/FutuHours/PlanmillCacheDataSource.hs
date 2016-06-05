@@ -1,18 +1,15 @@
 {-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
--- | TODO: remove orphans
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Futurice.App.FutuHours.PlanmillCacheDataSource
     ( PlanmillCacheRequest
@@ -20,7 +17,6 @@ module Futurice.App.FutuHours.PlanmillCacheDataSource
     ) where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Control.Concurrent.Async         (async, wait)
 import Control.Monad.Catch              (handle)

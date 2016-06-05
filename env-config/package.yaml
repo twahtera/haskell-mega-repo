@@ -27,3 +27,11 @@ library:
     - postgresql-simple
     - postgresql-simple-url
     - text
+  default-extensions:
+    - DeriveDataTypeable
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveGeneric
+    - DeriveTraversable
+    - NoImplicitPrelude
+    - ScopedTypeVariables

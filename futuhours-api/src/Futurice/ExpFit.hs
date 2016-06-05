@@ -1,8 +1,8 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 module Futurice.ExpFit (expfn, expfit) where
 
+import Prelude
 import Linear
 import Numeric.AD.Mode.Forward (AD, Forward, auto, jacobian')
 

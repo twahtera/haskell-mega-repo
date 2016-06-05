@@ -11,7 +11,6 @@ module Futurice.App.FutuHours.Reports.MissingHours (
     ) where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Data.Aeson.Extra                 (M (..))
 import Data.Maybe                       (mapMaybe)

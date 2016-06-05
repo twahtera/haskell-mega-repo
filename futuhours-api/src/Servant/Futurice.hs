@@ -1,6 +1,5 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators       #-}
 -- | Module with servant helpers.
 module Servant.Futurice (
@@ -11,7 +10,6 @@ module Servant.Futurice (
     ) where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Control.Concurrent.STM   (atomically)
 import Data.Swagger

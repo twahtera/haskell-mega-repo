@@ -5,7 +5,6 @@ module Futurice.App.FutuHours.Timereports (
     ) where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import qualified Database.PostgreSQL.Simple.Fxtra as Postgres
 import qualified PlanMill                         as PM

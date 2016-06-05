@@ -6,6 +6,8 @@ module Database.PostgreSQL.Simple.Fxtra (
     FromField(..),
     ) where
 
+import Prelude
+
 import Control.Monad                          (liftM)
 import Control.Monad.IO.Class                 (MonadIO (..))
 import Data.Maybe                             (listToMaybe)

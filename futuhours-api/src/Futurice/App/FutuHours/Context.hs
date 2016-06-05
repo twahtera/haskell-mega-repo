@@ -9,7 +9,6 @@
 module Futurice.App.FutuHours.Context where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Control.Concurrent.STM     (TVar)
 import Control.Monad.Logger       (LogLevel (..), LoggingT, filterLogger,
