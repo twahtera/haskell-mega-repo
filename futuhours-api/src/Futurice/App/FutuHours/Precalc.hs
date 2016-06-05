@@ -13,12 +13,10 @@ module Futurice.App.FutuHours.Precalc where
 import Futurice.Prelude
 import Prelude          ()
 
-import Control.Concurrent.Async   (async, wait)
-import Control.Concurrent.STM     (atomically, readTVar, writeTVar)
 import Control.Monad.Logger       (logInfo, logWarn)
 import Control.Monad.Trans.Class  (MonadTrans (..))
 import Control.Monad.Trans.Except (ExceptT)
-import Data.Functor.Compose       (Compose (..))
+import Futurice.AVar              (readAVarIO, writeAVarIO)
 import Generics.SOP
 import Generics.SOP.Curry
 import Servant                    (ServantErr, err500)
@@ -36,18 +34,13 @@ executeEndpoint
     -> IO ()
 executeEndpoint Ctx { ctxPrecalcEndpoints = m } e a = case DMap.lookup e m of
     Nothing   -> pure ()
-    Just tvar -> do
+    Just avar -> do
         x <- a
-        x' <- async (pure x)
-        atomically $ writeTVar (getCompose tvar) x'
+        writeAVarIO avar x
 
 lookupEndpoint :: Ctx -> EndpointTag a -> IO (Maybe a)
 lookupEndpoint Ctx { ctxPrecalcEndpoints = m } e =
-    case DMap.lookup e m of
-        Nothing   -> pure Nothing
-        Just tvar -> do
-            a <- atomically $ readTVar $ getCompose tvar
-            Just <$> wait a
+    traverse readAVarIO $ DMap.lookup e m
 
 data DefaultableEndpoint (xs :: [*]) (p :: *) (r :: *) = DefaultableEndpoint
     { defEndTag                :: EndpointTag r

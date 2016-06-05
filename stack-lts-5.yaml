@@ -1,6 +1,7 @@
 resolver: lts-5.17
 packages:
 - ansi-pretty/
+- avar/
 - avatar-app/
 - base64-bytestring-type/
 - contacts-api/

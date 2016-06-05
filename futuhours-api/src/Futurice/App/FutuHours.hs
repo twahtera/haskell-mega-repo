@@ -13,9 +13,9 @@ import Futurice.Prelude
 import Prelude          ()
 
 import Control.Concurrent.Async    (async)
+import Futurice.AVar
 import Control.Concurrent.STM      (atomically, newTVarIO, writeTVar)
 import Control.Monad               (foldM, forM_)
-import Data.Functor.Compose        (Compose (..))
 import Data.Pool                   (createPool, withResource)
 import Generics.SOP                (I (..), NP (..))
 import Network.Wai
@@ -123,8 +123,8 @@ defaultMain = do
         let f m (SDE de) = do
                 hPutStrLn stderr $ "Initialising " ++ show (defEndTag de)
                 a <- async (defEndDefaultParsedParam de >>= defEndAction de ctx'')
-                v <- newTVarIO a
-                pure $ DMap.insert (defEndTag de) (Compose v) m
+                avar <- newAVarAsyncIO a
+                pure $ DMap.insert (defEndTag de) avar m
         in foldM f DMap.empty defaultableEndpoints
 
     let ctx = ctx'' { ctxPrecalcEndpoints = precalcEndpoints }

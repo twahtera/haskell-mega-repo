@@ -22,6 +22,7 @@ library:
     - aeson-extra           >=0.3.1 && <0.4
     - ad
     - async >=2.0.2 && <2.2
+    - avar
     - base-compat
     - binary
     - binary-tagged
