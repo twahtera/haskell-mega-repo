@@ -1,6 +1,4 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -19,7 +17,6 @@ module PlanMill.Types.Enumeration (
     ) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 import Control.Lens                     (_1)
 import Data.Aeson.Types                 (Parser)

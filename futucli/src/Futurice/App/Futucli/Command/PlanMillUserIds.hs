@@ -1,17 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Futucli.Command.PlanMillUserIds (planMillUserIds) where
 
-import Prelude        ()
-import Prelude.Compat
+import Futurice.Prelude
 
-import Control.Applicative  (many)
-import Control.Lens         ((^.))
-import Control.Monad.Http   (evalHttpT)
-import Control.Monad.Logger (runStderrLoggingT)
-import Data.Monoid          ((<>))
--- LogLevel (..), LogSource, filterLogger,
+import Control.Monad.Http          (evalHttpT)
 import Control.Monad.Reader        (runReaderT)
-import Data.Vector                 (Vector)
 import Network.HTTP.Client         (newManager)
 import Network.HTTP.Client.TLS     (tlsManagerSettings)
 import Text.Regex.Applicative.Text (anySym, match)
@@ -20,9 +13,9 @@ import qualified Data.Text    as T
 import qualified Data.Text.IO as T
 import qualified Data.Vector  as V
 
-import qualified Control.Monad.PlanMill   as PM
+import qualified Control.Monad.PlanMill as PM
 import qualified FUM
-import qualified PlanMill                 as PM
+import qualified PlanMill               as PM
 
 import Futurice.App.Futucli.Cfg
 

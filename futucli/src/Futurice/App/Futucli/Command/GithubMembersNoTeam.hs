@@ -1,13 +1,8 @@
 {-# LANGUAGE OverloadedStrings  #-}
 module Futurice.App.Futucli.Command.GithubMembersNoTeam (githubMembersNoTeam) where
 
-import Prelude        ()
-import Prelude.Compat
+import Futurice.Prelude
 
-import Control.Monad.Catch     (throwM)
-import Data.Foldable           (traverse_)
-import Data.Maybe              (fromMaybe)
-import Data.Monoid             ((<>))
 import Network.HTTP.Client     (Manager, newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import System.IO               (stderr)

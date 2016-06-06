@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Futucli.Cfg (Cfg(..)) where
 
-import Prelude        ()
-import Prelude.Compat
+import Futurice.Prelude
 
 import Data.Aeson (FromJSON (..), withObject, (.:))
 

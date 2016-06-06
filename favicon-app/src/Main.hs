@@ -1,10 +1,8 @@
-{-# LANGUAGE CPP                #-}
-{-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TupleSections      #-}
-{-# LANGUAGE TypeOperators      #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections     #-}
+{-# LANGUAGE TypeOperators     #-}
 module Main (main) where
 
 import Futurice.Prelude
@@ -12,10 +10,9 @@ import Prelude          ()
 
 import Codec.Picture            (Image, PixelRGBA8)
 import Control.Concurrent.STM   (atomically)
-import Control.Monad            (forM_)
 import Futurice.Colour
 import Futurice.Logo
-import Lucid
+import Lucid                    hiding (for_)
 import Network.Wai              (Application)
 import Servant
 import Servant.Cache
@@ -27,7 +24,6 @@ import Servant.JuicyPixels      (PNG)
 import System.Environment       (lookupEnv)
 import System.IO                (hPutStrLn, stderr)
 
-import qualified Data.Text                     as T
 import qualified Network.Wai.Handler.Warp      as Warp
 import qualified Servant.Cache.Internal.DynMap as DynMap
 
@@ -75,6 +71,6 @@ main = do
   Warp.run port (app cache)
 
 indexPage :: Html ()
-indexPage = doctypehtml_ $ forM_ [minBound..maxBound] $ \colour ->
-    let link = T.pack $ show $ safeLink api iconEndpoint colour
+indexPage = doctypehtml_ $ for_ [minBound..maxBound] $ \colour ->
+    let link = textShow $ safeLink api iconEndpoint colour
     in a_ [href_ link] $ img_ [src_ link]

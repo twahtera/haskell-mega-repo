@@ -3,7 +3,6 @@
 module Futurice.App.Futucli.Orphans () where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Data.Aeson  (FromJSON (..), withText)
 

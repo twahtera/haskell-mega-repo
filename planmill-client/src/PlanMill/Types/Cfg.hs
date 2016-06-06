@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE OverloadedStrings  #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
@@ -8,7 +6,6 @@
 module PlanMill.Types.Cfg (Cfg(..)) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 import PlanMill.Types.Auth (ApiKey)
 import PlanMill.Types.User (UserId)

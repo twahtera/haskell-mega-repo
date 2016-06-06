@@ -1,22 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Futucli.Command.FumGithubCheck (fumGithubCheck) where
 
-import Prelude        ()
-import Prelude.Compat
+import Futurice.Prelude
 
-import Control.Lens
-import Control.Monad.Catch     (throwM)
-import Data.Foldable           (traverse_)
-import Data.Monoid             ((<>))
-import Data.Proxy              (Proxy (..))
-import Data.Text               (Text)
-import Data.Vector             (Vector)
+import Control.Lens            (to, (^..), _Just)
 import Network.HTTP.Client     (Manager, newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import System.IO               (stderr)
 
 import qualified Data.HashSet as HS
-import qualified Data.Text    as T
 import qualified Data.Text.IO as T
 import qualified Data.Vector  as V
 
@@ -28,16 +20,13 @@ import Futurice.App.Futucli.Cfg
 logic :: Vector GH.SimpleUser -> Vector FUM.User -> IO ()
 logic gh fum = do
     let fum' = V.filter (not . isInGH) fum
-    T.putStrLn $ "Has GitHub name in FUM, not in GitHub organisation (" <> tshow (V.length fum') <> "):"
+    T.putStrLn $ "Has GitHub name in FUM, not in GitHub organisation (" <> textShow (V.length fum') <> "):"
     traverse_ (T.putStrLn . showFumUser) fum'
     T.putStrLn ""
     let gh' = V.filter (not . isInFum) gh
-    T.putStrLn $ "In GitHub organisation, no username in FUM (" <> tshow (V.length gh') <> "):"
+    T.putStrLn $ "In GitHub organisation, no username in FUM (" <> textShow (V.length gh') <> "):"
     traverse_ (T.putStrLn . showGithubUser) gh'
   where
-    tshow :: Show a => a -> Text
-    tshow = T.pack . show
-
     showFumUser :: FUM.User -> Text
     showFumUser u = u ^. FUM.userFirst <> " " <> u ^. FUM.userLast
 

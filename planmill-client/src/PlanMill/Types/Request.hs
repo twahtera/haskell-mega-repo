@@ -1,5 +1,4 @@
 {-# LANGUAGE ConstraintKinds    #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE GADTs              #-}
 {-# LANGUAGE StandaloneDeriving #-}
 -- |
@@ -21,7 +20,6 @@ module PlanMill.Types.Request (
     ) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 import Data.Aeson.Compat (encode)
 import Data.ByteString   (ByteString)

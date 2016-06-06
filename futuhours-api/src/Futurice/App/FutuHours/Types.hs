@@ -42,7 +42,6 @@ module Futurice.App.FutuHours.Types (
 
 import Futurice.Prelude
 
-import Control.Arrow      (first)
 import Data.Aeson.Extra   (FromJSON (..), M, ToJSON (..), Value (..), object,
                            (.=))
 import Data.Csv           (DefaultOrdered (..), FromRecord (..), ToField (..),

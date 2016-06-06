@@ -27,6 +27,7 @@ source-repository head
 library
   hs-source-dirs:
       src
+  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable NoImplicitPrelude ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
       aeson                 >=0.8     && <0.12
@@ -91,7 +92,6 @@ library
       PlanMill.Endpoints
       PlanMill.Enumerations
       PlanMill.Eval
-      PlanMill.Internal
       PlanMill.Internal.Prelude
       PlanMill.Operational
       PlanMill.Test

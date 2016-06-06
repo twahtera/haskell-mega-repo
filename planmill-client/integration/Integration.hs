@@ -1,17 +1,17 @@
-{-# LANGUAGE ConstraintKinds  #-}
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TemplateHaskell  #-}
+{-# LANGUAGE ConstraintKinds   #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Main (main) where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Control.Monad.Http   (evalHttpT)
-import Control.Monad.Logger (LogLevel (..), LogSource, filterLogger,
-                             runStderrLoggingT)
+import Control.Monad.Logger (LogLevel (..), LogSource, filterLogger)
 import Control.Monad.Reader (runReaderT)
-import Data.Time            (UTCTime(..))
+import Data.Maybe           (isJust)
+import Data.Time            (UTCTime (..))
 import Data.Time.TH         (mkUTCTime)
 import Generics.SOP         (All)
 import System.Environment   (getArgs, lookupEnv)
@@ -26,7 +26,7 @@ import PlanMill
 
 main :: IO ()
 main = do
-    debug <- maybe False (const True) <$> lookupEnv "DEBUG"
+    debug <- isJust <$> lookupEnv "DEBUG"
     args <- getArgs
     case args of
         [uid, apikey, endpoint] ->

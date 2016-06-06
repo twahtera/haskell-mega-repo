@@ -1,6 +1,4 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
@@ -15,7 +13,6 @@ module PlanMill.Types.UserCapacity (
     ) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 type UserCapacities = Vector UserCapacity
 

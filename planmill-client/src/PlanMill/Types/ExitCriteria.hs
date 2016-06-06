@@ -1,6 +1,4 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
@@ -14,7 +12,6 @@ module PlanMill.Types.ExitCriteria (
     ) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 data ExitCriteria = ExitCriteria
     { ecName        :: !Text

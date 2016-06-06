@@ -4,7 +4,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 -- |
@@ -17,7 +16,6 @@ module PlanMill.Enumerations (
     ) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 import Data.Constraint (Dict (..))
 import Data.Reflection (reifySymbol)

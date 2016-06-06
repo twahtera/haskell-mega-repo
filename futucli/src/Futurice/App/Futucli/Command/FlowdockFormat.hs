@@ -7,7 +7,7 @@ import Futurice.Prelude
 
 import Futurice.App.Futucli.Cfg
 
-import Control.Lens            (re, to, _Show)
+import Control.Lens            (to)
 import Data.Aeson.Extra.Stream (streamDecode)
 
 import qualified Chat.Flowdock.REST          as FD
@@ -24,5 +24,5 @@ flowdockFormat fp _ = do
 
 p :: FD.Message -> IO ()
 p msg@FD.Message { FD._msgContent = FD.MTMessage contents } =
-    T.putStrLn $ "<" <> msg ^. FD.msgUser . to FD.getIdentifier .  re _Show . packed <>  "> " <> contents
+    T.putStrLn $ "<" <> msg ^. FD.msgUser . to FD.getIdentifier .  to textShow <>  "> " <> contents
 p _ = pure ()

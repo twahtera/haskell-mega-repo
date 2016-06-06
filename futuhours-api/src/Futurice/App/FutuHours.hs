@@ -13,10 +13,7 @@ import Futurice.Prelude
 
 import Control.Concurrent.Async    (async)
 import Control.Concurrent.STM      (atomically, newTVarIO, writeTVar)
-import Control.Monad               (foldM)
-import Control.Monad.Logger        (MonadLogger, runStderrLoggingT)
 import Data.Pool                   (createPool, withResource)
-import Data.Time                   (NominalDiffTime)
 import Futurice.AVar
 import Futurice.Periocron
 import Generics.SOP                (I (..), NP (..))

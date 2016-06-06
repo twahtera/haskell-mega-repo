@@ -16,7 +16,6 @@ import PlanMill.Internal.Prelude
 import Prelude                   ()
 
 import Control.Monad.Http               (MonadHttp)
-import Control.Monad.Logger             (MonadLogger)
 import Control.Monad.Operational        (singleton)
 import Control.Monad.Reader             (ReaderT (..))
 import Data.Constraint                  (Constraint)

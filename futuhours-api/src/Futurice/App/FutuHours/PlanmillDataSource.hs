@@ -22,8 +22,7 @@ import Control.Monad.Catch              (handle)
 import Control.Monad.CryptoRandom.Extra (CRandT, GenError, HashDRBG,
                                          evalCRandTThrow, mkHashDRBG)
 import Control.Monad.Http               (HttpT, evalHttpT)
-import Control.Monad.Logger             (LogLevel, LoggingT, MonadLogger,
-                                         logDebug, logError, logWarn, logInfo)
+import Control.Monad.Logger             (LogLevel, LoggingT)
 import Control.Monad.Reader             (ReaderT, runReaderT)
 import Data.Binary.Tagged               (taggedDecodeOrFail, taggedEncode)
 import Data.BinaryFromJSON              (BinaryFromJSON)
@@ -114,7 +113,7 @@ makeP bf@(BlockedFetch (PMR (PM.PlanMillAction req)) _) = P key bf
     url = T.pack $ PM.fromUrlParts (PM.requestUrlParts req)
 
     qs :: Text
-    qs = T.pack . show $ case req of
+    qs = textShow $ case req of
         PM.PlanMillGet qs' _      -> qs'
         PM.PlanMillPagedGet qs' _ -> qs'
         PM.PlanMillPost _ _       -> []
@@ -144,7 +143,7 @@ instance DataSource u PlanmillRequest where
                 . runFutuhoursLoggingT (I ll)
                 . flip runReaderT cfg
                 . flip evalCRandTThrow g
-                $ do $(logInfo) $ "Blocked fetches " <> T.pack (show $ HM.size cache) <> " / " <> T.pack (show $ length blockedFetches')
+                $ do $(logInfo) $ "Blocked fetches " <> textShow (HM.size cache) <> " / " <> textShow (length blockedFetches')
                      traverse_ (singleFetch cache) blockedFetches'
 
         singleFetch :: CacheLookup -> P -> M ()
@@ -192,5 +191,5 @@ extract key bs = case taggedDecodeOrFail bs of
 
 omitSqlError :: MonadLogger m => Postgres.SqlError -> m ()
 omitSqlError err = do
-    $(logError) $ T.pack $ show err
+    $(logError) $ textShow err
     return ()

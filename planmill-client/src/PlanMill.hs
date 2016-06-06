@@ -13,6 +13,8 @@ module PlanMill (
     module PlanMill.Enumerations,
     ) where
 
+import PlanMill.Internal.Prelude
+
 import Control.Monad.PlanMill
 import PlanMill.Auth
 import PlanMill.Classes

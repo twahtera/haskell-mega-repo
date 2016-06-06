@@ -2,15 +2,12 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 module PlanMill.Eval (evalPlanMill) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 import Control.Monad.Http   (MonadHttp (..), httpLbs)
-import Control.Monad.Logger (MonadLogger, logDebug, logInfo)
 import Data.Aeson.Compat    (eitherDecode)
 import Network.HTTP.Client  (Request, RequestBody (..), checkStatus, method,
                              parseUrl, path, queryString, requestBody,
@@ -29,7 +26,6 @@ import qualified Data.Vector                as V
 -- PlanMill import
 import PlanMill.Auth     (Auth (..), getAuth)
 import PlanMill.Classes
-import PlanMill.Internal
 import PlanMill.Types
 
 evalPlanMill
@@ -45,7 +41,7 @@ evalPlanMill pm = do
     baseReq <- mkBaseReq pm
     let url = BS8.unpack (path baseReq <> queryString baseReq)
     let emptyError = DecodeError url "empty input"
-    res <- case pm of
+    case pm of
         PlanMillGet qs _ ->
             singleReq baseReq qs (throwM emptyError)
         PlanMillPagedGet qs _ ->
@@ -54,7 +50,6 @@ evalPlanMill pm = do
             let req = addHeader ("Content-Type", "application/json;charset=UTF-8") $
                     baseReq { method = "POST", requestBody = RequestBodyLBS body }
             in singleReq req [] (throwM emptyError)
-    return res
   where
     mkBaseReq :: forall b. PlanMill b -> m Request
     mkBaseReq planmill = do
@@ -74,7 +69,7 @@ evalPlanMill pm = do
         let url = BS8.unpack (path req') <> BS8.unpack (queryString req')
         $(logInfo) $ T.pack $ "Request: " <> url
         res <- httpLbs req'
-        $(logDebug) $ "response status: " <> tshow (responseStatus res)
+        $(logDebug) $ "response status: " <> textShow (responseStatus res)
         if LBS.null (responseBody res)
             then do
                 $(logDebug) "empty response"

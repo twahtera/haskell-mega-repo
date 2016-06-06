@@ -4,10 +4,9 @@ module Futurice.App.MegaRepoTool.Command.BuildDocker (
     buildDocker
     ) where
 
-import Futurice.Prelude
+import Futurice.Prelude hiding (fold)
 import Turtle           hiding ((<>))
 
-import Data.Foldable (for_)
 import System.IO     (hClose, hFlush)
 
 import qualified Control.Foldl as Fold

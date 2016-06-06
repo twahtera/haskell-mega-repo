@@ -1,6 +1,5 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
 -- License   : BSD3
@@ -12,13 +11,10 @@ module PlanMill.Test (
     module PlanMill,
     ) where
 
-import Prelude        ()
-import Prelude.Compat
+import PlanMill.Internal.Prelude
 
 import Control.Monad.Http   (evalHttpT)
-import Control.Monad.Logger (runStderrLoggingT)
 import Control.Monad.Reader (runReaderT)
-import Data.Aeson.Compat    (FromJSON)
 
 import Control.Monad.PlanMill (planmillAction)
 import PlanMill               (Cfg)

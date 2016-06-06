@@ -23,8 +23,7 @@ import Control.Monad.Catch              (handle)
 import Control.Monad.CryptoRandom.Extra (CRandT, GenError, HashDRBG,
                                          evalCRandTThrow, mkHashDRBG)
 import Control.Monad.Http               (HttpT, evalHttpT)
-import Control.Monad.Logger             (LogLevel, LoggingT, MonadLogger,
-                                         logDebug, logError, logWarn)
+import Control.Monad.Logger             (LogLevel, LoggingT)
 import Control.Monad.Reader             (ReaderT, runReaderT)
 import Control.Monad.Trans.Maybe        (MaybeT (..))
 import Data.Binary.Tagged               (taggedDecodeOrFail, taggedEncode)
@@ -126,7 +125,7 @@ instance DataSource u PlanmillCacheRequest where
             url' = T.pack $ PM.fromUrlParts (PM.requestUrlParts req)
 
             qs' :: Text
-            qs' = T.pack . show $ case req of
+            qs' = textShow $ case req of
                 PM.PlanMillGet qs _ -> qs
                 PM.PlanMillPagedGet qs _ -> qs
                 PM.PlanMillPost _ _ -> []
@@ -169,5 +168,5 @@ extract url (Postgres.Only (Postgres.Binary bs)) = case taggedDecodeOrFail bs of
 
 omitSqlError :: MonadLogger m => Postgres.SqlError -> m ()
 omitSqlError err = do
-    $(logError) $ T.pack $ show err
+    $(logError) $ textShow err
     return ()
