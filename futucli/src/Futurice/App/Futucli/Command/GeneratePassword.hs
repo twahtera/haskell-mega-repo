@@ -1,10 +1,8 @@
 module Futurice.App.Futucli.Command.GeneratePassword (generatePassword) where
 
-import Prelude        ()
-import Prelude.Compat
+import Futurice.Prelude
 
 import Control.Monad (liftM)
-import Control.Monad.Catch (throwM)
 import Control.Monad.CryptoRandom
 import Crypto.Random.DRBG (HmacDRBG)
 

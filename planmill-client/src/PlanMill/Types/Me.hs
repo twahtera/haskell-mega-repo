@@ -1,6 +1,4 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
@@ -12,7 +10,6 @@
 module PlanMill.Types.Me (Me(..)) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 import PlanMill.Types.Identifier (HasIdentifier (..))
 import PlanMill.Types.User       (User, UserId)

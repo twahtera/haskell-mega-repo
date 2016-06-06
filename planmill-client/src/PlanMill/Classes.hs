@@ -1,6 +1,5 @@
 {-# LANGUAGE CPP                #-}
 {-# LANGUAGE ConstraintKinds    #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts   #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
@@ -20,8 +19,7 @@ module PlanMill.Classes (
     askCfg,
     ) where
 
-import Prelude        ()
-import Prelude.Compat
+import PlanMill.Internal.Prelude
 
 import Control.Monad.CryptoRandom (CRandT (..), GenError, MonadCRandom (..),
                                    evalCRandT)

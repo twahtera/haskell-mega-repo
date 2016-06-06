@@ -1,6 +1,4 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
@@ -12,7 +10,6 @@
 module PlanMill.Types.Meta (Meta(..), lookupFieldEnum) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 import Data.Char (isSpace)
 

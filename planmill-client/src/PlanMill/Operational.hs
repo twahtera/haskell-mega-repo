@@ -1,9 +1,7 @@
 {-# LANGUAGE ConstraintKinds     #-}
-{-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving  #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
@@ -20,11 +18,9 @@ module PlanMill.Operational (
     ) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 import Control.Monad             ((<=<))
 import Control.Monad.Http        (MonadHttp (..))
-import Control.Monad.Logger      (MonadLogger)
 import Control.Monad.Operational
 import Control.Monad.Reader      (ReaderT (..))
 import Control.Monad.Trans.Class (lift)

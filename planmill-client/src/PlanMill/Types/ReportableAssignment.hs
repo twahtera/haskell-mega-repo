@@ -1,6 +1,4 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
@@ -15,7 +13,6 @@ module PlanMill.Types.ReportableAssignment (
     ) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 import PlanMill.Types.Assignment (Assignment, AssignmentId)
 import PlanMill.Types.Identifier (HasIdentifier (..))

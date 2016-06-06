@@ -11,7 +11,6 @@ module Futurice.App.FutuHours.Precalc where
 
 import Futurice.Prelude
 
-import Control.Monad.Logger       (logInfo, logWarn)
 import Control.Monad.Trans.Class  (MonadTrans (..))
 import Control.Monad.Trans.Except (ExceptT)
 import Futurice.AVar              (readAVarIO, writeAVarIO)
@@ -20,7 +19,6 @@ import Generics.SOP.Curry
 import Servant                    (ServantErr, err500)
 
 import qualified Data.Dependent.Map as DMap
-import qualified Data.Text          as T
 
 import Futurice.App.FutuHours.Context
 import Futurice.App.FutuHours.Types
@@ -65,10 +63,10 @@ servantEndpoint de ctx = hCurry endpoint
             case l of
                 -- Shouldn't happen
                 Nothing -> do
-                    $(logWarn) $ "non-cached endpoint: " <> (T.pack $ show $ defEndTag de)
+                    $(logWarn) $ "non-cached endpoint: " <> (textShow $ defEndTag de)
                     throwM $ err500
                 Just r  -> do
-                    $(logInfo) $ "cached endpoint: " <> (T.pack $ show $ defEndTag de)
+                    $(logInfo) $ "cached endpoint: " <> (textShow $ defEndTag de)
                     return r
         | otherwise = do
             p <- defEndParseParams de xs

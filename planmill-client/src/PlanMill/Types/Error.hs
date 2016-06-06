@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings  #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
@@ -10,7 +9,6 @@ module PlanMill.Types.Error (
     ) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 -- | TODO: it should be an 'Int'
 type Code = String

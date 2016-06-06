@@ -6,7 +6,6 @@
 module Futurice.App.Futucli.Command.GithubCollaborators (githubCollaborators) where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Control.Monad.Reader    (ReaderT (..))
 import GHC.Exts                (Constraint)

@@ -1,22 +1,18 @@
 {-# LANGUAGE ConstraintKinds   #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 module Main (main) where
 
-import Futurice.Prelude
-import Prelude          ()
+import PlanMill.Internal.Prelude
 
 import Control.Arrow        ((&&&))
 import Control.Monad.Http   (HttpT, evalHttpT)
-import Control.Monad.Logger (LogLevel (..), LogSource, LoggingT, filterLogger,
-                             runStderrLoggingT)
+import Control.Monad.Logger (LogLevel (..), LogSource, LoggingT, filterLogger)
 import Control.Monad.Reader (ReaderT (..))
-import Data.Aeson.Compat    (FromJSON (..), withObject, (.:))
-import Data.Foldable        (fold)
 import Data.Maybe           (isJust)
-import Data.Time            (UTCTime (..))
 import Data.Time.TH         (mkUTCTime)
 import Data.Yaml            (decodeFileEither)
 import Generics.SOP         (All)

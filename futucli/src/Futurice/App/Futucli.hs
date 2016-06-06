@@ -1,14 +1,9 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings  #-}
 module Futurice.App.Futucli (defaultMain) where
 
-import Prelude        ()
-import Prelude.Compat
+import Futurice.Prelude hiding ((<>))
 
-import Control.Monad.Catch (Exception, throwM)
-import Data.Maybe          (fromMaybe)
 import Data.Monoid         ((<>))
-import Data.Typeable       (Typeable)
 import Data.Yaml
 import System.Environment  (lookupEnv)
 

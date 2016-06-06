@@ -17,10 +17,7 @@ module Futurice.Periocron (
 import Futurice.Prelude
 
 import Control.Concurrent       (ThreadId, forkIO, threadDelay)
-import Control.Concurrent.Async (async, waitCatch)
-import Control.Monad.Logger     (MonadLogger, logInfo, logDebug, logError)
-import Data.Bifunctor           (first)
-import Data.Time                (NominalDiffTime, addUTCTime, getCurrentTime)
+import Data.Time                (addUTCTime, getCurrentTime)
 
 -------------------------------------------------------------------------------
 -- Worker
@@ -63,7 +60,7 @@ workerLoop options = iterateM $ \jobs -> optionsLogger options $ go jobs
     executeJob :: (Applicative m, MonadLogger m, MonadIO m) => Job -> m ()
     executeJob (Job label action) = do
         $(logDebug) $ "Executing periocron job " <> label
-        x <- liftIO $ tryAndDeep action
+        x <- liftIO $ tryDeep action
         case x of
             Right _  -> pure ()
             Left exc ->
@@ -86,25 +83,6 @@ type Intervals = [NominalDiffTime]
 
 every :: NominalDiffTime -> Intervals
 every interval = iterate (+ interval) 0
-
--------------------------------------------------------------------------------
--- Helpers
--------------------------------------------------------------------------------
-
-iterateM :: Monad m => (a -> m a) -> a -> m b
-iterateM f = go
-  where
-    go x = f x >>= go 
-
-textShow :: Show a => a -> Text
-textShow = view packed . show
-
-tryAndDeep :: NFData a => IO a -> IO (Either SomeException a)
-tryAndDeep action = do
-    a <- async $ do
-        x <- action
-        evaluate $!! x
-    waitCatch a
 
 -------------------------------------------------------------------------------
 -- Merge helpers

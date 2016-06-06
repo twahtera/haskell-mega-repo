@@ -1,6 +1,4 @@
 {-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE DeriveDataTypeable     #-}
-{-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE TemplateHaskell        #-}
@@ -15,7 +13,6 @@ module PlanMill.Types.Identifier (
     ) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 import qualified Data.Csv     as Csv
 import           Data.Swagger (ToSchema)

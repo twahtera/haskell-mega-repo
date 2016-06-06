@@ -26,7 +26,6 @@ library:
   dependencies:
     - base                  >=4.7   && <4.10
     - base-compat
-    - bifunctors
     - async
     - futurice-prelude
     - monad-logger

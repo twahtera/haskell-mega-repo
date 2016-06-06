@@ -10,21 +10,20 @@ import Futurice.Prelude
 import Prelude          ()
 
 import Control.Concurrent.STM
-import Control.DeepSeq        (force)
-import Control.Monad.Catch    (try)
 import Data.Binary.Orphans    as Binary
 import Data.Binary.Tagged
 import Data.Digest.Pure.SHA
-import Data.Time              (NominalDiffTime, diffUTCTime, getCurrentTime)
+import Data.Time              (diffUTCTime, getCurrentTime)
 import System.Directory
 import System.FilePath
 
 data SP a b = SP !a !b
 
-memoryCached :: forall a. NFData a
-             => NominalDiffTime   -- ^ TTL
-             -> IO a              -- ^ Cached action
-             -> IO (IO a)
+memoryCached
+    :: forall a. NFData a
+    => NominalDiffTime   -- ^ TTL
+    -> IO a              -- ^ Cached action
+    -> IO (IO a)
 memoryCached ttl mx = do
     slot <- newTVarIO Nothing :: IO (TVar (Maybe (SP a UTCTime)))
     return $ do
@@ -39,7 +38,7 @@ memoryCached ttl mx = do
         let perform :: IO a
             perform = do
                 x <- mx
-                x' <- evaluate $ force x
+                x' <- evaluate $!! x
                 atomically $ writeTVar slot (Just (SP x' now))
                 pure x'
 
@@ -52,10 +51,11 @@ memoryCached ttl mx = do
 binaryDigest :: Binary a => a -> String
 binaryDigest = showDigest . sha1 . Binary.encode
 
-diskCached :: (Binary a, HasStructuralInfo a, HasSemanticVersion a, Binary b)
-       => b -> IO a -> IO a
+diskCached
+    :: (Binary a, NFData a, HasStructuralInfo a, HasSemanticVersion a, Binary b)
+    => b -> IO a -> IO a
 diskCached key mx = do
-    e <- tryIO (taggedDecodeFileOrFail path)
+    e <- tryDeep (taggedDecodeFileOrFail path)
     case e of
         Right (Right x) -> return x
         _  -> do x <- mx
@@ -65,6 +65,3 @@ diskCached key mx = do
   where
     (a:b:c:d:rest) = binaryDigest key
     path = ".cache/" <> [a,b] <> "/" <> [c,d] <> "/" <> rest
-
-tryIO :: IO a -> IO (Either IOError a)
-tryIO = try

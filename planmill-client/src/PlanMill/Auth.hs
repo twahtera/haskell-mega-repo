@@ -13,17 +13,11 @@ module PlanMill.Auth (
     getNonce,
     ) where
 
--- Base compat
-import Prelude        ()
-import Prelude.Compat
+import PlanMill.Internal.Prelude
 
 -- Almost standard imports
 import Control.Monad   (replicateM)
 import Data.ByteString (ByteString)
-import Data.Semigroup  ((<>))
-import Data.String     (fromString)
-import Data.Time       (UTCTime)
-import Data.Word       (Word8)
 
 import qualified Data.Vector as V
 
@@ -33,7 +27,6 @@ import Data.Byteable (toBytes)
 
 -- Local imports
 import PlanMill.Classes
-import PlanMill.Internal
 import PlanMill.Types
 
 -- | Authentication information

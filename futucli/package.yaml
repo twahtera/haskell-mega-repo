@@ -53,6 +53,14 @@ library:
     - unordered-containers
     - vector
     - yaml
+  default-extensions:
+    - DeriveDataTypeable
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveGeneric
+    - DeriveTraversable
+    - NoImplicitPrelude
+    - ScopedTypeVariables
 
 executables:
   futucli:

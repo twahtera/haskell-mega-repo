@@ -1,6 +1,4 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
@@ -18,7 +16,6 @@ module PlanMill.Types.Timereport (
     ) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 import PlanMill.Types.Identifier      (HasIdentifier (..), Identifier)
 import PlanMill.Types.MaybeNumberText (getMaybeNumberText)

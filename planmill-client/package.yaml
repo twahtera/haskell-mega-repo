@@ -73,6 +73,14 @@ dependencies:
 
 library:
   source-dirs: src
+  default-extensions:
+    - DeriveDataTypeable
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveGeneric
+    - DeriveTraversable
+    - NoImplicitPrelude
+    - ScopedTypeVariables
 
 tests:
   test:

@@ -7,12 +7,9 @@
 -- TODO: remove?
 module PlanMill.Types.UOffset where
 
-import Prelude        ()
-import Prelude.Compat
+import PlanMill.Internal.Prelude
 
-import Data.Aeson.Compat       (ToJSON (..), Value (..))
-import Data.String             (fromString)
-import Data.Time               (UTCTime, formatTime)
+import Data.Time               (formatTime)
 import Data.Time.Locale.Compat (defaultTimeLocale)
 
 -- | Hopefully temporaty object to work around over strict PlanMill API

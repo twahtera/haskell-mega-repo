@@ -1,6 +1,4 @@
 {-# LANGUAGE ConstraintKinds    #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE GADTs              #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
@@ -16,9 +14,6 @@ module PlanMill.Types.UrlPart (
     ) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
-
-import Data.Foldable (fold)
 
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text          as T

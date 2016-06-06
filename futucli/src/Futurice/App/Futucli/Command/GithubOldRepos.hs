@@ -2,17 +2,12 @@
 {-# LANGUAGE TupleSections     #-}
 module Futurice.App.Futucli.Command.GithubOldRepos (githubOldRepos) where
 
-import Prelude        ()
-import Prelude.Compat
+import Futurice.Prelude
 
 import Algebra.Lattice         ((\/))
-import Control.Monad.Catch     (throwM)
-import Data.Foldable           (traverse_)
-import Data.List               (nub, sort)
-import Data.Maybe              (fromMaybe, mapMaybe)
-import Data.Monoid             ((<>))
-import Data.Time               (Day (..), NominalDiffTime, UTCTime (..),
-                                diffUTCTime, getCurrentTime)
+import Data.Maybe              (mapMaybe)
+import Data.Time               (Day (..), UTCTime (..), diffUTCTime,
+                                getCurrentTime)
 import Network.HTTP.Client     (Manager, newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import System.IO               (stderr)

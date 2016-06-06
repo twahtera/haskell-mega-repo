@@ -5,7 +5,6 @@ import Futurice.Prelude
 
 import Control.Exception    (bracket)
 import Control.Monad.Random (evalRandIO)
-import Data.Foldable        (for_)
 import Generics.SOP         (I (..), NP (..))
 
 import qualified Data.HashMap.Strict        as HM

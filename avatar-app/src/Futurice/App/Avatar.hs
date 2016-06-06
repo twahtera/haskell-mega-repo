@@ -14,7 +14,6 @@ import Futurice.Prelude
 
 import Codec.Picture              (DynamicImage)
 import Control.Monad.Trans.Except (ExceptT (..), throwE)
-import Data.Bifunctor             (first)
 import Data.Time                  (getCurrentTime)
 import Development.GitRev         (gitHash)
 import Network.Wai

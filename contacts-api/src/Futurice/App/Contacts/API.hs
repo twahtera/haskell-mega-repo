@@ -78,7 +78,7 @@ serverWithDocs cache startTime p server =
     uptime = do
         now <- getCurrentTime
         let diff = now `diffUTCTime` startTime
-        pure $ T.pack $ show diff
+        pure $ textShow diff
 
 contactsAPI :: Proxy ContactsAPI
 contactsAPI = Proxy

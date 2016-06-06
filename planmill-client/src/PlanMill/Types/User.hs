@@ -1,6 +1,4 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
@@ -28,7 +26,6 @@ import PlanMill.Internal.Prelude
 import PlanMill.Types.Account     (AccountId)
 import PlanMill.Types.Enumeration (EnumValue)
 import PlanMill.Types.Identifier  (HasIdentifier (..), Identifier)
-import Prelude                    ()
 
 import Data.Aeson.Extra.SymTag (SymTag)
 

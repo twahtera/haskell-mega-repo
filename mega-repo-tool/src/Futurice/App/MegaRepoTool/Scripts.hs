@@ -6,10 +6,11 @@ module Futurice.App.MegaRepoTool.Scripts (
     statsScript,
     ) where
 
-import Futurice.Prelude hiding (foldMap)
+import Futurice.Prelude hiding (foldMap, fold)
 
 import Control.Foldl (foldMap)
 import Turtle hiding ((<>))
+
 import qualified Data.Text as T
 
 find' :: (Text -> Bool) -> Turtle.FilePath -> Shell Turtle.FilePath
@@ -40,7 +41,7 @@ dotScript
 -- | TODO: collect other stats as well
 statsScript :: Shell Text
 statsScript =
-    T.pack . show <$> fold allLines (foldMap lineStats id)
+    textShow <$> fold allLines (foldMap lineStats id)
   where
     allLines :: Shell Text
     allLines = do

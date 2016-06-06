@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
 -- License   : BSD3
@@ -10,7 +8,6 @@ module PlanMill.Types.Auth (
     ) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 import qualified Data.ByteString    as BS
 import qualified Data.Text.Encoding as TE

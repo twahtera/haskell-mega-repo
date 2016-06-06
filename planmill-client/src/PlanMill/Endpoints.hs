@@ -49,7 +49,6 @@ module PlanMill.Endpoints (
     ) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 import GHC.TypeLits (KnownSymbol, symbolVal)
 

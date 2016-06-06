@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE OverloadedStrings  #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
@@ -24,7 +22,6 @@ module PlanMill.Types.ResultInterval (
     ) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 import Numeric.Interval.NonEmpty
 import Numeric.Interval.NonEmpty.Internal (Interval (..))

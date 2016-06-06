@@ -1,6 +1,4 @@
 {-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE TemplateHaskell    #-}
 {-# LANGUAGE TypeFamilies       #-}
@@ -16,7 +14,6 @@ module PlanMill.Types.TimeBalance
     where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 newtype TimeBalance = TimeBalance { _tbMinutes :: Double }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)

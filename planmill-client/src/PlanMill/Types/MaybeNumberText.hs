@@ -7,7 +7,6 @@ module PlanMill.Types.MaybeNumberText (
     ) where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
 
 -- | Sometimes textual fields are numbers.
 --
