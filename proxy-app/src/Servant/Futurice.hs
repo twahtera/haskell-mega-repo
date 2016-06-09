@@ -44,9 +44,9 @@ stats dmap = gcStatusInfo <> dynmapStats
 
 swaggerDoc :: HasSwagger api => Proxy api -> Swagger
 swaggerDoc proxy = toSwagger proxy
-    & info.title       .~ "FutuHours API"
+    & info.title       .~ "Proxy API"
     & info.version     .~ "2016.2.6"
-    & info.description ?~ "This is an API that tests servant-swagger support "
+    & info.description ?~ "Proxy to internal API"
 
 futuriceApiServer
     :: forall api colour. (HasSwagger api, SColour colour)

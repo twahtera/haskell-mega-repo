@@ -17,3 +17,7 @@ envs:
         secret: prod-planmill-futu-signature
     GH_AUTH_TOKEN:
       secret: github-auth-token
+
+    PROXYAPP_USER: timo
+    PROXYAPP_PASS: secret
+    FUTUHOURS_BASEURL: http://localhost:8081

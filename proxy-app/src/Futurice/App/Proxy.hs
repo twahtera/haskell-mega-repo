@@ -33,6 +33,7 @@ import Futurice.App.FutuHours.Types (MissingHour)
 
 import Network.HTTP.Client     (Manager, newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
+import Network.Wai.Middleware.HttpAuth (basicAuth)
 
 import Futurice.App.Proxy.Config
 
@@ -97,6 +98,7 @@ defaultMain = do
     cache <- DynMap.newIO
     futuhoursBaseurl <- parseBaseUrl cfgFutuhoursBaseurl
     let ctx = Ctx mgr futuhoursBaseurl
-    let app' = app cache ctx
+    let checkCreds u p = pure (u == cfgBasicAuthUser && p == cfgBasicAuthPass)
+    let app' = basicAuth checkCreds "P-R-O-X-Y" $ app cache ctx
     hPutStrLn stderr "Starting web server"
     Warp.run cfgPort app'
