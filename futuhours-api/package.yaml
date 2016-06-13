@@ -37,6 +37,7 @@ library:
     - ekg-core
     - env-config
     - exceptions
+    - futurice-foundation
     - fum-client
     - futulogo
     - futurice-prelude >=0.1.9.0

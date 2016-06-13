@@ -12,14 +12,15 @@ module Futurice.App.FutuHours.Reports.MissingHours (
 
 import Futurice.Prelude
 
-import Data.Aeson.Extra                 (M (..))
 import Data.Maybe                       (mapMaybe)
 import Futurice.Constraint.ForallSymbol (ForallFSymbol)
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Map            as Map
+import qualified Data.Vector         as V
 import qualified PlanMill            as PM
 
+import Futurice.Report
 import Futurice.App.FutuHours.PlanMillCache
 import Futurice.App.FutuHours.Types
 
@@ -34,7 +35,7 @@ missingHoursForUser
        )
     => PM.Interval Day
     -> PM.UserId
-    -> m MissingHours
+    -> m (PerEmployee Vector MissingHour)
 missingHoursForUser interval uid = do
     u <- PM.planmillAction $ PM.user uid
     t <- traverse (PM.planmillAction . PM.team) (PM.uTeam u)
@@ -42,13 +43,18 @@ missingHoursForUser interval uid = do
     uc <- PM.planmillAction $ PM.userCapacity interval uid
     let uc' = capacities uc
     tr <- cachedTimereports interval uid
-    let tr' = reportedDays tr
-    return $ MissingHours
-        { missingHoursName     = PM.uFirstName u <> " " <> PM.uLastName u
-        , missingHoursTeam     = maybe "Unknown Team" PM.tName t
-        , missingHoursContract = c
-        , missingHoursDays     = M (Map.differenceWith minus uc' tr')
-        }
+    let perEmployee vs = PerEmployee
+            { perEmployeeName     = PM.uFirstName u <> " " <> PM.uLastName u
+            , perEmployeeTeam     = maybe "Unknown Team" PM.tName t
+            , perEmployeeContract = c
+            , perEmployeeData     = vs
+            }
+    let f (day, cap) =  MissingHour
+            { missingHourDay      = day
+            , missingHourCapacity = cap
+            }
+    let tr' = V.fromList $ map f $ Map.toList $ Map.differenceWith minus uc' $ reportedDays tr
+    return $ perEmployee tr'
   where
     -- For now show only days without any hour markings
     minus :: Double -> Double -> Maybe Double
@@ -82,18 +88,23 @@ missingHours
         , PM.MonadPlanMillC m PM.Team
         , PM.MonadPlanMillC m PM.Meta
         , ForallFSymbol (PM.MonadPlanMillC m) PM.EnumDesc
-       , MonadPlanMillCached m
+        , MonadPlanMillCached m
         )
-    => PlanmillUserLookupTable
+    => UTCTime
+    -> PlanmillUserLookupTable
     -> PM.Interval Day
     -> f FUMUsername
     -> m MissingHoursReport
-missingHours pmUsers interval usernames
-    = fmap (MissingHoursReport . HM.fromList)
-    . (traverse . traverse) (missingHoursForUser interval)
-    . mapMaybe g
-    $ usernames'
+missingHours now pmUsers interval usernames = do
+    rs <- fmap HM.fromList
+        . f
+        . mapMaybe g
+        $ usernames'
+    return $ Report (ReportGenerated now) rs
   where
+    f :: [(k, PM.UserId)] -> m [(k, PerEmployee Vector MissingHour)]
+    f = (traverse . traverse) (missingHoursForUser interval)
+
     usernames' :: [FUMUsername]
     usernames' = case toList usernames of
         [] -> HM.keys pmUsers

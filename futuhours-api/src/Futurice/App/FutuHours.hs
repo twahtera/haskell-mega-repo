@@ -47,8 +47,7 @@ server ctx = pure "Hello to futuhours api"
     :<|> addPlanmillApiKey ctx
     :<|> getBalances ctx
     :<|> (getMissingHoursReport ctx
-        :<|> getMissingHoursReportList ctx
-        )
+         )
     :<|> (getPowerUsers ctx
         :<|> getPowerAbsences ctx
         )
@@ -74,7 +73,7 @@ defaultableEndpoints :: [(NominalDiffTime, SomeDefaultableEndpoint)]
 defaultableEndpoints =
     [ (15 * 60, SDE powerAbsencesEndpoint)
     , (5  * 60, SDE powerUsersEndpoint)
-    , (21 * 60, SDE missingHoursListEndpoint)
+    , (21 * 60, SDE missingHoursEndpoint)
     , (31 * 60, SDE balanceReportEndpoint)
     ]
 

@@ -20,8 +20,7 @@ module Futurice.App.FutuHours.Endpoints (
     balanceReportEndpoint,
     -- * Reports
     getMissingHoursReport,
-    getMissingHoursReportList,
-    missingHoursListEndpoint,
+    missingHoursEndpoint,
     -- * Power
     getPowerUsers,
     powerUsersEndpoint,
@@ -40,9 +39,8 @@ import Data.Aeson.Extra                 (M (..))
 import Data.BinaryFromJSON              (BinaryFromJSON)
 import Data.Maybe                       (fromJust)
 import Data.Monoid (Sum (..))
-import Data.Ord                         (comparing)
 import Data.Pool                        (withResource)
-import Data.Time                        (UTCTime (..), addDays)
+import Data.Time                        (UTCTime (..), addDays, getCurrentTime)
 import Data.Time.Fxtra                  (beginningOfPrevMonth,
                                          getCurrentDayInFinland)
 import Database.PostgreSQL.Simple.Fxtra (execute)
@@ -132,7 +130,7 @@ balanceReportEndpoint = DefaultableEndpoint
     balanceReport :: Ctx -> () -> IO BalanceReport
     balanceReport ctx () = do
         interval <- getInterval
-        ids <- HM.toList . fmap (view PM.identifier) <$> readTVarIO (ctxPlanmillUserLookup ctx)
+        ids <- HM.toList <$> readTVarIO (ctxPlanmillUserLookup ctx)
         executeCachedAdminPlanmill ctx p $
             BalanceReport . V.fromList <$>
                 traverse (getBalance interval) ids
@@ -144,10 +142,11 @@ balanceReportEndpoint = DefaultableEndpoint
             let a = beginningOfPrevMonth b
             return (fromJust $ PM.mkInterval a b)
 
-        getBalance interval (fumId, pmId) = do
+        getBalance interval (fumId, pmUser) = do
+            let pmId = pmUser ^. PM.identifier
             mh <- missingHoursForUser interval pmId
-            let mh' = getSum . foldMap Sum . getMap . missingHoursDays $ mh
-            let name = missingHoursName mh
+            let mh' = getSum . foldMap (Sum . missingHourCapacity) $ mh
+            let name = PM.uFirstName pmUser <> " " <> PM.uLastName pmUser
             PM.TimeBalance balanceMinutes <- planmillAction $ PM.userTimeBalance pmId
             pure $ Balance fumId name (round $ balanceMinutes / 60) (round mh')
 
@@ -212,11 +211,13 @@ getLegacyHours gteDay lteDay =
 -------------------------------------------------------------------------------
 
 getMissingHoursReport
-    :: (MonadIO m, MonadError ServantErr m)
-    => Ctx
-    -> Day -> Day -> Maybe FUMUsernamesParam
-    -> m MissingHoursReport
-getMissingHoursReport ctx a b usernames = do
+    :: Ctx
+    -> Maybe Day -> Maybe Day -> Maybe FUMUsernamesParam
+    -> ExceptT ServantErr IO  MissingHoursReport
+getMissingHoursReport = servantEndpoint missingHoursEndpoint
+
+{-
+ctx a b usernames = do
     userLookup <- liftIO $ readTVarIO (ctxPlanmillUserLookup ctx)
     case PM.mkInterval a b of
         Nothing -> throwError err400
@@ -228,14 +229,15 @@ getMissingHoursReport ctx a b usernames = do
 
     usernames' :: [FUMUsername]
     usernames' = maybe [] getFUMUsernamesParam usernames
+-}
 
-missingHoursListEndpoint
+missingHoursEndpoint
     :: DefaultableEndpoint
         '[Maybe Day, Maybe Day, Maybe FUMUsernamesParam]
         (PM.Interval Day, [FUMUsername])
-        [MissingHour]
-missingHoursListEndpoint = DefaultableEndpoint
-    { defEndTag = EMissingHoursList
+        MissingHoursReport 
+missingHoursEndpoint = DefaultableEndpoint
+    { defEndTag = EMissingHours
     , defEndDefaultParsedParam = do
         b <- getCurrentDayInFinland
         let a = beginningOfPrevMonth b
@@ -247,30 +249,17 @@ missingHoursListEndpoint = DefaultableEndpoint
         interval <- maybe (throwError err400) pure $ PM.mkInterval a' b'
         let usernames' = maybe [] getFUMUsernamesParam usernames
         pure (interval, usernames')
-    , defEndAction = missingHoursList
+    , defEndAction = missingHours'
     }
   where
-    missingHoursList :: Ctx -> (PM.Interval Day, [FUMUsername]) -> IO [MissingHour]
-    missingHoursList ctx (interval, usernames) = do
+    missingHours' :: Ctx -> (PM.Interval Day, [FUMUsername]) -> IO MissingHoursReport
+    missingHours' ctx (interval, usernames) = do
+        now <- getCurrentTime
         pmUsers <- readTVarIO (ctxPlanmillUserLookup ctx)
-        executeCachedAdminPlanmill ctx p $ do
-            r <- missingHours pmUsers interval usernames
-            pure
-                . concatMap (f . snd)
-                . sortBy (comparing fst)
-                . HM.toList
-                . unMissingHoursReport
-                $ r
-      where
+        executeCachedAdminPlanmill ctx p $ missingHours now pmUsers interval usernames
+     where
         p = Proxy :: Proxy
             '[PM.UserCapacities, PM.Timereports, PM.User, PM.Team, PM.Meta]
-        f (MissingHours n t c ds) = uncurry (MissingHour n t c) <$> Map.toList (getMap ds)
-
-getMissingHoursReportList
-    :: Ctx
-    -> Maybe Day -> Maybe Day -> Maybe FUMUsernamesParam
-    -> ExceptT ServantErr IO [MissingHour]
-getMissingHoursReportList = servantEndpoint missingHoursListEndpoint
 
 -------------------------------------------------------------------------------
 -- Power

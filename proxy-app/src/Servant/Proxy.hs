@@ -11,6 +11,7 @@ module Servant.Proxy (
     Proxied,
     Proxyable(..),
     Proxyable'(..),
+    JSONAPI,
     ) where
 
 import Futurice.Prelude
@@ -47,14 +48,18 @@ class Proxyable' api where
 
     proxy' :: Proxy api -> C api -> S api
 
+type family JSONAPI api where
+    JSONAPI (Get cts a) = Get '[JSON] a
+    JSONAPI (x :> api)  = x :> JSONAPI api
+
 instance (KnownSymbol sym, Proxyable' api) => Proxyable' (sym :> api) where
     type C (sym :> api) = C api
     type S (sym :> api) = S api
     proxy' _ = proxy' (Proxy :: Proxy api)
 
-instance (MimeUnrender ct a, AllCTRender (ct ': cts) a) => Proxyable' (Get (ct ': cts) a) where
-    type C (Get (ct ': cts) a) = ExceptT ServantError IO a
-    type S (Get (ct ': cts) a) = ExceptT ServantErr IO a
+instance (MimeUnrender JSON a, AllCTRender cts a) => Proxyable' (Get cts a) where
+    type C (Get cts a) = ExceptT ServantError IO a
+    type S (Get cts a) = ExceptT ServantErr IO a
     proxy' _ cli = withExceptT f cli 
       where
         f err = err504 { errBody = fromString $ show err }
