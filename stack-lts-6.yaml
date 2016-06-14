@@ -37,7 +37,6 @@ extra-deps:
 - generics-sop-lens-0.1.1.0
 - github-0.15.0
 - lucid-foundation-0.0.2.1
-- monad-http-0.2.0.0
 - servant-swagger-1.1
 - servant-swagger-ui-0.1.0.2.1.4
 - swagger2-2.1
