@@ -35,7 +35,7 @@ missingHoursForUser
        )
     => PM.Interval Day
     -> PM.UserId
-    -> m (PerEmployee Vector MissingHour)
+    -> m (PerEmployee (Vector MissingHour))
 missingHoursForUser interval uid = do
     u <- PM.planmillAction $ PM.user uid
     t <- traverse (PM.planmillAction . PM.team) (PM.uTeam u)
@@ -102,7 +102,7 @@ missingHours now pmUsers interval usernames = do
         $ usernames'
     return $ Report (ReportGenerated now) rs
   where
-    f :: [(k, PM.UserId)] -> m [(k, PerEmployee Vector MissingHour)]
+    f :: [(k, PM.UserId)] -> m [(k, PerEmployee (Vector MissingHour))]
     f = (traverse . traverse) (missingHoursForUser interval)
 
     usernames' :: [FUMUsername]

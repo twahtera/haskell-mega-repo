@@ -1,0 +1,35 @@
+name: futurice-reports
+version: "0"
+synopsis: Various reports utils
+description: ...
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/haskell-mega-repo
+category: Web
+tested-with: GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
+extra-source-files:
+- README.md
+
+ghc-options: -Wall
+
+library:
+  source-dirs: src
+  dependencies:
+    - base                  >=4.7   && <4.10
+    - aeson
+    - aeson-compat
+    - generics-sop
+    - swagger2
+    - lucid
+    - futurice-foundation
+    - futurice-prelude
+    - text
+  default-extensions:
+    - DeriveDataTypeable
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveGeneric
+    - DeriveTraversable
+    - NoImplicitPrelude
+    - ScopedTypeVariables

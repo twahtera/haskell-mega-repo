@@ -31,10 +31,10 @@ library
   ghc-options: -Wall
   build-depends:
       base                  >=4.7   && <4.10
+    , ad
     , aeson                 >=0.8   && <0.12
     , aeson-compat          >=0.3.1 && <0.4
     , aeson-extra           >=0.3.1 && <0.4
-    , ad
     , async >=2.0.2 && <2.2
     , avar
     , base-compat
@@ -51,10 +51,11 @@ library
     , ekg-core
     , env-config
     , exceptions
-    , futurice-foundation
     , fum-client
     , futulogo
+    , futurice-foundation
     , futurice-prelude >=0.1.9.0
+    , futurice-reports
     , generics-sop >=0.2.1.0 && <0.3
     , generics-sop-lens >=0.1.0.0 && <0.2
     , hashable
@@ -105,8 +106,8 @@ library
     , unordered-containers
     , vector
     , wai
-    , wai-middleware-metrics
     , wai-cors
+    , wai-middleware-metrics
     , warp
   exposed-modules:
       Data.BinaryFromJSON
@@ -130,7 +131,6 @@ library
       Futurice.App.FutuHours.Tools
       Futurice.App.FutuHours.Types
       Futurice.ExpFit
-      Futurice.Report
       Generics.SOP.Curry
       Servant.Futurice
   default-language: Haskell2010
