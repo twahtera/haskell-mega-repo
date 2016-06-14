@@ -8,6 +8,7 @@ import Futurice.Prelude hiding (fold)
 import Turtle           hiding ((<>))
 
 import System.IO     (hClose, hFlush)
+import System.Exit   (exitFailure)
 
 import qualified Control.Foldl as Fold
 import qualified Data.Text     as T
@@ -28,12 +29,13 @@ apps =
     ]
 
 buildImage :: Text
-buildImage = "futurice/base-images:haskell-lts-6.0-1"
+buildImage = "futurice/base-images:haskell-lts-6.3-1"
 
 buildCmd :: Text
 buildCmd = T.unwords
     [ "docker run"
     , "--rm"
+    , "-ti"
     , "--entrypoint /app/src/build-in-docker.sh"
     , "-v $(pwd):/app/src"
     , "-v $(pwd)/build:/app/bin"
@@ -42,18 +44,23 @@ buildCmd = T.unwords
 
 buildDocker :: IO ()
 buildDocker = do
-    -- Build binaries inside the docker
-    shells buildCmd mempty
-
     -- Get the hash of current commit
     githash <- fold (inshell "git log --pretty=format:'%h' -n 1" empty) $ Fold.lastDef "HEAD"
     shells ("git rev-parse --verify " <> githash) empty
+    T.putStrLn $ "Git hash aka tag for images: " <> githash
 
-    print githash
+    -- Check that binaries are build with current hash 
+    githashBuild <- (T.strip <$> T.readFile "build/git-hash.txt") `catch` onIOError "<none>"
+    when (githashBuild /= githash) $ do
+        T.putStrLn $ "Git hash in build directory don't match: " <> githashBuild  <> " != " <> githash
+        T.putStrLn $ "Run following command to build image:"
+        T.putStrLn $ buildCmd
+        exitFailure
 
+    -- Build docker images
     for_ apps $ \(image, exe) -> sh $ do
         -- Write Dockerfile
-        let dockerfile' = dockerfile exe 
+        let dockerfile' = dockerfile exe
         (file,handle) <- using $ mktemp "build" "Dockerfile"
         liftIO $ do
             T.hPutStrLn handle dockerfile'
@@ -85,3 +92,6 @@ dockerfile exe = T.unlines $
         , "libgmp10"
         , "libpq5"
         ]
+
+onIOError :: Monad m => a -> IOError -> m a
+onIOError v _ = return v
