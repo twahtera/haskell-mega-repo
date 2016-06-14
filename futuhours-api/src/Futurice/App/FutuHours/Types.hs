@@ -26,7 +26,7 @@ module Futurice.App.FutuHours.Types (
     MissingHoursReport,
     MissingHour(..),
     -- ** Balance
-    BalanceReport(..),
+    BalanceReport,
     Balance(..),
     -- * Power
     PowerUser(..),
@@ -41,29 +41,27 @@ module Futurice.App.FutuHours.Types (
 
 import Futurice.Prelude
 
-import Data.Aeson.Extra          (FromJSON (..), M, ToJSON (..), Value (..),
-                                  object, (.=), (.:), withObject)
-import Data.Csv                  (DefaultOrdered (..), FromRecord (..),
-                                  ToField (..), ToNamedRecord (..)
-                                  )
-import Data.GADT.Compare         ((:~:) (..), GCompare (..), GEq (..),
-                                  GOrdering (..))
-import Data.Swagger              (ToParamSchema, ToSchema (..))
-import Futurice.EnvConfig        (FromEnvVar (..))
-import Futurice.Generics         (sopDeclareNamedSchema, sopHeaderOrder,
-                                  sopParseJSON, sopParseRecord, sopToJSON,
-                                  sopToNamedRecord)
-import Lucid                     hiding (for_)
-import Servant                   (Capture, FromHttpApiData (..))
-import Servant.Docs              (DocCapture (..), ToCapture (..))
+import Data.Aeson.Extra   (FromJSON (..), M, ToJSON (..), Value (..), object,
+                           withObject, (.:), (.=))
+import Data.Csv           (DefaultOrdered (..), ToField (..),
+                           ToNamedRecord (..))
+import Data.GADT.Compare  ((:~:) (..), GCompare (..), GEq (..), GOrdering (..))
+import Data.Swagger       (ToParamSchema, ToSchema (..))
+import Futurice.EnvConfig (FromEnvVar (..))
+import Futurice.Generics  (sopDeclareNamedSchema, sopHeaderOrder, sopParseJSON,
+                           sopToJSON, sopToNamedRecord)
+import Lucid              hiding (for_)
+import Servant            (Capture, FromHttpApiData (..))
+import Servant.Docs       (DocCapture (..), ToCapture (..))
 
-import Futurice.Peano
-import qualified Futurice.IC as IList
-import Futurice.Report
+import qualified Futurice.IC     as IList
+import           Futurice.Peano
+import           Futurice.Report
 
 import qualified Data.Aeson                           as Aeson
 import qualified Data.Aeson.Types                     as Aeson
 import qualified Data.HashMap.Strict                  as HM
+import qualified Data.Set                             as Set
 import qualified Data.Swagger                         as Swagger
 import qualified Data.Text                            as T
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
@@ -225,62 +223,6 @@ instance ToJSON Timereport where toJSON = sopToJSON
 instance ToSchema Timereport where declareNamedSchema = sopDeclareNamedSchema
 
 -------------------------------------------------------------------------------
--- Balance
--------------------------------------------------------------------------------
-
-data Balance = Balance
-    { balanceUser         :: !FUMUsername
-    , balanceName         :: !Text
-    , balanceHours        :: !Int
-    , balanceMissingHours :: !Int
-    }
-    deriving (Eq, Ord, Show, Typeable, Generic)
-
-deriveGeneric ''Balance
-
-instance ToJSON Balance where toJSON = sopToJSON
-instance ToSchema Balance where declareNamedSchema = sopDeclareNamedSchema
-
-data BalanceReport = BalanceReport
-    { balanceReportData :: !(Vector Balance)
-    }
-
-deriveGeneric ''BalanceReport
-
-instance ToJSON BalanceReport where toJSON = sopToJSON
-instance ToSchema BalanceReport where declareNamedSchema = sopDeclareNamedSchema
-
-instance ToHtml BalanceReport where
-    toHtml (BalanceReport vs) = doctypehtml_ $ do
-      head_ $ do
-          title_ $ "Hour balance report"
-          style_ $ T.unlines
-              [ ".emphasize td { font-weight: bold; background: #eee }"
-              , ".emphasize2 td { font-style: italic; background: #efe; }"
-              ]
-      body_ $ do
-          h1_ $ "Hour balance report"
-          table_ $ do
-              tr_ $ do
-                  th_ "Username"
-                  th_ "Name"
-                  th_ "Balance hours"
-                  th_ "Missing hours"
-                  th_ "Sum (balance + missing)"
-              for_ (sortBy (compare `on` balanceUser) . toList $ vs) $ \(Balance username name hours missing) -> do
-                  let diff = hours + missing
-                  let cls | diff <= -20 || diff >= 40   = "emphasize"
-                          | hours <= -20 || hours >= 40 = "emphasize2"
-                          | otherwise                   = "normal"
-                  tr_ [class_ cls] $ do
-                      td_ $ toHtmlRaw username
-                      td_ $ toHtmlRaw name
-                      td_ $ toHtmlRaw $ show hours
-                      td_ $ toHtmlRaw $ show missing
-                      td_ $ toHtmlRaw $ show diff
-    toHtmlRaw = toHtml
-
--------------------------------------------------------------------------------
 -- Project
 -------------------------------------------------------------------------------
 
@@ -406,7 +348,7 @@ instance ToReportRow1 PerEmployee where
 
     liftReportRow _ f (PerEmployee n t c d) = map prepend $ f d
       where
-        prepend = overReportRow 
+        prepend = overReportRow
             $ IList.cons (toHtml n)
             . IList.cons (toHtml t)
             . IList.cons (toHtml c)
@@ -420,11 +362,55 @@ instance ToJSON1 PerEmployee where
         ]
 
 instance FromJSON1 PerEmployee where
-    liftParseJSON fr = withObject "PerEmployee" $ \obj -> PerEmployee 
+    liftParseJSON fr = withObject "PerEmployee" $ \obj -> PerEmployee
         <$> obj .: "name"
         <*> obj .: "team"
         <*> obj .: "contract"
         <*> (obj .: "data" >>= fr)
+
+-------------------------------------------------------------------------------
+-- Balance
+-------------------------------------------------------------------------------
+
+data Balance = Balance
+    { balanceHours        :: !Double
+    , balanceMissingHours :: !Double
+    }
+    deriving (Eq, Ord, Show, Typeable, Generic)
+
+instance ToReportRow Balance where
+    type ReportRowLen Balance = 'PS ('PS ('PS 'PZ))
+
+    reportHeader _ = ReportHeader
+        $ IList.cons "hours"
+        $ IList.cons "missing"
+        $ IList.cons "difference"
+        $ IList.nil
+
+    reportRow (Balance hours missing) = [r]
+      where
+        diff = hours + missing
+        cls | diff <= -20 || diff >= 40   = "emphasize"
+            | hours <= -20 || hours >= 40 = "emphasize2"
+            | otherwise                   = "normal"
+
+        r = ReportRow (Set.singleton cls)
+            $ IList.cons (toHtml $ show hours)
+            $ IList.cons (toHtml $ show missing)
+            $ IList.cons (toHtml $ show diff)
+            $ IList.nil
+
+deriveGeneric ''Balance
+
+instance ToJSON Balance where toJSON = sopToJSON
+instance FromJSON Balance where parseJSON = sopParseJSON
+instance ToSchema Balance where declareNamedSchema = sopDeclareNamedSchema
+
+type BalanceReport = Report
+    "Balance"
+    ReportGenerated
+    '[Vector, PerEmployee]
+    Balance
 
 -------------------------------------------------------------------------------
 -- Missing hours
@@ -452,7 +438,7 @@ instance ToReportRow MissingHour where
 
     reportRow (MissingHour d c) = [r]
       where
-        r = ReportRow 
+        r = ReportRow Set.empty
             $ IList.cons (toHtml $ show d)
             $ IList.cons (toHtml $ show c)
             $ IList.nil
@@ -462,9 +448,9 @@ deriveGeneric ''MissingHour
 instance ToJSON MissingHour where toJSON = sopToJSON
 instance FromJSON MissingHour where parseJSON = sopParseJSON
 instance ToSchema MissingHour where declareNamedSchema = sopDeclareNamedSchema
-instance DefaultOrdered MissingHour where headerOrder = sopHeaderOrder
-instance ToNamedRecord MissingHour where toNamedRecord = sopToNamedRecord
-instance FromRecord MissingHour where parseRecord = sopParseRecord
+--instance DefaultOrdered MissingHour where headerOrder = sopHeaderOrder
+--instance ToNamedRecord MissingHour where toNamedRecord = sopToNamedRecord
+--instance FromRecord MissingHour where parseRecord = sopParseRecord
 
 -------------------------------------------------------------------------------
 -- Power

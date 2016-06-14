@@ -39,6 +39,7 @@ import Data.Aeson.Extra                 (M (..))
 import Data.BinaryFromJSON              (BinaryFromJSON)
 import Data.Maybe                       (fromJust)
 import Data.Monoid (Sum (..))
+import Data.Ord                         (comparing)
 import Data.Pool                        (withResource)
 import Data.Time                        (UTCTime (..), addDays, getCurrentTime)
 import Data.Time.Fxtra                  (beginningOfPrevMonth,
@@ -46,6 +47,8 @@ import Data.Time.Fxtra                  (beginningOfPrevMonth,
 import Database.PostgreSQL.Simple.Fxtra (execute)
 import Generics.SOP                     (All, NP(..), I(..))
 import Servant                          (ServantErr)
+
+import Futurice.Report
 
 import Servant.Server (err400, err404)
 
@@ -129,26 +132,35 @@ balanceReportEndpoint = DefaultableEndpoint
   where
     balanceReport :: Ctx -> () -> IO BalanceReport
     balanceReport ctx () = do
+        now <- getCurrentTime
         interval <- getInterval
         ids <- HM.toList <$> readTVarIO (ctxPlanmillUserLookup ctx)
         executeCachedAdminPlanmill ctx p $
-            BalanceReport . V.fromList <$>
+            Report (ReportGenerated now) . V.fromList . sortBy cmpPE <$>
                 traverse (getBalance interval) ids
       where
         p = Proxy :: Proxy '[ PM.TimeBalance, PM.User, PM.Team, PM.Timereports, PM.UserCapacities, PM.Meta ]
+
+        cmpPE = comparing perEmployeeTeam <> comparing perEmployeeName
 
         getInterval = do
             b <- getCurrentDayInFinland
             let a = beginningOfPrevMonth b
             return (fromJust $ PM.mkInterval a b)
 
-        getBalance interval (fumId, pmUser) = do
+        getBalance interval (_fumId, pmUser) = do
             let pmId = pmUser ^. PM.identifier
-            mh <- missingHoursForUser interval pmId
-            let mh' = getSum . (foldMap . foldMap) (Sum . missingHourCapacity) $ mh
-            let name = PM.uFirstName pmUser <> " " <> PM.uLastName pmUser
+
             PM.TimeBalance balanceMinutes <- planmillAction $ PM.userTimeBalance pmId
-            pure $ Balance fumId name (round $ balanceMinutes / 60) (round mh')
+            let balanceMinutes' = balanceMinutes / 60
+
+            mh <- missingHoursForUser interval pmId
+
+            -- We sum data from missing hour report
+            let balance ms = Balance
+                    balanceMinutes'
+                    (getSum . foldMap (Sum . missingHourCapacity) $ ms)
+            pure $ balance <$> mh
 
 getLegacyUsers
     :: (MonadIO m, MonadError ServantErr m)
