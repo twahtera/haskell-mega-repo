@@ -16,6 +16,7 @@ packages:
 - futulogo/
 - futurice-foundation/
 - futurice-prelude/
+- futurice-reports/
 - github-dashboard/
 - haxl-fxtra/
 - haxl-typed/

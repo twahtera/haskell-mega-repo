@@ -145,7 +145,7 @@ balanceReportEndpoint = DefaultableEndpoint
         getBalance interval (fumId, pmUser) = do
             let pmId = pmUser ^. PM.identifier
             mh <- missingHoursForUser interval pmId
-            let mh' = getSum . foldMap (Sum . missingHourCapacity) $ mh
+            let mh' = getSum . (foldMap . foldMap) (Sum . missingHourCapacity) $ mh
             let name = PM.uFirstName pmUser <> " " <> PM.uLastName pmUser
             PM.TimeBalance balanceMinutes <- planmillAction $ PM.userTimeBalance pmId
             pure $ Balance fumId name (round $ balanceMinutes / 60) (round mh')

@@ -57,6 +57,8 @@ import Lucid                     hiding (for_)
 import Servant                   (Capture, FromHttpApiData (..))
 import Servant.Docs              (DocCapture (..), ToCapture (..))
 
+import Futurice.Peano
+import qualified Futurice.IC as IList
 import Futurice.Report
 
 import qualified Data.Aeson                           as Aeson
@@ -384,39 +386,45 @@ instance ToSchema Hour where
 -- Reports
 -------------------------------------------------------------------------------
 
--- | TODO: Change to @PerEmployee a@
-data PerEmployee f a = PerEmployee
+-- | Todo move to @futurice-integrations@
+data PerEmployee a = PerEmployee
     { perEmployeeName     :: !Text
     , perEmployeeTeam     :: !Text
     , perEmployeeContract :: !Text
-    , perEmployeeData     :: !(f a)
+    , perEmployeeData     :: !a
     }
     deriving (Functor, Foldable, Traversable)
 
-instance ToReportRow1 f => ToReportRow1 (PerEmployee f) where
-   liftReportHeader = go
-      where
-        go :: forall a. (Proxy a -> [Text]) -> Proxy (PerEmployee f a) -> [Text]
-        go f _ = ["name", "team", "contract"] ++ liftReportHeader f (Proxy :: Proxy (f a))
+instance ToReportRow1 PerEmployee where
+    type ReportRowLen1 PerEmployee n = 'PS ('PS ('PS n))
 
-   liftReportRow f (PerEmployee n t c d) = map (items ++) $ liftReportRow f d
-      where
-        items = [ toHtml n, toHtml t, toHtml c]
+    liftReportHeader _ f _ = ReportHeader
+        $ IList.cons "name"
+        $ IList.cons "team"
+        $ IList.cons "contract"
+        $ getReportHeader (f Proxy)
 
-instance ToJSON1 f => ToJSON1 (PerEmployee f) where
+    liftReportRow _ f (PerEmployee n t c d) = map prepend $ f d
+      where
+        prepend = overReportRow 
+            $ IList.cons (toHtml n)
+            . IList.cons (toHtml t)
+            . IList.cons (toHtml c)
+
+instance ToJSON1 PerEmployee where
     liftToJSON toJ (PerEmployee n t c d) = object
         [ "name"     .= n
         , "team"     .= t
         , "contract" .= c
-        , "data"     .= liftToJSON toJ d
+        , "data"     .= toJ d
         ]
 
-instance FromJSON1 f => FromJSON1 (PerEmployee f) where
+instance FromJSON1 PerEmployee where
     liftParseJSON fr = withObject "PerEmployee" $ \obj -> PerEmployee 
         <$> obj .: "name"
         <*> obj .: "team"
         <*> obj .: "contract"
-        <*> (obj .: "data" >>= liftParseJSON fr)
+        <*> (obj .: "data" >>= fr)
 
 -------------------------------------------------------------------------------
 -- Missing hours
@@ -425,7 +433,7 @@ instance FromJSON1 f => FromJSON1 (PerEmployee f) where
 type MissingHoursReport = Report
     "Missing hours"
     ReportGenerated
-    '[HashMap FUMUsername, PerEmployee Vector]
+    '[HashMap FUMUsername, PerEmployee, Vector]
     MissingHour
 
 data MissingHour = MissingHour
@@ -435,8 +443,19 @@ data MissingHour = MissingHour
     deriving (Eq, Ord, Show, Typeable, Generic)
 
 instance ToReportRow MissingHour where
-    reportHeader _ = ["day", "capacity"]
-    reportRow (MissingHour d c) = [[toHtml $ show d, toHtml $ show c]]
+    type ReportRowLen MissingHour = 'PS ('PS 'PZ)
+
+    reportHeader _ = ReportHeader
+        $ IList.cons "day"
+        $ IList.cons "capacity"
+        $ IList.nil
+
+    reportRow (MissingHour d c) = [r]
+      where
+        r = ReportRow 
+            $ IList.cons (toHtml $ show d)
+            $ IList.cons (toHtml $ show c)
+            $ IList.nil
 
 deriveGeneric ''MissingHour
 

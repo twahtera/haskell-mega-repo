@@ -41,10 +41,13 @@ library:
     - fum-client
     - futulogo
     - futurice-prelude >=0.1.9.0
+    - futurice-reports
     - generics-sop >=0.2.1.0 && <0.3
     - generics-sop-lens >=0.1.0.0 && <0.2
     - hashable
     - haxl                  >=0.3   && <0.4
+    - MonadRandom
+    - QuickCheck
     - haxl-fxtra
     - haxl-typed
     - http-client
@@ -57,7 +60,6 @@ library:
     - markdown
     - monad-http
     - monad-logger
-    - MonadRandom
     - mtl
     - operational
     - parsec
@@ -65,7 +67,6 @@ library:
     - planmill-client
     - postgresql-simple
     - postgresql-simple-url
-    - QuickCheck
     - quickcheck-instances
     - reflection
     - regex-applicative-text
