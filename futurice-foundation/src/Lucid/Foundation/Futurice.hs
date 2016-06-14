@@ -18,6 +18,8 @@ import Data.Text        (Text)
 import Lucid
 import Lucid.Foundation hiding (large_, row_)
 
+import qualified Data.Text as T
+
 embeddedFoundationStyle_ :: Monad m => HtmlT m ()
 embeddedFoundationStyle_ =
     style_ [type_ "text/css"] ($(embedStringFile "foundation.min.css") :: String)
@@ -37,4 +39,9 @@ page_ t b = doctypehtml_ $ do
         meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1.0"]
         meta_ [httpEquiv_ "x-ua-compatible", content_"ie=edge"]
         embeddedFoundationStyle_
+        -- TODO: rework, use clay-package
+        style_ $ T.unlines
+            [ ".emphasize td { font-weight: bold; background: #eee }"
+            , ".emphasize2 td { font-style: italic; background: #efe; }"
+            ]
     body_ b

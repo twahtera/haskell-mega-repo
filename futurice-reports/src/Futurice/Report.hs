@@ -39,6 +39,8 @@ import Lucid hiding (for_)
 import Lucid.Foundation.Futurice (large_, page_, row_)
 
 import qualified Futurice.IC as IList
+import qualified Data.Text as T
+import qualified Data.Set as Set
 
 -------------------------------------------------------------------------------
 -- ReportGenerated
@@ -84,16 +86,19 @@ instance FromJSON1 Vector where
 newtype ReportHeader (n :: Peano) = ReportHeader { getReportHeader :: IList.IList n Text }
 
 -- | Single row of the report.
--- 
+--
 -- *TODO:* add styles
-newtype ReportRow m (n :: Peano) = ReportRow { getReportRow :: IList.IList n (HtmlT m ()) }
+data ReportRow m (n :: Peano) = ReportRow
+    { getReportRowCls :: Set Text
+    , getReportRow :: !(IList.IList n (HtmlT m ()))
+    }
 
 -- | Map over report row contents.
 overReportRow
     :: Monad m
     => (IList.IList n (HtmlT m ()) -> IList.IList n' (HtmlT m ()))
     -> ReportRow m n -> ReportRow m n'
-overReportRow f = ReportRow . f . getReportRow
+overReportRow f (ReportRow cls row) = ReportRow cls . f $ row
 
 -- | Transform type to @['ReportRow']@.
 class ToReportRow a where
@@ -105,7 +110,7 @@ class ToReportRow a where
 
 -- | Unary version of 'ToReportRow'.
 class ToReportRow1 f where
-    -- | How much fields are added. 
+    -- | How much fields are added.
     type ReportRowLen1 f (n :: Peano) :: Peano
 
     liftReportHeader
@@ -160,7 +165,7 @@ instance ToReportRow1 Vector where
         -> ReportHeader (ReportRowLen1 Vector n)
     liftReportHeader _ f _ = f Proxy
 
-    liftReportRow _ = foldMap 
+    liftReportRow _ = foldMap
 
 -------------------------------------------------------------------------------
 -- Cassava
@@ -175,10 +180,10 @@ instance ToReportRow1 Vector where
 -- | Nested application
 --
 -- @
--- >>> :kind! ComposeFold '[[], Maybe, Either Bool] Int 
+-- >>> :kind! ComposeFold '[[], Maybe, Either Bool] Int
 -- ComposeFold '[[], Maybe, Either Bool] Int :: *
 -- = [Maybe (Either Bool Int)]
--- @ 
+-- @
 type family ComposeFold (fs :: [* -> *]) (a :: *) :: * where
     ComposeFold '[]       a = a
     ComposeFold (f ': fs) a = f (ComposeFold fs a)
@@ -256,16 +261,21 @@ instance (KnownSymbol name, ToHtml params, All ToReportRow1 fs, ToReportRow a)
             thead_ $
                 tr_ $ for_ (getReportHeader $ foldReportHeader proxyFs proxyA Proxy) $ \h ->
                     th_ $ toHtml h
-            tbody_ $ for_ (foldReportRow proxyFs proxyA fs) $
-                tr_ . traverse_ td_ . getReportRow
+            tbody_ $ for_ (foldReportRow proxyFs proxyA fs) $ \(ReportRow cls row) ->
+                tr_ (cls' cls) $ traverse_ td_ row
       where
         proxyA = Proxy :: Proxy a
         proxyFs = Proxy :: Proxy fs
         title = symbolVal (Proxy :: Proxy name)
 
+        cls' :: Set Text -> [Attribute]
+        cls' cs
+            | Set.null cs = []
+            | otherwise   = [class_ $ T.intercalate " " $ toList cs]
+
 type family FoldReportLen fs a where
     FoldReportLen '[]       a = ReportRowLen a
-    FoldReportLen (f ': fs) a = ReportRowLen1 f (FoldReportLen fs a) 
+    FoldReportLen (f ': fs) a = ReportRowLen1 f (FoldReportLen fs a)
 
 foldReportHeader
     :: forall fs a. (SListI fs, All ToReportRow1 fs, ToReportRow a)
