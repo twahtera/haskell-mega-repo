@@ -52,6 +52,7 @@ library
     , servant-cassava
     , servant-client
     , servant-docs
+    , servant-lucid
     , servant-server
     , servant-status
     , servant-swagger

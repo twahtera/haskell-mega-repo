@@ -1,4 +1,4 @@
-flags: {}
+resolver: nightly-2016-05-29
 packages:
 - ansi-pretty/
 - avar/
@@ -29,20 +29,12 @@ packages:
 - servant-status/
 - spice-stats/
 - location:
-    git: https://github.com/ekmett/ad.git
-    commit: 9385c9c7326e1a457ed32317510dbc8f82f9c3ec
-  extra-dep: true
-- location:
     git: https://github.com/ekmett/parsers.git
     commit: f1fff116f277ffb733e6b6e281c3e7a1912e82d9
   extra-dep: true
 - location:
     git: https://github.com/ekmett/recursion-schemes.git
     commit: 129df9bb5c5630781ba0c2dd6def698fce0f44df
-  extra-dep: true
-- location:
-    git: https://github.com/ekmett/reducers.git
-    commit: 0e610b18eb48952cc62423eee094d86c952844b4
   extra-dep: true
 - location:
     git: https://github.com/facebook/Haxl.git
@@ -69,10 +61,6 @@ packages:
     commit: 0b00f8ed025eb67ecf3234045b40139306502666
   extra-dep: true
 - location:
-    git: https://github.com/phadej/threads.git
-    commit: f41d440bb9b77fdbd8eea4705c0f853456f6f120
-  extra-dep: true
-- location:
     git: https://github.com/phadej/time-parsers.git
     commit: bc49be701d00baf9f7f98c6214065a77cbd8d364
   extra-dep: true
@@ -89,6 +77,7 @@ packages:
     commit: 7a5c389046e071bafe7d196378c678ced0ab985f
   extra-dep: true
 extra-deps:
+- ad-4.3.2.1
 - aeson-compat-0.3.4.0
 - concurrent-extra-0.7.0.10
 - data-reify-0.6.1
@@ -104,14 +93,15 @@ extra-deps:
 - optional-args-1.0.1
 - placeholders-0.1
 - readable-0.3.1
-- reducers-3.12.2
+- reducers-3.12.1
 - rfc5051-0.1.0.3
 - servant-swagger-1.1
 - servant-swagger-ui-0.1.0.2.1.4
 - stm-containers-0.2.12
 - swagger2-2.1
+- threads-0.5.1.4
 - turtle-1.2.8
 - tz-0.1.1.1
 - wai-cors-0.2.4
 - wai-middleware-metrics-0.2.3
-resolver: nightly-2016-05-29
+flags: {}

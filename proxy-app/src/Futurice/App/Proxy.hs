@@ -15,12 +15,12 @@ module Futurice.App.Proxy (defaultMain) where
 import Futurice.Prelude
 import Prelude          ()
 
-import Data.Csv.Futurice
 import Futurice.Colour
 import Network.Wai
 import Servant
 import Servant.Cache.Class (DynMapCache)
 import Servant.Client
+import Servant.HTML.Lucid  (HTML)
 import Servant.Proxy
 import System.IO           (hPutStrLn, stderr)
 
@@ -29,10 +29,10 @@ import qualified Servant.Cache.Internal.DynMap as DynMap
 
 import Servant.Futurice
 
-import Futurice.App.FutuHours.Types (MissingHour)
+import Futurice.App.FutuHours.Types (MissingHoursReport)
 
-import Network.HTTP.Client     (Manager, newManager)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
+import Network.HTTP.Client             (Manager, newManager)
+import Network.HTTP.Client.TLS         (tlsManagerSettings)
 import Network.Wai.Middleware.HttpAuth (basicAuth)
 
 import Futurice.App.Proxy.Config
@@ -47,19 +47,25 @@ makeProxy
       ( Proxyable api
       , S (ProxyNamespace api :> ProxiedAPI api) ~ Server (ProxyNamespace api :> ProxiedAPI api)
       , (Manager -> BaseUrl -> C (ProxiedAPI api)) ~ Client (ProxiedAPI api)
-      , HasClient (ProxiedAPI api)
+      , (Manager -> BaseUrl -> C (ProxiedAPI api)) ~ Client (JSONAPI (ProxiedAPI api))
+      , HasClient (JSONAPI (ProxiedAPI api))
       )
     => Proxy api -> Ctx -> Server (ProxyNamespace api :> ProxiedAPI api)
-makeProxy _ ctx = proxy' p (client p manager baseurl)
+makeProxy _ ctx = proxy' p (client p' manager baseurl)
   where
     baseurl = ctxFutuhoursBaseurl ctx  -- TODO: make a class with Ctx -> BaseUrl
     manager = ctxManager ctx
+
+    p' :: Proxy (JSONAPI (ProxiedAPI api))
+    p' = Proxy
+
     p :: Proxy (ProxiedAPI api)
     p = Proxy
 
 data API = Futuhours
 
-type FutuhoursAPI = "reports" :> "missinghours-list" :> Get '[FutuCSV, JSON] [MissingHour]
+type FutuhoursAPI = "reports" :> "missinghours" :> Get '[HTML, JSON] MissingHoursReport
+
 instance Proxyable 'Futuhours where
     type ProxyNamespace 'Futuhours = "futuhours"
     type ProxiedAPI 'Futuhours = FutuhoursAPI

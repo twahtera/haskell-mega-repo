@@ -11,7 +11,6 @@ import Futurice.Prelude
 import Futurice.Colour
 import Servant
 import Servant.HTML.Lucid
-import Servant.CSV.Cassava
 import Servant.Futurice
 
 import Futurice.App.FutuHours.Types
@@ -28,8 +27,7 @@ type FutuHoursAPI = Get '[PlainText] Text
     :<|> "add-planmill-token" :> Capture "fum-id" FUMUsername :> ReqBody '[JSON] PlanmillApiKey :> Put '[JSON] ()
     :<|> "balances" :> Get '[HTML, JSON] BalanceReport
     :<|> "reports" :>
-        ( "missinghours" :> Capture "from" Day :> Capture "to" Day :> QueryParam "users" FUMUsernamesParam :> Get '[JSON] MissingHoursReport
-        :<|> "missinghours-list" :> QueryParam "from" Day :> QueryParam "to" Day :> QueryParam "users" FUMUsernamesParam :> Get '[(CSV', DefaultEncodeOpts), JSON] [MissingHour]
+        ( "missinghours" :> QueryParam "from" Day :> QueryParam "to" Day :> QueryParam "users" FUMUsernamesParam :> Get '[HTML, JSON] MissingHoursReport
         )
     :<|> "power" :>
         ( "users" :> Get '[JSON] (Vector PowerUser)

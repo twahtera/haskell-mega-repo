@@ -21,10 +21,9 @@ module Futurice.App.FutuHours.Types (
     User(..),
     Hour(..),
     -- * Reports
+    PerEmployee(..),
     -- ** Missing hours
-    MissingHoursReport(..),
-    unMissingHoursReport,
-    MissingHours(..),
+    MissingHoursReport,
     MissingHour(..),
     -- ** Balance
     BalanceReport(..),
@@ -42,18 +41,23 @@ module Futurice.App.FutuHours.Types (
 
 import Futurice.Prelude
 
-import Data.Aeson.Extra   (FromJSON (..), M, ToJSON (..), Value (..), object,
-                           (.=))
-import Data.Csv           (DefaultOrdered (..), FromRecord (..), ToField (..),
-                           ToNamedRecord (..))
-import Data.GADT.Compare  ((:~:) (..), GCompare (..), GEq (..), GOrdering (..))
-import Data.Swagger       (ToParamSchema, ToSchema (..))
-import Futurice.EnvConfig (FromEnvVar (..))
-import Futurice.Generics  (sopDeclareNamedSchema, sopHeaderOrder, sopParseJSON,
-                           sopParseRecord, sopToJSON, sopToNamedRecord)
-import Lucid
-import Servant            (Capture, FromHttpApiData (..))
-import Servant.Docs       (DocCapture (..), ToCapture (..))
+import Data.Aeson.Extra          (FromJSON (..), M, ToJSON (..), Value (..),
+                                  object, (.=), (.:), withObject)
+import Data.Csv                  (DefaultOrdered (..), FromRecord (..),
+                                  ToField (..), ToNamedRecord (..)
+                                  )
+import Data.GADT.Compare         ((:~:) (..), GCompare (..), GEq (..),
+                                  GOrdering (..))
+import Data.Swagger              (ToParamSchema, ToSchema (..))
+import Futurice.EnvConfig        (FromEnvVar (..))
+import Futurice.Generics         (sopDeclareNamedSchema, sopHeaderOrder,
+                                  sopParseJSON, sopParseRecord, sopToJSON,
+                                  sopToNamedRecord)
+import Lucid                     hiding (for_)
+import Servant                   (Capture, FromHttpApiData (..))
+import Servant.Docs              (DocCapture (..), ToCapture (..))
+
+import Futurice.Report
 
 import qualified Data.Aeson                           as Aeson
 import qualified Data.Aeson.Types                     as Aeson
@@ -122,6 +126,24 @@ instance ToJSON FUMUsername where
 #endif
 instance ToSchema FUMUsername
 instance ToParamSchema FUMUsername
+
+instance ToSchema a => ToSchema (HashMap FUMUsername a) where
+    declareNamedSchema _ = declareNamedSchema (Proxy :: Proxy (HashMap String a))
+
+hmMapKey :: (Eq k', Hashable k') => (k -> k') -> HashMap k v -> HashMap k' v
+hmMapKey f = HM.fromList . map (first f) . HM.toList
+
+instance ToJSON a => ToJSON (HashMap FUMUsername a) where
+    toJSON = toJSON . hmMapKey getFUMUsername
+
+instance ToJSON1 (HashMap FUMUsername) where
+    liftToJSON t = toJSON . fmap t
+
+instance FromJSON1 (HashMap FUMUsername) where
+    liftParseJSON p v = parseJSON v >>= traverse p
+
+instance FromJSON a => FromJSON (HashMap FUMUsername a) where
+    parseJSON = fmap (hmMapKey FUMUsername) . parseJSON
 
 instance ToCapture (Capture "fum-id" FUMUsername) where
     toCapture _ = DocCapture "fum-id" "FUM username"
@@ -243,7 +265,7 @@ instance ToHtml BalanceReport where
                   th_ "Balance hours"
                   th_ "Missing hours"
                   th_ "Sum (balance + missing)"
-              flip traverse_ (sortBy (compare `on` balanceUser) . toList $ vs) $ \(Balance username name hours missing) -> do
+              for_ (sortBy (compare `on` balanceUser) . toList $ vs) $ \(Balance username name hours missing) -> do
                   let diff = hours + missing
                   let cls | diff <= -20 || diff >= 40   = "emphasize"
                           | hours <= -20 || hours >= 40 = "emphasize2"
@@ -362,60 +384,68 @@ instance ToSchema Hour where
 -- Reports
 -------------------------------------------------------------------------------
 
-newtype MissingHoursReport = MissingHoursReport (HashMap FUMUsername MissingHours)
-    deriving (Show)
+-- | TODO: Change to @PerEmployee a@
+data PerEmployee f a = PerEmployee
+    { perEmployeeName     :: !Text
+    , perEmployeeTeam     :: !Text
+    , perEmployeeContract :: !Text
+    , perEmployeeData     :: !(f a)
+    }
+    deriving (Functor, Foldable, Traversable)
 
--- | TODO: rename to @getMissingHoursReport@ or so.
-unMissingHoursReport :: MissingHoursReport -> HashMap FUMUsername MissingHours
-unMissingHoursReport (MissingHoursReport r) = r
+instance ToReportRow1 f => ToReportRow1 (PerEmployee f) where
+   liftReportHeader = go
+      where
+        go :: forall a. (Proxy a -> [Text]) -> Proxy (PerEmployee f a) -> [Text]
+        go f _ = ["name", "team", "contract"] ++ liftReportHeader f (Proxy :: Proxy (f a))
 
-instance ToJSON MissingHoursReport where
-    toJSON (MissingHoursReport mhs) = toJSON . HM.fromList . map (first getFUMUsername) . HM.toList $ mhs
+   liftReportRow f (PerEmployee n t c d) = map (items ++) $ liftReportRow f d
+      where
+        items = [ toHtml n, toHtml t, toHtml c]
 
--- | TODO:
-instance ToSchema MissingHoursReport where
-    declareNamedSchema _ = pure $
-        Swagger.NamedSchema (Just "Missing Hours report") mempty
+instance ToJSON1 f => ToJSON1 (PerEmployee f) where
+    liftToJSON toJ (PerEmployee n t c d) = object
+        [ "name"     .= n
+        , "team"     .= t
+        , "contract" .= c
+        , "data"     .= liftToJSON toJ d
+        ]
 
-data MissingHours = MissingHours
-   { missingHoursName     :: !Text
-   , missingHoursTeam     :: !Text
-   , missingHoursContract :: !Text
-   , missingHoursDays     :: !(M (Map Day Double)) -- Hours per day
+instance FromJSON1 f => FromJSON1 (PerEmployee f) where
+    liftParseJSON fr = withObject "PerEmployee" $ \obj -> PerEmployee 
+        <$> obj .: "name"
+        <*> obj .: "team"
+        <*> obj .: "contract"
+        <*> (obj .: "data" >>= liftParseJSON fr)
+
+-------------------------------------------------------------------------------
+-- Missing hours
+-------------------------------------------------------------------------------
+
+type MissingHoursReport = Report
+    "Missing hours"
+    ReportGenerated
+    '[HashMap FUMUsername, PerEmployee Vector]
+    MissingHour
+
+data MissingHour = MissingHour
+   { missingHourDay      :: !Day
+   , missingHourCapacity :: !Double
    }
     deriving (Eq, Ord, Show, Typeable, Generic)
 
-instance ToJSON MissingHours where
-  toJSON = Aeson.genericToJSON opts
-      where
-        opts = Aeson.defaultOptions
-            { Aeson.fieldLabelModifier = camelTo . drop 12
-            }
-
-instance ToSchema MissingHours where
-    declareNamedSchema = Swagger.genericDeclareNamedSchema opts
-      where
-        opts = Swagger.defaultSchemaOptions
-            { Swagger.fieldLabelModifier = camelTo . drop 12
-            }
-
-data MissingHour = MissingHour
-    { missingHourName     :: !Text
-    , missingHourTeam     :: !Text
-    , missingHourContract :: !Text
-    , missingHourDay      :: !Day
-    , missingHourHours    :: !Double
-    }
-    deriving (Eq, Ord, Show, Typeable, Generic)
+instance ToReportRow MissingHour where
+    reportHeader _ = ["day", "capacity"]
+    reportRow (MissingHour d c) = [[toHtml $ show d, toHtml $ show c]]
 
 deriveGeneric ''MissingHour
 
-instance DefaultOrdered MissingHour where headerOrder = sopHeaderOrder
-instance ToNamedRecord MissingHour where toNamedRecord = sopToNamedRecord
-instance FromRecord MissingHour where parseRecord = sopParseRecord
 instance ToJSON MissingHour where toJSON = sopToJSON
 instance FromJSON MissingHour where parseJSON = sopParseJSON
 instance ToSchema MissingHour where declareNamedSchema = sopDeclareNamedSchema
+instance DefaultOrdered MissingHour where headerOrder = sopHeaderOrder
+instance ToNamedRecord MissingHour where toNamedRecord = sopToNamedRecord
+instance FromRecord MissingHour where parseRecord = sopParseRecord
 
 -------------------------------------------------------------------------------
 -- Power
@@ -461,7 +491,7 @@ instance ToSchema PowerAbsence where declareNamedSchema = sopDeclareNamedSchema
 -------------------------------------------------------------------------------
 
 data EndpointTag a where
-    EMissingHoursList :: EndpointTag [MissingHour]
+    EMissingHours      :: EndpointTag MissingHoursReport
     -- missing hours from beginning of the previous month till today
     EPowerUsers       :: EndpointTag (Vector PowerUser)
     -- Users in planmill with some additional information
@@ -471,16 +501,16 @@ data EndpointTag a where
     deriving (Typeable)
 
 instance GEq EndpointTag where
-    geq EMissingHoursList EMissingHoursList = Just Refl
+    geq EMissingHours     EMissingHours     = Just Refl
     geq EPowerUsers       EPowerUsers       = Just Refl
     geq EPowerAbsences    EPowerAbsences    = Just Refl
     geq EBalanceReport    EBalanceReport    = Just Refl
     geq _ _ = Nothing
 
 instance GCompare EndpointTag where
-    gcompare EMissingHoursList EMissingHoursList = GEQ
-    gcompare EMissingHoursList _                 = GLT
-    gcompare _                 EMissingHoursList = GGT
+    gcompare EMissingHours     EMissingHours = GEQ
+    gcompare EMissingHours     _                 = GLT
+    gcompare _                 EMissingHours = GGT
     gcompare EPowerUsers       EPowerUsers       = GEQ
     gcompare EPowerUsers       _                 = GLT
     gcompare _                 EPowerUsers       = GGT
