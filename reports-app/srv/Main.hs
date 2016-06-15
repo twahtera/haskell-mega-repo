@@ -1,4 +1,4 @@
 module Main (main) where
-import Futurice.App.GitHubDashboard (defaultMain)
+import Futurice.App.Reports (defaultMain)
 main :: IO ()
 main = defaultMain

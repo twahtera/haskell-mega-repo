@@ -7,51 +7,49 @@
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-module Futurice.App.GitHubDashboard (defaultMain) where
+module Futurice.App.Reports (defaultMain) where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Control.Monad.Trans.Class  (lift)
 import Control.Monad.Trans.Except (ExceptT (..))
 import Development.GitRev         (gitHash)
-import Network.HTTP.Client        (Manager, newManager)
+import Network.HTTP.Client        (Manager, newManager, parseUrl, responseBody, httpLbs)
+import Data.Maybe (mapMaybe)
 import Network.HTTP.Client.TLS    (tlsManagerSettings)
 import Network.Wai
 import Servant
 import Servant.Cache.Class        (DynMapCache, cachedIO)
 import System.IO                  (hPutStrLn, stderr)
-import Data.Pool                   (Pool, createPool, withResource)
 
 import qualified Network.Wai.Handler.Warp      as Warp
 import qualified Servant.Cache.Internal.DynMap as DynMap
-import qualified Database.PostgreSQL.Simple    as Postgres
+import qualified GitHub as GH
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
+import qualified Data.ByteString.Lazy as LBS
 
-import Futurice.App.GitHubDashboard.Config
-import Futurice.App.GitHubDashboard.Logic
-import Futurice.App.GitHubDashboard.Server.API
+import Futurice.App.Reports.Config
+import Futurice.App.Reports.Logic
+import Futurice.App.Reports.Types
+import Futurice.App.Reports.Server.API
 
 -- | TODO: use reader monad
-type Ctx = (DynMapCache, Manager, Pool Postgres.Connection, Config)
+type Ctx = (DynMapCache, Manager, Config)
 
-servePullrequests :: Ctx -> ExceptT ServantErr IO PullRequests 
-servePullrequests (cache, mgr, connPool, cfg) =
-    lift $ cachedIO cache 600 () $ withResource connPool $ \conn ->
-    pullrequests mgr conn (cfgGhAuth cfg)
-
-serveIssues :: Ctx -> ExceptT ServantErr IO Issues 
-serveIssues (cache, mgr, connPool, cfg) =
-    lift $ cachedIO cache 600 () $ withResource connPool $ \conn ->
-    issues mgr conn (cfgGhAuth cfg)
+serveIssues :: Ctx -> ExceptT ServantErr IO IssueReport
+serveIssues (cache, mgr, cfg) =
+    lift $ cachedIO cache 600 () $ do
+        repos' <- repos mgr (cfgReposUrl cfg)
+        issueReport mgr (cfgGhAuth cfg) repos'
 
 -- | API server
-server :: Ctx -> Server DashboardAPI 
-server ctx = pure "Hello from github dashboard app"
-    :<|> servePullrequests ctx
+server :: Ctx -> Server ReportsAPI 
+server ctx = pure IndexPage
     :<|> serveIssues ctx
 
 -- | Server with docs and cache and status
-server' :: DynMapCache -> String -> Ctx -> Server DashboardAPI'
+server' :: DynMapCache -> String -> Ctx -> Server ReportsAPI'
 server' cache versionHash ctx = serverAvatarApi cache versionHash (server ctx)
 
 -- | Wai application
@@ -64,9 +62,23 @@ defaultMain = do
     cfg@Config {..} <- getConfig
     mgr <- newManager tlsManagerSettings
     cache <- DynMap.newIO
-    postgresPool <- createPool (Postgres.connect cfgPostgresConnInfo) Postgres.close 1 10 5
-    let ctx = (cache, mgr, postgresPool, cfg)
+    let ctx = (cache, mgr, cfg)
     let app' = app cache $(gitHash) ctx
     hPutStrLn stderr $ "Starting web server in port " ++ show cfgPort
     Warp.run cfgPort app'
 
+-------------------------------------------------------------------------------
+-- Temporary
+-------------------------------------------------------------------------------
+
+-- | We download the list
+repos :: Manager -> Text -> IO [GitHubRepo]
+repos mgr url = do
+    req <- parseUrl $ T.unpack url
+    res <- TE.decodeUtf8 . LBS.toStrict . responseBody <$> httpLbs req mgr
+    return $ mapMaybe f $ T.lines res
+  where
+    f line = case T.words line of
+      [o, n] -> Just $ GitHubRepo (GH.mkOwnerName o) (GH.mkRepoName n)
+      _      -> Nothing
+    
