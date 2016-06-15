@@ -141,7 +141,7 @@ balanceReportEndpoint = DefaultableEndpoint
       where
         p = Proxy :: Proxy '[ PM.TimeBalance, PM.User, PM.Team, PM.Timereports, PM.UserCapacities, PM.Meta ]
 
-        cmpPE = comparing perEmployeeTeam <> comparing perEmployeeName
+        cmpPE = (comparing employeeTeam <> comparing employeeName) `on` perFst
 
         getInterval = do
             b <- getCurrentDayInFinland

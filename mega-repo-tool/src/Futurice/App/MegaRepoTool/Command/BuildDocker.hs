@@ -24,7 +24,7 @@ apps =
     , ("favicon", "favicon")
     , ("spice-stats", "spice-stats-server")
     , ("futuhours-api", "futuhours-api-server")
-    , ("github-dashboard", "github-dashboard-server")
+    , ("reports-app", "reports-app-server")
     , ("proxy-app", "proxy-app-server")
     ]
 

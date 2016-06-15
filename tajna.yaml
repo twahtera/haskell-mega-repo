@@ -21,3 +21,6 @@ envs:
     PROXYAPP_USER: timo
     PROXYAPP_PASS: secret
     FUTUHOURS_BASEURL: http://localhost:8081
+
+    REPORTS_GH_REPOSURL:
+      secret: reports-gh-repos

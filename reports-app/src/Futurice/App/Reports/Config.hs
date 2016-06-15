@@ -1,4 +1,4 @@
-module Futurice.App.GitHubDashboard.Config (
+module Futurice.App.Reports.Config (
     Config(..),
     getConfig,
     ) where
@@ -7,13 +7,13 @@ import Futurice.Prelude
 import Prelude          ()
 
 import Futurice.EnvConfig
-import Database.PostgreSQL.Simple     (ConnectInfo)
 
 import qualified GitHub             as GH
 
 data Config = Config
-    { cfgGhAuth           :: !GH.Auth      -- ^ Github auth information
-    , cfgPostgresConnInfo :: !ConnectInfo
+    { cfgGhAuth           :: !GH.Auth
+      -- ^ Github auth information
+    , cfgReposUrl         :: !Text
     , cfgPort             :: !Int
       -- ^ Port to listen from, default is 'defaultPort'.
     }
@@ -22,6 +22,6 @@ data Config = Config
 getConfig :: IO Config
 getConfig = Config
     <$> parseEnvVar "GH_AUTH_TOKEN"
-    <*> getConnectInfo
+    <*> parseEnvVar "REPORTS_GH_REPOSURL"
     <*> parseDefaultPort
 

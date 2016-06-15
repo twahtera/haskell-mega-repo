@@ -18,6 +18,7 @@ module Futurice.Report (
     ToReportRow(..),
     ToReportRow1(..),
     -- * Useful helpers
+    Per(..),
     ReportGenerated(..),
     -- * Aeson helpers, in aeson-1
     ToJSON1(..),
@@ -62,7 +63,46 @@ instance ToHtml ReportGenerated where
     toHtmlRaw = toHtml
 
 -------------------------------------------------------------------------------
--- ToJSON1
+-- Per
+-------------------------------------------------------------------------------
+
+-- | Strict pair which is useful for adding layers to reports.
+-- Results into cartesian product in the report.
+--
+-- @
+-- type Rep = Report
+--     "Example report"
+--     '[Vector, Per Something, Vector]
+--     SomeVal
+-- @
+data Per a b = Per
+    { perFst :: !a
+    , perSnd :: !b
+    }
+    deriving (Eq, Show, Functor, Foldable, Traversable)
+
+instance ToJSON a => ToJSON1 (Per a) where
+    liftToJSON f (Per a b) = toJSON (a, f b)
+
+instance FromJSON a => FromJSON1 (Per a) where
+    liftParseJSON f j = parseJSON j >>= \(k, v) ->
+        Per k <$> f v
+
+instance ToReportRow a => ToReportRow1 (Per a) where
+    type ReportRowLen1 (Per a) n = PAdd (ReportRowLen a) n
+
+    liftReportHeader _ f _ =
+        let ReportHeader a = reportHeader (Proxy :: Proxy a)
+            ReportHeader b = f Proxy
+        in ReportHeader (IList.append a b)
+
+    liftReportRow _ f (Per a b) = do
+        ReportRow cls  row  <- reportRow a
+        ReportRow cls' row' <- f b
+        pure $ ReportRow (cls <> cls') (IList.append row row')
+
+-------------------------------------------------------------------------------
+-- ToJSON1 / FromJSON1
 -------------------------------------------------------------------------------
 
 -- | TODO: use `ToJSON1` from @aeson-1@
@@ -86,8 +126,6 @@ instance FromJSON1 Vector where
 newtype ReportHeader (n :: Peano) = ReportHeader { getReportHeader :: IList.IList n Text }
 
 -- | Single row of the report.
---
--- *TODO:* add styles
 data ReportRow m (n :: Peano) = ReportRow
     { getReportRowCls :: Set Text
     , getReportRow :: !(IList.IList n (HtmlT m ()))
@@ -101,6 +139,8 @@ overReportRow
 overReportRow f (ReportRow cls row) = ReportRow cls . f $ row
 
 -- | Transform type to @['ReportRow']@.
+--
+-- *TODO:* we could also separate "singleton" and "listy" types.
 class ToReportRow a where
     -- How much columns there is?
     type ReportRowLen a :: Peano

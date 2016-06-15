@@ -8,7 +8,8 @@ module Futurice.IC (
     IList,
     nil,
     singleton,
-    cons
+    cons,
+    append,
     ) where
 
 import Futurice.Prelude hiding (empty)
@@ -31,3 +32,6 @@ singleton x = IC [x]
 
 cons :: a -> IList n a -> IList ('PS n) a
 cons x (IC xs) = IC (x : xs)
+
+append :: IList n a -> IList m a -> IList (PAdd n m) a
+append (IC x) (IC y) = IC (x ++ y)

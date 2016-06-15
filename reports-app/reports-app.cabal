@@ -2,9 +2,9 @@
 --
 -- see: https://github.com/sol/hpack
 
-name:           github-dashboard
-version:        0.0.0.0
-synopsis:       Show open github issues and pull requests across repositories
+name:           reports-app
+version:        0
+synopsis:       Show various reports.
 description:    ...
 category:       Web
 homepage:       https://github.com/futurice/haskell-mega-repo#readme
@@ -23,6 +23,7 @@ source-repository head
 library
   hs-source-dirs:
       src
+  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable NoImplicitPrelude ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
       base >= 4.7 && <4.10
@@ -42,6 +43,8 @@ library
     , exceptions
     , filepath
     , futurice-prelude
+    , futurice-reports
+    , futurice-foundation
     , github >=0.15.0
     , hashable >= 1.2
     , http-client
@@ -74,7 +77,6 @@ library
     , servant-lucid
     , lucid
     , servant-server
-    , servant-docs
     , markdown
     , futulogo
     , servant-blaze
@@ -84,15 +86,14 @@ library
     , warp
     , gitrev
   exposed-modules:
-      Futurice.App.GitHubDashboard
-      Futurice.App.GitHubDashboard.Config
-      Futurice.App.GitHubDashboard.Logic
-      Futurice.App.GitHubDashboard.Orphans
-      Futurice.App.GitHubDashboard.Server.API
-      Futurice.App.GitHubDashboard.Types
+      Futurice.App.Reports
+      Futurice.App.Reports.Config
+      Futurice.App.Reports.Logic
+      Futurice.App.Reports.Server.API
+      Futurice.App.Reports.Types
   default-language: Haskell2010
 
-executable github-dashboard-server
+executable reports-app-server
   main-is: Main.hs
   hs-source-dirs:
       srv
@@ -115,6 +116,8 @@ executable github-dashboard-server
     , exceptions
     , filepath
     , futurice-prelude
+    , futurice-reports
+    , futurice-foundation
     , github >=0.15.0
     , hashable >= 1.2
     , http-client
@@ -147,7 +150,6 @@ executable github-dashboard-server
     , servant-lucid
     , lucid
     , servant-server
-    , servant-docs
     , markdown
     , futulogo
     , servant-blaze
@@ -156,5 +158,5 @@ executable github-dashboard-server
     , wai
     , warp
     , gitrev
-    , github-dashboard
+    , reports-app
   default-language: Haskell2010

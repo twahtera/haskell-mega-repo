@@ -1,6 +1,6 @@
-name: github-dashboard
-version: 0.0.0.0
-synopsis: Show open github issues and pull requests across repositories
+name: reports-app
+version: "0"
+synopsis: Show various reports.
 description: ...
 author: Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
@@ -28,6 +28,8 @@ dependencies:
   - exceptions
   - filepath
   - futurice-prelude
+  - futurice-reports
+  - futurice-foundation
   - github >=0.15.0
   - hashable >= 1.2
   - http-client
@@ -61,7 +63,6 @@ dependencies:
   - servant-lucid
   - lucid
   - servant-server
-  - servant-docs
   - markdown
   - futulogo
   - servant-blaze
@@ -73,11 +74,19 @@ dependencies:
 
 library:
   source-dirs: src
+  default-extensions:
+    - DeriveDataTypeable
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveGeneric
+    - DeriveTraversable
+    - NoImplicitPrelude
+    - ScopedTypeVariables
 
 executables:
-  github-dashboard-server:
+  reports-app-server:
     main: Main.hs
     source-dirs: srv
     ghc-options: -Wall -threaded
     dependencies:
-      - github-dashboard
+      - reports-app 

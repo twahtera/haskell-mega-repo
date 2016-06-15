@@ -17,7 +17,6 @@ packages:
 - futurice-foundation/
 - futurice-prelude/
 - futurice-reports/
-- github-dashboard/
 - haxl-fxtra/
 - haxl-typed/
 - mega-repo-tool/
@@ -26,6 +25,7 @@ packages:
 - planmill-client/
 - postgresql-simple-url/
 - proxy-app/
+- reports-app/
 - servant-cache/
 - servant-status/
 - spice-stats/
