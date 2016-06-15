@@ -10,7 +10,6 @@
 module PlanMill.Classes (
     HasCredentials(..),
     HasPlanMillBaseUrl(..),
-    MonadReader(..),
     MonadCRandom(..),
     MonadCRandom',
     CRandT(..),
@@ -23,7 +22,6 @@ import PlanMill.Internal.Prelude
 
 import Control.Monad.CryptoRandom (CRandT (..), GenError, MonadCRandom (..),
                                    evalCRandT)
-import Control.Monad.Reader       (MonadReader (..))
 import Control.Monad.Time         (MonadTime (..))
 
 import PlanMill.Types

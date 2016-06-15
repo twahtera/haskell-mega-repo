@@ -401,6 +401,13 @@ type BalanceReport = Report
     '[Vector, Per Employee]
     Balance
 
+instance IsReport
+    ReportGenerated
+    '[Vector, Per Employee]
+    Balance
+  where
+    reportExec = defaultReportExec
+
 -------------------------------------------------------------------------------
 -- Missing hours
 -------------------------------------------------------------------------------
@@ -410,6 +417,13 @@ type MissingHoursReport = Report
     ReportGenerated
     '[HashMap FUMUsername, Per Employee, Vector]
     MissingHour
+
+instance IsReport
+    ReportGenerated
+    '[HashMap FUMUsername, Per Employee, Vector]
+    MissingHour
+  where
+    reportExec = defaultReportExec
 
 data MissingHour = MissingHour
    { missingHourDay      :: !Day

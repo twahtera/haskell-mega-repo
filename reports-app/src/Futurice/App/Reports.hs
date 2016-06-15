@@ -22,6 +22,8 @@ import Servant
 import Servant.Cache.Class        (DynMapCache, cachedIO)
 import System.IO                  (hPutStrLn, stderr)
 
+import Futurice.Reflection.TypeLits (reifyTypeableSymbol)
+
 import qualified Network.Wai.Handler.Warp      as Warp
 import qualified Servant.Cache.Internal.DynMap as DynMap
 import qualified GitHub as GH
@@ -39,9 +41,11 @@ type Ctx = (DynMapCache, Manager, Config)
 
 serveIssues :: Ctx -> ExceptT ServantErr IO IssueReport
 serveIssues (cache, mgr, cfg) =
-    lift $ cachedIO cache 600 () $ do
+    lift $ reifyTypeableSymbol p $ cachedIO cache 600 () $ do
         repos' <- repos mgr (cfgReposUrl cfg)
         issueReport mgr (cfgGhAuth cfg) repos'
+  where
+    p = Proxy :: Proxy "GitHub issues"
 
 -- | API server
 server :: Ctx -> Server ReportsAPI 

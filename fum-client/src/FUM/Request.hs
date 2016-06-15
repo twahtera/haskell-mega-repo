@@ -15,7 +15,6 @@ import Futurice.Prelude
 import Prelude          ()
 
 import Control.Monad.Http.Class (MonadHttp, httpLbs)
-import Control.Monad.Reader     (MonadReader (..))
 import Data.Aeson.Compat        (FromJSON (..), decode, withObject, (.:))
 
 import qualified Data.Text.Encoding  as TE (encodeUtf8)

@@ -30,10 +30,6 @@ packages:
 - servant-status/
 - spice-stats/
 - location:
-    git: https://github.com/ekmett/parsers.git
-    commit: f1fff116f277ffb733e6b6e281c3e7a1912e82d9
-  extra-dep: true
-- location:
     git: https://github.com/ekmett/recursion-schemes.git
     commit: 129df9bb5c5630781ba0c2dd6def698fce0f44df
   extra-dep: true
@@ -55,15 +51,11 @@ packages:
   extra-dep: true
 - location:
     git: https://github.com/phadej/github.git
-    commit: 4dd62be8c5d380cc8f260cddb1510ac73f409663
+    commit: 9346f526e87d9d3811285f0d01c84a5905c17b8a
   extra-dep: true
 - location:
     git: https://github.com/phadej/stm-containers.git
     commit: 0b00f8ed025eb67ecf3234045b40139306502666
-  extra-dep: true
-- location:
-    git: https://github.com/phadej/time-parsers.git
-    commit: bc49be701d00baf9f7f98c6214065a77cbd8d364
   extra-dep: true
 - location:
     git: https://github.com/snapframework/io-streams-haproxy.git
@@ -80,7 +72,6 @@ packages:
 extra-deps:
 - ad-4.3.2.1
 - aeson-compat-0.3.4.0
-- concurrent-extra-0.7.0.10
 - data-reify-0.6.1
 - ekg-core-0.1.1.1
 - friendly-time-0.4
@@ -92,15 +83,16 @@ extra-deps:
 - monad-http-0.2.0.0
 - mwc-random-monad-0.7.3.1
 - optional-args-1.0.1
+- parsers-0.12.4
 - placeholders-0.1
 - readable-0.3.1
-- reducers-3.12.1
 - rfc5051-0.1.0.3
 - servant-swagger-1.1
 - servant-swagger-ui-0.1.0.2.1.4
 - stm-containers-0.2.12
 - swagger2-2.1
 - threads-0.5.1.4
+- time-parsers-0.1.0.0
 - turtle-1.2.8
 - tz-0.1.1.1
 - wai-cors-0.2.4

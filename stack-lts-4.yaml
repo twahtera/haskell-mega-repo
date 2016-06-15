@@ -53,6 +53,7 @@ extra-deps:
 - http2-1.6.0
 - JuicyPixels-3.2.7
 - linear-1.20.4
+- lucid-2.9.5
 - lucid-foundation-0.0.2.1
 - managed-1.0.5
 - monad-http-0.2.0.0

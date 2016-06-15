@@ -67,4 +67,3 @@ indexPage = doctypehtml_ $ body_ $ ul_ $ forM_ exampleWords $ \word ->
 #if !MIN_VERSION_transformers_compat(0,5,0)
 deriving instance Typeable Identity
 #endif
-deriving instance Typeable HtmlT

@@ -1,6 +1,5 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
@@ -8,28 +7,26 @@
 module Futurice.App.Reports.Types where
 
 import Futurice.Prelude
-import Prelude          ()
 
 import Data.Aeson                (ToJSON (..))
 import Data.Swagger              (ToSchema (..))
+import Data.Time.Format.Human    (humanReadableTime')
 import Futurice.Generics         (sopDeclareNamedSchema, sopToJSON)
-import Futurice.Peano (PThree, PTwo)
+import Futurice.Peano            (PThree, PTwo)
 import Futurice.Report
 import Lucid
 import Lucid.Foundation.Futurice
 
--- import Data.Time.Format.Human    (humanReadableTime')
 
 import qualified Futurice.IC as IList
 import qualified GitHub      as GH
-
 
 -------------------------------------------------------------------------------
 -- Indexpage
 -------------------------------------------------------------------------------
 
 data IndexPage = IndexPage
-    
+
 instance ToHtml IndexPage where
     toHtmlRaw = toHtml
     toHtml _ = page_ "Reports" $ do
@@ -45,6 +42,7 @@ data GitHubRepo = GitHubRepo
     { ghRepoOwner :: !(GH.Name GH.Owner)
     , ghRepoName  :: !(GH.Name GH.Repo)
     }
+    deriving (Typeable)
 
 instance ToReportRow GitHubRepo where
     type ReportRowLen GitHubRepo = PTwo
@@ -80,6 +78,8 @@ data IssueInfo = IssueInfo
 instance ToReportRow IssueInfo where
     type ReportRowLen IssueInfo = PThree
 
+    type ReportRowC IssueInfo m = MonadReader ReportGenerated m
+
     reportHeader _ = ReportHeader
         $ IList.cons "#"
         $ IList.cons "title"
@@ -88,9 +88,13 @@ instance ToReportRow IssueInfo where
 
     reportRow (IssueInfo n t c u) = [ReportRow mempty row]
       where
+        c' = do
+            ReportGenerated now <- ask
+            return $ humanReadableTime' now c
+
         row = IList.cons (a_ [href_ u] $ toHtml $ "#" ++ show n)
             $ IList.cons (a_ [href_ u] $ toHtml t)
-            $ IList.cons (toHtml $ show c)
+            $ IList.cons (c' >>= toHtml)
             $ IList.nil
 
 makeLenses ''IssueInfo
@@ -104,3 +108,6 @@ type IssueReport = Report
     ReportGenerated
     '[Vector, Per GitHubRepo, Vector]
     IssueInfo
+
+instance IsReport ReportGenerated '[Vector, Per GitHubRepo, Vector] IssueInfo where
+    reportExec = readerReportExec

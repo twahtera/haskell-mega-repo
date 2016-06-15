@@ -50,6 +50,7 @@ library
     , http-client
     , http-client-tls
     , http-types
+    , mtl
     , futurice-foundation
     , lens
     , optparse-applicative
@@ -123,6 +124,7 @@ executable reports-app-server
     , http-client
     , http-client-tls
     , http-types
+    , mtl
     , futurice-foundation
     , lens
     , optparse-applicative

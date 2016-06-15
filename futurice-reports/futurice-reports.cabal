@@ -33,13 +33,16 @@ library
       base                  >=4.7   && <4.10
     , aeson
     , aeson-compat
+    , constraints
     , containers
-    , generics-sop
-    , swagger2
-    , lucid
     , futurice-foundation
     , futurice-prelude
+    , generics-sop
+    , lucid
+    , mtl
+    , swagger2
     , text
+    , transformers
   exposed-modules:
       Futurice.IC
       Futurice.Report
