@@ -35,7 +35,7 @@ missingHoursForUser
        )
     => PM.Interval Day
     -> PM.UserId
-    -> m (PerEmployee (Vector MissingHour))
+    -> m (Per Employee (Vector MissingHour))
 missingHoursForUser interval uid = do
     u <- PM.planmillAction $ PM.user uid
     t <- traverse (PM.planmillAction . PM.team) (PM.uTeam u)
@@ -43,18 +43,17 @@ missingHoursForUser interval uid = do
     uc <- PM.planmillAction $ PM.userCapacity interval uid
     let uc' = capacities uc
     tr <- cachedTimereports interval uid
-    let perEmployee vs = PerEmployee
-            { perEmployeeName     = PM.uFirstName u <> " " <> PM.uLastName u
-            , perEmployeeTeam     = maybe "Unknown Team" PM.tName t
-            , perEmployeeContract = c
-            , perEmployeeData     = vs
+    let employee = Employee
+            { employeeName     = PM.uFirstName u <> " " <> PM.uLastName u
+            , employeeTeam     = maybe "Unknown Team" PM.tName t
+            , employeeContract = c
             }
     let f (day, cap) =  MissingHour
             { missingHourDay      = day
             , missingHourCapacity = cap
             }
     let tr' = V.fromList $ map f $ Map.toList $ Map.differenceWith minus uc' $ reportedDays tr
-    return $ perEmployee tr'
+    return $ Per employee tr'
   where
     -- For now show only days without any hour markings
     minus :: Double -> Double -> Maybe Double
@@ -102,7 +101,7 @@ missingHours now pmUsers interval usernames = do
         $ usernames'
     return $ Report (ReportGenerated now) rs
   where
-    f :: [(k, PM.UserId)] -> m [(k, PerEmployee (Vector MissingHour))]
+    f :: [(k, PM.UserId)] -> m [(k, Per Employee (Vector MissingHour))]
     f = (traverse . traverse) (missingHoursForUser interval)
 
     usernames' :: [FUMUsername]

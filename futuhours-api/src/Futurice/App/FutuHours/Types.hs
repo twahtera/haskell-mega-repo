@@ -21,7 +21,7 @@ module Futurice.App.FutuHours.Types (
     User(..),
     Hour(..),
     -- * Reports
-    PerEmployee(..),
+    Employee(..),
     -- ** Missing hours
     MissingHoursReport,
     MissingHour(..),
@@ -42,7 +42,7 @@ module Futurice.App.FutuHours.Types (
 import Futurice.Prelude
 
 import Data.Aeson.Extra   (FromJSON (..), M, ToJSON (..), Value (..), object,
-                           withObject, (.:), (.=))
+                           (.=))
 import Data.Csv           (DefaultOrdered (..), ToField (..),
                            ToNamedRecord (..))
 import Data.GADT.Compare  ((:~:) (..), GCompare (..), GEq (..), GOrdering (..))
@@ -329,44 +329,33 @@ instance ToSchema Hour where
 -------------------------------------------------------------------------------
 
 -- | Todo move to @futurice-integrations@
-data PerEmployee a = PerEmployee
-    { perEmployeeName     :: !Text
-    , perEmployeeTeam     :: !Text
-    , perEmployeeContract :: !Text
-    , perEmployeeData     :: !a
+data Employee = Employee
+    { employeeName     :: !Text
+    , employeeTeam     :: !Text
+    , employeeContract :: !Text
     }
-    deriving (Functor, Foldable, Traversable)
 
-instance ToReportRow1 PerEmployee where
-    type ReportRowLen1 PerEmployee n = 'PS ('PS ('PS n))
+deriveGeneric ''Employee
 
-    liftReportHeader _ f _ = ReportHeader
+instance ToReportRow Employee where
+    type ReportRowLen Employee = PThree
+
+    reportHeader _ = ReportHeader
         $ IList.cons "name"
         $ IList.cons "team"
         $ IList.cons "contract"
-        $ getReportHeader (f Proxy)
+        $ IList.nil
 
-    liftReportRow _ f (PerEmployee n t c d) = map prepend $ f d
+    reportRow (Employee n t c) = [r]
       where
-        prepend = overReportRow
+        r = ReportRow mempty
             $ IList.cons (toHtml n)
-            . IList.cons (toHtml t)
-            . IList.cons (toHtml c)
+            $ IList.cons (toHtml t)
+            $ IList.cons (toHtml c)
+            $ IList.nil
 
-instance ToJSON1 PerEmployee where
-    liftToJSON toJ (PerEmployee n t c d) = object
-        [ "name"     .= n
-        , "team"     .= t
-        , "contract" .= c
-        , "data"     .= toJ d
-        ]
-
-instance FromJSON1 PerEmployee where
-    liftParseJSON fr = withObject "PerEmployee" $ \obj -> PerEmployee
-        <$> obj .: "name"
-        <*> obj .: "team"
-        <*> obj .: "contract"
-        <*> (obj .: "data" >>= fr)
+instance ToJSON Employee where toJSON = sopToJSON
+instance FromJSON Employee where parseJSON = sopParseJSON
 
 -------------------------------------------------------------------------------
 -- Balance
@@ -379,7 +368,7 @@ data Balance = Balance
     deriving (Eq, Ord, Show, Typeable, Generic)
 
 instance ToReportRow Balance where
-    type ReportRowLen Balance = 'PS ('PS ('PS 'PZ))
+    type ReportRowLen Balance = PThree
 
     reportHeader _ = ReportHeader
         $ IList.cons "hours"
@@ -409,7 +398,7 @@ instance ToSchema Balance where declareNamedSchema = sopDeclareNamedSchema
 type BalanceReport = Report
     "Balance"
     ReportGenerated
-    '[Vector, PerEmployee]
+    '[Vector, Per Employee]
     Balance
 
 -------------------------------------------------------------------------------
@@ -419,7 +408,7 @@ type BalanceReport = Report
 type MissingHoursReport = Report
     "Missing hours"
     ReportGenerated
-    '[HashMap FUMUsername, PerEmployee, Vector]
+    '[HashMap FUMUsername, Per Employee, Vector]
     MissingHour
 
 data MissingHour = MissingHour
