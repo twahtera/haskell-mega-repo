@@ -104,7 +104,11 @@ defaultMain = do
     cache <- DynMap.newIO
     futuhoursBaseurl <- parseBaseUrl cfgFutuhoursBaseurl
     let ctx = Ctx mgr futuhoursBaseurl
-    let checkCreds u p = pure (u == cfgBasicAuthUser && p == cfgBasicAuthPass)
+    let checkCreds u p = if u == cfgBasicAuthUser && p == cfgBasicAuthPass
+        then pure True
+        else do
+            hPutStrLn stderr $ "Invalid login with: " ++ show (u, p)
+            pure False
     let app' = basicAuth checkCreds "P-R-O-X-Y" $ app cache ctx
     hPutStrLn stderr "Starting web server"
     Warp.run cfgPort app'
