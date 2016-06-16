@@ -57,7 +57,7 @@ fumGithubReport mgr cfg = do
     now <- getCurrentTime
     fs <- fumUsers
     gs <- githubUsers
-    return $ Report (ReportGenerated now) $ makeReport gs fs
+    return $ Report (FumGithubReportParams now $ cfgFumPubUrl cfg) $ makeReport gs fs
   where
     fumUsers :: IO (Vector FUMUser)
     fumUsers = V.fromList . mapMaybe mk . V.toList <$>

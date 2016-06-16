@@ -30,7 +30,6 @@ module Futurice.Report (
 import Futurice.Prelude
 import Futurice.Peano
 
-import Control.Monad.Reader (runReader, Reader)
 import Data.Functor.Identity (Identity (..))
 import Data.Aeson.Compat (FromJSON (..), ToJSON (..), object, withObject,
                           (.:), (.=))
@@ -239,11 +238,11 @@ ntHtmlT :: (forall b. m b -> n b) -> HtmlT m a -> HtmlT n a
 ntHtmlT nt (HtmlT x) = HtmlT (nt x)
 
 readerReportExec
-    :: (ReportRowC a (Reader params))
+    :: (ReportRowC a ((->) params))
     => Proxy a -> params
     -> (forall m. Dict (Monad m, ReportRowC a m) -> HtmlT m ())
     -> Html ()
-readerReportExec _ params f = ntHtmlT (Identity . flip runReader params) (f Dict)
+readerReportExec _ params f = ntHtmlT (Identity . ($ params)) (f Dict)
 
 -------------------------------------------------------------------------------
 -- Aeson instances

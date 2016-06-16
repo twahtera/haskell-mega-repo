@@ -5,11 +5,15 @@
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
+---
+{-# LANGUAGE ConstraintKinds, PolyKinds, UndecidableInstances, RankNTypes, GADTs, InstanceSigs #-}
 module Futurice.App.Reports.Types where
 
 import Futurice.Prelude
 
+import Control.Monad.Trans.Class (lift)
 import Data.Aeson                (ToJSON (..))
+import Data.Constraint (Dict (..))
 import Data.Swagger              (ToSchema (..))
 import Data.These                (These (..))
 import Data.Time.Format.Human    (humanReadableTime')
@@ -152,6 +156,7 @@ instance ToReportRow GitHubUser where
 
 instance ToReportRow FUMUser where
     type ReportRowLen FUMUser = PThree
+    type ReportRowC FUMUser m = MonadReader' HasFUMPublicURL m
 
     reportHeader _ = ReportHeader
         $ IList.cons "FUM name"
@@ -159,17 +164,58 @@ instance ToReportRow FUMUser where
         $ IList.cons "FUM GH login"
         $ IList.nil
 
-    reportRow (FUMUser n l g) = [ReportRow mempty row]
-      where
-        row = IList.cons (toHtml n)
-            $ IList.cons (toHtml l)
-            $ IList.cons (a_ [href_ $ "https://github.com/" <> g] $ toHtml g)
-            $ IList.nil
+    reportRow
+        :: forall m. (Monad m, ReportRowC FUMUser m)
+        => FUMUser -> [ReportRow m (ReportRowLen FUMUser)]
+    reportRow (FUMUser n l g) = case monadReaderUnwrap :: E HasFUMPublicURL m of
+        MkE Dict -> let
+            l' = do
+                u <- lift (view fumPublicUrl)
+                a_ [href_ $ u <> "/fum/users/" <> l <> "/"] $ toHtml l
+            row = IList.cons (toHtml n)
+                $ IList.cons l'
+                $ IList.cons (a_ [href_ $ "https://github.com/" <> g] $ toHtml g)
+                $ IList.nil
+            in [ReportRow mempty row]
+
+data FumGithubReportParams = FumGithubReportParams !UTCTime Text
+    deriving (Typeable)
+
+instance ToHtml FumGithubReportParams where
+    toHtml (FumGithubReportParams r _) = toHtml $ show r
+    toHtmlRaw = toHtml
+
+instance ToJSON FumGithubReportParams where
+    toJSON (FumGithubReportParams t _) = toJSON t
 
 type FumGitHubReport = Report
     "Users in FUM <-> GitHub"
-    ReportGenerated
+    FumGithubReportParams
     (Vector (These GitHubUser FUMUser))
 
-instance IsReport ReportGenerated (Vector (These GitHubUser FUMUser)) where
-    reportExec = defaultReportExec
+instance IsReport FumGithubReportParams (Vector (These GitHubUser FUMUser)) where
+    reportExec = readerReportExec
+
+-- | *TODO:* move to @futurice-integrations@ package
+
+class HasFUMPublicURL env where
+    fumPublicUrl :: Lens' env Text
+
+instance HasFUMPublicURL FumGithubReportParams where
+    fumPublicUrl = lens t f
+      where
+        t (FumGithubReportParams _ x) = x
+        f (FumGithubReportParams y _) = FumGithubReportParams y
+
+-------------------------------------------------------------------------------
+-- This might be a bad idea?
+-------------------------------------------------------------------------------
+
+data E envC m where
+    MkE :: Dict (MonadReader env m, envC env) -> E envC m
+
+class MonadReader' envC m where
+    monadReaderUnwrap :: E envC m
+
+instance envC env => MonadReader' envC ((->) env) where
+    monadReaderUnwrap = MkE Dict

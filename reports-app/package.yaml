@@ -37,6 +37,7 @@ dependencies:
   - http-types
   - mtl
   - futurice-foundation
+  - constraints
   - lens
   - optparse-applicative
   - regex-applicative
