@@ -51,7 +51,7 @@ packages:
   extra-dep: true
 - location:
     git: https://github.com/phadej/github.git
-    commit: 9346f526e87d9d3811285f0d01c84a5905c17b8a
+    commit: 718c8dc50a16dc3afeb669b61d6174096787736e
   extra-dep: true
 - location:
     git: https://github.com/phadej/stm-containers.git

@@ -217,5 +217,5 @@ data E envC m where
 class MonadReader' envC m where
     monadReaderUnwrap :: E envC m
 
-instance envC env => MonadReader' envC ((->) env) where
+instance (MonadReader env m, c env) => MonadReader' c m where
     monadReaderUnwrap = MkE Dict
