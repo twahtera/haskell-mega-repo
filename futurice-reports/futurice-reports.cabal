@@ -33,12 +33,15 @@ library
       base                  >=4.7   && <4.10
     , aeson
     , aeson-compat
+    , cassava
     , constraints
     , containers
     , futurice-foundation
     , futurice-prelude
     , lucid
     , mtl
+    , servant
+    , servant-cassava
     , swagger2
     , text
     , these

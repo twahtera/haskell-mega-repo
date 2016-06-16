@@ -17,6 +17,7 @@ import Futurice.Colour
 import qualified Data.Text                     as T
 import qualified Servant.Cache.Internal.DynMap as DynMap
 import qualified Servant.HTML.Lucid            as Lucid
+import Servant.CSV.Cassava (CSV', DefaultEncodeOpts)
 
 import Servant
 import Servant.Cache.Class      (DynMapCache)
@@ -25,9 +26,11 @@ import Servant.Futurice.Status
 
 import Futurice.App.Reports.Types
 
+type ReportTypes = '[Lucid.HTML, (CSV', DefaultEncodeOpts), JSON]
+
 type ReportsAPI = Get '[Lucid.HTML] IndexPage
-    :<|> "issues" :> Get '[Lucid.HTML, JSON] IssueReport
-    :<|> "fum-github" :> Get '[Lucid.HTML, JSON] FumGitHubReport
+    :<|> "issues" :> Get ReportTypes IssueReport
+    :<|> "fum-github" :> Get ReportTypes FumGitHubReport
 
 type ReportsAPI' = ReportsAPI :<|> AuxAPI ('FutuAccent 'AF2 'AC3)
 

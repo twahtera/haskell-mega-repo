@@ -23,6 +23,7 @@ import Futurice.Report
 import Lucid
 import Lucid.Foundation.Futurice
 
+import qualified Data.Csv    as Csv
 import qualified Futurice.IC as IList
 import qualified GitHub      as GH
 
@@ -69,6 +70,15 @@ instance ToReportRow GitHubRepo where
         ownerLink = "https://github.com/" <> o'
         repoLink = ownerLink <> "/" <> n'
 
+    reportCsvRow (GitHubRepo o n) = [ReportCsvRow row]
+      where
+        row = IList.cons (pure $ Csv.toField o')
+            $ IList.cons (pure $ Csv.toField n')
+            $ IList.nil
+
+        o' = GH.untagName o
+        n' = GH.untagName n
+
 deriveGeneric ''GitHubRepo
 instance ToJSON GitHubRepo where toJSON = sopToJSON
 
@@ -101,6 +111,13 @@ instance ToReportRow IssueInfo where
         row = IList.cons (a_ [href_ u] $ toHtml $ "#" ++ show n)
             $ IList.cons (a_ [href_ u] $ toHtml t)
             $ IList.cons (c' >>= toHtml)
+            $ IList.nil
+
+    reportCsvRow (IssueInfo n t c _) = [ReportCsvRow row]
+      where
+        row = IList.cons (pure $ Csv.toField n)
+            $ IList.cons (pure $ Csv.toField t)
+            $ IList.cons (pure $ Csv.toField $ show c)
             $ IList.nil
 
 makeLenses ''IssueInfo
@@ -154,6 +171,12 @@ instance ToReportRow GitHubUser where
             $ IList.cons (a_ [href_ $ "https://github.com/" <> l] $ toHtml l)
             $ IList.nil
 
+    reportCsvRow (GitHubUser n l) = [ReportCsvRow row]
+      where
+        row = IList.cons (pure $ Csv.toField n)
+            $ IList.cons (pure $ Csv.toField l)
+            $ IList.nil
+
 instance ToReportRow FUMUser where
     type ReportRowLen FUMUser = PThree
     type ReportRowC FUMUser m = MonadReader' HasFUMPublicURL m
@@ -177,6 +200,14 @@ instance ToReportRow FUMUser where
                 $ IList.cons (a_ [href_ $ "https://github.com/" <> g] $ toHtml g)
                 $ IList.nil
             in [ReportRow mempty row]
+
+    reportCsvRow (FUMUser n l g) = [ReportCsvRow row]
+      where
+        row = IList.cons (pure $ Csv.toField n)
+            $ IList.cons (pure $ Csv.toField l)
+            $ IList.cons (pure $ Csv.toField g)
+            $ IList.nil
+
 
 data FumGithubReportParams = FumGithubReportParams !UTCTime Text
     deriving (Typeable)
@@ -211,6 +242,7 @@ instance HasFUMPublicURL FumGithubReportParams where
 -- This might be a bad idea?
 -------------------------------------------------------------------------------
 
+-- | See <http://stackoverflow.com/questions/5890094/is-there-a-way-to-define-an-existentially-quantified-newtype-in-ghc-haskell>
 data E envC m where
     MkE :: Dict (MonadReader env m, envC env) -> E envC m
 

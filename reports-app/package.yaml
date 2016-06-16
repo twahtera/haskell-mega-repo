@@ -18,6 +18,7 @@ dependencies:
   - ansi-pretty
   - base64-bytestring
   - bifunctors
+  - cassava
   - binary-orphans
   - binary-tagged
   - bytestring
@@ -65,6 +66,7 @@ dependencies:
   - servant-status
   - servant-cache
   - servant-lucid
+  - servant-cassava
   - lucid
   - servant-server
   - markdown

@@ -21,6 +21,7 @@ import Servant
 import Servant.Cache.Class (DynMapCache)
 import Servant.Client
 import Servant.HTML.Lucid  (HTML)
+import Servant.CSV.Cassava (CSV', DefaultEncodeOpts)
 import Servant.Proxy
 import System.IO           (hPutStrLn, stderr)
 
@@ -64,7 +65,7 @@ makeProxy _ ctx = proxy' p (client p' manager baseurl)
 
 data API = Futuhours
 
-type FutuhoursAPI = "reports" :> "missinghours" :> Get '[HTML, JSON] MissingHoursReport
+type FutuhoursAPI = "reports" :> "missinghours" :> Get '[(CSV', DefaultEncodeOpts), HTML, JSON] MissingHoursReport
 
 instance Proxyable 'Futuhours where
     type ProxyNamespace 'Futuhours = "futuhours"

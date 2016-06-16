@@ -2,8 +2,10 @@
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE DefaultSignatures    #-}
 {-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE InstanceSigs         #-}
 {-# LANGUAGE KindSignatures       #-}
+{-# LANGUAGE GADTs                #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE RankNTypes           #-}
@@ -16,6 +18,7 @@ module Futurice.Report (
     Report(..),
     ReportHeader(..),
     ReportRow(..),
+    ReportCsvRow(..),
     overReportRow,
     -- ** Typeclasses to generate reports
     IsReport(..),
@@ -31,19 +34,24 @@ import Futurice.Prelude
 import Futurice.Peano
 
 import Data.Functor.Identity (Identity (..))
+import Control.Monad.Trans.Identity (IdentityT(..))
 import Data.Aeson.Compat (FromJSON (..), ToJSON (..), object, withObject,
                           (.:), (.=))
 import Data.These        (These (..))
-import Data.Constraint   (Constraint, Dict(..))
+import Data.Constraint   (Constraint)
 import Data.Swagger      (ToSchema (..))
 import GHC.TypeLits      (KnownSymbol, Symbol, symbolVal)
 import Lucid hiding (for_)
 import Lucid.Base (HtmlT(..))
 import Lucid.Foundation.Futurice (large_, page_, row_)
 
+import Servant.API (MimeRender (..))
+import Servant.CSV.Cassava (EncodeOpts(..), CSV')
+
 import qualified Futurice.IC as IList
 import qualified Data.Text as T
 import qualified Data.Set as Set
+import qualified Data.Csv as Csv
 
 -------------------------------------------------------------------------------
 -- ReportGenerated
@@ -105,18 +113,32 @@ instance (ToReportRow a, ToReportRow b) => ToReportRow (Per a b) where
         ReportRow cls' row' <- reportRow b
         pure $ ReportRow (cls <> cls') (IList.append row row')
 
+    reportCsvRow (Per a b) = do
+        ReportCsvRow  row  <- reportCsvRow a
+        ReportCsvRow  row' <- reportCsvRow b
+        pure $ ReportCsvRow (IList.append row row')
+
 -------------------------------------------------------------------------------
 -- Lucid
 -------------------------------------------------------------------------------
 
 -- | Header of the report.
-newtype ReportHeader (n :: Peano) = ReportHeader { getReportHeader :: IList.IList n Text }
+newtype ReportHeader (n :: Peano) = ReportHeader
+    { getReportHeader :: IList.IList n Text }
+    deriving (Typeable)
 
 -- | Single row of the report.
 data ReportRow m (n :: Peano) = ReportRow
     { getReportRowCls :: Set Text
     , getReportRow :: !(IList.IList n (HtmlT m ()))
     }
+    deriving (Typeable)
+
+-- | Single row of the CSV report.
+newtype ReportCsvRow m (n :: Peano) = ReportCsvRow
+    { getReportCsv :: IList.IList n (IdentityT m Csv.Field)
+    }
+    deriving (Typeable)
 
 -- | Map over report row contents.
 overReportRow
@@ -141,6 +163,10 @@ class ToReportRow a where
         :: (Monad m, ReportRowC a m)
         => a -> [ReportRow m (ReportRowLen a)]
 
+    reportCsvRow
+        :: (Monad m, ReportRowC a m)
+        => a -> [ReportCsvRow m (ReportRowLen a)]
+
 -- | Fold on the elements, keys discarded.
 instance ToReportRow v => ToReportRow (HashMap k v) where
     type ReportRowLen (HashMap k v) = ReportRowLen v
@@ -148,6 +174,7 @@ instance ToReportRow v => ToReportRow (HashMap k v) where
 
     reportHeader _ = reportHeader (Proxy :: Proxy v)
     reportRow = foldMap reportRow
+    reportCsvRow = foldMap reportCsvRow
 
 -- | Fold on the elements, keys discarded.
 instance ToReportRow v => ToReportRow (Map k v) where
@@ -156,6 +183,7 @@ instance ToReportRow v => ToReportRow (Map k v) where
 
     reportHeader _ = reportHeader (Proxy :: Proxy v)
     reportRow = foldMap reportRow
+    reportCsvRow = foldMap reportCsvRow
 
 -- | Fold on the contains.
 instance ToReportRow a => ToReportRow (Vector a) where
@@ -164,6 +192,7 @@ instance ToReportRow a => ToReportRow (Vector a) where
 
     reportHeader _ = reportHeader (Proxy :: Proxy a)
     reportRow = foldMap reportRow
+    reportCsvRow = foldMap reportCsvRow
 
 instance (ToReportRow a, ToReportRow b) => ToReportRow (These a b) where
     type ReportRowLen (These a b) = PAdd (ReportRowLen a) (ReportRowLen b)
@@ -195,11 +224,21 @@ instance (ToReportRow a, ToReportRow b) => ToReportRow (These a b) where
         ReportRow cls' row' <- reportRow b
         pure $ ReportRow (cls <> cls') (IList.append row row')
 
--------------------------------------------------------------------------------
--- Cassava
--------------------------------------------------------------------------------
+    reportCsvRow (This a) = do
+        ReportCsvRow row <- reportCsvRow a
+        pure $ ReportCsvRow $ IList.append row fills
+      where
+        fills = IList.replicateP (Proxy :: Proxy (ReportRowLen b)) $ pure "-"
+    reportCsvRow (That b) = do
+        ReportCsvRow row <- reportCsvRow b
+        pure $ ReportCsvRow $ IList.append fills row
+      where
+        fills = IList.replicateP (Proxy :: Proxy (ReportRowLen a)) $ pure "-"
+    reportCsvRow (These a b) = do
+        ReportCsvRow row  <- reportCsvRow a
+        ReportCsvRow row' <- reportCsvRow b
+        pure $ ReportCsvRow $ IList.append row row'
 
--- TODO: add cassava support for 'Report' if needed
 
 -------------------------------------------------------------------------------
 -- Report
@@ -220,29 +259,26 @@ data Report (name :: Symbol) params a = Report
 
 -- TODO: Eq, Show, Ord instances
 
+data E a c where
+    MkE :: ((forall m. (Monad m, ReportRowC a m) => m c) -> c) -> E a c
+
 -- | Class to provide context for cell generation.
 class IsReport params a where
     reportExec
-        :: Proxy a -> params
-        -> (forall m. Dict (Monad m, ReportRowC a m) -> HtmlT m ())
-        -> Html ()
+        :: params
+        -> E a c
 
 defaultReportExec
     :: (ReportRowC a Identity)
-    => Proxy a -> params
-    -> (forall m. Dict (Monad m, ReportRowC a m) -> HtmlT m ())
-    -> Html ()
-defaultReportExec _ _ f = f Dict
-
-ntHtmlT :: (forall b. m b -> n b) -> HtmlT m a -> HtmlT n a
-ntHtmlT nt (HtmlT x) = HtmlT (nt x)
+    => params
+    -> E a c
+defaultReportExec _ = MkE runIdentity
 
 readerReportExec
     :: (ReportRowC a ((->) params))
-    => Proxy a -> params
-    -> (forall m. Dict (Monad m, ReportRowC a m) -> HtmlT m ())
-    -> Html ()
-readerReportExec _ params f = ntHtmlT (Identity . ($ params)) (f Dict)
+    => params
+    -> E a c
+readerReportExec params = MkE (\x -> x params)
 
 -------------------------------------------------------------------------------
 -- Aeson instances
@@ -273,11 +309,12 @@ instance ToSchema (Report name params a) where
 instance (KnownSymbol name, ToHtml params, ToReportRow a, IsReport params a)
     => ToHtml (Report name params a) where
     toHtmlRaw _ = pure ()
-    toHtml (Report params d) = HtmlT . return . runIdentity . runHtmlT $
-        reportExec proxyA params p
+    toHtml :: forall m. Monad m => Report name params a -> HtmlT m ()
+    toHtml (Report params d) = case reportExec params :: E a (HtmlT m ()) of
+        MkE f -> f (HtmlT . return <$> runHtmlT p)
       where
-        p :: Dict (Monad m, ReportRowC a m) -> HtmlT m ()
-        p Dict =
+        p :: forall n. (Monad n, ReportRowC a n) => HtmlT n ()
+        p =
           page_ (fromString title) $ do
           row_ $ large_ 12 $ h1_ $ fromString title
           row_ $ large_ 12 $ div_ [class_ "callout"] $ toHtml params
@@ -295,3 +332,24 @@ instance (KnownSymbol name, ToHtml params, ToReportRow a, IsReport params a)
         cls' cs
             | Set.null cs = []
             | otherwise   = [class_ $ T.intercalate " " $ toList cs]
+
+-------------------------------------------------------------------------------
+-- Cassava + Servant
+-------------------------------------------------------------------------------
+
+reportToCsvRecordList
+    :: forall name params a. (ToReportRow a, IsReport params a)
+    => Report name params a
+    -> [[Csv.Field]]
+reportToCsvRecordList (Report params a) =
+    case reportExec params :: E a [[Csv.Field]] of
+        MkE f -> f $ traverse g (reportCsvRow a)
+  where
+    g :: Monad m => ReportCsvRow m n -> m [Csv.Field]
+    g = runIdentityT . sequence . toList . getReportCsv
+
+instance (ToReportRow a, IsReport params a, EncodeOpts opt)
+    => MimeRender (CSV', opt) (Report name params a)
+  where
+    mimeRender _ = Csv.encodeWith (encodeOpts p) . reportToCsvRecordList
+      where p = Proxy :: Proxy opt

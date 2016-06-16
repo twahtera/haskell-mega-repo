@@ -55,12 +55,14 @@ import Lucid              hiding (for_)
 import Servant            (Capture, FromHttpApiData (..))
 import Servant.Docs       (DocCapture (..), ToCapture (..))
 
+
 import qualified Futurice.IC     as IList
 import           Futurice.Peano
 import           Futurice.Report
 
 import qualified Data.Aeson                           as Aeson
 import qualified Data.Aeson.Types                     as Aeson
+import qualified Data.Csv                             as Csv
 import qualified Data.HashMap.Strict                  as HM
 import qualified Data.Set                             as Set
 import qualified Data.Swagger                         as Swagger
@@ -349,6 +351,14 @@ instance ToReportRow Employee where
             $ IList.cons (toHtml c)
             $ IList.nil
 
+    reportCsvRow (Employee n t c) = [r]
+      where
+        r = ReportCsvRow
+            $ IList.cons (pure $ Csv.toField n)
+            $ IList.cons (pure $ Csv.toField t)
+            $ IList.cons (pure $ Csv.toField c)
+            $ IList.nil
+
 instance ToJSON Employee where toJSON = sopToJSON
 instance FromJSON Employee where parseJSON = sopParseJSON
 
@@ -382,6 +392,15 @@ instance ToReportRow Balance where
             $ IList.cons (toHtml $ show hours)
             $ IList.cons (toHtml $ show missing)
             $ IList.cons (toHtml $ show diff)
+            $ IList.nil
+
+    reportCsvRow (Balance hours missing) = [r]
+      where
+        diff = hours + missing
+        r = ReportCsvRow
+            $ IList.cons (pure $ Csv.toField hours)
+            $ IList.cons (pure $ Csv.toField missing)
+            $ IList.cons (pure $ Csv.toField diff)
             $ IList.nil
 
 deriveGeneric ''Balance
@@ -435,6 +454,13 @@ instance ToReportRow MissingHour where
         r = ReportRow Set.empty
             $ IList.cons (toHtml $ show d)
             $ IList.cons (toHtml $ show c)
+            $ IList.nil
+
+    reportCsvRow (MissingHour d c) = [r]
+      where
+        r = ReportCsvRow
+            $ IList.cons (pure $ Csv.toField  d)
+            $ IList.cons (pure $ Csv.toField $ show c)
             $ IList.nil
 
 deriveGeneric ''MissingHour
