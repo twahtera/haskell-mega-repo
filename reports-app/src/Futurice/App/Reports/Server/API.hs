@@ -27,10 +27,11 @@ import Futurice.App.Reports.Types
 
 type ReportsAPI = Get '[Lucid.HTML] IndexPage
     :<|> "issues" :> Get '[Lucid.HTML, JSON] IssueReport
+    :<|> "fum-github" :> Get '[Lucid.HTML, JSON] FumGitHubReport
 
 type ReportsAPI' = ReportsAPI :<|> AuxAPI ('FutuAccent 'AF2 'AC3)
 
-avatarApi :: Proxy ReportsAPI 
+avatarApi :: Proxy ReportsAPI
 avatarApi = Proxy
 
 avatarApi' :: Proxy ReportsAPI'

@@ -28,6 +28,7 @@ library:
     - mtl
     - swagger2
     - text
+    - these
     - transformers
   default-extensions:
     - DeriveDataTypeable

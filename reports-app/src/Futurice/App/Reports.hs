@@ -47,10 +47,18 @@ serveIssues (cache, mgr, cfg) =
   where
     p = Proxy :: Proxy "GitHub issues"
 
+serveFumGitHubReport :: Ctx -> ExceptT ServantErr IO FumGitHubReport
+serveFumGitHubReport (cache, mgr, cfg) =
+    lift $ reifyTypeableSymbol p $ cachedIO cache 600 () $
+        fumGithubReport mgr cfg
+  where
+    p = Proxy :: Proxy "Users in FUM <-> GitHub"
+
 -- | API server
-server :: Ctx -> Server ReportsAPI 
+server :: Ctx -> Server ReportsAPI
 server ctx = pure IndexPage
     :<|> serveIssues ctx
+    :<|> serveFumGitHubReport ctx
 
 -- | Server with docs and cache and status
 server' :: DynMapCache -> String -> Ctx -> Server ReportsAPI'
@@ -85,4 +93,4 @@ repos mgr url = do
     f line = case T.words line of
       [o, n] -> Just $ GitHubRepo (GH.mkOwnerName o) (GH.mkRepoName n)
       _      -> Nothing
-    
+

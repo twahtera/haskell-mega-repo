@@ -42,6 +42,7 @@ library
     , mtl
     , swagger2
     , text
+    , these
     , transformers
   exposed-modules:
       Futurice.IC

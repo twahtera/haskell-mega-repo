@@ -40,6 +40,7 @@ import Control.Monad.Reader (runReader, Reader)
 import Data.Functor.Identity (Identity (..))
 import Data.Aeson.Compat (FromJSON (..), ToJSON (..), Value, object, withObject,
                           (.:), (.=))
+import Data.These        (These (..))
 import Data.Aeson.Types  (Parser)
 import Data.Constraint   (Constraint, Dict(..))
 import Data.Swagger      (ToSchema (..))
@@ -229,6 +230,36 @@ instance ToReportRow1 Vector where
     liftReportHeader _ f _ = f Proxy
 
     liftReportRow _ = foldMap
+
+instance (ToReportRow a, ToReportRow b) => ToReportRow (These a b) where
+    type ReportRowLen (These a b) = PAdd (ReportRowLen a) (ReportRowLen b)
+
+    type ReportRowC (These a b) m =
+        ( SPeanoI (ReportRowLen b)
+        , SPeanoI (ReportRowLen a)
+        , ReportRowC a m
+        , ReportRowC b m
+        )
+
+    reportHeader _ =
+        let ReportHeader a = reportHeader (Proxy :: Proxy a)
+            ReportHeader b = reportHeader (Proxy :: Proxy b)
+        in ReportHeader (IList.append a b)
+
+    reportRow (This a) = do
+        ReportRow cls row <- reportRow a
+        pure $ ReportRow cls $ IList.append row fills
+      where
+        fills = IList.replicateP (Proxy :: Proxy (ReportRowLen b)) $ span_ "-"
+    reportRow (That b) = do
+        ReportRow cls row <- reportRow b
+        pure $ ReportRow cls $ IList.append fills row
+      where
+        fills = IList.replicateP (Proxy :: Proxy (ReportRowLen a)) $ span_ "-"
+    reportRow (These a b) = do
+        ReportRow cls  row  <- reportRow a
+        ReportRow cls' row' <- reportRow b
+        pure $ ReportRow (cls <> cls') (IList.append row row')
 
 -------------------------------------------------------------------------------
 -- Cassava

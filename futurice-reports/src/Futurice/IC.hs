@@ -10,10 +10,14 @@ module Futurice.IC (
     singleton,
     cons,
     append,
+    replicate,
+    replicateP,
     ) where
 
-import Futurice.Prelude hiding (empty)
+import Futurice.Prelude hiding (empty, replicate)
 import Futurice.Peano
+
+import qualified Futurice.Prelude  as P
 
 newtype IC c (n :: Peano) a = IC (c a)
     deriving (Functor, Foldable, Traversable)
@@ -35,3 +39,11 @@ cons x (IC xs) = IC (x : xs)
 
 append :: IList n a -> IList m a -> IList (PAdd n m) a
 append (IC x) (IC y) = IC (x ++ y)
+
+replicate :: forall n a. SPeanoI n => a -> IList n a
+replicate = IC . P.replicate n
+  where
+    n = fromInteger $ sPeanoToInteger (singPeano :: SPeano n)
+
+replicateP :: SPeanoI n => Proxy n -> a -> IList n a
+replicateP _ = replicate
