@@ -7,6 +7,7 @@
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 module Futurice.App.FutuHours.Types (
     Project(..),
@@ -135,12 +136,6 @@ hmMapKey f = HM.fromList . map (first f) . HM.toList
 
 instance ToJSON a => ToJSON (HashMap FUMUsername a) where
     toJSON = toJSON . hmMapKey getFUMUsername
-
-instance ToJSON1 (HashMap FUMUsername) where
-    liftToJSON t = toJSON . fmap t
-
-instance FromJSON1 (HashMap FUMUsername) where
-    liftParseJSON p v = parseJSON v >>= traverse p
 
 instance FromJSON a => FromJSON (HashMap FUMUsername a) where
     parseJSON = fmap (hmMapKey FUMUsername) . parseJSON
@@ -398,13 +393,11 @@ instance ToSchema Balance where declareNamedSchema = sopDeclareNamedSchema
 type BalanceReport = Report
     "Balance"
     ReportGenerated
-    '[Vector, Per Employee]
-    Balance
+    (Vector :$ Per Employee :$ Balance)
 
 instance IsReport
     ReportGenerated
-    '[Vector, Per Employee]
-    Balance
+    (Vector :$ Per Employee :$ Balance)
   where
     reportExec = defaultReportExec
 
@@ -415,13 +408,11 @@ instance IsReport
 type MissingHoursReport = Report
     "Missing hours"
     ReportGenerated
-    '[HashMap FUMUsername, Per Employee, Vector]
-    MissingHour
+    (HashMap FUMUsername :$ Per Employee :$ Vector :$ MissingHour)
 
 instance IsReport
     ReportGenerated
-    '[HashMap FUMUsername, Per Employee, Vector]
-    MissingHour
+    (HashMap FUMUsername :$ Per Employee :$ Vector :$ MissingHour)
   where
     reportExec = defaultReportExec
 
@@ -432,7 +423,7 @@ data MissingHour = MissingHour
     deriving (Eq, Ord, Show, Typeable, Generic)
 
 instance ToReportRow MissingHour where
-    type ReportRowLen MissingHour = 'PS ('PS 'PZ)
+    type ReportRowLen MissingHour = PTwo
 
     reportHeader _ = ReportHeader
         $ IList.cons "day"

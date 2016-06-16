@@ -37,7 +37,6 @@ library
     , containers
     , futurice-foundation
     , futurice-prelude
-    , generics-sop
     , lucid
     , mtl
     , swagger2

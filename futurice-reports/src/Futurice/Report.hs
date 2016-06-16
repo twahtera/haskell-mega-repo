@@ -22,15 +22,9 @@ module Futurice.Report (
     defaultReportExec,
     readerReportExec,
     ToReportRow(..),
-    ToReportRow1(..),
     -- * Useful helpers
     Per(..),
     ReportGenerated(..),
-    -- * Aeson helpers, in aeson-1
-    ToJSON1(..),
-    FromJSON1(..),
-    -- * Utilities
-    ComposeFold,
     ) where
 
 import Futurice.Prelude
@@ -38,13 +32,11 @@ import Futurice.Peano
 
 import Control.Monad.Reader (runReader, Reader)
 import Data.Functor.Identity (Identity (..))
-import Data.Aeson.Compat (FromJSON (..), ToJSON (..), Value, object, withObject,
+import Data.Aeson.Compat (FromJSON (..), ToJSON (..), object, withObject,
                           (.:), (.=))
 import Data.These        (These (..))
-import Data.Aeson.Types  (Parser)
 import Data.Constraint   (Constraint, Dict(..))
 import Data.Swagger      (ToSchema (..))
-import Generics.SOP      (All, SList (..), SListI (..))
 import GHC.TypeLits      (KnownSymbol, Symbol, symbolVal)
 import Lucid hiding (for_)
 import Lucid.Base (HtmlT(..))
@@ -93,44 +85,26 @@ data Per a b = Per
     }
     deriving (Eq, Show, Functor, Foldable, Traversable, Typeable)
 
-instance ToJSON a => ToJSON1 (Per a) where
-    liftToJSON f (Per a b) = toJSON (a, f b)
+instance (ToJSON a, ToJSON b) => ToJSON (Per a b) where
+    toJSON (Per a b) = toJSON (a, b)
 
-instance FromJSON a => FromJSON1 (Per a) where
-    liftParseJSON f j = parseJSON j >>= \(k, v) ->
-        Per k <$> f v
+instance (FromJSON a, FromJSON b) => FromJSON (Per a b) where
+    parseJSON = fmap (uncurry Per) . parseJSON
 
-instance ToReportRow a => ToReportRow1 (Per a) where
-    type ReportRowLen1 (Per a) n = PAdd (ReportRowLen a) n
+instance (ToReportRow a, ToReportRow b) => ToReportRow (Per a b) where
+    type ReportRowLen (Per a b) = PAdd (ReportRowLen a) (ReportRowLen b)
 
-    type ReportRowC1 (Per a) m = ReportRowC a m
+    type ReportRowC (Per a b) m = (ReportRowC a m, ReportRowC b m)
 
-    liftReportHeader _ f _ =
+    reportHeader _ =
         let ReportHeader a = reportHeader (Proxy :: Proxy a)
-            ReportHeader b = f Proxy
+            ReportHeader b = reportHeader (Proxy :: Proxy b)
         in ReportHeader (IList.append a b)
 
-    liftReportRow _ f (Per a b) = do
+    reportRow (Per a b) = do
         ReportRow cls  row  <- reportRow a
-        ReportRow cls' row' <- f b
+        ReportRow cls' row' <- reportRow b
         pure $ ReportRow (cls <> cls') (IList.append row row')
-
--------------------------------------------------------------------------------
--- ToJSON1 / FromJSON1
--------------------------------------------------------------------------------
-
--- | TODO: use `ToJSON1` from @aeson-1@
-class ToJSON1 f where
-    liftToJSON :: (a -> Value) -> f a -> Value
-    default liftToJSON :: Foldable f => (a -> Value) -> f a -> Value
-    liftToJSON f = toJSON . map f . toList
-
-class FromJSON1 f where
-    liftParseJSON :: (Value -> Parser a) -> Value -> Parser (f a)
-
-instance ToJSON1 Vector
-instance FromJSON1 Vector where
-    liftParseJSON p v = parseJSON v >>= traverse p
 
 -------------------------------------------------------------------------------
 -- Lucid
@@ -168,68 +142,29 @@ class ToReportRow a where
         :: (Monad m, ReportRowC a m)
         => a -> [ReportRow m (ReportRowLen a)]
 
--- | Unary version of 'ToReportRow'.
-class ToReportRow1 f where
-    -- | How much fields are added.
-    type ReportRowLen1 f (n :: Peano) :: Peano
+-- | Fold on the elements, keys discarded.
+instance ToReportRow v => ToReportRow (HashMap k v) where
+    type ReportRowLen (HashMap k v) = ReportRowLen v
+    type ReportRowC (HashMap k v) m = ReportRowC v m
 
-    -- | Additional constrains on @HtmlT m@ monad
-    type ReportRowC1 f (m :: * -> *) :: Constraint
-    type ReportRowC1 f m = ()
-
-    liftReportHeader
-        :: Proxy n
-        -> (Proxy a -> ReportHeader n)
-        -> Proxy (f a)
-        -> ReportHeader (ReportRowLen1 f n)
-
-    liftReportRow
-        :: (Monad m, ReportRowC1 f m)
-        => Proxy n
-        -> (a -> [ReportRow m n])
-        -> f a -> [ReportRow m (ReportRowLen1 f n)]
+    reportHeader _ = reportHeader (Proxy :: Proxy v)
+    reportRow = foldMap reportRow
 
 -- | Fold on the elements, keys discarded.
-instance ToReportRow1 (HashMap k) where
-    type ReportRowLen1 (HashMap k) n = n
+instance ToReportRow v => ToReportRow (Map k v) where
+    type ReportRowLen (Map k v) = ReportRowLen v
+    type ReportRowC (Map k v) m = ReportRowC v m
 
-    liftReportHeader
-        :: forall n a.
-           Proxy n
-        -> (Proxy a -> ReportHeader n)
-        -> Proxy (HashMap k a)
-        -> ReportHeader (ReportRowLen1 (HashMap k) n)
-    liftReportHeader _ f _ = f Proxy
-
-    liftReportRow _ = foldMap
---
--- | Fold on the elements, keys discarded.
-instance ToReportRow1 (Map k) where
-    type ReportRowLen1 (Map k) n = n
-
-    liftReportHeader
-        :: forall n a.
-           Proxy n
-        -> (Proxy a -> ReportHeader n)
-        -> Proxy (Map k a)
-        -> ReportHeader (ReportRowLen1 (Map k) n)
-    liftReportHeader _ f _ = f Proxy
-
-    liftReportRow _ = foldMap
+    reportHeader _ = reportHeader (Proxy :: Proxy v)
+    reportRow = foldMap reportRow
 
 -- | Fold on the contains.
-instance ToReportRow1 Vector where
-    type ReportRowLen1 Vector n = n
+instance ToReportRow a => ToReportRow (Vector a) where
+    type ReportRowLen (Vector a) = ReportRowLen a
+    type ReportRowC (Vector a) m = ReportRowC a m
 
-    liftReportHeader
-        :: forall n a.
-           Proxy n
-        -> (Proxy a -> ReportHeader n)
-        -> Proxy (Vector a)
-        -> ReportHeader (ReportRowLen1 Vector n)
-    liftReportHeader _ f _ = f Proxy
-
-    liftReportRow _ = foldMap
+    reportHeader _ = reportHeader (Proxy :: Proxy a)
+    reportRow = foldMap reportRow
 
 instance (ToReportRow a, ToReportRow b) => ToReportRow (These a b) where
     type ReportRowLen (These a b) = PAdd (ReportRowLen a) (ReportRowLen b)
@@ -271,17 +206,6 @@ instance (ToReportRow a, ToReportRow b) => ToReportRow (These a b) where
 -- Report
 -------------------------------------------------------------------------------
 
--- | Nested application
---
--- @
--- >>> :kind! ComposeFold '[[], Maybe, Either Bool] Int
--- ComposeFold '[[], Maybe, Either Bool] Int :: *
--- = [Maybe (Either Bool Int)]
--- @
-type family ComposeFold (fs :: [* -> *]) (a :: *) :: * where
-    ComposeFold '[]       a = a
-    ComposeFold (f ': fs) a = f (ComposeFold fs a)
-
 -- | The report.
 --
 -- Report is parameterised over
@@ -289,150 +213,86 @@ type family ComposeFold (fs :: [* -> *]) (a :: *) :: * where
 -- * @name@ - the name
 -- * @params@ - the report parameteters, e.g. 'ReportGenerated'
 -- * @fs@ and @a@ - report actual data
-data Report (name :: Symbol) params fs a = Report
+data Report (name :: Symbol) params a = Report
     { reportParams :: !params
-    , reportData   :: !(ComposeFold fs a)
+    , reportData   :: !a
     }
-    deriving (Typeable)
+    deriving (Typeable, Functor, Foldable, Traversable)
 
 -- TODO: Eq, Show, Ord instances
 
 -- | Class to provide context for cell generation.
-class IsReport params fs a where
+class IsReport params a where
     reportExec
-        :: Proxy fs -> Proxy a -> params
-        -> (forall m. Dict (Monad m, FoldReportRowC fs a m) -> HtmlT m ())
+        :: Proxy a -> params
+        -> (forall m. Dict (Monad m, ReportRowC a m) -> HtmlT m ())
         -> Html ()
 
 defaultReportExec
-    :: (FoldReportRowC fs a Identity)
-    => Proxy fs -> Proxy a -> params
-    -> (forall m. Dict (Monad m, FoldReportRowC fs a m) -> HtmlT m ())
+    :: (ReportRowC a Identity)
+    => Proxy a -> params
+    -> (forall m. Dict (Monad m, ReportRowC a m) -> HtmlT m ())
     -> Html ()
-defaultReportExec _ _ _ f = f Dict
+defaultReportExec _ _ f = f Dict
 
 ntHtmlT :: (forall b. m b -> n b) -> HtmlT m a -> HtmlT n a
 ntHtmlT nt (HtmlT x) = HtmlT (nt x)
 
 readerReportExec
-    :: (FoldReportRowC fs a (Reader params))
-    => Proxy fs -> Proxy a -> params
-    -> (forall m. Dict (Monad m, FoldReportRowC fs a m) -> HtmlT m ())
+    :: (ReportRowC a (Reader params))
+    => Proxy a -> params
+    -> (forall m. Dict (Monad m, ReportRowC a m) -> HtmlT m ())
     -> Html ()
-readerReportExec _ _ params f = ntHtmlT (Identity . flip runReader params) (f Dict)
+readerReportExec _ params f = ntHtmlT (Identity . flip runReader params) (f Dict)
 
 -------------------------------------------------------------------------------
 -- Aeson instances
 -------------------------------------------------------------------------------
 
-instance (KnownSymbol name, ToJSON params, All ToJSON1 fs, ToJSON a)
-    => ToJSON (Report name params fs a) where
-    toJSON (Report params fs) = object
+instance (KnownSymbol name, ToJSON params, ToJSON a)
+    => ToJSON (Report name params a) where
+    toJSON (Report params d) = object
         [ "name" .= symbolVal (Proxy :: Proxy name)
         , "params" .= params
-        , "data" .= foldToJSON (Proxy :: Proxy fs) (Proxy :: Proxy a) fs
+        , "data" .= d
         ]
 
-foldToJSON
-    :: forall fs a. (SListI fs, All ToJSON1 fs, ToJSON a)
-    => Proxy fs -> Proxy a -> ComposeFold fs a -> Value
-foldToJSON _ pa x = case sList :: SList fs of
-    SNil  -> toJSON x
-    SCons -> consCase
-  where
-    consCase :: forall f (fs' :: [* -> *]). (fs ~ (f ': fs')) => Value
-    consCase = liftToJSON (foldToJSON (Proxy :: Proxy fs') pa) x
-
-instance (KnownSymbol name, FromJSON params, All FromJSON1 fs, FromJSON a)
-    => FromJSON (Report name params fs a) where
+instance (KnownSymbol name, FromJSON params, FromJSON a)
+    => FromJSON (Report name params a) where
     parseJSON = withObject "report" $ \obj -> Report
         <$> obj .: "params"
-        <*> (obj .: "data" >>= foldParseJSON (Proxy :: Proxy fs) (Proxy :: Proxy a))
-
-foldParseJSON
-    :: forall fs a. (SListI fs, All FromJSON1 fs, FromJSON a)
-    => Proxy fs -> Proxy a -> Value -> Parser (ComposeFold fs a)
-foldParseJSON _ pa v = case sList :: SList fs of
-    SNil  -> parseJSON v
-    SCons -> consCase
-  where
-    consCase
-        :: forall f (fs' :: [* -> *]). (fs ~ (f ': fs'))
-        => Parser (ComposeFold fs a)
-    consCase = liftParseJSON (foldParseJSON (Proxy :: Proxy fs') pa) v
+        <*> obj .: "data"
 
 -- | TODO
-instance ToSchema (Report name params fs a) where
+instance ToSchema (Report name params a) where
     declareNamedSchema _ = declareNamedSchema (Proxy :: Proxy Text)
 
 -------------------------------------------------------------------------------
 -- Lucid instance
 -------------------------------------------------------------------------------
 
-instance (KnownSymbol name, ToHtml params, All ToReportRow1 fs, ToReportRow a, IsReport params fs a)
-    => ToHtml (Report name params fs a) where
+instance (KnownSymbol name, ToHtml params, ToReportRow a, IsReport params a)
+    => ToHtml (Report name params a) where
     toHtmlRaw _ = pure ()
-    toHtml (Report params fs) = HtmlT . return . runIdentity . runHtmlT $
-        reportExec proxyFs proxyA params p
+    toHtml (Report params d) = HtmlT . return . runIdentity . runHtmlT $
+        reportExec proxyA params p
       where
-        p :: Dict (Monad m, FoldReportRowC fs a m) -> HtmlT m ()
+        p :: Dict (Monad m, ReportRowC a m) -> HtmlT m ()
         p Dict =
           page_ (fromString title) $ do
           row_ $ large_ 12 $ h1_ $ fromString title
           row_ $ large_ 12 $ div_ [class_ "callout"] $ toHtml params
           row_ $ large_ 12 $ table_ [class_ "hover"] $ do
               thead_ $
-                  tr_ $ for_ (getReportHeader $ foldReportHeader proxyFs proxyA Proxy) $ \h ->
+                  tr_ $ for_ (getReportHeader $ reportHeader proxyA) $ \h ->
                       th_ $ toHtml h
-              tbody_ $ for_ (foldReportRow proxyFs proxyA fs) $ \(ReportRow cls row) ->
+              tbody_ $ for_ (reportRow d) $ \(ReportRow cls row) ->
                 tr_ (cls' cls) $ traverse_ td_ row
 
         proxyA = Proxy :: Proxy a
-        proxyFs = Proxy :: Proxy fs
         title = symbolVal (Proxy :: Proxy name)
 
         cls' :: Set Text -> [Attribute]
         cls' cs
             | Set.null cs = []
             | otherwise   = [class_ $ T.intercalate " " $ toList cs]
-
-type family FoldReportLen fs a where
-    FoldReportLen '[]       a = ReportRowLen a
-    FoldReportLen (f ': fs) a = ReportRowLen1 f (FoldReportLen fs a)
-
-foldReportHeader
-    :: forall fs a. (SListI fs, All ToReportRow1 fs, ToReportRow a)
-    => Proxy fs -> Proxy a -> Proxy (ComposeFold fs a)
-    -> ReportHeader (FoldReportLen fs a)
-foldReportHeader _ pa _ = case sList :: SList fs of
-    SNil  -> reportHeader pa
-    SCons -> consCase
-      where
-        consCase
-            :: forall f (fs' :: [* -> *]). (fs ~ (f ': fs'))
-            => ReportHeader (ReportRowLen1 f (FoldReportLen fs' a))
-        consCase = liftReportHeader
-            Proxy
-            (foldReportHeader (Proxy :: Proxy fs') pa)
-            (Proxy :: Proxy (f (ComposeFold fs' a)))
-
-type family FoldReportRowC fs a m :: Constraint where
-    FoldReportRowC '[]       a m = ReportRowC a m
-    FoldReportRowC (f ': fs) a m = (ReportRowC1 f m, FoldReportRowC fs a m)
-
-foldReportRow
-    :: forall fs a m.
-       ( SListI fs
-       , All ToReportRow1 fs, ToReportRow a
-       , FoldReportRowC fs a m, Monad m
-       )
-    => Proxy fs -> Proxy a -> ComposeFold fs a
-    -> [ReportRow m (FoldReportLen fs a)]
-foldReportRow _ pa v = case sList :: SList fs of
-    SNil  -> reportRow v
-    SCons -> consCase
-  where
-    consCase
-        :: forall f (fs' :: [* -> *]). (fs ~ (f ': fs'))
-        => [ReportRow m (ReportRowLen1 f (FoldReportLen fs' a))]
-    consCase = liftReportRow Proxy (foldReportRow (Proxy :: Proxy fs') pa) v

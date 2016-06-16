@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Reports.Types where
 
 import Futurice.Prelude
@@ -107,10 +108,9 @@ instance ToSchema IssueInfo where declareNamedSchema = sopDeclareNamedSchema
 type IssueReport = Report
     "GitHub issues"
     ReportGenerated
-    '[Vector, Per GitHubRepo, Vector]
-    IssueInfo
+    (Vector :$ Per GitHubRepo :$ Vector :$ IssueInfo)
 
-instance IsReport ReportGenerated '[Vector, Per GitHubRepo, Vector] IssueInfo where
+instance IsReport ReportGenerated (Vector :$ Per GitHubRepo :$ Vector :$ IssueInfo) where
     reportExec = readerReportExec
 
 -------------------------------------------------------------------------------
@@ -169,8 +169,7 @@ instance ToReportRow FUMUser where
 type FumGitHubReport = Report
     "Users in FUM <-> GitHub"
     ReportGenerated
-    '[Vector]
-    (These GitHubUser FUMUser)
+    (Vector (These GitHubUser FUMUser))
 
-instance IsReport ReportGenerated '[Vector] (These GitHubUser FUMUser) where
+instance IsReport ReportGenerated (Vector (These GitHubUser FUMUser)) where
     reportExec = defaultReportExec
