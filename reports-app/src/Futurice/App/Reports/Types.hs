@@ -1,41 +1,44 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+---
+{-# LANGUAGE ConstraintKinds, PolyKinds, UndecidableInstances, RankNTypes, GADTs, InstanceSigs #-}
 module Futurice.App.Reports.Types where
 
 import Futurice.Prelude
-import Prelude          ()
 
+import Control.Monad.Trans.Class (lift)
 import Data.Aeson                (ToJSON (..))
+import Data.Constraint (Dict (..))
 import Data.Swagger              (ToSchema (..))
+import Data.These                (These (..))
+import Data.Time.Format.Human    (humanReadableTime')
 import Futurice.Generics         (sopDeclareNamedSchema, sopToJSON)
-import Futurice.Peano (PThree, PTwo)
+import Futurice.Peano            (PThree, PTwo)
 import Futurice.Report
 import Lucid
 import Lucid.Foundation.Futurice
 
--- import Data.Time.Format.Human    (humanReadableTime')
-
 import qualified Futurice.IC as IList
 import qualified GitHub      as GH
-
 
 -------------------------------------------------------------------------------
 -- Indexpage
 -------------------------------------------------------------------------------
 
 data IndexPage = IndexPage
-    
+
 instance ToHtml IndexPage where
     toHtmlRaw = toHtml
     toHtml _ = page_ "Reports" $ do
         row_ $ large_ 12 $ h1_ "Reports"
         row_ $ large_ 12 $ div_ [class_ "callout"] $ ul_ $ do
             li_ $ a_ [href_ "/issues" ] $ "GitHub issues"
+            li_ $ a_ [href_ "/fum-github" ] $ "Users in FUM and GitHub"
 
 -------------------------------------------------------------------------------
 -- Issues
@@ -45,6 +48,7 @@ data GitHubRepo = GitHubRepo
     { ghRepoOwner :: !(GH.Name GH.Owner)
     , ghRepoName  :: !(GH.Name GH.Repo)
     }
+    deriving (Typeable)
 
 instance ToReportRow GitHubRepo where
     type ReportRowLen GitHubRepo = PTwo
@@ -80,6 +84,8 @@ data IssueInfo = IssueInfo
 instance ToReportRow IssueInfo where
     type ReportRowLen IssueInfo = PThree
 
+    type ReportRowC IssueInfo m = MonadReader ReportGenerated m
+
     reportHeader _ = ReportHeader
         $ IList.cons "#"
         $ IList.cons "title"
@@ -88,9 +94,13 @@ instance ToReportRow IssueInfo where
 
     reportRow (IssueInfo n t c u) = [ReportRow mempty row]
       where
+        c' = do
+            ReportGenerated now <- ask
+            return $ humanReadableTime' now c
+
         row = IList.cons (a_ [href_ u] $ toHtml $ "#" ++ show n)
             $ IList.cons (a_ [href_ u] $ toHtml t)
-            $ IList.cons (toHtml $ show c)
+            $ IList.cons (c' >>= toHtml)
             $ IList.nil
 
 makeLenses ''IssueInfo
@@ -102,5 +112,110 @@ instance ToSchema IssueInfo where declareNamedSchema = sopDeclareNamedSchema
 type IssueReport = Report
     "GitHub issues"
     ReportGenerated
-    '[Vector, Per GitHubRepo, Vector]
-    IssueInfo
+    (Vector :$ Per GitHubRepo :$ Vector :$ IssueInfo)
+
+instance IsReport ReportGenerated (Vector :$ Per GitHubRepo :$ Vector :$ IssueInfo) where
+    reportExec = readerReportExec
+
+-------------------------------------------------------------------------------
+-- Github + FUM
+-------------------------------------------------------------------------------
+
+data GitHubUser = GitHubUser
+    { ghUserName  :: !(Maybe Text)
+    , ghUserLogin :: !Text
+    }
+    deriving (Eq, Ord, Show, Typeable)
+
+data FUMUser = FUMUser
+    { fumUserName  :: !Text
+    , fumUserLogin :: !Text
+    , fumGhLogin   :: !Text
+    }
+    deriving (Eq, Ord, Show, Typeable)
+
+deriveGeneric ''GitHubUser
+deriveGeneric ''FUMUser
+
+instance ToJSON GitHubUser where toJSON = sopToJSON
+instance ToJSON FUMUser where toJSON = sopToJSON
+
+instance ToReportRow GitHubUser where
+    type ReportRowLen GitHubUser = PTwo
+
+    reportHeader _ = ReportHeader
+        $ IList.cons "GH name"
+        $ IList.cons "GH login"
+        $ IList.nil
+
+    reportRow (GitHubUser n l) = [ReportRow mempty row]
+      where
+        row = IList.cons (maybe (em_ "???") toHtml n)
+            $ IList.cons (a_ [href_ $ "https://github.com/" <> l] $ toHtml l)
+            $ IList.nil
+
+instance ToReportRow FUMUser where
+    type ReportRowLen FUMUser = PThree
+    type ReportRowC FUMUser m = MonadReader' HasFUMPublicURL m
+
+    reportHeader _ = ReportHeader
+        $ IList.cons "FUM name"
+        $ IList.cons "FUM login"
+        $ IList.cons "FUM GH login"
+        $ IList.nil
+
+    reportRow
+        :: forall m. (Monad m, ReportRowC FUMUser m)
+        => FUMUser -> [ReportRow m (ReportRowLen FUMUser)]
+    reportRow (FUMUser n l g) = case monadReaderUnwrap :: E HasFUMPublicURL m of
+        MkE Dict -> let
+            l' = do
+                u <- lift (view fumPublicUrl)
+                a_ [href_ $ u <> "/fum/users/" <> l <> "/"] $ toHtml l
+            row = IList.cons (toHtml n)
+                $ IList.cons l'
+                $ IList.cons (a_ [href_ $ "https://github.com/" <> g] $ toHtml g)
+                $ IList.nil
+            in [ReportRow mempty row]
+
+data FumGithubReportParams = FumGithubReportParams !UTCTime Text
+    deriving (Typeable)
+
+instance ToHtml FumGithubReportParams where
+    toHtml (FumGithubReportParams r _) = toHtml $ show r
+    toHtmlRaw = toHtml
+
+instance ToJSON FumGithubReportParams where
+    toJSON (FumGithubReportParams t _) = toJSON t
+
+type FumGitHubReport = Report
+    "Users in FUM <-> GitHub"
+    FumGithubReportParams
+    (Vector (These GitHubUser FUMUser))
+
+instance IsReport FumGithubReportParams (Vector (These GitHubUser FUMUser)) where
+    reportExec = readerReportExec
+
+-- | *TODO:* move to @futurice-integrations@ package
+
+class HasFUMPublicURL env where
+    fumPublicUrl :: Lens' env Text
+
+instance HasFUMPublicURL FumGithubReportParams where
+    fumPublicUrl = lens t f
+      where
+        t (FumGithubReportParams _ x) = x
+        f (FumGithubReportParams y _) = FumGithubReportParams y
+
+-------------------------------------------------------------------------------
+-- This might be a bad idea?
+-------------------------------------------------------------------------------
+
+data E envC m where
+    MkE :: Dict (MonadReader env m, envC env) -> E envC m
+
+class MonadReader' envC m where
+    monadReaderUnwrap :: E envC m
+
+instance (MonadReader env m, c env) => MonadReader' c m where
+    monadReaderUnwrap = MkE Dict

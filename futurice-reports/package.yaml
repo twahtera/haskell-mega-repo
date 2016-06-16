@@ -19,13 +19,16 @@ library:
     - base                  >=4.7   && <4.10
     - aeson
     - aeson-compat
+    - constraints
     - containers
-    - generics-sop
-    - swagger2
-    - lucid
     - futurice-foundation
     - futurice-prelude
+    - lucid
+    - mtl
+    - swagger2
     - text
+    - these
+    - transformers
   default-extensions:
     - DeriveDataTypeable
     - DeriveFoldable

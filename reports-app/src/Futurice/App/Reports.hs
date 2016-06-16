@@ -22,6 +22,8 @@ import Servant
 import Servant.Cache.Class        (DynMapCache, cachedIO)
 import System.IO                  (hPutStrLn, stderr)
 
+import Futurice.Reflection.TypeLits (reifyTypeableSymbol)
+
 import qualified Network.Wai.Handler.Warp      as Warp
 import qualified Servant.Cache.Internal.DynMap as DynMap
 import qualified GitHub as GH
@@ -39,14 +41,24 @@ type Ctx = (DynMapCache, Manager, Config)
 
 serveIssues :: Ctx -> ExceptT ServantErr IO IssueReport
 serveIssues (cache, mgr, cfg) =
-    lift $ cachedIO cache 600 () $ do
+    lift $ reifyTypeableSymbol p $ cachedIO cache 600 () $ do
         repos' <- repos mgr (cfgReposUrl cfg)
         issueReport mgr (cfgGhAuth cfg) repos'
+  where
+    p = Proxy :: Proxy "GitHub issues"
+
+serveFumGitHubReport :: Ctx -> ExceptT ServantErr IO FumGitHubReport
+serveFumGitHubReport (cache, mgr, cfg) =
+    lift $ reifyTypeableSymbol p $ cachedIO cache 600 () $
+        fumGithubReport mgr cfg
+  where
+    p = Proxy :: Proxy "Users in FUM <-> GitHub"
 
 -- | API server
-server :: Ctx -> Server ReportsAPI 
+server :: Ctx -> Server ReportsAPI
 server ctx = pure IndexPage
     :<|> serveIssues ctx
+    :<|> serveFumGitHubReport ctx
 
 -- | Server with docs and cache and status
 server' :: DynMapCache -> String -> Ctx -> Server ReportsAPI'
@@ -81,4 +93,4 @@ repos mgr url = do
     f line = case T.words line of
       [o, n] -> Just $ GitHubRepo (GH.mkOwnerName o) (GH.mkRepoName n)
       _      -> Nothing
-    
+

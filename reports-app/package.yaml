@@ -35,16 +35,20 @@ dependencies:
   - http-client
   - http-client-tls
   - http-types
+  - mtl
   - futurice-foundation
+  - constraints
   - lens
   - optparse-applicative
   - regex-applicative
   - regex-applicative-text
   - friendly-time >=0.4 && <0.5
+  - fum-client
   - regex-compat
   - semigroups
   - tagged
   - text
+  - these
   - time
   - transformers
   - transformers-compat
