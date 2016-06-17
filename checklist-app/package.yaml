@@ -14,6 +14,8 @@ dependencies:
   - base >= 4.7 && <4.10
   - futurice-prelude
 
+  - lens
+
 library:
   source-dirs: src
   default-extensions:
@@ -22,7 +24,6 @@ library:
     - DeriveFunctor
     - DeriveGeneric
     - DeriveTraversable
-    - NoImplicitPrelude
     - ScopedTypeVariables
 
 executables:
