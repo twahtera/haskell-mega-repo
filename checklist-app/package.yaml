@@ -1,0 +1,34 @@
+name: checklist-app
+version: "0"
+synopsis: Over-engineered TODO
+description: ...
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/haskell-mega-repo
+category: Web
+
+ghc-options: -Wall
+
+dependencies:
+  - base >= 4.7 && <4.10
+  - futurice-prelude
+
+library:
+  source-dirs: src
+  default-extensions:
+    - DeriveDataTypeable
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveGeneric
+    - DeriveTraversable
+    - NoImplicitPrelude
+    - ScopedTypeVariables
+
+executables:
+  checklist-app-server:
+    main: Main.hs
+    source-dirs: srv
+    ghc-options: -Wall -threaded
+    dependencies:
+      - checklist-app 
