@@ -188,7 +188,7 @@ instance ToReportRow FUMUser where
         $ IList.nil
 
     reportRow
-        :: forall m. (Monad m, ReportRowC FUMUser m)
+        :: forall m. (Applicative m, Monad m, ReportRowC FUMUser m)
         => FUMUser -> [ReportRow m (ReportRowLen FUMUser)]
     reportRow (FUMUser n l g) = case monadReaderUnwrap :: E HasFUMPublicURL m of
         MkE Dict -> let
