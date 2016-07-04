@@ -22,10 +22,11 @@ apps =
     [ ("avatar", "avatar-server")
     , ("contacts-api", "contacts-server")
     , ("favicon", "favicon")
-    , ("spice-stats", "spice-stats-server")
     , ("futuhours-api", "futuhours-api-server")
-    , ("reports-app", "reports-app-server")
     , ("proxy-app", "proxy-app-server")
+    , ("reports-app", "reports-app-server")
+    , ("spice-stats", "spice-stats-server")
+    , ("theme-app", "theme-app-server")
     ]
 
 buildImage :: Text
