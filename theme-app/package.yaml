@@ -1,0 +1,50 @@
+name: theme-app
+version: "0"
+synopsis: Show Futurice colour theme
+description: ...
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/haskell-mega-repo
+category: Web
+
+ghc-options: -Wall
+
+dependencies:
+  - base >= 4.7 && <4.10
+  - clay >= 0.11
+  - env-config
+  - futulogo
+  - futurice-foundation
+  - futurice-prelude
+  - gitrev
+  - JuicyPixels
+  - lucid
+  - servant >=0.6 && <0.8
+  - servant-cache
+  - servant-lucid
+  - servant-server
+  - servant-swagger-ui
+  - text
+  - wai
+  - wai-app-static
+  - warp
+
+library:
+  source-dirs: src
+  default-extensions:
+    - DeriveDataTypeable
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveGeneric
+    - DeriveTraversable
+    - NoImplicitPrelude
+    - ScopedTypeVariables
+
+executables:
+  theme-app-server:
+    main: Main.hs
+    source-dirs: srv
+    ghc-options: -Wall -threaded
+    dependencies:
+      - theme-app 

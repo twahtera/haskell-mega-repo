@@ -19,7 +19,10 @@ module Futurice.Colour (
     AccentFamily(..),
     AccentColour(..),
     -- * Conversions
+    colourName,
     colourRGB8,
+    colourCMYK8,
+    colourClay,
     -- * Colour Combinations
     infographicsColours,
     ColourCombination(..),
@@ -31,11 +34,12 @@ module Futurice.Colour (
     SAccentColour(..),
     ) where
 
-import Codec.Picture.Types (PixelRGB8 (..))
+import Codec.Picture.Types (PixelRGB8 (..), PixelCMYK8(..))
 import Control.DeepSeq     (NFData)
 import Data.Hashable       (Hashable)
 import Data.Monoid         ((<>))
 import Data.Tagged         (Tagged (..), untag)
+import Data.Text           (Text)
 import Data.Typeable       (Typeable)
 import GHC.Generics        (Generic)
 #if MIN_VERSION_servant(0,5,0)
@@ -43,6 +47,7 @@ import Servant.API         (FromHttpApiData (..), ToHttpApiData (..))
 #else
 import Servant.Common.Text (FromText (..), ToText (..))
 #endif
+import Clay.Color (Color, rgba)
 
 ------------------------------------------------------------------------------
 -- Types
@@ -101,6 +106,31 @@ instance Hashable Colour
 -- Colour conversions
 ------------------------------------------------------------------------------
 
+-- | Colour name.
+colourName :: Colour -> Text
+colourName FutuGreen             = "Futurice Green"
+colourName FutuBlack             = "Black"
+colourName FutuLightGreen        = "Accent Green Light"
+colourName FutuDarkGreen         = "Accent Green Dark"
+colourName (FutuAccent AF1 AC1)  = "Pantone 574"
+colourName (FutuAccent AF1 AC2)  = "Pantone 561"
+colourName (FutuAccent AF1 AC3)  = "Pantone 548"
+colourName (FutuAccent AF2 AC1)  = "Pantone 7444"
+colourName (FutuAccent AF2 AC2)  = "Pantone Violet"
+colourName (FutuAccent AF2 AC3)  = "Pantone 261"
+colourName (FutuAccent AF3 AC1)  = "Pantone 113"
+colourName (FutuAccent AF3 AC2)  = "Pantone 151"
+colourName (FutuAccent AF3 AC3)  = "Pantone Warm Red"
+colourName (FutuAccent AF4 AC1)  = "Pantone Warm Gray"
+colourName (FutuAccent AF4 AC2)  = "Pantone 482"
+colourName (FutuAccent AF4 AC3)  = "Pantone 410"
+colourName (FutuAccent AF5 AC1)  = "Pantone 7541"
+colourName (FutuAccent AF5 AC2)  = "Pantone 434"
+colourName (FutuAccent AF5 AC3)  = "Pantone 430"
+colourName (FutuAccent AF6 AC1)  = "Pantone 7499"
+colourName (FutuAccent AF6 AC2)  = "Pantone 600"
+colourName (FutuAccent AF6 AC3)  = "Pantone 7485"
+
 -- | Convert to JuicyPixels colour
 colourRGB8 :: Colour -> PixelRGB8
 colourRGB8 FutuGreen             = PixelRGB8 50 158 65
@@ -125,6 +155,38 @@ colourRGB8 (FutuAccent AF5 AC3)  = PixelRGB8 126 135 139
 colourRGB8 (FutuAccent AF6 AC1)  = PixelRGB8 255 240 210
 colourRGB8 (FutuAccent AF6 AC2)  = PixelRGB8 255 245 175
 colourRGB8 (FutuAccent AF6 AC3)  = PixelRGB8 230 245 220
+
+-- | Convert to JuicyPixels CMYK colour.
+--
+-- /Note:/ uses 'colourRGB8. TODO: weite explicitly
+colourCMYK8 :: Colour -> PixelCMYK8
+colourCMYK8 FutuGreen             = PixelCMYK8 75 0 95 15
+colourCMYK8 FutuBlack             = PixelCMYK8 41 57 72 90
+colourCMYK8 FutuLightGreen        = PixelCMYK8 74 80 98 2
+colourCMYK8 FutuDarkGreen         = PixelCMYK8 71 8 100 50
+colourCMYK8 (FutuAccent AF1 AC1)  = PixelCMYK8 20 0 14 0
+colourCMYK8 (FutuAccent AF1 AC2)  = PixelCMYK8 84 20 58 54
+colourCMYK8 (FutuAccent AF1 AC3)  = PixelCMYK8 100 21 28 76
+colourCMYK8 (FutuAccent AF2 AC1)  = PixelCMYK8 27 21 0 0
+colourCMYK8 (FutuAccent AF2 AC2)  = PixelCMYK8 90 99 0 0
+colourCMYK8 (FutuAccent AF2 AC3)  = PixelCMYK8 62 100 9 44
+colourCMYK8 (FutuAccent AF3 AC1)  = PixelCMYK8 0 2 83 0
+colourCMYK8 (FutuAccent AF3 AC2)  = PixelCMYK8 0 60 100 0
+colourCMYK8 (FutuAccent AF3 AC3)  = PixelCMYK8 0 83 80 0
+colourCMYK8 (FutuAccent AF4 AC1)  = PixelCMYK8 3 3 6 7
+colourCMYK8 (FutuAccent AF4 AC2)  = PixelCMYK8 4 17 21 7
+colourCMYK8 (FutuAccent AF4 AC3)  = PixelCMYK8 22 33 28 60
+colourCMYK8 (FutuAccent AF5 AC1)  = PixelCMYK8 7 1 3 2
+colourCMYK8 (FutuAccent AF5 AC2)  = PixelCMYK8 5 11 8 12
+colourCMYK8 (FutuAccent AF5 AC3)  = PixelCMYK8 33 18 13 40
+colourCMYK8 (FutuAccent AF6 AC1)  = PixelCMYK8 1 2 24 0
+colourCMYK8 (FutuAccent AF6 AC2)  = PixelCMYK8 2 0 39 0
+colourCMYK8 (FutuAccent AF6 AC3)  = PixelCMYK8 9 0 18 0
+
+colourClay :: Colour -> Color
+colourClay = f . colourRGB8
+  where
+    f (PixelRGB8 r g b) = rgba (toInteger r) (toInteger g) (toInteger b) 255
 
 ------------------------------------------------------------------------------
 -- Colour combinations

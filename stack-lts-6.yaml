@@ -29,11 +29,13 @@ packages:
 - servant-cache/
 - servant-status/
 - spice-stats/
+- theme-app/
 - location:
     git: https://github.com/phadej/github.git
     commit: eb610e6b105ea108e6e11be7dd2429ea10ade48c
   extra-dep: true
 extra-deps:
+- clay-0.11
 - friendly-time-0.4
 - generics-sop-lens-0.1.1.0
 - github-0.15.0

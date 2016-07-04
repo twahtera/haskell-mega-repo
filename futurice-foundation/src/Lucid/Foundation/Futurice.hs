@@ -39,9 +39,14 @@ page_ t b = doctypehtml_ $ do
         meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1.0"]
         meta_ [httpEquiv_ "x-ua-compatible", content_"ie=edge"]
         embeddedFoundationStyle_
-        -- TODO: rework, use clay-package
+        -- TODO: rework, use @clay@
         style_ $ T.unlines
             [ ".emphasize td { font-weight: bold; background: #eee }"
             , ".emphasize2 td { font-style: italic; background: #efe; }"
+            , "h1, h2, h3, h4, li, td, div, span, b { font-family: \"Lucida Grande\", Helvetica, Arial, sans-serif; }"
+            , "* { font-size: 11pt; }"
+            , "h1 { font-size: 20pt; font-weight: bold; }"
+            , "h2 { font-size: 15pt; font-weight: bold; }"
+            , "h3 { font-size: 13pt; font-weight: bold; }"
             ]
     body_ b
