@@ -34,7 +34,7 @@ module Futurice.Colour (
     SAccentColour(..),
     ) where
 
-import Codec.Picture.Types (PixelRGB8 (..), PixelCMYK8(..), convertPixel)
+import Codec.Picture.Types (PixelRGB8 (..), PixelCMYK8(..))
 import Control.DeepSeq     (NFData)
 import Data.Hashable       (Hashable)
 import Data.Monoid         ((<>))
