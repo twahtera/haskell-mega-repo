@@ -42,6 +42,7 @@ library
     , servant-swagger-ui
     , text
     , wai
+    , wai-app-static
     , warp
   exposed-modules:
       Futurice.App.Theme
@@ -72,6 +73,7 @@ executable theme-app-server
     , servant-swagger-ui
     , text
     , wai
+    , wai-app-static
     , warp
     , theme-app
   default-language: Haskell2010

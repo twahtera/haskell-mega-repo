@@ -27,6 +27,7 @@ dependencies:
   - servant-swagger-ui
   - text
   - wai
+  - wai-app-static
   - warp
 
 library:

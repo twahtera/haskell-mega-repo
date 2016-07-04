@@ -13,15 +13,15 @@ import Prelude          ()
 
 import Futurice.Colour
 
-import qualified Servant.HTML.Lucid            as Lucid
+import Servant.HTML.Lucid (HTML)
 
 import Servant
 import Servant.Futurice.Favicon
 
 import Futurice.App.Theme.Types
 
-type ThemeAPI = Get '[Lucid.HTML] IndexPage
-type ThemeAPI' = ThemeAPI :<|> FutuFaviconAPI 'FutuGreen
+type ThemeAPI = Get '[HTML] IndexPage
+type ThemeAPI' = ThemeAPI :<|> "images" :> Raw :<|> FutuFaviconAPI 'FutuGreen
  
 themeApi :: Proxy ThemeAPI
 themeApi = Proxy
