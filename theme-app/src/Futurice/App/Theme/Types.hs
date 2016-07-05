@@ -5,7 +5,7 @@ import Futurice.Prelude
 
 import Codec.Picture.Types (PixelCMYK8 (..), PixelRGB8 (..))
 import Futurice.Colour     (Colour (..), colourCMYK8, colourClay, colourName,
-                            colourRGB8)
+                            colourPantoneName, colourRGB8)
 import Numeric             (showHex)
 
 import Lucid                     hiding (for_)
@@ -32,19 +32,32 @@ instance ToHtml IndexPage where
                 h3_ "Download logos"
                 ul_ $ for_ logos $ \(name, url) ->
                     li_ $ a_ [href_ $ "/images/" <> url ] $ toHtml name
+                h3_ "Design book"
+                a_ [href_ $ "/images/Futurice_Guide_v4.pdf" ] $ "Design book"
 
 colors :: Monad m => HtmlT m ()
 colors = do
     row' $ do
-        largemedium_ 6 $ colorBox True FutuGreen
-        largemedium_ 6 $ colorBox True FutuBlack
+        largemedium_ 6 $ colorBox Large FutuGreen
+        largemedium_ 6 $ colorBox Large FutuBlack
+    row' $ do
+        largemedium_ 6 $ colorBox Medium FutuLightGreen
+        largemedium_ 6 $ colorBox Medium FutuDarkGreen
     for_ [minBound .. maxBound ] $ \fam ->
         row' $ for_ [minBound .. maxBound ] $ \col ->
-            largemedium_ 4 $ colorBox False $ FutuAccent fam col
+            largemedium_ 4 $ colorBox Small $ FutuAccent fam col
 
-colorBox :: Monad m => Bool -> Colour -> HtmlT m ()
-colorBox big colour = div_ [style_ $ render css ] $ do
-    b_ $ toHtml $ colourName colour
+flipMaybe :: a -> Maybe b -> (b -> a) -> a
+flipMaybe d m f = maybe d f m
+
+data BoxSize = Large | Medium | Small
+
+colorBox :: Monad m => BoxSize -> Colour -> HtmlT m ()
+colorBox boxSize colour = div_ [style_ $ render css ] $ do
+    flipMaybe (pure ()) (colourName colour) $ \name -> do
+        b_ $ toHtml $ name
+        br_ []
+    b_ $ toHtml $ colourPantoneName colour
     br_ []
     toHtml $ rgbDesc
     br_ []
@@ -57,7 +70,10 @@ colorBox big colour = div_ [style_ $ render css ] $ do
     css = do
         Clay.sym Clay.padding em1
         Clay.sym Clay.margin emhalf
-        Clay.height $ Clay.em $ if big then 16 else 8
+        Clay.height $ Clay.em $ case boxSize of
+            Large  -> 16
+            Medium -> 10
+            Small  -> 8
         Clay.backgroundColor $ bgColor
         Clay.fontColor $ fgColor
 

@@ -20,6 +20,7 @@ module Futurice.Colour (
     AccentColour(..),
     -- * Conversions
     colourName,
+    colourPantoneName,
     colourRGB8,
     colourCMYK8,
     colourClay,
@@ -107,29 +108,37 @@ instance Hashable Colour
 ------------------------------------------------------------------------------
 
 -- | Colour name.
-colourName :: Colour -> Text
-colourName FutuGreen             = "Futurice Green"
-colourName FutuBlack             = "Black"
-colourName FutuLightGreen        = "Accent Green Light"
-colourName FutuDarkGreen         = "Accent Green Dark"
-colourName (FutuAccent AF1 AC1)  = "Pantone 574"
-colourName (FutuAccent AF1 AC2)  = "Pantone 561"
-colourName (FutuAccent AF1 AC3)  = "Pantone 548"
-colourName (FutuAccent AF2 AC1)  = "Pantone 7444"
-colourName (FutuAccent AF2 AC2)  = "Pantone Violet"
-colourName (FutuAccent AF2 AC3)  = "Pantone 261"
-colourName (FutuAccent AF3 AC1)  = "Pantone 113"
-colourName (FutuAccent AF3 AC2)  = "Pantone 151"
-colourName (FutuAccent AF3 AC3)  = "Pantone Warm Red"
-colourName (FutuAccent AF4 AC1)  = "Pantone Warm Gray"
-colourName (FutuAccent AF4 AC2)  = "Pantone 482"
-colourName (FutuAccent AF4 AC3)  = "Pantone 410"
-colourName (FutuAccent AF5 AC1)  = "Pantone 7541"
-colourName (FutuAccent AF5 AC2)  = "Pantone 434"
-colourName (FutuAccent AF5 AC3)  = "Pantone 430"
-colourName (FutuAccent AF6 AC1)  = "Pantone 7499"
-colourName (FutuAccent AF6 AC2)  = "Pantone 600"
-colourName (FutuAccent AF6 AC3)  = "Pantone 7485"
+colourName :: Colour -> Maybe Text
+colourName FutuGreen      = Just "Futurice Green"
+colourName FutuBlack      = Just "Black"
+colourName FutuLightGreen = Just "Accent Green Light"
+colourName FutuDarkGreen  = Just "Accent Green Dark"
+colourName _              = Nothing
+
+-- | Colour pantone name.
+colourPantoneName :: Colour -> Text
+colourPantoneName FutuGreen             = "Pantone 7740"
+colourPantoneName FutuBlack             = "Pantone Black 4"
+colourPantoneName FutuLightGreen        = "Pantone 7738"
+colourPantoneName FutuDarkGreen         = "Pantone 7743"
+colourPantoneName (FutuAccent AF1 AC1)  = "Pantone 574"
+colourPantoneName (FutuAccent AF1 AC2)  = "Pantone 561"
+colourPantoneName (FutuAccent AF1 AC3)  = "Pantone 548"
+colourPantoneName (FutuAccent AF2 AC1)  = "Pantone 7444"
+colourPantoneName (FutuAccent AF2 AC2)  = "Pantone Violet"
+colourPantoneName (FutuAccent AF2 AC3)  = "Pantone 261"
+colourPantoneName (FutuAccent AF3 AC1)  = "Pantone 113"
+colourPantoneName (FutuAccent AF3 AC2)  = "Pantone 151"
+colourPantoneName (FutuAccent AF3 AC3)  = "Pantone Warm Red"
+colourPantoneName (FutuAccent AF4 AC1)  = "Pantone Warm Gray"
+colourPantoneName (FutuAccent AF4 AC2)  = "Pantone 482"
+colourPantoneName (FutuAccent AF4 AC3)  = "Pantone 410"
+colourPantoneName (FutuAccent AF5 AC1)  = "Pantone 7541"
+colourPantoneName (FutuAccent AF5 AC2)  = "Pantone 434"
+colourPantoneName (FutuAccent AF5 AC3)  = "Pantone 430"
+colourPantoneName (FutuAccent AF6 AC1)  = "Pantone 7499"
+colourPantoneName (FutuAccent AF6 AC2)  = "Pantone 600"
+colourPantoneName (FutuAccent AF6 AC3)  = "Pantone 7485"
 
 -- | Convert to JuicyPixels colour
 colourRGB8 :: Colour -> PixelRGB8
