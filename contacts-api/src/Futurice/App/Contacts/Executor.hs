@@ -17,10 +17,8 @@ import Control.Monad.Reader      (ReaderT, runReaderT)
 import Control.Monad.Trans.Class (lift)
 import Data.Aeson                (FromJSON)
 
-import Haxl.Core  (dataFetch)
 import Haxl.Typed
 
-import Unsafe.Coerce (unsafeCoerce)
 
 -- Haxl data sources
 import qualified Flowdock.TyHaxl as FDDataSource
@@ -108,17 +106,15 @@ instance MonadFlowdock Wrap where
 
 instance MonadFUM Wrap where
     type MonadFUMC Wrap a = ShowTypeable a
-    -- TODO: move dataFetch to haxl-fxtra
-    fumAction = Wrap . lift . GenTyHaxl . dataFetch . FUMDataSource.FumRequest
+    fumAction = Wrap . lift . FUMDataSource.request
 
 instance MonadGitHub Wrap where
-    -- TODO: move dataFetch to haxl-fxtra
     type MonadGitHubC Wrap a = ShowTypeable a
-    githubReq = Wrap . lift . GenTyHaxl . dataFetch . GHDataSource.GithubRequest . githubRequestToTrue
+    githubReq = Wrap . lift . GHDataSource.request
 
--- | TODO: Add to github, or move to Github.TyHaxl
-githubRequestToTrue :: GH.Request 'False a -> GH.Request 'True a
-githubRequestToTrue = unsafeCoerce
+-------------------------------------------------------------------------------
+-- Constraint for Wrap
+-------------------------------------------------------------------------------
 
 class (Show a, Typeable a, FromJSON a) => ShowTypeable a
 instance (Show a, Typeable a, FromJSON a) => ShowTypeable (Vector a)

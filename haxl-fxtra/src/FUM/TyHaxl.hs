@@ -1,13 +1,17 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
 module FUM.TyHaxl (
+    request,
     fetchUsers,
     fetchList,
     Haxl.initDataSource,
     Haxl.FumRequest(..),
     ) where
 
-import           Data.Vector (Vector)
+import Futurice.Prelude
+
+import Data.Aeson (FromJSON)
+
 import qualified FUM
 import qualified FUM.Haxl    as Haxl
 import           Haxl.Typed
@@ -22,3 +26,10 @@ fetchList
     => FUM.ListName
     -> GenTyHaxl r u (Vector FUM.User)
 fetchList = GenTyHaxl . Haxl.fetchList
+
+request
+    :: ( Show a, Typeable a, FromJSON a
+       , IsElem' Haxl.FumRequest r (Index Haxl.FumRequest r)
+       )
+    => FUM.FUM a -> GenTyHaxl r u a
+request = GenTyHaxl . Haxl.request

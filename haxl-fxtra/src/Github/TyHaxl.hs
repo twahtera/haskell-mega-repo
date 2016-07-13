@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
 module Github.TyHaxl (
+    request,
     membersOf,
     userInfoFor,
     Haxl.initDataSource,
@@ -8,7 +9,7 @@ module Github.TyHaxl (
     Haxl.GithubDataSourceException,
     ) where
 
-import Data.Vector (Vector)
+import Futurice.Prelude
 import Haxl.Typed
 
 import qualified GitHub as GH
@@ -25,3 +26,8 @@ userInfoFor
     => GH.Name GH.User
     -> GenTyHaxl r u GH.User
 userInfoFor = GenTyHaxl . Haxl.userInfoFor
+
+request
+    :: (Show a, Typeable a, IsElem' Haxl.GithubRequest r (Index Haxl.GithubRequest r))
+    =>  GH.Request k a -> GenTyHaxl r u a
+request = GenTyHaxl . Haxl.request

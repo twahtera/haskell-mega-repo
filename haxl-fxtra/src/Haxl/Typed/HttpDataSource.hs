@@ -6,6 +6,8 @@ module Haxl.Typed.HttpDataSource
     , Haxl.HttpRequest
     ) where
 
+import Futurice.Prelude
+
 import qualified Data.ByteString.Lazy      as LBS
 import qualified Haxl.Extra.HttpDataSource as Haxl
 import           Haxl.Typed

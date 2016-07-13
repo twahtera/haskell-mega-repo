@@ -6,20 +6,17 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TypeFamilies               #-}
-module FUM.Haxl
-  ( fetchUsers
-  , fetchList
-  , initDataSource
-  , FumRequest(..)
-  ) where
+module FUM.Haxl (
+    request,
+    fetchUsers,
+    fetchList,
+    initDataSource,
+    FumRequest(..),
+    ) where
 
-import Prelude        ()
-import Prelude.Compat
+import Futurice.Prelude
 
 import Data.Aeson              (FromJSON)
-import Data.Hashable           (Hashable (..))
-import Data.Typeable           (Typeable)
-import Data.Vector             (Vector)
 import Haxl.Core
 import Network.HTTP.Client     (Manager, newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
@@ -39,11 +36,16 @@ instance Hashable (FumRequest a) where
     hashWithSalt salt (FumRequest req) =
         salt `hashWithSalt` req
 
+request
+    :: (Show a, Typeable a, FromJSON a)
+    => FUM.FUM a -> GenHaxl u a
+request = dataFetch . FumRequest
+
 fetchUsers :: GenHaxl u (Vector FUM.User)
-fetchUsers = dataFetch $ FumRequest FUM.fumUsersR
+fetchUsers = request FUM.fumUsersR
 
 fetchList :: FUM.ListName -> GenHaxl u (Vector FUM.User)
-fetchList = dataFetch . FumRequest . FUM.fumListR
+fetchList = request . FUM.fumListR
 
 instance StateKey FumRequest where
     data State FumRequest = FumState Manager FUM.AuthToken FUM.BaseUrl

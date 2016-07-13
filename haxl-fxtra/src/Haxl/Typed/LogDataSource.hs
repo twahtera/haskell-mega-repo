@@ -7,6 +7,8 @@ module Haxl.Typed.LogDataSource (
     Haxl.LogRequest,
     ) where
 
+import Futurice.Prelude
+
 import qualified Haxl.Extra.LogDataSource as Haxl
 import           Haxl.Typed
 
