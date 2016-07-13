@@ -1,8 +1,6 @@
-{-# LANGUAGE DeriveDataTypeable  #-}
-{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE ConstraintKinds     #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
 module FUM (
     -- * Actions
     fumUsers,
@@ -46,10 +44,10 @@ fumListR (ListName listName) =
 -- Actions
 -------------------------------------------------------------------------------
 
-fumUsers :: MonadFUM m => m (Vector User)
+fumUsers :: (MonadFUM m, MonadFUMC m (Vector User)) => m (Vector User)
 fumUsers = fumAction fumUsersR
 
-fumList :: MonadFUM m => ListName -> m (Vector User)
+fumList :: (MonadFUM m, MonadFUMC m (Vector User)) => ListName -> m (Vector User)
 fumList = fumAction . fumListR
 
 executeRequest

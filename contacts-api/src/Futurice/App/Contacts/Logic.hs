@@ -45,6 +45,7 @@ type ContactsM env m =
     , HasFlowdockOrgName env
     , HasGithubOrgName env
     , MonadGitHub m, MonadFUM m, MonadFlowdock m
+    , MonadFUMC m (Vector FUM.User)
     , MonadGitHubC m (Vector GH.SimpleUser)
     , MonadGitHubC m GH.User
     )
