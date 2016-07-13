@@ -46,6 +46,7 @@ library
     , bifunctors
     , tagged
     , haxl-typed
+    , aeson
   exposed-modules:
       Flowdock.Haxl
       Flowdock.TyHaxl

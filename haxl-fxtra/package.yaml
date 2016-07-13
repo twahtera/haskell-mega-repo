@@ -32,6 +32,7 @@ dependencies:
   - bifunctors
   - tagged
   - haxl-typed
+  - aeson
 
 library:
   source-dirs: src

@@ -3,21 +3,22 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE PolyKinds             #-}
 module Futurice.App.Contacts.Logic (
-    contactsAction,
+    contacts,
+    ContactsM,
     ) where
 
 import Futurice.Prelude
 import Prelude          ()
 
-import Data.Maybe    (mapMaybe)
-import Data.RFC5051  (compareUnicode)
-import Haxl.Typed
+import Data.Maybe            (mapMaybe)
+import Data.RFC5051          (compareUnicode)
+import Futurice.Integrations
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Maybe.Strict   as S
@@ -30,13 +31,6 @@ import qualified Chat.Flowdock.REST.Internal as FD
 import qualified FUM
 import qualified GitHub                      as GH
 
--- Haxl data sources
-import qualified Flowdock.TyHaxl           as FDDataSource
-import qualified FUM.TyHaxl                as FUMDataSource
-import qualified Github.TyHaxl             as GHDataSource
-import qualified Haxl.Typed.HttpDataSource as HttpDataSource
-import qualified Haxl.Typed.LogDataSource  as LogDataSource
-
 -- Contacts modules
 import Futurice.App.Contacts.Types
 import Futurice.App.Contacts.Types.Tri (lessSure)
@@ -44,55 +38,35 @@ import Futurice.App.Contacts.Types.Tri (lessSure)
 compareUnicodeText :: Text -> Text -> Ordering
 compareUnicodeText = compareUnicode `on` T.unpack
 
-type In e es = IsElem' e es (Index e es)
-type AllIn es es' = IsSubset' es es' (Image es es')
+type ContactsM env m =
+    ( MonadReader env m
+    , HasFUMEmployeeListName env
+    , HasFlowdockOrgName env
+    , HasGithubOrgName env
+    , MonadGitHub m, MonadFUM m, MonadFlowdock m
+    , MonadGitHubC m (Vector GH.SimpleUser)
+    , MonadGitHubC m GH.User
+    )
 
-type Effects = '[ FUMDataSource.FumRequest
-                , FDDataSource.FlowdockRequest
-                , GHDataSource.GithubRequest
-                , HttpDataSource.HttpRequest
-                ]
+contacts
+    :: ContactsM env m
+    => m [Contact Text]
+contacts = contacts'
+    <$> fumEmployeeList
+    <*> githubDetailedMembers
+    <*> flowdockOrganisation
 
-contactsAction :: GH.Name GH.Organization       -- ^ Github organisation
-               -> FD.ParamName FD.Organisation  -- ^ Flowdock organistion
-               -> FUM.ListName                  -- ^ FUM user list
-               -> FUM.AuthToken                 -- ^ FUM access token
-               -> FUM.BaseUrl                   -- ^ FUM base url
-               -> GH.Auth                       -- ^ Github access token
-               -> FD.AuthToken                  -- ^ Flowdock access token
-               -> IO [Contact Text]
-contactsAction ghOrg fdOrg fumUserList = runHaxl' haxl
-  where
-    haxl = contactsHaxl ghOrg fdOrg fumUserList ::
-              GenTyHaxl Effects () [Contact Text]
-
-runHaxl' :: forall a r.
-            AllIn r '[ FUMDataSource.FumRequest
-                     , GHDataSource.GithubRequest
-                     , FDDataSource.FlowdockRequest
-                     , HttpDataSource.HttpRequest
-                     , LogDataSource.LogRequest
-                     ]
-         => GenTyHaxl r () a
-         -> FUM.AuthToken
-         -> FUM.BaseUrl
-         -> GH.Auth
-         -> FD.AuthToken
-         -> IO a
-runHaxl' haxl token url ghAuth fdAuth = do
-    fumDS <- FUMDataSource.initDataSource token url
-    ghDS <- GHDataSource.initDataSource ghAuth
-    fdDS <- FDDataSource.initDataSource fdAuth
-    httpDS <- HttpDataSource.initDataSource
-    logDS <- LogDataSource.initDataSource
-    environment <- initTyEnv (fumDS  `tyStateSet`
-                              ghDS   `tyStateSet`
-                              fdDS   `tyStateSet`
-                              httpDS `tyStateSet`
-                              logDS  `tyStateSet` tyStateEmpty) ()
-    runTyHaxl environment haxl
-
---
+contacts'
+    :: Vector FUM.User
+    -> Vector GH.User
+    -> FD.Organisation
+    -> [Contact Text]
+contacts' users githubMembers flowdockOrg =
+    let users' = filter ((==FUM.StatusActive) . view FUM.userStatus) $ V.toList users
+        res = map userToContact users'
+        res' = addGithubInfo githubMembers res
+        res'' = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) res'
+    in sortBy (compareUnicodeText `on` contactName) res''
 
 userToContact :: FUM.User -> Contact Text
 userToContact FUM.User{..} = Contact
@@ -110,25 +84,32 @@ userToContact FUM.User{..} = Contact
     noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
     defaultEmail = FUM._getUserName _userName <> "@futurice.com"
 
-githubDetailedMembersOf
-    :: In GHDataSource.GithubRequest r
-    => GH.Name GH.Organization
-    -> GenTyHaxl r u [GH.User]
-githubDetailedMembersOf org = do
-    githubMembers <- GHDataSource.membersOf org
-    traverse (GHDataSource.userInfoFor . GH.simpleUserLogin) (V.toList githubMembers)
+githubDetailedMembers
+    :: ( MonadGitHub m
+       , MonadGitHubC m (Vector GH.SimpleUser)
+       , MonadGitHubC m GH.User
+       , MonadReader env m, HasGithubOrgName env
+       )
+    => m (Vector GH.User)
+githubDetailedMembers = do
+    githubMembers <- githubOrganisationMembers
+    traverse (githubReq . GH.userInfoForR . GH.simpleUserLogin) githubMembers
 
-addGithubInfo :: [GH.User] -> [Contact Text] -> [Contact Text]
+addGithubInfo
+    :: (Functor f, Foldable g)
+    => g GH.User -> f (Contact Text) -> f (Contact Text)
 addGithubInfo gh = fmap add
   where
+    gh' = toList gh
+
     nameMap :: HM.HashMap Text GH.User
-    nameMap = HM.fromList (mapMaybe pair gh)
+    nameMap = HM.fromList (mapMaybe pair gh')
       where
         pair :: GH.User -> Maybe (Text, GH.User)
         pair x = (\y -> (y, x)) <$> GH.userName x
 
     loginMap :: HM.HashMap Text GH.User
-    loginMap = HM.fromList (map pair gh)
+    loginMap = HM.fromList (map pair gh')
       where
         pair :: GH.User -> (Text, GH.User)
         pair x = (GH.untagName $ GH.userLogin x, x)
@@ -152,12 +133,13 @@ addGithubInfo gh = fmap add
                                 (HM.lookup ghLogin loginMap)
 
 fromDetailedOwner :: GH.User -> ContactGH Text
-fromDetailedOwner gh = ContactGH (GH.untagName . GH.userLogin $ gh)
-                                 (GH.userAvatarUrl gh)
+fromDetailedOwner gh = ContactGH
+    (GH.untagName . GH.userLogin $ gh)
+    (GH.userAvatarUrl gh)
 
 addFlowdockInfo
-    :: forall u f. (FD.UserLike u, Functor f)
-    => Vector u
+    :: forall u f g. (FD.UserLike u, Functor f, Foldable g)
+    => g u
     -> f (Contact Text)
     -> f (Contact Text)
 addFlowdockInfo us = fmap add
@@ -172,46 +154,26 @@ addFlowdockInfo us = fmap add
     uidMap = foldMap (\u -> HM.singleton (u ^. FD.userId) u) us
 
     add :: Contact Text -> Contact Text
-    add c = c{ contactFlowdock = (cfd >>= byId . FD.mkIdentifier . fromIntegral . cfdId)
-                               <> lessSure cfd
-                               <> byEmail
-                               <> byName }
+    add c = c
+        { contactFlowdock =
+            (cfd >>= byId . FD.mkIdentifier . fromIntegral . cfdId)
+            <> lessSure cfd
+            <> byEmail
+            <> byName
+        }
       where
-         cfd = contactFlowdock c
-         name = contactName c
-         email = contactEmail c
+        cfd = contactFlowdock c
+        name = contactName c
+        email = contactEmail c
 
-         byId uid = maybe Unknown (Sure . f) (HM.lookup uid uidMap)
-         byEmail = maybe Unknown (Sure . f)   (HM.lookup email emailMap)
-         byName  = maybe Unknown (Unsure . f) (HM.lookup name nameMap)
+        byId uid = maybe Unknown (Sure . f) (HM.lookup uid uidMap)
+        byEmail = maybe Unknown (Sure . f)   (HM.lookup email emailMap)
+        byName  = maybe Unknown (Unsure . f) (HM.lookup name nameMap)
 
-         f :: u -> ContactFD Text
-         f u = ContactFD (fromInteger $ FD.getIdentifier $ u ^. FD.userId)
+        f :: u -> ContactFD Text
+        f u = ContactFD (fromInteger $ FD.getIdentifier $ u ^. FD.userId)
                          (u ^. FD.userNick)
                          (u ^. FD.userAvatar)
 
-contactsHaxl
-    :: ( In FUMDataSource.FumRequest r
-       , In FDDataSource.FlowdockRequest r
-       , In GHDataSource.GithubRequest r
-       , In HttpDataSource.HttpRequest r
-       )
-    => GH.Name GH.Organization
-    -> FD.ParamName FD.Organisation
-    -> FUM.ListName
-    -> GenTyHaxl r u [Contact Text]
-contactsHaxl ghOrg fdOrg fumUserList = contactsHaxl'
-    <$> FUMDataSource.fetchList fumUserList
-    <*> githubDetailedMembersOf ghOrg
-    <*> FDDataSource.organisation fdOrg
 
-contactsHaxl' :: Vector FUM.User
-              -> [GH.User]
-              -> FD.Organisation
-              -> [Contact Text]
-contactsHaxl' users githubMembers flowdockOrg =
-    let users' = filter ((==FUM.StatusActive) . view FUM.userStatus) $ V.toList users
-        contacts = map userToContact users'
-        contacts' = addGithubInfo githubMembers contacts
-        contacts'' = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) contacts'
-    in sortBy (compareUnicodeText `on` contactName) contacts''
+

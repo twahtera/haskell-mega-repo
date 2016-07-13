@@ -50,8 +50,9 @@ library
     , filepath
     , flowdock-rest >=0.2
     , fum-client
-    , futurice-prelude
     , futulogo
+    , futurice-integrations
+    , futurice-prelude
     , github >= 0.14
     , gitrev
     , hashable
@@ -65,6 +66,7 @@ library
     , JuicyPixels-scale-dct
     , lens
     , lucid
+    , mtl
     , parallel-io
     , rfc5051
     , semigroups
@@ -99,6 +101,7 @@ library
       Futurice.App.Contacts.API
       Futurice.App.Contacts.Cached
       Futurice.App.Contacts.Config
+      Futurice.App.Contacts.Executor
       Futurice.App.Contacts.Logic
       Futurice.App.Contacts.Orphans
       Futurice.App.Contacts.Types

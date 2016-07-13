@@ -8,5 +8,6 @@ import Data.Aeson.Compat (FromJSON)
 import FUM.Request
 
 class (Applicative m, Monad m) => MonadFUM m where
-    fumAction :: FromJSON a => FUM a -> m a
+    -- | TODO: unhardcode the constraint
+    fumAction :: (FromJSON a, Show a, Typeable a) => FUM a -> m a
 
