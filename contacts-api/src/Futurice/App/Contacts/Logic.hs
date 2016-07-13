@@ -38,6 +38,7 @@ import Futurice.App.Contacts.Types.Tri (lessSure)
 compareUnicodeText :: Text -> Text -> Ordering
 compareUnicodeText = compareUnicode `on` T.unpack
 
+-- | Constraint for 'contacts'
 type ContactsM env m =
     ( MonadReader env m
     , HasFUMEmployeeListName env
@@ -48,6 +49,7 @@ type ContactsM env m =
     , MonadGitHubC m GH.User
     )
 
+-- | Get contacts data
 contacts
     :: ContactsM env m
     => m [Contact Text]
@@ -56,6 +58,7 @@ contacts = contacts'
     <*> githubDetailedMembers
     <*> flowdockOrganisation
 
+-- | The pure, data mangling part of 'contacts'
 contacts'
     :: Vector FUM.User
     -> Vector GH.User
@@ -70,16 +73,17 @@ contacts' users githubMembers flowdockOrg =
 
 userToContact :: FUM.User -> Contact Text
 userToContact FUM.User{..} = Contact
-    (FUM._getUserName _userName)
-    _userFirst
-    (_userFirst <> " " <> _userLast)
-    (S.fromMaybe defaultEmail _userEmail)
-    (S.catMaybes [_userPhone1, _userPhone2])
-    (view lazy _userTitle)
-    (S.fromMaybe noImage _userThumbUrl)
-    (S.fromMaybe noImage _userImageUrl)
-    (S.maybe Unknown (Sure . (\uid -> ContactFD uid "-" noImage)) _userFlowdock)
-    (S.maybe Unknown (Sure . flip ContactGH noImage) _userGithub)
+    { contactLogin    = FUM._getUserName _userName
+    , contactFirst    = _userFirst
+    , contactName     = _userFirst <> " " <> _userLast
+    , contactEmail    = S.fromMaybe defaultEmail _userEmail
+    , contactPhones   = S.catMaybes [_userPhone1, _userPhone2]
+    , contactTitle    = _userTitle ^. lazy
+    , contactThumb    = S.fromMaybe noImage _userThumbUrl
+    , contactImage    = S.fromMaybe noImage _userImageUrl
+    , contactFlowdock = S.maybe Unknown (Sure . (\uid -> ContactFD uid "-" noImage)) _userFlowdock
+    , contactGithub   = S.maybe Unknown (Sure . flip ContactGH noImage) _userGithub
+    }
   where
     noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
     defaultEmail = FUM._getUserName _userName <> "@futurice.com"
@@ -134,8 +138,9 @@ addGithubInfo gh = fmap add
 
 fromDetailedOwner :: GH.User -> ContactGH Text
 fromDetailedOwner gh = ContactGH
-    (GH.untagName . GH.userLogin $ gh)
-    (GH.userAvatarUrl gh)
+    { cghNick   = GH.untagName . GH.userLogin $ gh
+    , cghAvatar = GH.userAvatarUrl gh
+    }
 
 addFlowdockInfo
     :: forall u f g. (FD.UserLike u, Functor f, Foldable g)
@@ -144,6 +149,7 @@ addFlowdockInfo
     -> f (Contact Text)
 addFlowdockInfo us = fmap add
   where
+    -- we could use ixsed-typed for these
     emailMap :: HM.HashMap Text u
     emailMap = foldMap (\u -> HM.singleton (u ^. FD.userEmail) u) us
 
@@ -172,8 +178,5 @@ addFlowdockInfo us = fmap add
 
         f :: u -> ContactFD Text
         f u = ContactFD (fromInteger $ FD.getIdentifier $ u ^. FD.userId)
-                         (u ^. FD.userNick)
-                         (u ^. FD.userAvatar)
-
-
-
+                        (u ^. FD.userNick)
+                        (u ^. FD.userAvatar)
