@@ -9,6 +9,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 
 module Github.Haxl (
+    request,
     membersOf,
     userInfoFor,
     initDataSource,
@@ -16,19 +17,17 @@ module Github.Haxl (
     GithubDataSourceException(..),
     ) where
 
-import Prelude        ()
-import Prelude.Compat
+import Futurice.Prelude
 
 import Control.Concurrent.ParallelIO.Local (parallel_, withPool)
 
 import Control.Exception
-import Data.Bifunctor    (first)
-import Data.Hashable     (Hashable (..))
-import Data.Typeable     (Typeable)
-import Data.Vector       (Vector)
 import Haxl.Core
 
-import qualified GitHub     as GH
+-- | TODO: for githubRequestToTrue
+import Unsafe.Coerce     (unsafeCoerce)
+
+import qualified GitHub as GH
 
 data GithubRequest a where
     GithubRequest :: Show a => GH.Request 'True a -> GithubRequest a
@@ -42,11 +41,17 @@ instance Show1 GithubRequest where show1 = show
 instance Hashable (GithubRequest a) where
   hashWithSalt salt (GithubRequest gh) = hashWithSalt salt gh
 
+request :: (Show a, Typeable a) => GH.Request k a -> GenHaxl u a
+request = dataFetch . GithubRequest . githubRequestToTrue
+  where
+    githubRequestToTrue :: GH.Request k' a' -> GH.Request 'True a'
+    githubRequestToTrue = unsafeCoerce
+
 membersOf :: GH.Name GH.Organization -> GenHaxl u (Vector GH.SimpleUser)
-membersOf = dataFetch . GithubRequest . flip GH.membersOfR Nothing
+membersOf = request . flip GH.membersOfR Nothing
 
 userInfoFor :: GH.Name GH.User -> GenHaxl u GH.User
-userInfoFor = dataFetch . GithubRequest. GH.userInfoForR
+userInfoFor = request . GH.userInfoForR
 
 instance StateKey GithubRequest where
     data State GithubRequest = GithubDataState GH.Auth

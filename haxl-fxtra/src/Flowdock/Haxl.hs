@@ -13,11 +13,8 @@ module Flowdock.Haxl (
     FlowdockRequest(..),
     ) where
 
-import Prelude        ()
-import Prelude.Compat
+import Futurice.Prelude
 
-import Data.Hashable           (Hashable (..))
-import Data.Typeable           (Typeable)
 import Haxl.Core
 import Network.HTTP.Client     (Manager, newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)

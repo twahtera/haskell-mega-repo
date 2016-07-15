@@ -14,14 +14,10 @@ module Haxl.Extra.HttpDataSource
     , HttpRequest
     ) where
 
-import Prelude        ()
-import Prelude.Compat
+import Futurice.Prelude
 
 import qualified Data.ByteString.Lazy as LBS
 
-import           Data.Hashable           (Hashable)
-import           Data.Typeable           (Typeable)
-import           GHC.Generics            (Generic)
 import           Haxl.Core
 import qualified Haxl.Extra.IODataSource as IODS
 import           Network.HTTP.Client     (Manager, httpLbs, newManager,

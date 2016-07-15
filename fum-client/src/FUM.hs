@@ -1,8 +1,6 @@
-{-# LANGUAGE DeriveDataTypeable  #-}
-{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE ConstraintKinds     #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
 module FUM (
     -- * Actions
     fumUsers,
@@ -10,6 +8,7 @@ module FUM (
     -- * Requests
     fumUsersR,
     fumListR,
+    executeRequest,
     -- * Legacy Methods
     fetchUsers,
     fetchList,
@@ -23,6 +22,7 @@ import Prelude          ()
 
 import Control.Monad.Http   (runHttpT)
 import Control.Monad.Reader (runReaderT)
+import Data.Aeson           (FromJSON)
 import Network.HTTP.Client  (Manager)
 
 import Control.Monad.FUM
@@ -44,31 +44,41 @@ fumListR (ListName listName) =
 -- Actions
 -------------------------------------------------------------------------------
 
-fumUsers :: MonadFUM m => m (Vector User)
+fumUsers :: (MonadFUM m, MonadFUMC m (Vector User)) => m (Vector User)
 fumUsers = fumAction fumUsersR
 
-fumList :: MonadFUM m => ListName -> m (Vector User)
+fumList :: (MonadFUM m, MonadFUMC m (Vector User)) => ListName -> m (Vector User)
 fumList = fumAction . fumListR
+
+executeRequest
+    :: FromJSON a
+    => Manager
+    -> AuthToken
+    -> BaseUrl
+    -> FUM a
+    -> IO a
+executeRequest mgr token burl fum =
+    flip runHttpT mgr $ flip runReaderT cfg $ evalFUM fum
+  where
+    cfg = Cfg burl token
 
 -------------------------------------------------------------------------------
 -- Legacy
 -------------------------------------------------------------------------------
 
-fetchUsers :: Manager
-           -> AuthToken
-           -> BaseUrl
-           -> IO (Vector User)
+fetchUsers
+    :: Manager
+    -> AuthToken
+    -> BaseUrl
+    -> IO (Vector User)
 fetchUsers mgr token burl =
-    flip runHttpT mgr $ flip runReaderT cfg $ evalFUM fumUsersR
-  where cfg = Cfg burl token
+    executeRequest mgr token burl fumUsersR
 
-fetchList :: Manager
-          -> AuthToken
-          -> BaseUrl
-          -> ListName
-          -> IO (Vector User)
+fetchList
+    :: Manager
+    -> AuthToken
+    -> BaseUrl
+    -> ListName
+    -> IO (Vector User)
 fetchList mgr token burl listname =
-    flip runHttpT mgr $ flip runReaderT cfg $ evalFUM (fumListR listname)
-  where cfg = Cfg burl token
-
-
+    executeRequest mgr token burl $ fumListR listname

@@ -11,6 +11,18 @@ envs:
     FUM_TOKEN:
         secret: prod-fum-token
 
+    FD_AUTH_TOKEN:
+        secret: prod-fd-authtoken
+    FD_ORGANISATION: "futurice"
+               
+    # contacts is drunk
+    FUM_USER_LIST: employees
+    FUM_BASE_URL:
+        secret: prod-fum-baseurl
+    FUM_AUTH_TOKEN:
+        secret: prod-fum-token
+    GH_ORGANISATION: "futurice"
+
     POSTGRES_URL: postgres://$USER@localhost:5432/$USER
     POSTGRES_PASS: ""
 

@@ -14,14 +14,9 @@ module Haxl.Extra.IODataSource (
     IODataSourceTag(..),
     ) where
 
-import Prelude        ()
-import Prelude.Compat
+import Futurice.Prelude
 
 import Control.Concurrent.ParallelIO.Local (parallel_, withPool)
-import Data.Hashable                       (Hashable (..))
-import Data.Proxy                          (Proxy (..))
-import Data.Text                           (Text)
-import Data.Typeable                       (Typeable)
 import Haxl.Core
 
 -- | Generic IO request.

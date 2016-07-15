@@ -15,9 +15,8 @@ module Haxl.Extra.LogDataSource
     , LogRequest
     ) where
 
-import           Data.Hashable           (Hashable)
-import           Data.Typeable           (Typeable)
-import           GHC.Generics            (Generic)
+import Futurice.Prelude
+
 import           Haxl.Core
 import qualified Haxl.Extra.IODataSource as IODS
 

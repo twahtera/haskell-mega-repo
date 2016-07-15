@@ -27,7 +27,8 @@ import qualified Servant.Cache.Internal.DynMap as DynMap
 -- Contacts modules
 import Futurice.App.Contacts.API
 import Futurice.App.Contacts.Config (Config (..), getConfig)
-import Futurice.App.Contacts.Logic  (contactsAction)
+import Futurice.App.Contacts.Logic  (contacts)
+import Futurice.App.Contacts.Executor  (execute)
 import Futurice.App.Contacts.Types
 
 import Futurice.App.Contacts.Orphans ()
@@ -38,28 +39,32 @@ server action = liftIO action :<|> liftIO action
 
 -- | Server with docs and cache and status
 server' :: DynMapCache -> UTCTime -> IO [Contact Text] -> Server ContactsAPI'
-server' cache startTime contacts =
-    serverWithDocs cache startTime contactsAPI (server contacts)
+server' cache startTime cs =
+    serverWithDocs cache startTime contactsAPI (server cs)
 
 -- | Wai application
 app :: DynMapCache -> UTCTime -> IO [Contact Text] -> Application
-app cache startTime contacts =
-    serveWithContext  contactsAPI' context (server' cache startTime contacts)
+app cache startTime cs =
+    serveWithContext  contactsAPI' context (server' cache startTime cs)
   where
     context = SomeCache cache :. EmptyContext
+
+-- TODO: add periocron
+-- TODO: add swagger
 
 defaultMain :: IO ()
 defaultMain = do
     hPutStrLn stderr "Hello, I'm alive"
     now <- getCurrentTime
     Config{..} <- getConfig
-    let getContacts = contactsAction cfgGhOrg
-                                     cfgFdOrg
-                                     cfgFumUserList
-                                     cfgFumAuth
-                                     cfgFumBaseUrl
-                                     cfgGhAuth
-                                     cfgFdAuth
+    let getContacts = execute contacts
+            cfgGhOrg
+            cfgFdOrg
+            cfgFumUserList
+            cfgFumAuth
+            cfgFumBaseUrl
+            cfgFdAuth
+            cfgGhAuth
     cache <- DynMap.newIO
     unique <- newUnique
     let getContacts' = cachedIO cache 3600 unique getContacts

@@ -27,10 +27,10 @@ source-repository head
 library
   hs-source-dirs:
       src
+  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable NoImplicitPrelude ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
       base                  >=4.7      && <4.10
-    , base-compat           >=0.6.0    && <0.10
     , haxl                  >=0.3      && <0.4
     , http-client           >=0.4.18.1 && <0.5
     , http-client-tls       >=0.2.2    && <0.3
@@ -39,6 +39,7 @@ library
     , parallel-io           >=0.3.3    && <0.4
     , github                >=0.14.0
     , fum-client
+    , futurice-prelude
     , flowdock-rest         >=0.2.0.0
     , bytestring
     , exceptions
@@ -46,6 +47,7 @@ library
     , bifunctors
     , tagged
     , haxl-typed
+    , aeson
   exposed-modules:
       Flowdock.Haxl
       Flowdock.TyHaxl
