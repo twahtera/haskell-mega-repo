@@ -183,6 +183,9 @@ instance ToJSON (Query a) where
         , "uid"      .= u
         ]
 
+instance ToJSON SomeQuery where
+    toJSON (SomeQuery q) = toJSON q
+
 instance FromJSON SomeQuery where
     parseJSON = withObject "Query" $ \obj -> do
         tag <- obj .: "tag"

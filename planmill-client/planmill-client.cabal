@@ -35,6 +35,7 @@ library
     , aeson-extra           >=0.3.0.0 && <0.4
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
+    , async
     , base                  >=4.7     && <4.10
     , base-compat           >=0.6     && <0.10
     , base64-bytestring
@@ -140,6 +141,7 @@ executable planmill-client
     , aeson-extra           >=0.3.0.0 && <0.4
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
+    , async
     , base                  >=4.7     && <4.10
     , base-compat           >=0.6     && <0.10
     , base64-bytestring
@@ -211,6 +213,7 @@ test-suite integration
     , aeson-extra           >=0.3.0.0 && <0.4
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
+    , async
     , base                  >=4.7     && <4.10
     , base-compat           >=0.6     && <0.10
     , base64-bytestring
@@ -275,6 +278,7 @@ test-suite test
     , aeson-extra           >=0.3.0.0 && <0.4
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
+    , async
     , base                  >=4.7     && <4.10
     , base-compat           >=0.6     && <0.10
     , base64-bytestring
