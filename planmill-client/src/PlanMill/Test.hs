@@ -8,17 +8,18 @@
 -- This module is intended for interactive testing
 module PlanMill.Test (
     evalPlanMillIO,
-    module PlanMill,
     ) where
 
 import PlanMill.Internal.Prelude
 
 import Control.Monad.Http   (evalHttpT)
 import Control.Monad.Reader (runReaderT)
+import Control.Monad.CryptoRandom.Extra (MonadInitHashDRBG (..),
+                                         evalCRandTThrow)
 
-import Control.Monad.PlanMill (planmillAction)
-import PlanMill               (Cfg)
+import PlanMill.Types.Cfg     (Cfg)
 import PlanMill.Types.Request (PlanMill)
+import PlanMill.Eval (evalPlanMill)
 
 -- | Evaluate single PlanMill request
 --
@@ -28,9 +29,12 @@ import PlanMill.Types.Request (PlanMill)
 -- λ > let cfg = Cfg (Ident 42) "secret" mockEndpoint)
 -- λ > evalPlanMillIO cfg timereports
 -- @
-evalPlanMillIO :: forall a. FromJSON a
-               => Cfg         -- ^ Configuration
-               -> PlanMill a  -- ^ PlanMill request
-               -> IO a
-evalPlanMillIO cfg planmill =
-    evalHttpT $ runStderrLoggingT $ runReaderT (planmillAction planmill) cfg
+evalPlanMillIO
+    :: FromJSON a
+    => Cfg         -- ^ Configuration
+    -> PlanMill a  -- ^ PlanMill request
+    -> IO a
+evalPlanMillIO cfg planmill = do
+    g <- mkHashDRBG
+    evalHttpT $ runStderrLoggingT $ flip runReaderT cfg $ flip evalCRandTThrow g $
+        evalPlanMill planmill

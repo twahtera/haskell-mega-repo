@@ -13,7 +13,6 @@ import Control.Monad.Reader (runReaderT)
 import Data.Maybe           (isJust)
 import Data.Time            (UTCTime (..))
 import Data.Time.TH         (mkUTCTime)
-import Generics.SOP         (All)
 import System.Environment   (getArgs, lookupEnv)
 import System.IO            (hPutStrLn, stderr)
 
@@ -37,38 +36,25 @@ main = do
 putPretty :: (MonadIO m, AnsiPretty a) => a -> m ()
 putPretty = liftIO . putDoc . (<> linebreak) . ansiPretty
 
-script1 :: ( MonadPlanMill m, MonadIO m
-           , MonadPlanMillC m Me
-           )
-        => m ()
+script1 :: (MonadPlanMill m, MonadIO m) => m ()
 script1 = planmillAction me >>= putPretty
 
-script2 :: ( MonadPlanMill m, MonadIO m
-           , MonadPlanMillC m Projects
-           , MonadPlanMillC m Project
-           , MonadPlanMillC m Tasks
-           , MonadPlanMillC m Assignments
-           )
-        => m ()
+script2 :: (MonadPlanMill m, MonadIO m) => m ()
 script2 = do
-    ps <- planmillAction projects
+    ps <- planmillVectorAction projects
     let p = V.head ps
     p' <- planmillAction $ project $ p ^. identifier
     putPretty p
     putPretty p'
     putPretty (p == p')
-    ts <- planmillAction $ projectTasks $ p ^. identifier
+    ts <- planmillVectorAction $ projectTasks $ p ^. identifier
     putPretty ts
-    as <- planmillAction $ projectAssignments $ p ^. identifier
+    as <- planmillVectorAction $ projectAssignments $ p ^. identifier
     putPretty as
 
-script3 :: ( MonadPlanMill m, MonadIO m
-           , MonadPlanMillC m Users
-           , MonadPlanMillC m User
-           )
-        => m ()
+script3 :: (MonadPlanMill m, MonadIO m) => m ()
 script3 = do
-    us <- planmillAction users
+    us <- planmillVectorAction users
     let us' = V.take 5 us
     putPretty us'
     let u = V.head us
@@ -77,13 +63,9 @@ script3 = do
     putPretty u'
     putPretty (u == u')
 
-script4 :: ( MonadPlanMill m, MonadIO m
-           , MonadPlanMillC m Teams
-           , MonadPlanMillC m Team
-           )
-        => m ()
+script4 :: (MonadPlanMill m, MonadIO m) => m ()
 script4 = do
-    ts <- planmillAction teams
+    ts <- planmillVectorAction teams
     let ts' = V.take 5 ts
     putPretty ts'
     let t = V.head ts
@@ -92,14 +74,7 @@ script4 = do
     putPretty t'
     putPretty (t == t')
 
-script5
-    :: ( MonadPlanMill m, MonadIO m, MonadThrow m
-       , All (MonadPlanMillC m)
-           '[ Me , ReportableAssignments, TimeBalance, Timereports
-            , UserCapacities
-            ]
-       )
-    => m ()
+script5 :: (MonadPlanMill m, MonadIO m, MonadThrow m) => m ()
 script5 = do
     interval <- mkResultInterval IntervalStart
         $(mkUTCTime "2015-01-01T00:00:00.000Z")
@@ -108,23 +83,16 @@ script5 = do
         (utctDay $(mkUTCTime "2016-01-01T00:00:00.000Z"))
         (utctDay $(mkUTCTime "2016-02-01T00:00:00.000Z"))
     me' <- planmillAction me
-    as <- planmillAction $ reportableAssignments (me' ^. identifier)
+    as <- planmillVectorAction $ reportableAssignments (me' ^. identifier)
     tb <- planmillAction $ userTimeBalance (me' ^. identifier)
-    trs <- planmillAction $ timereportsFromIntervalFor interval (me' ^. identifier)
-    cc <- planmillAction $ userCapacity interval' (me' ^. identifier)
+    trs <- planmillVectorAction $ timereportsFromIntervalFor interval (me' ^. identifier)
+    cc <- planmillVectorAction $ userCapacity interval' (me' ^. identifier)
     putPretty as
     putPretty tb
     putPretty trs
     putPretty cc
 
-script6
-    :: ( MonadPlanMill m, MonadIO m, MonadThrow m
-       , All (MonadPlanMillC m)
-           '[ Me, User, Meta
-            ]
-       , ForallFSymbol (MonadPlanMillC m) EnumDesc
-       )
-    => m ()
+script6 :: (MonadPlanMill m, MonadIO m, MonadThrow m) => m ()
 script6 = do
     me' <- planmillAction me
     u <- planmillAction $ user $ me' ^. identifier

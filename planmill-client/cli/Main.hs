@@ -15,7 +15,6 @@ import Control.Monad.Reader (ReaderT (..))
 import Data.Maybe           (isJust)
 import Data.Time.TH         (mkUTCTime)
 import Data.Yaml            (decodeFileEither)
-import Generics.SOP         (All)
 import System.Environment   (getArgs, lookupEnv)
 import System.IO            (hPutStrLn, stderr)
 
@@ -36,34 +35,21 @@ data Dump = Dump
     }
     deriving Show
 
-directUsersTeams :: ( MonadPlanMill m, MonadCatch m, Applicative m
-                    , MonadPlanMillC m Teams
-                    , MonadPlanMillC m Users
-                    )
-                 => m (Users, Teams)
+directUsersTeams :: (MonadPlanMill m, MonadCatch m) => m (Users, Teams)
 directUsersTeams = (,) <$> u <*> t
   where
-    u = planmillAction users `catch` onPlanmillError (pure mempty)
-    t = planmillAction teams `catch` onPlanmillError (pure mempty)
+    u = planmillVectorAction users `catch` onPlanmillError (pure mempty)
+    t = planmillVectorAction teams `catch` onPlanmillError (pure mempty)
 
-getDump :: ( MonadPlanMill m, MonadIO m, MonadCatch m, Applicative m
-           , MonadPlanMillC m Me
-           , MonadPlanMillC m User
-           , MonadPlanMillC m Projects
-           , MonadPlanMillC m Tasks
-           , MonadPlanMillC m Assignments
-           , MonadPlanMillC m Teams
-           , MonadPlanMillC m Users
-           )
-        => m Dump
+getDump :: (MonadPlanMill m, MonadIO m, MonadCatch m) => m Dump
 getDump = do
     me' <- planmillAction me
     liftIO $ putPretty me'
     me'' <- planmillAction $ user (me' ^. identifier)
     liftIO $ putPretty me''
-    ps <- planmillAction projects
-    ts <- fold <$> traverse (planmillAction . projectTasks . view identifier) (toList ps)
-    as <- fold <$> traverse (planmillAction . projectAssignments . view identifier) (toList ps)
+    ps <- planmillVectorAction projects
+    ts <- fold <$> traverse (planmillVectorAction . projectTasks . view identifier) (toList ps)
+    as <- fold <$> traverse (planmillVectorAction . projectAssignments . view identifier) (toList ps)
     (us, t) <- directUsersTeams
     pure Dump
         { dumpProjects    = toLookupHM ps
@@ -91,26 +77,18 @@ printDumpStats (Dump ps ts as t us) = do
 -- My projects
 -------------------------------------------------------------------------------
 
-myProjects :: ( MonadPlanMill m, MonadIO m, MonadCatch m, Applicative m
-              , MonadPlanMillC m Me
-              , MonadPlanMillC m ReportableAssignments
-              )
-           => m ()
+myProjects :: (MonadPlanMill m, MonadIO m) => m ()
 myProjects = do
     me' <- planmillAction me
     putPretty me'
-    as <- planmillAction $ reportableAssignments (me' ^. identifier)
+    as <- planmillVectorAction $ reportableAssignments (me' ^. identifier)
     putPretty as
 
 -------------------------------------------------------------------------------
 -- Timereports
 -------------------------------------------------------------------------------
 
-myTimereports
-    :: ( MonadPlanMill m, MonadIO m, MonadThrow m
-       , All (MonadPlanMillC m) '[Me, User, Team, Timereports]
-       )
-    => m ()
+myTimereports :: ( MonadPlanMill m, MonadIO m, MonadThrow m) => m ()
 myTimereports = do
     me' <- planmillAction me
     putPretty me'
@@ -123,37 +101,28 @@ myTimereports = do
         (utctDay $(mkUTCTime "2016-03-01T00:00:00.000Z"))
         (utctDay $(mkUTCTime "2016-05-01T00:00:00.000Z"))
     let interval' = ResultInterval IntervalStart $ intervalDayToIntervalUTC interval
-    trs <- planmillAction $ timereportsFromIntervalFor interval' ident
+    trs <- planmillVectorAction $ timereportsFromIntervalFor interval' ident
     putPretty trs
 
 -------------------------------------------------------------------------------
 -- Capacity calendar
 -------------------------------------------------------------------------------
 
-capacityCalendar
-    :: ( MonadPlanMill m, MonadIO m, MonadThrow m
-       , All (MonadPlanMillC m) '[Me, UserCapacities]
-       )
-    => m ()
+capacityCalendar :: (MonadPlanMill m, MonadIO m, MonadThrow m) => m ()
 capacityCalendar = do
     me' <- planmillAction me
     putPretty me'
     interval <- mkInterval
         (utctDay $(mkUTCTime "2016-01-01T00:00:00.000Z"))
         (utctDay $(mkUTCTime "2016-02-01T00:00:00.000Z"))
-    cc <- planmillAction $ userCapacity interval $ Ident 17557
+    cc <- planmillVectorAction $ userCapacity interval $ Ident 17557
     putPretty cc
 
 -------------------------------------------------------------------------------
 -- Enumerations
 -------------------------------------------------------------------------------
 
-enumerationsCommand
-    :: ( MonadPlanMill m, MonadIO m, MonadThrow m
-       , All (MonadPlanMillC m) '[Meta, Me, User]
-       , ForallFSymbol (MonadPlanMillC m) EnumDesc
-       )
-    => m ()
+enumerationsCommand :: (MonadPlanMill m, MonadIO m) => m ()
 enumerationsCommand = do
     me' <- planmillAction me
     putPretty me'

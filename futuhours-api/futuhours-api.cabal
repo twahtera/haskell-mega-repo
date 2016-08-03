@@ -50,6 +50,7 @@ library
     , ekg
     , ekg-core
     , env-config
+    , constraints
     , exceptions
     , fum-client
     , futulogo

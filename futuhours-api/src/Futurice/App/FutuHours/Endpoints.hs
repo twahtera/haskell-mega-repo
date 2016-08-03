@@ -2,10 +2,10 @@
 {-# LANGUAGE ConstraintKinds   #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeOperators     #-}
 #if __GLASGOW_HASKELL__ >= 800
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
@@ -38,14 +38,14 @@ import Control.Monad.Trans.Except       (ExceptT)
 import Data.Aeson.Extra                 (M (..))
 import Data.BinaryFromJSON              (BinaryFromJSON)
 import Data.Maybe                       (fromJust)
-import Data.Monoid (Sum (..))
+import Data.Monoid                      (Sum (..))
 import Data.Ord                         (comparing)
 import Data.Pool                        (withResource)
 import Data.Time                        (UTCTime (..), addDays, getCurrentTime)
-import Data.Time.Fxtra                  (beginningOfPrevMonth,
-                                         getCurrentDayInFinland)
+import Data.Time.Fxtra
+       (beginningOfPrevMonth, getCurrentDayInFinland)
 import Database.PostgreSQL.Simple.Fxtra (execute)
-import Generics.SOP                     (All, NP(..), I(..))
+import Generics.SOP                     (All, I (..), NP (..))
 import Servant                          (ServantErr)
 
 import Futurice.Report
@@ -55,14 +55,14 @@ import Servant.Server (err400, err404)
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Map            as Map
 --import qualified Data.Text.Encoding  as TE
-import qualified Data.Vector         as V
+import qualified Data.Vector as V
 
 import Futurice.App.FutuHours.Context
 import Futurice.App.FutuHours.PlanMill
 import Futurice.App.FutuHours.PlanMillCache
+import Futurice.App.FutuHours.Precalc
 import Futurice.App.FutuHours.Reports.MissingHours
 import Futurice.App.FutuHours.Types
-import Futurice.App.FutuHours.Precalc
 
 -- Planmill modules
 import           Control.Monad.PlanMill (ForallFSymbol, MonadPlanMill (..))
@@ -91,7 +91,7 @@ getPlanmillApiKey' ctx username = (fmap . fmap) f (getPlanmillApiKey ctx usernam
 getTimereports :: Ctx  -> FUMUsername -> ExceptT ServantErr IO (V.Vector Timereport)
 getTimereports = withPlanmillCfg $ \cfg -> liftIO $ runHaxl cfg getTimereports'
   where
-    getTimereports' :: (MonadPlanMill m, MonadPlanMillC m PM.Timereports) => m (V.Vector Timereport)
+    getTimereports' :: (MonadPlanMill m) => m (V.Vector Timereport)
     getTimereports' = do
         timereports <- planmillAction PM.timereports
         return $ fmap convert timereports
@@ -189,7 +189,7 @@ getLegacyHours gteDay lteDay =
         Nothing       -> \_ _ -> throwError err400
         Just interval -> withLegacyPlanmill p $ \uid -> do
             let ri = interval
-            ts <- planmillAction $ PM.timereportsFromIntervalFor ri uid
+            ts <- PM.planmillVectorAction $ PM.timereportsFromIntervalFor ri uid
             pure $ Envelope $ fmap f ts
   where
     lte, gte :: Maybe UTCTime
@@ -247,7 +247,7 @@ missingHoursEndpoint
     :: DefaultableEndpoint
         '[Maybe Day, Maybe Day, Maybe FUMUsernamesParam]
         (PM.Interval Day, [FUMUsername])
-        MissingHoursReport 
+        MissingHoursReport
 missingHoursEndpoint = DefaultableEndpoint
     { defEndTag = EMissingHours
     , defEndDefaultParsedParam = do
@@ -294,12 +294,7 @@ powerUsersEndpoint = DefaultableEndpoint
       where
         p = Proxy :: Proxy '[PM.User, PM.Team, PM.Meta]
 
-        powerUser
-            :: ( Applicative n, PM.MonadPlanMill n
-               , All (PM.MonadPlanMillC n) '[PM.User, PM.Team, PM.Meta]
-               , ForallFSymbol (PM.MonadPlanMillC n) PM.EnumDesc
-               )
-            => (FUMUsername, PM.User) -> n PowerUser
+        powerUser :: PM.MonadPlanMill n => (FUMUsername, PM.User) -> n PowerUser
         powerUser (fumLogin, u) = do
             t <- traverse (PM.planmillAction . PM.team) (PM.uTeam u)
             a <- PM.enumerationValue (PM.uPassive u) "-"
@@ -342,26 +337,21 @@ powerAbsencesEndpoint = DefaultableEndpoint
         p = Proxy :: Proxy '[PM.Absences, PM.UserCapacities]
 
         getPowerAbsences'
-            :: ( Applicative n, PM.MonadPlanMill n
-               , PM.MonadPlanMillC n PM.Absences
-               , PM.MonadPlanMillC n PM.UserCapacities
-               )
+            :: PM.MonadPlanMill n
             => HM.HashMap FUMUsername PM.UserId
             -> n (Vector PowerAbsence)
         getPowerAbsences' idsLookup = do
-            absences <- PM.planmillAction (PM.absencesFromInterval (toResultInterval interval))
+            absences <- PM.planmillVectorAction (PM.absencesFromInterval (toResultInterval interval))
             traverse (toPowerAbsence' idsLookup) absences
 
         toPowerAbsence'
-            :: ( Applicative n, PM.MonadPlanMill n
-               , PM.MonadPlanMillC n PM.UserCapacities
-               )
+            :: PM.MonadPlanMill n
             => HM.HashMap FUMUsername PM.UserId
             -> PM.Absence -> n PowerAbsence
         toPowerAbsence' idsLookup ab =
             case PM.mkInterval (PM.absenceStart ab) (PM.absenceFinish ab) of
                 Just interval' -> do
-                    uc <- PM.planmillAction $ PM.userCapacity interval' (PM.absencePerson ab)
+                    uc <- PM.planmillVectorAction $ PM.userCapacity interval' (PM.absencePerson ab)
                     return $ toPowerAbsence idsLookup ab uc
                 Nothing ->
                     return $ toPowerAbsence idsLookup ab mempty
@@ -411,7 +401,7 @@ withPlanmillCfg action ctx username =do
 withLegacyPlanmill
     :: forall m a as. (MonadIO m, MonadError ServantErr m, All BinaryFromJSON as)
     => Proxy as
-    -> (forall n. (Applicative n, MonadPlanMill n, All (MonadPlanMillC n) as) => PM.UserId -> n a)
+    -> (forall n. MonadPlanMill n => PM.UserId -> n a)
     -> Ctx
     -> Maybe Text
     -> m a
@@ -427,7 +417,7 @@ executeUncachedAdminPlanmill
     :: forall m a as. (MonadIO m, All BinaryFromJSON as)
     => Ctx
     -> Proxy as
-    -> (forall n. (Applicative n, MonadPlanMill n, All (MonadPlanMillC n) as) => n a)
+    -> (forall n. MonadPlanMill n => n a)
     -> m a
 executeUncachedAdminPlanmill ctx _ action =
     liftIO $ withResource (ctxPostgresPool ctx) $ \conn ->
@@ -437,7 +427,7 @@ executeCachedAdminPlanmill
     :: forall m a as. (MonadIO m, All BinaryFromJSON as, ForallFSymbol BinaryFromJSON PM.EnumDesc)
     => Ctx
     -> Proxy as
-    -> (forall n. (Applicative n, MonadPlanMill n, All (MonadPlanMillC n) as, ForallFSymbol (MonadPlanMillC n) PM.EnumDesc, MonadPlanMillCached n) => n a)
+    -> (forall n. (MonadPlanMill n, MonadPlanMillCached n) => n a)
     -> m a
 executeCachedAdminPlanmill ctx _ action =
     liftIO $ withResource (ctxPostgresPool ctx) $ \conn ->
