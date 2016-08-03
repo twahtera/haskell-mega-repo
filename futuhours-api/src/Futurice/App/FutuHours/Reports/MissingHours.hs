@@ -13,7 +13,6 @@ module Futurice.App.FutuHours.Reports.MissingHours (
 import Futurice.Prelude
 
 import Data.Maybe                       (mapMaybe)
-import Futurice.Constraint.ForallSymbol (ForallFSymbol)
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Map            as Map
@@ -25,14 +24,7 @@ import Futurice.App.FutuHours.PlanMillCache
 import Futurice.App.FutuHours.Types
 
 missingHoursForUser
-    :: ( PM.MonadPlanMill m, Applicative m
-       , PM.MonadPlanMillC m PM.User
-       , PM.MonadPlanMillC m PM.Team
-       , PM.MonadPlanMillC m PM.UserCapacities
-       , PM.MonadPlanMillC m PM.Meta
-       , ForallFSymbol (PM.MonadPlanMillC m) PM.EnumDesc
-       , MonadPlanMillCached m
-       )
+    :: (PM.MonadPlanMill m, MonadPlanMillCached m)
     => PM.Interval Day
     -> PM.UserId
     -> m (Per Employee (Vector MissingHour))
@@ -40,7 +32,7 @@ missingHoursForUser interval uid = do
     u <- PM.planmillAction $ PM.user uid
     t <- traverse (PM.planmillAction . PM.team) (PM.uTeam u)
     c <- PM.enumerationValue (PM.uContractType u) "Unknown Contract"
-    uc <- PM.planmillAction $ PM.userCapacity interval uid
+    uc <- PM.planmillVectorAction $ PM.userCapacity interval uid
     let uc' = capacities uc
     tr <- cachedTimereports interval uid
     let employee = Employee
@@ -80,15 +72,7 @@ missingHoursForUser interval uid = do
 --
 -- * Types
 missingHours
-    :: forall m f.
-        ( Applicative m, PM.MonadPlanMill m, Foldable f
-        , PM.MonadPlanMillC m PM.UserCapacities
-        , PM.MonadPlanMillC m PM.User
-        , PM.MonadPlanMillC m PM.Team
-        , PM.MonadPlanMillC m PM.Meta
-        , ForallFSymbol (PM.MonadPlanMillC m) PM.EnumDesc
-        , MonadPlanMillCached m
-        )
+    :: forall m f. (PM.MonadPlanMill m, MonadPlanMillCached m, Foldable f)
     => UTCTime
     -> PlanmillUserLookupTable
     -> PM.Interval Day

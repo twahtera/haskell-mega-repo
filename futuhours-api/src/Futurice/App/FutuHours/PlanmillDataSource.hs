@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE GADTs    #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -26,6 +27,7 @@ import Control.Monad.Logger             (LogLevel, LoggingT)
 import Control.Monad.Reader             (ReaderT, runReaderT)
 import Data.Binary.Tagged               (taggedDecodeOrFail, taggedEncode)
 import Data.BinaryFromJSON              (BinaryFromJSON)
+import Data.Constraint                  (Dict (..), type (:-)(..))
 import Futurice.Has
 import Generics.SOP                     (I (..))
 import Haxl.Core
@@ -39,13 +41,14 @@ import qualified Database.PostgreSQL.Simple.Fxtra as Postgres
 import Futurice.App.FutuHours.Context
 
 import qualified PlanMill             as PM
-import qualified PlanMill.Operational as PM
+import qualified PlanMill.Eval        as PM
 
 -------------------------------------------------------------------------------
 -- Request
 -------------------------------------------------------------------------------
 
-newtype PlanmillRequest a = PMR (PM.PlanMillAction BinaryFromJSON a)
+data PlanmillRequest a where
+    PMR :: BinaryFromJSON a => PM.PlanMill a -> PlanmillRequest a
 
 deriving instance Show (PlanmillRequest a)
 deriving instance Typeable PlanmillRequest
@@ -76,7 +79,8 @@ initDataSource e conn = pure $
 
 instance In' PlanmillRequest r => PM.MonadPlanMill (GenTyHaxl r u) where
     type MonadPlanMillC (GenTyHaxl r u) = BinaryFromJSON
-    planmillAction = GenTyHaxl . dataFetch . PMR . PM.PlanMillAction
+    entailMonadPlanMillCVector _ _ = Sub Dict 
+    planmillAction = GenTyHaxl . dataFetch . PMR
 
 -------------------------------------------------------------------------------
 -- Fetching
@@ -104,7 +108,7 @@ data P = P
     }
 
 makeP :: BlockedFetch PlanmillRequest -> P
-makeP bf@(BlockedFetch (PMR (PM.PlanMillAction req)) _) = P key bf
+makeP bf@(BlockedFetch (PMR req) _) = P key bf
   where
     key :: Key
     key = Key $ url <> qs
@@ -147,7 +151,7 @@ instance DataSource u PlanmillRequest where
                      traverse_ (singleFetch cache) blockedFetches'
 
         singleFetch :: CacheLookup -> P -> M ()
-        singleFetch cache (P key (BlockedFetch (PMR (PM.PlanMillAction req)) v)) = do
+        singleFetch cache (P key (BlockedFetch (PMR req) v)) = do
             -- Lookup in cache
             inCache <- join <$> extract key `traverse` HM.lookup key cache
             -- If not found perform fetch

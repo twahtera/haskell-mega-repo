@@ -1,22 +1,26 @@
 {-# LANGUAGE CPP                     #-}
 {-# LANGUAGE ConstraintKinds         #-}
 {-# LANGUAGE FlexibleInstances       #-}
+{-# LANGUAGE InstanceSigs            #-}
 {-# LANGUAGE MultiParamTypeClasses   #-}
 {-# LANGUAGE NoOverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables     #-}
 {-# LANGUAGE TypeFamilies            #-}
+{-# LANGUAGE TypeOperators           #-}
 {-# LANGUAGE UndecidableInstances    #-}
+{-# LANGUAGE RankNTypes              #-}
 #if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
+{-# OPTIONS_GHC -fconstraint-solver-iterations=10 #-}
 #endif
 module Caching where
 
 import PlanMill.Internal.Prelude
-import Prelude                   ()
+import Prelude ()
 
 import Data.Binary          (encode)
 import Data.Binary.Tagged   (taggedDecodeFileOrFail, taggedEncodeFile)
-import Data.Constraint      (Dict (..))
+import Data.Constraint      (Dict (..), type (:-)(..), (\\))
 import Data.Digest.Pure.SHA (sha256, showDigest)
 
 import Control.Monad.PlanMill
@@ -48,31 +52,46 @@ instance (Applicative m, MonadCatch m) => MonadCatch (CachingT m) where
 
 class (MonadPlanMillC m a, Binary a, HasStructuralInfo a, HasSemanticVersion a)
      => CachingTC m a
-instance (MonadPlanMillC m a, Binary a, HasStructuralInfo a, HasSemanticVersion a)
-     => CachingTC m a
 
-instance ( ForallFSymbol (MonadPlanMillC m) e
-         , ForallFSymbol Binary e
-         , ForallFSymbol HasStructuralInfo e
-         , ForallFSymbol HasSemanticVersion e
-         )
-    => ForallFSymbol (CachingTC m) e
-  where
-    instFSymbol _ f s =
-        case proxies of
-            (Dict, Dict, Dict, Dict) -> Dict
+-- Unfortunate boilerplate 
+instance MonadPlanMillC m Absence              => CachingTC m Absence
+instance MonadPlanMillC m Assignment           => CachingTC m Assignment
+instance MonadPlanMillC m Me                   => CachingTC m Me
+instance MonadPlanMillC m Meta                 => CachingTC m Meta
+instance MonadPlanMillC m Project              => CachingTC m Project
+instance MonadPlanMillC m ReportableAssignment => CachingTC m ReportableAssignment
+instance MonadPlanMillC m Task                 => CachingTC m Task
+instance MonadPlanMillC m Team                 => CachingTC m Team
+instance MonadPlanMillC m TimeBalance          => CachingTC m TimeBalance
+instance MonadPlanMillC m Timereport           => CachingTC m Timereport
+instance MonadPlanMillC m User                 => CachingTC m User
+instance MonadPlanMillC m UserCapacity         => CachingTC m UserCapacity
+instance MonadPlanMillC m (EnumDesc s)         => CachingTC m (EnumDesc s)
+
+instance (MonadPlanMillC m (Vector a), CachingTC m a) => CachingTC m (Vector a)
+
+instance ForallFSymbol (MonadPlanMillC m) EnumDesc
+    => ForallFSymbol (CachingTC m) EnumDesc where
+    instFSymbol _ f s = case proxies of
+        Dict -> Dict
       where
-        proxies =
-            ( instFSymbol (Proxy :: Proxy (MonadPlanMillC m)) f s
-            , instFSymbol (Proxy :: Proxy Binary) f s
-            , instFSymbol (Proxy :: Proxy HasStructuralInfo) f s
-            , instFSymbol (Proxy :: Proxy HasSemanticVersion) f s
-            )
-
+        proxies = instFSymbol (Proxy :: Proxy (MonadPlanMillC m)) f s
+          
 -- | Caches get requests
-instance (Applicative m, MonadPlanMill m, MonadIO m, MonadCatch m)
-    => MonadPlanMill (CachingT m) where
+instance
+    (Applicative m, MonadPlanMill m, MonadIO m, MonadCatch m)
+  => MonadPlanMill (CachingT m) where
     type MonadPlanMillC (CachingT m) = CachingTC m
+
+    -- Nasty manual plumbing
+    entailMonadPlanMillCVector
+        :: forall a. Proxy (CachingT m) -> Proxy a
+        -> MonadPlanMillC (CachingT m) a :- MonadPlanMillC (CachingT m) (Vector a)
+    entailMonadPlanMillCVector _ p = Sub dict 
+      where
+        dict :: CachingTC m a => Dict (CachingTC m (Vector a))
+        dict = Dict \\ entailMonadPlanMillCVector (Proxy :: Proxy m) p
+            -- :: MonadPlanMillC m a :- MonadPlanMillC m (Vector a))
 
     planmillAction p@(PlanMillGet qs ps) =
         CachingT $ cached path $ planmillAction p

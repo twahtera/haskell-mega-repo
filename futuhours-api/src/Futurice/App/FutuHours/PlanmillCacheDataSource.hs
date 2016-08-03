@@ -40,7 +40,7 @@ import qualified Database.PostgreSQL.Simple.Fxtra as Postgres
 import Futurice.App.FutuHours.Context
 
 import qualified PlanMill             as PM
-import qualified PlanMill.Operational as PM
+import qualified PlanMill.Eval        as PM
 
 import Futurice.App.FutuHours.PlanMillCache
 

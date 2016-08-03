@@ -93,7 +93,6 @@ library
       PlanMill.Enumerations
       PlanMill.Eval
       PlanMill.Internal.Prelude
-      PlanMill.Operational
       PlanMill.Test
       PlanMill.Types
       PlanMill.Types.Absence

@@ -43,8 +43,6 @@ enumerationForField
         ( HasMeta entity
         , KnownSymbol field
         , MonadPlanMill m
-        , MonadPlanMillC m Meta
-        , ForallFSymbol (MonadPlanMillC m) EnumDesc
         )
     => Proxy entity -> Proxy field
     -> m (Maybe SomeEnumDesc)
@@ -63,8 +61,6 @@ enumerationValue
         ( HasMeta entity
         , KnownSymbol field
         , MonadPlanMill m
-        , MonadPlanMillC m Meta
-        , ForallFSymbol (MonadPlanMillC m) EnumDesc
         )
     => EnumValue entity field
     -> Text  -- ^ Default text
