@@ -54,8 +54,7 @@ import GHC.TypeLits (KnownSymbol, symbolVal)
 
 import PlanMill.Types
 
-import qualified Data.Text          as T
-import qualified Data.Text.Encoding as TE
+import qualified Data.Text as T
 
 -- | Get a list of absences.
 --
@@ -155,7 +154,7 @@ timereportsFor (Ident uid) =
     planMillPagedGetQs qs' $ t "timereports"
   where
     qs' :: QueryString
-    qs' = [ ("person", Just . fromString $ show uid)
+    qs' = [ ("person", fromString $ show uid)
           ]
 
 -- | Get a list of timereports from specified interval.
@@ -172,7 +171,7 @@ timereportsFromIntervalFor ri (Ident uid) =
     qs :: QueryString
     qs = intervalToQueryString ri
     qs' :: QueryString
-    qs' = [ ("person", Just . fromString $ show uid)
+    qs' = [ ("person", fromString $ show uid)
           ]
 
 -- | View details of single task.
@@ -214,8 +213,8 @@ userCapacity :: Interval Day -> UserId -> PlanMill UserCapacities
 userCapacity interval uid = planMillGetQs qs $ t "users" // uid // t "capacity"
   where
     qs = flip elimInterval interval $ \a b ->
-        [ ("start",  Just . fromString . showPlanmillUTCTime $ UTCTime a 0)
-        , ("finish", Just . fromString . showPlanmillUTCTime $ UTCTime b 0)
+        [ ("start",  fromString . showPlanmillUTCTime $ UTCTime a 0)
+        , ("finish", fromString . showPlanmillUTCTime $ UTCTime b 0)
         ]
 
 -- | Get a list of assignments
@@ -241,7 +240,7 @@ actions = planMillGet $ t "actions"
 -- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#enumerations_get>
 enumerations :: KnownSymbol k => Proxy k -> PlanMill (EnumDesc k)
 enumerations p = planMillGetQs qs $ t "enumerations"
-  where qs = [ ("name", Just . TE.encodeUtf8 $ T.pack $ symbolVal p) ]
+  where qs = [ ("name", T.pack $ symbolVal p) ]
 
 -------------------------------------------------------------------------------
 -- Utilities

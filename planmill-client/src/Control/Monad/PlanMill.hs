@@ -18,8 +18,11 @@
 module Control.Monad.PlanMill (
     MonadPlanMill(..),
     planmillVectorAction,
+    MonadPlanMillQuery(..),
+    planmillVectorQuery,
     MonadPlanMillTypes,
     ForallFSymbol(..),
+    MonadPlanMillConstraint(..),
     ) where
 
 import PlanMill.Internal.Prelude
@@ -32,6 +35,7 @@ import Futurice.Constraint.ForallSymbol (ForallFSymbol (..))
 
 import PlanMill.Classes
 import PlanMill.Types
+import PlanMill.Types.Query (Query, queryToRequest)
 import PlanMill.Test (evalPlanMillIO)
 
 -- | Types 'MonadPlanMillC' should be satisfied to define 'MonadPlanMill' instance.
@@ -44,7 +48,8 @@ type MonadPlanMillTypes =
 -- Note: to update do:
 -- intercalate ", " $ sort $ splitOn ", " "User, Team"
 
--- | Class of monads capable to do planmill operations.
+-- | Superclass for providing constraints for 'MonadPlanMill' and 
+-- 'MonadPlanMillQuery'.
 class
     ( Applicative m, Monad m
     -- Unfortunately we have to write all of those down
@@ -62,7 +67,7 @@ class
     , MonadPlanMillC m UserCapacity
     , ForallFSymbol (MonadPlanMillC m) EnumDesc
     )
-  => MonadPlanMill m where
+  => MonadPlanMillConstraint m where
 
     -- | Different planmill monads have different constraints
     type MonadPlanMillC m :: * -> Constraint
@@ -72,9 +77,15 @@ class
         :: Proxy m -> Proxy a
         -> MonadPlanMillC m a :- MonadPlanMillC m (Vector a)
 
+-------------------------------------------------------------------------------
+-- MonadPlanMill
+-------------------------------------------------------------------------------
+
+-- | Class of monads capable to do planmill operations.
+class MonadPlanMillConstraint m => MonadPlanMill m where
     -- | "Lift" planmill actions to monad action
     planmillAction :: MonadPlanMillC m a => PlanMill a -> m a
-
+--
 -- | Use this for actions retutning @'Vector' a@
 planmillVectorAction
     :: forall m a. (MonadPlanMill m, MonadPlanMillC m a)
@@ -82,13 +93,46 @@ planmillVectorAction
 planmillVectorAction = planmillAction \\  -- hello CPP
     entailMonadPlanMillCVector (Proxy :: Proxy m) (Proxy :: Proxy a)
 
-instance ( MonadIO m, MonadHttp m, MonadThrow m, MonadTime m, MonadLogger m
-         , Applicative m
-         , HasPlanMillBaseUrl env, HasCredentials env
-         )
-    => MonadPlanMill (ReaderT env m) where
+-------------------------------------------------------------------------------
+-- MonadPlanMillQuery
+-------------------------------------------------------------------------------
+
+-- | Class of monads capable to do planmill queries (i.e. serialisable
+-- read-only operations).
+class MonadPlanMillConstraint m => MonadPlanMillQuery m where
+    -- | "Lift" planmill queries to monad action
+    planmillQuery :: MonadPlanMillC m a => Query a -> m a
+
+planmillVectorQuery
+    :: forall m a. (MonadPlanMillQuery m, MonadPlanMillC m a)
+    => Query (Vector a) -> m (Vector a)
+planmillVectorQuery = planmillQuery \\  -- hello CPP
+    entailMonadPlanMillCVector (Proxy :: Proxy m) (Proxy :: Proxy a)
+
+instance (Applicative m, Monad m)
+    => MonadPlanMillConstraint (ReaderT env m)
+  where
     type MonadPlanMillC (ReaderT env m) = FromJSON
     entailMonadPlanMillCVector _ _ = Sub Dict
+
+-------------------------------------------------------------------------------
+-- Simple instance for "IO"
+-------------------------------------------------------------------------------
+
+instance
+    ( MonadIO m, MonadHttp m, MonadThrow m, MonadTime m, MonadLogger m
+    , Applicative m
+    , HasPlanMillBaseUrl env, HasCredentials env
+    )
+  => MonadPlanMill (ReaderT env m) where
     planmillAction planmill = do
-        cfg <- undefined
+        cfg <- askCfg
         liftIO $ evalPlanMillIO cfg planmill
+
+instance
+    ( MonadIO m, MonadHttp m, MonadThrow m, MonadTime m, MonadLogger m
+    , Applicative m
+    , HasPlanMillBaseUrl env, HasCredentials env
+    )
+  => MonadPlanMillQuery (ReaderT env m) where
+    planmillQuery = planmillAction . queryToRequest

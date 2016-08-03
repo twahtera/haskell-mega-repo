@@ -77,9 +77,11 @@ initDataSource
 initDataSource e conn = pure $
     PMRS conn (e ^. planmillCfg) (e ^. logLevel)
 
-instance In' PlanmillRequest r => PM.MonadPlanMill (GenTyHaxl r u) where
+instance In' PlanmillRequest r => PM.MonadPlanMillConstraint (GenTyHaxl r u) where
     type MonadPlanMillC (GenTyHaxl r u) = BinaryFromJSON
     entailMonadPlanMillCVector _ _ = Sub Dict 
+
+instance In' PlanmillRequest r => PM.MonadPlanMill (GenTyHaxl r u) where
     planmillAction = GenTyHaxl . dataFetch . PMR
 
 -------------------------------------------------------------------------------

@@ -93,6 +93,7 @@ library
       PlanMill.Enumerations
       PlanMill.Eval
       PlanMill.Internal.Prelude
+      PlanMill.Queries
       PlanMill.Test
       PlanMill.Types
       PlanMill.Types.Absence
@@ -112,6 +113,7 @@ library
       PlanMill.Types.Me
       PlanMill.Types.Meta
       PlanMill.Types.Project
+      PlanMill.Types.Query
       PlanMill.Types.ReportableAssignment
       PlanMill.Types.Request
       PlanMill.Types.ResultInterval

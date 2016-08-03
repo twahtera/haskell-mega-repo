@@ -13,3 +13,4 @@ columns: 80
 language_extensions:
   - MultiParamTypeClasses
   - FlexibleContexts
+  - ExplicitForAll

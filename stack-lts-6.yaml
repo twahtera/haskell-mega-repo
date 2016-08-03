@@ -45,4 +45,5 @@ extra-deps:
 - servant-swagger-1.1
 - servant-swagger-ui-0.1.0.2.1.4
 - swagger2-2.1
+- these-0.7.1
 flags: {}

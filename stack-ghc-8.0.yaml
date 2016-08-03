@@ -94,6 +94,7 @@ extra-deps:
 - swagger2-2.1
 - threads-0.5.1.4
 - time-parsers-0.1.0.0
+- these-0.7.1
 - turtle-1.2.8
 - tz-0.1.1.1
 - wai-cors-0.2.4

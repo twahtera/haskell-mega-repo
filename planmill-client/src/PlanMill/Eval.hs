@@ -1,19 +1,19 @@
-{-# LANGUAGE ConstraintKinds     #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE ConstraintKinds   #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module PlanMill.Eval (evalPlanMill) where
 
 import PlanMill.Internal.Prelude
 
-import Control.Monad.Http   (MonadHttp (..), httpLbs)
-import Data.Aeson.Compat    (eitherDecode)
-import Network.HTTP.Client  (Request, RequestBody (..), checkStatus, method,
-                             parseUrl, path, queryString, requestBody,
-                             requestHeaders, responseBody, responseStatus,
-                             setQueryString)
-import Network.HTTP.Types   (Header, statusIsSuccessful)
+import Control.Monad.Http  (MonadHttp (..), httpLbs)
+import Data.Aeson.Compat   (eitherDecode)
+import Network.HTTP.Client
+       (Request, RequestBody (..), checkStatus, method, parseUrl, path,
+       queryString, requestBody, requestHeaders, responseBody, responseStatus,
+       setQueryString)
+import Network.HTTP.Types  (Header, statusIsSuccessful)
 
 -- Qualified imports
 import qualified Data.ByteString.Base64     as Base64
@@ -21,10 +21,11 @@ import qualified Data.ByteString.Char8      as BS8
 import qualified Data.ByteString.Lazy       as LBS
 import qualified Data.ByteString.Lazy.Char8 as LBS8
 import qualified Data.Text                  as T
+import qualified Data.Text.Encoding         as TE
 import qualified Data.Vector                as V
 
 -- PlanMill import
-import PlanMill.Auth     (Auth (..), getAuth)
+import PlanMill.Auth    (Auth (..), getAuth)
 import PlanMill.Classes
 import PlanMill.Types
 
@@ -65,7 +66,7 @@ evalPlanMill pm = do
     singleReq req qs d = do
         -- We need to generate auth (nonce) at each req
         auth <- getAuth
-        let req' = setQueryString qs (req `withAuthHeader` auth)
+        let req' = setQueryString' qs (req `withAuthHeader` auth)
         let url = BS8.unpack (path req') <> BS8.unpack (queryString req')
         $(logInfo) $ T.pack $ "Request: " <> url
         res <- httpLbs req'
@@ -79,6 +80,11 @@ evalPlanMill pm = do
                 if statusIsSuccessful (responseStatus res)
                     then parseResult url $ responseBody res
                     else throwM $ parseError url $ responseBody res
+
+    setQueryString' :: QueryString -> Request -> Request
+    setQueryString' qs = setQueryString (f <$> qs)
+      where
+        f (a, b) = (TE.encodeUtf8 a, Just $ TE.encodeUtf8 b)
 
     parseResult :: forall b .(FromJSON b) => String -> LBS.ByteString -> m b
     parseResult url body =
@@ -107,8 +113,8 @@ evalPlanMill pm = do
         go acc = do
             -- We are for one too much, because if `nextrows` is over amount
             -- the collection from beginning is returned
-            let qs' = [ ("rowcount", Just $ bsShow $ rowCount + 1)
-                      , ("nextrows", Just $ bsShow $ V.length acc + 1)
+            let qs' = [ ("rowcount", T.pack $ show $ rowCount + 1)
+                      , ("nextrows", T.pack $ show $ V.length acc + 1)
                       ]
             res <- singleReq req (qs ++ qs') (pure V.empty)
             if V.length res <= rowCount

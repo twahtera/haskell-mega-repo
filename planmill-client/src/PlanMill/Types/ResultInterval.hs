@@ -39,9 +39,9 @@ data IntervalType = IntervalStart
 -- | Map to query string value.
 intervalToQueryString :: ResultInterval -> QueryString
 intervalToQueryString (ResultInterval t i) =
-    [ ("interval", Just t')
-    , ("intervalstart", Just . fromString . showPlanmillUTCTime $ inf i)
-    , ("intervalfinish", Just . fromString . showPlanmillUTCTime $ sup i)
+    [ ("interval", t')
+    , ("intervalstart", fromString . showPlanmillUTCTime $ inf i)
+    , ("intervalfinish", fromString . showPlanmillUTCTime $ sup i)
     ]
   where
     t' = case t of

@@ -7,7 +7,7 @@
 -- Maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
 module PlanMill.Types.Request (
     -- * Request type
-    PlanMill(..),
+    PlanMill (..),
     -- * Smart constructors
     planMillGet,
     planMillGetQs,
@@ -21,46 +21,46 @@ module PlanMill.Types.Request (
 
 import PlanMill.Internal.Prelude
 
-import Data.Aeson.Compat (encode)
-import Data.ByteString   (ByteString)
+import Data.Aeson.Compat         (encode)
 
 import qualified Data.ByteString.Lazy as LBS
 
-import PlanMill.Types.UrlPart (ToUrlParts (..), UrlParts)
+import PlanMill.Types.UrlPart      (ToUrlParts (..), UrlParts)
 
--- | This type synonym should be in @http-types@
-type QueryString = [(ByteString, Maybe ByteString)]
+type QueryString = [(Text, Text)]
 
 -- | Planmill API request.
 --
 -- We can have different constraints on result type,
 -- for example to be able to cache responses.
 data PlanMill a where
-    PlanMillGet      :: QueryString -> UrlParts -> PlanMill a
+    PlanMillGet         :: QueryString -> UrlParts -> PlanMill a
     -- TODO: add "max iteration" or "max size" limit
-    PlanMillPagedGet :: QueryString -> UrlParts -> PlanMill (Vector a)
-    PlanMillPost     :: LBS.ByteString -> UrlParts -> PlanMill a
-  deriving (Typeable)
+    PlanMillPagedGet    :: QueryString -> UrlParts -> PlanMill (Vector a)
+    PlanMillPost        :: LBS.ByteString -> UrlParts -> PlanMill a
 
 deriving instance Eq (PlanMill a)
 deriving instance Ord (PlanMill a)
 
 instance Show (PlanMill a) where
-    showsPrec d r =
-        case r of
-            PlanMillGet qs ps -> showParen (d > appPrec) $
-                showString "PlanMillGet " . showsPrec (appPrec + 1) qs
-                                          . showString " "
-                                          . showsPrec (appPrec + 1) ps
-            PlanMillPagedGet qs ps -> showParen (d > appPrec) $
-                showString "PlanMillPagedGet " . showsPrec (appPrec + 1) qs
-                                               . showString " "
-                                               . showsPrec (appPrec + 1) ps
-            PlanMillPost body ps -> showParen (d > appPrec) $
-                showString "PlanMillPost " . showsPrec (appPrec + 1) body
-                                           . showString " "
-                                           . showsPrec (appPrec + 1) ps
-      where appPrec = 10 :: Int
+    showsPrec d r = case r of
+        PlanMillGet qs ps -> showParen (d > appPrec)
+            $ showString "PlanMillGet "
+            . showsPrec (appPrec + 1) qs
+            . showString " "
+            . showsPrec (appPrec + 1) ps
+        PlanMillPagedGet qs ps -> showParen (d > appPrec)
+            $ showString "PlanMillPagedGet "
+            . showsPrec (appPrec + 1) qs
+            . showString " "
+            . showsPrec (appPrec + 1) ps
+        PlanMillPost body ps -> showParen (d > appPrec)
+            $ showString "PlanMillPost "
+            . showsPrec (appPrec + 1) body
+            . showString " "
+            . showsPrec (appPrec + 1) ps
+      where
+        appPrec = 10 :: Int
 
 instance Hashable (PlanMill a) where
     hashWithSalt salt (PlanMillGet qs ps) =
@@ -77,9 +77,13 @@ instance Hashable (PlanMill a) where
              `hashWithSalt` ps
 
 instance NFData (PlanMill a) where
-    rnf (PlanMillGet qs ps)      = rnf qs `seq` rnf ps
-    rnf (PlanMillPagedGet qs ps) = rnf qs `seq` rnf ps
-    rnf (PlanMillPost body ps)   = rnf body `seq` rnf ps
+    rnf (PlanMillGet qs ps)                = rnf qs `seq` rnf ps
+    rnf (PlanMillPagedGet qs ps)           = rnf qs `seq` rnf ps
+    rnf (PlanMillPost body ps)             = rnf body `seq` rnf ps
+
+-------------------------------------------------------------------------------
+-- Smart constructors
+-------------------------------------------------------------------------------
 
 planMillGet :: (ToUrlParts p) => p -> PlanMill a
 planMillGet = PlanMillGet [] . toUrlParts
@@ -104,6 +108,8 @@ planMillPost d = PlanMillPost (encode d) . toUrlParts
 --
 -- > req <- parseUrl $ baseUrl <> fromUrlParts (requestUrlParts planmillRequest)
 requestUrlParts :: PlanMill a -> UrlParts
-requestUrlParts (PlanMillGet _ ps)      = ps
-requestUrlParts (PlanMillPagedGet _ ps) = ps
-requestUrlParts (PlanMillPost _ ps)     = ps
+requestUrlParts (PlanMillGet _ ps)                 = ps
+requestUrlParts (PlanMillPagedGet _ ps)            = ps
+requestUrlParts (PlanMillPost _ ps)                = ps
+
+-- instance NFData a => NFData (Interval a)
