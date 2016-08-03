@@ -26,8 +26,8 @@ library:
     - cassava
     - env-config
     - futuhours-api
-    - futulogo
     - futurice-prelude
+    - futurice-servant
     - http-client
     - http-client-tls
     - lens
@@ -35,15 +35,11 @@ library:
     - semigroups
     - servant >=0.6 && <0.8
     - servant-blaze
-    - servant-cache
     - servant-cassava
     - servant-client
-    - servant-docs
     - servant-lucid
     - servant-server
-    - servant-status
     - servant-swagger
-    - servant-swagger-ui
     - stm
     - swagger2
     - text

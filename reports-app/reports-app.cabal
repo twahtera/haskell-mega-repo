@@ -46,6 +46,7 @@ library
     , futurice-prelude
     , futurice-reports
     , futurice-foundation
+    , futurice-servant
     , github >=0.15.0
     , hashable >= 1.2
     , http-client
@@ -125,6 +126,7 @@ executable reports-app-server
     , futurice-prelude
     , futurice-reports
     , futurice-foundation
+    , futurice-servant
     , github >=0.15.0
     , hashable >= 1.2
     , http-client

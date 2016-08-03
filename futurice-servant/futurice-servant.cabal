@@ -2,9 +2,9 @@
 --
 -- see: https://github.com/sol/hpack
 
-name:           theme-app
-version:        0
-synopsis:       Show Futurice colour theme
+name:           futurice-servant
+version:        0.0.0.0
+synopsis:       Collection of utilities for servant
 description:    ...
 category:       Web
 homepage:       https://github.com/futurice/haskell-mega-repo#readme
@@ -13,8 +13,12 @@ author:         Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
 license:        BSD3
 license-file:   LICENSE
+tested-with:    GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
 build-type:     Simple
 cabal-version:  >= 1.10
+
+extra-source-files:
+    README.md
 
 source-repository head
   type: git
@@ -26,50 +30,20 @@ library
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable NoImplicitPrelude ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base >= 4.7 && <4.10
-    , clay >= 0.11
-    , env-config
-    , JuicyPixels
+      base                  >=4.7   && <4.10
+    , base-compat
     , futulogo
-    , futurice-foundation
     , futurice-prelude
-    , futurice-servant
-    , lucid
-    , servant >=0.6 && <0.8
+    , gitrev >=1.2.0
+    , servant
+    , servant-cache
+    , servant-lucid
     , servant-server
+    , servant-status
+    , servant-swagger
     , servant-swagger-ui
-    , text
-    , wai
-    , wai-app-static
-    , warp
+    , stm
+    , swagger2
   exposed-modules:
-      Futurice.App.Theme
-      Futurice.App.Theme.Config
-      Futurice.App.Theme.Server.API
-      Futurice.App.Theme.Types
-  default-language: Haskell2010
-
-executable theme-app-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  ghc-options: -Wall -Wall -threaded
-  build-depends:
-      base >= 4.7 && <4.10
-    , clay >= 0.11
-    , env-config
-    , JuicyPixels
-    , futulogo
-    , futurice-foundation
-    , futurice-prelude
-    , futurice-servant
-    , lucid
-    , servant >=0.6 && <0.8
-    , servant-server
-    , servant-swagger-ui
-    , text
-    , wai
-    , wai-app-static
-    , warp
-    , theme-app
+      Futurice.Servant
   default-language: Haskell2010

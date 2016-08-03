@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 
-name:           favicon
+name:           favicon-app
 version:        0.1.0.0
 synopsis:       Generate Futurice favicons
 description:    Fancy icons!
@@ -34,14 +34,12 @@ executable favicon
     , base-compat
     , futulogo
     , futurice-prelude
+    , futurice-servant
     , JuicyPixels
     , lucid
     , semigroups
     , servant >=0.6 && <0.8
-    , servant-cache
-    , servant-docs
     , servant-JuicyPixels >=0.3.0.0
-    , servant-lucid
     , servant-server
     , servant-status
     , stm
