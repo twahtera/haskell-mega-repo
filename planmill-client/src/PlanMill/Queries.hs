@@ -4,6 +4,7 @@ module PlanMill.Queries (
     MonadPlanMillQuery,
     timereports,
     capacities,
+    me,
     users,
     ) where
 
@@ -11,6 +12,7 @@ import PlanMill.Internal.Prelude
 
 import Control.Monad.PlanMill
 
+import PlanMill.Types.Me             (Me)
 import PlanMill.Types.Query          (Query (..), QueryTag (..))
 import PlanMill.Types.ResultInterval (Interval)
 import PlanMill.Types.Timereport     (Timereports)
@@ -25,6 +27,12 @@ timereports i u = planmillVectorQuery (QueryTimereports i u)
 -- | Get capacities for interval and user.
 capacities :: MonadPlanMillQuery m => Interval Day -> UserId -> m UserCapacities
 capacities i u = planmillVectorQuery (QueryCapacities i u)
+
+-- | Get "me"
+me :: MonadPlanMillQuery m => m Me
+me = planmillQuery
+    $ QueryGet QueryTagMe []
+    $ toUrlParts ("me" :: Text)
 
 -- | Get all users.
 users :: MonadPlanMillQuery m => m Users

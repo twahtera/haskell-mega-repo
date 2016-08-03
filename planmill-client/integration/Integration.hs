@@ -3,33 +3,41 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TypeFamilies      #-}
 module Main (main) where
 
 import Futurice.Prelude
 
-import Control.Monad.Http   (evalHttpT)
-import Control.Monad.Logger (LogLevel (..), LogSource, filterLogger)
-import Control.Monad.Reader (runReaderT)
-import Data.Maybe           (isJust)
-import Data.Time            (UTCTime (..))
-import Data.Time.TH         (mkUTCTime)
-import System.Environment   (getArgs, lookupEnv)
-import System.IO            (hPutStrLn, stderr)
-
-import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..), linebreak,
-                                                putDoc)
+import Control.Monad.Http                      (evalHttpT)
+import Control.Monad.Logger
+       (LogLevel (..), LogSource, filterLogger)
+import Control.Monad.Reader                    (runReaderT)
+import Data.Constraint
+import Data.Maybe                              (isJust)
+import Data.Time                               (UTCTime (..))
+import Data.Time.TH                            (mkUTCTime)
+import System.Environment                      (getArgs, lookupEnv)
+import System.IO                               (hPutStrLn, stderr)
+import Text.PrettyPrint.ANSI.Leijen.AnsiPretty
+       (AnsiPretty (..), linebreak, putDoc)
 
 import qualified Data.Vector as V
+import qualified Haxl.Core   as H
 
-import PlanMill
+import           PlanMill
+import qualified PlanMill.Types.Query  as Q
+import qualified PlanMill.Queries      as Q
+import           PlanMill.Queries.Haxl
 
 main :: IO ()
 main = do
     debug <- isJust <$> lookupEnv "DEBUG"
     args <- getArgs
     case args of
-        [uid, apikey, endpoint] ->
-            integration debug (Ident $ read uid) (ApiKey $ fromString apikey) endpoint
+        [uid, apikey, endpoint] -> do
+            let cfg = Cfg (Ident $ read uid) (ApiKey $ fromString apikey) endpoint
+            haxlScript1 cfg
+            integration debug cfg
         _                       ->
             hPutStrLn stderr "to run integration tests: ./integration uid apikey endpoint"
 
@@ -102,8 +110,8 @@ script6 = do
     p <- enumerationValue (uPassive u) (fromString "Unknown passivity")
     putPretty p
 
-integration :: Bool -> UserId -> ApiKey -> String -> IO ()
-integration debug uid apikey endpoint = id
+integration :: Bool -> Cfg -> IO ()
+integration debug cfg = id
     $ evalHttpT
     $ runStderrLoggingT
     $ filterLogger logPredicate
@@ -112,8 +120,44 @@ integration debug uid apikey endpoint = id
         , script4, script5, script6
         ]
   where
-    cfg :: Cfg
-    cfg = Cfg uid apikey endpoint
-
     logPredicate :: LogSource -> LogLevel -> Bool
     logPredicate _ level = debug || level > LevelDebug
+
+-------------------------------------------------------------------------------
+-- Haxl example
+-------------------------------------------------------------------------------
+
+newtype H a = H { unH :: H.GenHaxl () a }
+
+instance Functor H where
+    fmap f (H x) = H (fmap f x)
+
+instance Applicative H where
+    pure = H . pure
+    H f <*> H x = H (f <*> x)
+    H f *> H x = H (f *> x)
+
+instance Monad H where
+    return = pure
+    (>>) = (*>)
+    H f >>= k = H $ f >>= unH . k
+
+instance MonadPlanMillConstraint H where
+    type MonadPlanMillC H = Show
+    entailMonadPlanMillCVector _ _ = Sub Dict
+
+instance MonadPlanMillQuery H where
+    planmillQuery q = case (Q.queryDict (Proxy :: Proxy Typeable) (Sub Dict)) q of
+        Dict -> H (H.dataFetch q)
+
+runH :: Cfg -> H a -> IO a
+runH cfg (H haxl) = do
+    let stateStore = H.stateSet (initDataSourceSimpleIO cfg) H.stateEmpty
+    env <- H.initEnv stateStore ()
+    H.runHaxl env haxl
+
+haxlScript1 :: Cfg -> IO ()
+haxlScript1 cfg = do
+    (us, m) <- runH cfg ((,) <$> Q.users <*> Q.me)
+    putPretty m
+    putPretty us

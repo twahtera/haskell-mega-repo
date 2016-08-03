@@ -1,16 +1,22 @@
 {-# LANGUAGE GADTs              #-}
+{-# LANGUAGE ConstraintKinds    #-}
 {-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE RankNTypes         #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeOperators      #-}
 module PlanMill.Types.Query (
     Query (..),
     QueryTag (..),
     SomeQuery(..),
-    queryToRequest
+    queryToRequest,
+    queryDict,
+    queryTagDict,
     ) where
 
 import PlanMill.Internal.Prelude
 
 import Numeric.Interval.NonEmpty (Interval)
+import Data.Constraint
 
 import qualified Data.Text as T
 
@@ -203,3 +209,22 @@ instance FromJSON SomeQuery where
             SomeQueryTag t' -> SomeQuery (QueryPagedGet t' q p)
         mkSomeQueryTimereports i u = SomeQuery (QueryTimereports i u)
         mkSomeQueryCapacities i u = SomeQuery (QueryCapacities i u)
+
+-------------------------------------------------------------------------------
+-- Query dictionaries
+-------------------------------------------------------------------------------
+
+-- | We can recover all type parameters 'Query' can has.
+queryDict
+    :: (c Me, c User, c Timereports, c UserCapacities)
+    => Proxy c -> (forall b. c b :- c (Vector b)) -> Query a -> Dict (c a)
+queryDict p _ (QueryGet t _ _)       = queryTagDict p t
+queryDict p e (QueryPagedGet t _ _)  = mapDict e (queryTagDict p t)
+queryDict _ _ (QueryTimereports _ _) = Dict
+queryDict _ _ (QueryCapacities _ _)  = Dict
+
+queryTagDict
+    :: (c Me, c User)
+    => Proxy c -> QueryTag a -> Dict (c a)
+queryTagDict _ QueryTagMe   = Dict
+queryTagDict _ QueryTagUser = Dict

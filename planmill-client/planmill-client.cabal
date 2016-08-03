@@ -56,6 +56,7 @@ library
     , generics-sop
     , hashable
     , hashable-time
+    , haxl
     , http-client           >=0.4   && <0.5
     , http-client-tls       >=0.2.2 && <0.3
     , http-types
@@ -94,6 +95,7 @@ library
       PlanMill.Eval
       PlanMill.Internal.Prelude
       PlanMill.Queries
+      PlanMill.Queries.Haxl
       PlanMill.Test
       PlanMill.Types
       PlanMill.Types.Absence
@@ -159,6 +161,7 @@ executable planmill-client
     , generics-sop
     , hashable
     , hashable-time
+    , haxl
     , http-client           >=0.4   && <0.5
     , http-client-tls       >=0.2.2 && <0.3
     , http-types
@@ -229,6 +232,7 @@ test-suite integration
     , generics-sop
     , hashable
     , hashable-time
+    , haxl
     , http-client           >=0.4   && <0.5
     , http-client-tls       >=0.2.2 && <0.3
     , http-types
@@ -292,6 +296,7 @@ test-suite test
     , generics-sop
     , hashable
     , hashable-time
+    , haxl
     , http-client           >=0.4   && <0.5
     , http-client-tls       >=0.2.2 && <0.3
     , http-types
