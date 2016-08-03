@@ -13,6 +13,7 @@ import Control.Monad.Logger
        (LogLevel (..), LogSource, filterLogger)
 import Control.Monad.Reader                    (runReaderT)
 import Data.Constraint
+import Futurice.Constraint.Unit1
 import Data.Maybe                              (isJust)
 import Data.Time                               (UTCTime (..))
 import Data.Time.TH                            (mkUTCTime)
@@ -143,12 +144,15 @@ instance Monad H where
     H f >>= k = H $ f >>= unH . k
 
 instance MonadPlanMillConstraint H where
-    type MonadPlanMillC H = Show
+    type MonadPlanMillC H = Unit1
     entailMonadPlanMillCVector _ _ = Sub Dict
 
 instance MonadPlanMillQuery H where
-    planmillQuery q = case (Q.queryDict (Proxy :: Proxy Typeable) (Sub Dict)) q of
-        Dict -> H (H.dataFetch q)
+    planmillQuery q = case (showDict, typeableDict) of
+        (Dict, Dict) -> H (H.dataFetch q)
+      where
+        typeableDict = Q.queryDict (Proxy :: Proxy Typeable) (Sub Dict) q
+        showDict     = Q.queryDict (Proxy :: Proxy Show)     (Sub Dict) q
 
 runH :: Cfg -> H a -> IO a
 runH cfg (H haxl) = do
