@@ -60,3 +60,6 @@ instance ToUrlParts (Identifier a) where
 
 instance ToUrlParts UrlParts where
     toUrlParts = id
+
+instance ToJSON UrlParts
+instance FromJSON UrlParts

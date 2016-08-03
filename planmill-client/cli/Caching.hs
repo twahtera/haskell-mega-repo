@@ -77,10 +77,9 @@ instance ForallFSymbol (MonadPlanMillC m) EnumDesc
       where
         proxies = instFSymbol (Proxy :: Proxy (MonadPlanMillC m)) f s
           
--- | Caches get requests
 instance
-    (Applicative m, MonadPlanMill m, MonadIO m, MonadCatch m)
-  => MonadPlanMill (CachingT m) where
+    (Applicative m, MonadPlanMillConstraint m)
+  => MonadPlanMillConstraint (CachingT m) where
     type MonadPlanMillC (CachingT m) = CachingTC m
 
     -- Nasty manual plumbing
@@ -93,6 +92,10 @@ instance
         dict = Dict \\ entailMonadPlanMillCVector (Proxy :: Proxy m) p
             -- :: MonadPlanMillC m a :- MonadPlanMillC m (Vector a))
 
+-- | Caches get requests
+instance
+    (Applicative m, MonadPlanMill m, MonadIO m, MonadCatch m)
+  => MonadPlanMill (CachingT m) where
     planmillAction p@(PlanMillGet qs ps) =
         CachingT $ cached path $ planmillAction p
       where

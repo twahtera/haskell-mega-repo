@@ -35,6 +35,7 @@ library
     , aeson-extra           >=0.3.0.0 && <0.4
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
+    , async
     , base                  >=4.7     && <4.10
     , base-compat           >=0.6     && <0.10
     , base64-bytestring
@@ -56,6 +57,7 @@ library
     , generics-sop
     , hashable
     , hashable-time
+    , haxl
     , http-client           >=0.4   && <0.5
     , http-client-tls       >=0.2.2 && <0.3
     , http-types
@@ -93,6 +95,8 @@ library
       PlanMill.Enumerations
       PlanMill.Eval
       PlanMill.Internal.Prelude
+      PlanMill.Queries
+      PlanMill.Queries.Haxl
       PlanMill.Test
       PlanMill.Types
       PlanMill.Types.Absence
@@ -112,6 +116,7 @@ library
       PlanMill.Types.Me
       PlanMill.Types.Meta
       PlanMill.Types.Project
+      PlanMill.Types.Query
       PlanMill.Types.ReportableAssignment
       PlanMill.Types.Request
       PlanMill.Types.ResultInterval
@@ -136,6 +141,7 @@ executable planmill-client
     , aeson-extra           >=0.3.0.0 && <0.4
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
+    , async
     , base                  >=4.7     && <4.10
     , base-compat           >=0.6     && <0.10
     , base64-bytestring
@@ -157,6 +163,7 @@ executable planmill-client
     , generics-sop
     , hashable
     , hashable-time
+    , haxl
     , http-client           >=0.4   && <0.5
     , http-client-tls       >=0.2.2 && <0.3
     , http-types
@@ -206,6 +213,7 @@ test-suite integration
     , aeson-extra           >=0.3.0.0 && <0.4
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
+    , async
     , base                  >=4.7     && <4.10
     , base-compat           >=0.6     && <0.10
     , base64-bytestring
@@ -227,6 +235,7 @@ test-suite integration
     , generics-sop
     , hashable
     , hashable-time
+    , haxl
     , http-client           >=0.4   && <0.5
     , http-client-tls       >=0.2.2 && <0.3
     , http-types
@@ -269,6 +278,7 @@ test-suite test
     , aeson-extra           >=0.3.0.0 && <0.4
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
+    , async
     , base                  >=4.7     && <4.10
     , base-compat           >=0.6     && <0.10
     , base64-bytestring
@@ -290,6 +300,7 @@ test-suite test
     , generics-sop
     , hashable
     , hashable-time
+    , haxl
     , http-client           >=0.4   && <0.5
     , http-client-tls       >=0.2.2 && <0.3
     , http-types

@@ -7,6 +7,7 @@ module PlanMill.Internal.Prelude (
     (.:), (.:?), (.=), (.!=),
     Value(..),
     U(..), Z(..),
+    typeMismatch,
     -- * binary-tagged
     HasSemanticVersion, HasStructuralInfo(..), sopStructuralInfo,
     -- * Time related
@@ -18,16 +19,18 @@ module PlanMill.Internal.Prelude (
     ) where
 
 import Futurice.Prelude
-import Prelude          ()
+import Prelude ()
 
-import Data.Aeson.Compat     (FromJSON (..), ToJSON (..), Value (..), object,
-                              withObject, withText, (.!=), (.:), (.:?), (.=))
+import Data.Aeson.Compat
+       (FromJSON (..), ToJSON (..), Value (..), object, withObject, withText,
+       (.!=), (.:), (.:?), (.=))
 import Data.Aeson.Extra      (U (..), Z (..))
-import Data.Binary.Tagged    (HasSemanticVersion, HasStructuralInfo (..),
-                              sopStructuralInfo)
+import Data.Aeson.Types      (typeMismatch)
+import Data.Binary.Tagged
+       (HasSemanticVersion, HasStructuralInfo (..), sopStructuralInfo)
 import Data.ByteString       (ByteString)
-import Data.Time             (UTCTime (..), ZonedTime, localDay,
-                              zonedTimeToLocalTime)
+import Data.Time
+       (UTCTime (..), ZonedTime, localDay, zonedTimeToLocalTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 
 import qualified Data.Text.Encoding as TE
