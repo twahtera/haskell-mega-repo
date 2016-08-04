@@ -4,8 +4,10 @@ module Futurice.App.Theme.Types where
 import Futurice.Prelude
 
 import Codec.Picture.Types (PixelCMYK8 (..), PixelRGB8 (..))
-import Futurice.Colour     (Colour (..), colourCMYK8, colourClay, colourName,
-                            colourPantoneName, colourRGB8)
+import Futurice.Servant    (NamedSchema (..), ToSchema (..))
+import Futurice.Colour
+       (Colour (..), colourCMYK8, colourClay, colourName, colourPantoneName,
+       colourRGB8)
 import Numeric             (showHex)
 
 import Lucid                     hiding (for_)
@@ -19,6 +21,9 @@ import qualified Data.Text as T
 -------------------------------------------------------------------------------
 
 data IndexPage = IndexPage
+
+instance ToSchema IndexPage where
+    declareNamedSchema _ = pure $ NamedSchema (Just "Indexpage") mempty
 
 instance ToHtml IndexPage where
     toHtmlRaw = toHtml

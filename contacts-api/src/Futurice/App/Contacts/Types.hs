@@ -1,12 +1,9 @@
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveFoldable        #-}
-{-# LANGUAGE DeriveFunctor         #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE DeriveTraversable     #-}
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
 module Futurice.App.Contacts.Types (
     Tri(..),
     ContactFD(..),
@@ -15,11 +12,11 @@ module Futurice.App.Contacts.Types (
     ) where
 
 import Futurice.Prelude
-import Prelude          ()
+import Prelude ()
 
-import Data.Aeson.TH
-import Data.Char     (toLower)
-import Servant.Docs  (ToSample (..))
+import Data.Aeson        (ToJSON (..))
+import Data.Swagger      (ToSchema (..))
+import Futurice.Generics
 
 import Futurice.App.Contacts.Types.Tri
 
@@ -32,9 +29,10 @@ data ContactFD avatar = ContactFD
              , Functor, Foldable, Traversable)
 
 instance NFData a => NFData (ContactFD a)
-$(deriveJSON
-    defaultOptions{fieldLabelModifier = map toLower . drop 3 }
-    ''ContactFD)
+deriveGeneric ''ContactFD
+instance ToJSON a => ToJSON (ContactFD a) where toJSON = sopToJSON
+instance ToSchema a => ToSchema (ContactFD a) where
+    declareNamedSchema = sopDeclareNamedSchema
 
 data ContactGH avatar = ContactGH
     { cghNick   :: !Text
@@ -44,9 +42,10 @@ data ContactGH avatar = ContactGH
              , Functor, Foldable, Traversable)
 
 instance NFData a => NFData (ContactGH a)
-$(deriveJSON
-    defaultOptions{fieldLabelModifier = map toLower . drop 3 }
-    ''ContactGH)
+deriveGeneric ''ContactGH
+instance ToJSON a => ToJSON (ContactGH a) where toJSON = sopToJSON
+instance ToSchema a => ToSchema (ContactGH a) where
+    declareNamedSchema = sopDeclareNamedSchema
 
 data Contact avatar = Contact
     { contactLogin    :: !Text
@@ -65,22 +64,9 @@ data Contact avatar = Contact
 
 instance NFData a => NFData (Contact a)
 
-instance ToSample (Contact Text) where
-    toSamples _ = [("", contact)]
-      where
-        contact = Contact "fbar"
-                          "Foo"
-                          "Foo Bar"
-                          "foo.bar@example.com"
-                          ["555-HASKELL"]
-                          (Just "Head of Dummies")
-                          "01234567910"
-                          "http://example.com/image.jpg"
-                          Unknown
-                          Unknown
-
 -- TH slices
 
-$(deriveJSON
-    defaultOptions{fieldLabelModifier = map toLower . drop 7 }
-    ''Contact)
+deriveGeneric ''Contact
+instance ToJSON a => ToJSON (Contact a) where toJSON = sopToJSON
+instance ToSchema a => ToSchema (Contact a) where
+    declareNamedSchema = sopDeclareNamedSchema

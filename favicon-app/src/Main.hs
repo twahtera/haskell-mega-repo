@@ -3,74 +3,79 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections     #-}
 {-# LANGUAGE TypeOperators     #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Main (main) where
 
 import Futurice.Prelude
-import Prelude          ()
+import Prelude ()
 
-import Codec.Picture            (Image, PixelRGBA8)
-import Control.Concurrent.STM   (atomically)
+import Codec.Picture       (Image, PixelRGBA8)
 import Futurice.Colour
 import Futurice.Logo
-import Lucid                    hiding (for_)
-import Network.Wai              (Application)
+import Futurice.Servant
+import Lucid               hiding (for_)
+import Network.Wai         (Application)
 import Servant
-import Servant.Cache
-import Servant.Cache.Class      (DynMapCache)
-import Servant.Futurice.Favicon
-import Servant.Futurice.Status
-import Servant.HTML.Lucid
-import Servant.JuicyPixels      (PNG)
-import System.Environment       (lookupEnv)
-import System.IO                (hPutStrLn, stderr)
+import Servant.JuicyPixels (PNG)
+import System.Environment  (lookupEnv)
+import System.IO           (hPutStrLn, stderr)
 
-import qualified Network.Wai.Handler.Warp      as Warp
-import qualified Servant.Cache.Internal.DynMap as DynMap
+import qualified Network.Wai.Handler.Warp as Warp
 
 type IconAPI = "icon" :> Capture "colour" Colour :> Get '[PNG] (Image PixelRGBA8)
 
-type UncachedAPI
-    = FutuFaviconAPI ('FutuAccent 'AF5 'AC3)
-    :<|> Get '[HTML] (Html ())
+type API =
+    Get '[HTML] IndexPage
     :<|> IconAPI
 
-type API = Cached SomeCache 3600 :> UncachedAPI :<|> StatusAPI
+type API' = FuturiceAPI API 'FutuBlack
 
 api :: Proxy API
 api = Proxy
 
+api' :: Proxy API'
+api' = Proxy
+
 iconEndpoint :: Proxy IconAPI
 iconEndpoint = Proxy
 
-stats :: DynMapCache -> StatusInfoIO
-stats dmap = gcStatusInfo <> dynmapStats
-  where
-    dynmapStats :: StatusInfoIO
-    dynmapStats = SIIO $ group "cache" . metric "size" <$> dynmapSize
-
-    dynmapSize :: IO Int
-    dynmapSize = atomically $ DynMap.size dmap
-
 server :: DynMapCache -> Server API
-server dmap =
-    (serveFutuFavicon :<|> pure indexPage
-                      :<|> pure . makeLogo)
-    :<|> serveStatus (stats dmap)
+server cache = pure IndexPage :<|> liftIO . makeLogo'
+ where
+   makeLogo' c = cachedIO cache 3600 c (evaluate $!! makeLogo c)
 
 app :: DynMapCache -> Application
-app dmap = serveWithContext api context $ server dmap
-  where
-    context = cache :. EmptyContext
-    cache = SomeCache dmap
+app cache = serve api' $ futuriceServer
+    "Favicon API"
+    "Serve favicons in different colours"
+    cache api $ server cache
 
 main :: IO ()
 main = do
   hPutStrLn stderr "Hello, I'm alive"
   port <- fromMaybe 8000 . (>>= readMaybe) <$> lookupEnv "PORT"
-  cache <- DynMap.newIO
+  cache <- newDynMapCache
   Warp.run port (app cache)
 
-indexPage :: Html ()
-indexPage = doctypehtml_ $ for_ [minBound..maxBound] $ \colour ->
-    let link = textShow $ safeLink api iconEndpoint colour
-    in a_ [href_ link] $ img_ [src_ link]
+-------------------------------------------------------------------------------
+-- IndexPage
+-------------------------------------------------------------------------------
+
+data IndexPage = IndexPage
+
+instance ToHtml IndexPage where
+    toHtmlRaw = toHtml
+    toHtml _ = doctypehtml_ $ for_ [minBound..maxBound] $ \colour ->
+        let link = textShow $ safeLink api iconEndpoint colour
+        in a_ [href_ link] $ img_ [src_ link]
+
+instance ToSchema IndexPage where
+    declareNamedSchema _ = pure $ NamedSchema (Just "Indexpage") mempty
+
+-- /TODO/: move to prelude
+instance ToSchema (Image a) where
+    declareNamedSchema _ = pure $ NamedSchema (Just "Image") mempty
+
+-- /TODO/: move to prelude
+instance ToParamSchema Colour where
+    toParamSchema = mempty

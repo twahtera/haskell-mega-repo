@@ -6,15 +6,20 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 ---
-{-# LANGUAGE ConstraintKinds, PolyKinds, UndecidableInstances, RankNTypes, GADTs, InstanceSigs #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE UndecidableInstances  #-}
 module Futurice.App.Reports.Types where
 
 import Futurice.Prelude
 
 import Control.Monad.Trans.Class (lift)
 import Data.Aeson                (ToJSON (..))
-import Data.Constraint (Dict (..))
-import Data.Swagger              (ToSchema (..))
+import Data.Constraint           (Dict (..))
+import Data.Swagger              (ToSchema (..), NamedSchema (..))
 import Data.These                (These (..))
 import Data.Time.Format.Human    (humanReadableTime')
 import Futurice.Generics         (sopDeclareNamedSchema, sopToJSON)
@@ -40,6 +45,9 @@ instance ToHtml IndexPage where
         row_ $ large_ 12 $ div_ [class_ "callout"] $ ul_ $ do
             li_ $ a_ [href_ "/issues" ] $ "GitHub issues"
             li_ $ a_ [href_ "/fum-github" ] $ "Users in FUM and GitHub"
+
+instance ToSchema IndexPage where
+    declareNamedSchema _ = pure $ NamedSchema (Just "Indexpage") mempty
 
 -------------------------------------------------------------------------------
 -- Issues

@@ -9,11 +9,13 @@
 module Futurice.App.Contacts.Types.Tri (Tri(..), lessSure) where
 
 import Futurice.Prelude
-import Prelude          ()
+import Prelude ()
 
 import Control.Monad (ap)
-import Data.Aeson.TH
 import Data.Char     (toLower)
+
+import qualified Data.Aeson.TH as A
+import qualified Data.Swagger  as S
 
 -- | This essentially is @'WriterT' 'All' 'Maybe' a@,
 -- with nice 'Semigroup' / 'Monoid' instance.
@@ -46,7 +48,11 @@ instance Monoid (Tri a) where
     mappend = (<>)
 
 instance NFData a => NFData (Tri a)
-$(deriveJSON defaultOptions{constructorTagModifier = map toLower } ''Tri)
+$(A.deriveJSON A.defaultOptions
+    { A.constructorTagModifier = map toLower } ''Tri)
+instance S.ToSchema a => S.ToSchema (Tri a) where
+    declareNamedSchema = S.genericDeclareNamedSchema S.defaultSchemaOptions
+        { S.constructorTagModifier = map toLower }
 
 lessSure :: Tri a -> Tri a
 lessSure (Sure a) = Unsure a

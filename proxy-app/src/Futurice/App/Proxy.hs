@@ -6,7 +6,6 @@
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
@@ -15,19 +14,15 @@ module Futurice.App.Proxy (defaultMain) where
 import Futurice.Prelude
 import Prelude          ()
 
-import Futurice.Colour
 import Network.Wai
 import Servant
-import Servant.Cache.Class (DynMapCache)
+import Futurice.Servant
 import Servant.Client
 import Servant.CSV.Cassava (CSV', DefaultEncodeOpts)
 import Servant.Proxy
 import System.IO           (hPutStrLn, stderr)
 
 import qualified Network.Wai.Handler.Warp      as Warp
-import qualified Servant.Cache.Internal.DynMap as DynMap
-
-import Servant.Futurice
 
 import Futurice.App.FutuHours.Types (MissingHoursReport)
 
@@ -90,7 +85,10 @@ server ctx = pure "P-R-O-X-Y" :<|> makeProxy (Proxy :: Proxy 'Futuhours) ctx
 
 -- | Server with docs and cache and status
 server' :: DynMapCache -> Ctx -> Server ProxyAPI'
-server' cache ctx = futuriceApiServer cache proxyAPI (server ctx)
+server' cache ctx = futuriceServer
+    "Proxy"
+    "Proxy into Futurice internal services"
+    cache proxyAPI (server ctx)
 
 -- | Wai application
 app :: DynMapCache -> Ctx -> Application
@@ -101,7 +99,7 @@ defaultMain = do
     hPutStrLn stderr "Hello, proxy-app is alive"
     Config{..} <- getConfig
     mgr <- newManager tlsManagerSettings
-    cache <- DynMap.newIO
+    cache <- newDynMapCache
     futuhoursBaseurl <- parseBaseUrl cfgFutuhoursBaseurl
     let ctx = Ctx mgr futuhoursBaseurl
     let checkCreds u p = if u == cfgBasicAuthUser && p == cfgBasicAuthPass

@@ -18,6 +18,7 @@ packages:
 - futurice-integrations/
 - futurice-prelude/
 - futurice-reports/
+- futurice-servant/
 - haxl-fxtra/
 - haxl-typed/
 - mega-repo-tool/

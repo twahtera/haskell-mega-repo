@@ -18,6 +18,7 @@ packages:
 - futurice-integrations/
 - futurice-prelude/
 - futurice-reports/
+- futurice-servant/
 - haxl-fxtra/
 - haxl-typed/
 - mega-repo-tool/
@@ -39,10 +40,12 @@ extra-deps:
 - aeson-extra-0.3.2.0
 - base-compat-0.9.1
 - base-orphans-0.5.4
+- bifunctors-5.2
 - binary-tagged-0.1.4.0
+- bytestring-builder-0.10.8.1.0
 - carray-0.1.6.4
 - composition-extra-2.0.0
-- conduit-extra-1.1.13.1
+- conduit-extra-1.1.13.2
 - control-monad-omega-0.3.1
 - cryptonite-0.15
 - dependent-map-0.2.2.0
@@ -54,6 +57,7 @@ extra-deps:
 - friendly-time-0.4
 - generics-sop-0.2.1.0
 - generics-sop-lens-0.1.1.0
+- gitrev-1.2.0
 - hashable-1.2.4.0
 - hashable-time-0.2
 - haxl-0.3.1.0
@@ -75,7 +79,7 @@ extra-deps:
 - memory-0.13
 - monad-time-0.2
 - monadcryptorandom-0.7.0
-- postgresql-simple-0.5.2.0
+- postgresql-simple-0.5.2.1
 - recursion-schemes-4.1.2
 - regex-applicative-text-0.1.0.1
 - semigroupoids-5.0.1
@@ -103,8 +107,8 @@ extra-deps:
 - vector-0.11.0.0
 - vector-binary-instances-0.2.3.2
 - wai-3.2.1.1
-- wai-extra-3.0.15.1
+- wai-extra-3.0.16.1
 - wai-logger-2.2.7
 - wai-middleware-metrics-0.2.3
-- warp-3.2.6
+- warp-3.2.7
 flags: {}
