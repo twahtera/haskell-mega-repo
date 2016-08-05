@@ -133,6 +133,8 @@ futuriceServerMain t d _proxyColour getConfig cfgPort _proxyApi server makeCtx =
     let server' = futuriceServer t d cache proxyApi (server ctx)
                 :: Server (FuturiceAPI api colour)
     T.hPutStrLn stderr $ "Starting " <> t <> " at port " <> show p ^. packed
+    T.hPutStrLn stderr $ "- http://localhost:" <> show p ^. packed <> "/"
+    T.hPutStrLn stderr $ "- http://localhost:" <> show p ^. packed <> "/swagger-ui/"
     Warp.run p (serve proxyApi' server')
   where
     proxyApi :: Proxy api
