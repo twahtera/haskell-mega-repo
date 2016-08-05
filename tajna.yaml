@@ -1,8 +1,6 @@
 default: dev
 envs:
   dev:
-    PORT: "8080"
-
     FUM_LISTNAME: employees
     FUM_BASEURL:
         secret: prod-fum-baseurl
@@ -49,3 +47,15 @@ envs:
 
     # spice stats       
     FD_FLOW: "open-source"
+
+    # PORTS
+    AVATARAPP_PORT:     "8801"
+    CONTACTSAPI_PORT:   "8802"
+    FUTUHOURSAPI_PORT:  "8803"
+    PROXYAPP_PORT:      "8804"
+    SPICESTATSAPP_PORT: "8805"
+    THEMEAPP_PORT:      "8806"
+    REPORTSAPP_PORT:    "8807"
+
+    # Legacy
+    PORT: "8080"

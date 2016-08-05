@@ -110,6 +110,7 @@ futuriceServer t d cache papi server
 -- main boilerplate
 -------------------------------------------------------------------------------
 
+-- TODO: make class for config, to get ekg port later
 futuriceServerMain
     :: forall cfg ctx api proxy proxy' colour.
        (HasSwagger api,  HasServer api '[], SColour colour)

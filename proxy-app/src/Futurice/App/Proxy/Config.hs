@@ -19,7 +19,7 @@ data Config = Config
 -- | TODO: parse
 getConfig :: IO Config
 getConfig = Config
-    <$> parseDefaultPort
-    <*> parseEnvVar "FUTUHOURS_BASEURL"
+    <$> parseDefaultPort "PROXYAPP"
+    <*> parseEnvVar "FUTUHOURS_BASEURL" -- TODO: change to FUTUHOURSAPI_BASEURL
     <*> parseEnvVar "PROXYAPP_USER"
     <*> parseEnvVar "PROXYAPP_PASS"

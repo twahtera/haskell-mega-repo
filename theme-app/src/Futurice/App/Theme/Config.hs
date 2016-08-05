@@ -15,4 +15,4 @@ data Config = Config
 
 getConfig :: IO Config
 getConfig = Config
-    <$> parseDefaultPort
+    <$> parseDefaultPort "THEMAPP"
