@@ -1,5 +1,5 @@
 name: futurice-servant
-version: 0.0.0.0
+version: "0"
 synopsis: Collection of utilities for servant
 description: ...
 author: Oleg Grenrus <oleg.grenrus@iki.fi>
@@ -38,3 +38,4 @@ library:
     - servant-swagger-ui
     - stm
     - swagger2
+    - wai

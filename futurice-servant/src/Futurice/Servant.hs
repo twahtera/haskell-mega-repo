@@ -7,6 +7,8 @@ module Futurice.Servant (
     -- * Server API
     FuturiceAPI,
     futuriceServer,
+    -- * WAI
+    Application,
     -- * Cache
     DynMapCache,
     newDynMapCache,
@@ -36,6 +38,7 @@ import Data.Swagger
 import Development.GitRev       (gitCommitDate, gitHash)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
+import Network.Wai              (Application)
 import Servant
 import Servant.Cache.Class      (DynMapCache, cachedIO)
 import Servant.Futurice.Favicon (FutuFaviconAPI, serveFutuFavicon)

@@ -14,7 +14,6 @@ import Futurice.Colour
 import Futurice.Logo
 import Futurice.Servant
 import Lucid               hiding (for_)
-import Network.Wai         (Application)
 import Servant
 import Servant.JuicyPixels (PNG)
 import System.Environment  (lookupEnv)

@@ -14,7 +14,6 @@ import Prelude ()
 import Codec.Picture              (DynamicImage)
 import Control.Monad.Trans.Except (ExceptT (..), throwE)
 import Futurice.Servant
-import Network.Wai                (Application)
 import Servant
 import System.IO                  (hPutStrLn, stderr)
 
@@ -32,7 +31,6 @@ import Futurice.App.Avatar.API
 import Futurice.App.Avatar.Config (Config (..), getConfig)
 import Futurice.App.Avatar.Logic  (avatar)
 
--- | /TODO:/ We probably will have some
 type Ctx = (DynMapCache, Manager)
 
 type DynamicImage' = Headers '[Header "Cache-Control" Text] DynamicImage
@@ -54,7 +52,7 @@ mkAvatar (cache, mgr) (Just url) msize grey = ExceptT . fmap (first f) $ do
         , " grey: ", show grey
         ]
     req <- parseUrl (T.unpack url)
-    -- XXX: The cache will eventually fill is service is abused
+    -- XXX: The cache will eventually fill if service is abused
     res <- cachedIO cache 3600 url $ httpLbs req mgr
     (fmap . fmap) (addHeader "public, max-age=3600")
         . cachedIO cache 3600 (url, size, grey)

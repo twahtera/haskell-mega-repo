@@ -17,7 +17,6 @@ import Futurice.Servant
 import Network.HTTP.Client
        (Manager, httpLbs, newManager, parseUrl, responseBody)
 import Network.HTTP.Client.TLS    (tlsManagerSettings)
-import Network.Wai
 import Servant
 import System.IO                  (hPutStrLn, stderr)
 

@@ -27,71 +27,65 @@ library
   ghc-options: -Wall
   build-depends:
       base >= 4.7 && <4.10
-    , SHA
     , aeson
     , aeson-pretty
     , ansi-pretty
     , base64-bytestring
     , bifunctors
-    , cassava
     , binary-orphans
     , binary-tagged
     , bytestring
     , case-insensitive
+    , cassava
+    , constraints
+    , containers
     , deepseq
     , directory
+    , either
     , env-config
     , exceptions
     , filepath
+    , friendly-time >=0.4 && <0.5
+    , fum-client
+    , futulogo
+    , futurice-foundation
+    , futurice-foundation
     , futurice-prelude
     , futurice-reports
-    , futurice-foundation
     , futurice-servant
     , github >=0.15.0
     , hashable >= 1.2
     , http-client
     , http-client-tls
     , http-types
-    , mtl
-    , futurice-foundation
-    , constraints
     , lens
+    , lucid
+    , markdown
+    , mtl
     , optparse-applicative
+    , postgresql-simple
+    , postgresql-simple-url
     , regex-applicative
     , regex-applicative-text
-    , friendly-time >=0.4 && <0.5
-    , fum-client
     , regex-compat
+    , resource-pool
     , semigroups
+    , servant >=0.6 && <0.8
+    , servant-cassava
+    , servant-lucid
+    , servant-server
+    , SHA
+    , stm
+    , swagger2 >= 2.0.2
     , tagged
     , text
     , these
     , time
     , transformers
     , transformers-compat
-    , containers
     , unordered-containers
-    , postgresql-simple
-    , postgresql-simple-url
     , vector
-    , swagger2 >= 2.0.2
-    , resource-pool
-    , either
-    , servant >=0.6 && <0.8
-    , servant-status
-    , servant-cache
-    , servant-lucid
-    , servant-cassava
-    , lucid
-    , servant-server
-    , markdown
-    , futulogo
-    , servant-blaze
-    , stm
-    , blaze-html
-    , wai
     , warp
-    , gitrev
   exposed-modules:
       Futurice.App.Reports
       Futurice.App.Reports.Config
@@ -107,70 +101,64 @@ executable reports-app-server
   ghc-options: -Wall -Wall -threaded
   build-depends:
       base >= 4.7 && <4.10
-    , SHA
     , aeson
     , aeson-pretty
     , ansi-pretty
     , base64-bytestring
     , bifunctors
-    , cassava
     , binary-orphans
     , binary-tagged
     , bytestring
     , case-insensitive
+    , cassava
+    , constraints
+    , containers
     , deepseq
     , directory
+    , either
     , env-config
     , exceptions
     , filepath
+    , friendly-time >=0.4 && <0.5
+    , fum-client
+    , futulogo
+    , futurice-foundation
+    , futurice-foundation
     , futurice-prelude
     , futurice-reports
-    , futurice-foundation
     , futurice-servant
     , github >=0.15.0
     , hashable >= 1.2
     , http-client
     , http-client-tls
     , http-types
-    , mtl
-    , futurice-foundation
-    , constraints
     , lens
+    , lucid
+    , markdown
+    , mtl
     , optparse-applicative
+    , postgresql-simple
+    , postgresql-simple-url
     , regex-applicative
     , regex-applicative-text
-    , friendly-time >=0.4 && <0.5
-    , fum-client
     , regex-compat
+    , resource-pool
     , semigroups
+    , servant >=0.6 && <0.8
+    , servant-cassava
+    , servant-lucid
+    , servant-server
+    , SHA
+    , stm
+    , swagger2 >= 2.0.2
     , tagged
     , text
     , these
     , time
     , transformers
     , transformers-compat
-    , containers
     , unordered-containers
-    , postgresql-simple
-    , postgresql-simple-url
     , vector
-    , swagger2 >= 2.0.2
-    , resource-pool
-    , either
-    , servant >=0.6 && <0.8
-    , servant-status
-    , servant-cache
-    , servant-lucid
-    , servant-cassava
-    , lucid
-    , servant-server
-    , markdown
-    , futulogo
-    , servant-blaze
-    , stm
-    , blaze-html
-    , wai
     , warp
-    , gitrev
     , reports-app
   default-language: Haskell2010
