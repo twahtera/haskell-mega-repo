@@ -17,4 +17,4 @@ data Config = Config
 getConfig :: IO Config
 getConfig = Config
     <$> parseEnvVar "UNUSED"
-    <*> parseDefaultPort
+    <*> parseDefaultPort "AVATAR"

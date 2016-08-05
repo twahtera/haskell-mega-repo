@@ -6,7 +6,6 @@ module Futurice.App.Theme (defaultMain) where
 import Futurice.Prelude
 
 import Futurice.Servant
-import Network.Wai                    (Application)
 import Network.Wai.Application.Static (embeddedSettings, staticApp)
 import Servant
 import Servant.Swagger.UI.Internal    (mkRecursiveEmbedded)

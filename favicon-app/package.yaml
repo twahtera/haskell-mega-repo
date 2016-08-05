@@ -31,8 +31,6 @@ dependencies:
 - time
 - transformers
 - transformers-compat
-- wai
-- warp
 
 executables:
   favicon:

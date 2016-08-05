@@ -87,7 +87,6 @@ library
     , unordered-containers
     , vector                >=0.10  && <0.12
     , wai
-    , warp
   if flag(aeson-compat)
     build-depends:
         aeson-compat >=0.3.0.0 && <0.4

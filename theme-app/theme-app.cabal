@@ -39,7 +39,6 @@ library
     , servant-server
     , servant-swagger-ui
     , text
-    , wai
     , wai-app-static
     , warp
   exposed-modules:
@@ -68,7 +67,6 @@ executable theme-app-server
     , servant-server
     , servant-swagger-ui
     , text
-    , wai
     , wai-app-static
     , warp
     , theme-app

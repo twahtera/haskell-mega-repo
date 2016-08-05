@@ -2,9 +2,10 @@
 module Futurice.EnvConfig where
 
 import Futurice.Prelude
-import Prelude          ()
+import Prelude ()
 
 import Control.Monad.Logger           (LogLevel (..))
+import Data.Char                      (toUpper)
 import Database.PostgreSQL.Simple     (ConnectInfo (..))
 import Database.PostgreSQL.Simple.URL (parseDatabaseUrl)
 import System.Environment             (lookupEnv)
@@ -18,8 +19,17 @@ import qualified PlanMill           as PM
 defaultPort :: Int
 defaultPort = 8000
 
-parseDefaultPort :: IO Int
-parseDefaultPort = parseEnvVarWithDefault "PORT" defaultPort
+-- | Parse port, @parseDefaultPort prefix@ first tries to parse @PREFIX_PORT@,
+-- then @PORT@ and after that defaults to 'defaultPort'
+parseDefaultPort :: String -> IO Int
+parseDefaultPort prefix = do
+    val0 <- parseEnvVarMaybe var0
+    case val0 of
+        Just x -> pure x
+        Nothing ->  parseEnvVarWithDefault var1 defaultPort
+  where
+    var0 = map toUpper prefix ++ "_PORT"
+    var1 = "PORT"
 
 -- | Class to parse env variables
 class FromEnvVar a where
@@ -32,20 +42,30 @@ parseEnvVar :: FromEnvVar a
 parseEnvVar var =
     parseEnvVarWithDefault var (error $ "No environment variable " ++ var)
 
--- | Parse optional environment variable.
--- Will fail if variable is present, but is of invalid format.
-parseEnvVarWithDefault :: FromEnvVar a
-                       => String  -- ^ Environment variable
-                       -> a       -- ^ Default value
-                       -> IO a
-parseEnvVarWithDefault var def = do
+-- | Parse optional var.
+-- Returns 'Nothing' if var is not set
+-- Will throw an exception if var cannot be parsed
+parseEnvVarMaybe
+    :: FromEnvVar a  -- ^ Environment variable
+    => String        -- ^ Default value
+    -> IO (Maybe a)
+parseEnvVarMaybe var = do
     val <- lookupEnv var
     case val of
-        Nothing   -> pure def
+        Nothing   -> pure Nothing
         Just val' -> case fromEnvVar val' of
             Nothing -> error $
                "Cannot parse environment variable: " ++ var ++ " -- " ++ val'
-            Just x  -> pure x
+            Just x  -> pure (Just x)
+
+-- | Parse optional environment variable.
+-- Will fail if variable is present, but is of invalid format.
+parseEnvVarWithDefault
+    :: FromEnvVar a
+     => String  -- ^ Environment variable
+    -> a        -- ^ Default value
+    -> IO a
+parseEnvVarWithDefault var def = fromMaybe def <$> parseEnvVarMaybe var
 
 getConnectInfo :: IO ConnectInfo
 getConnectInfo = f

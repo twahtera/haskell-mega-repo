@@ -30,4 +30,4 @@ getConfig = Config
     <*> parseEnvVar "FD_AUTH_TOKEN"
     <*> parseEnvVar "FD_ORGANISATION"
     <*> parseEnvVar "FD_FLOW"
-    <*> parseDefaultPort
+    <*> parseDefaultPort "SPICESTATSAPP"

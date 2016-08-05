@@ -13,11 +13,7 @@ module Futurice.App.Contacts.Types (
 
 import Futurice.Prelude
 import Prelude ()
-
-import Data.Aeson        (ToJSON (..))
-import Data.Swagger      (ToSchema (..))
 import Futurice.Generics
-
 import Futurice.App.Contacts.Types.Tri
 
 data ContactFD avatar = ContactFD

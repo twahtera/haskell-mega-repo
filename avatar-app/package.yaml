@@ -29,7 +29,7 @@ library:
     - env-config
     - futulogo
     - futurice-prelude
-    - gitrev >=1.0.0
+    - futurice-servant
     - http-client
     - http-client-tls
     - JuicyPixels >=3.2.7
@@ -38,12 +38,8 @@ library:
     - markdown
     - semigroups
     - servant
-    - servant-blaze
-    - servant-cache
-    - servant-docs
     - servant-JuicyPixels >=0.3.0.0
     - servant-server
-    - servant-status
     - stm
     - text
     - time
@@ -51,8 +47,6 @@ library:
     - transformers-compat
     - unordered-containers
     - vector
-    - wai
-    - warp
 
   when:
     - condition: flag(aeson-compat)

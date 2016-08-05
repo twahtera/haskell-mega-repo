@@ -82,7 +82,6 @@ library:
     - unordered-containers
     - vector                >=0.10  && <0.12
     - wai
-    - warp
 
   when:
     - condition: flag(aeson-compat)

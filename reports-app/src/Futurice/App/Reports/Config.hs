@@ -33,5 +33,5 @@ getConfig = Config
     <*> parseEnvVar "FUM_TOKEN"
     <*> parseEnvVar "FUM_BASEURL"
     <*> parseEnvVar "FUM_LISTNAME"
-    <*> parseEnvVar "REPORTS_GH_REPOSURL"
-    <*> parseDefaultPort
+    <*> parseEnvVar "REPORTS_GH_REPOSURL" -- TODO: change to REPORTSAPP_GH_REPOSURL
+    <*> parseDefaultPort "REPORTSAPP"

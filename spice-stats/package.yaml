@@ -12,7 +12,6 @@ ghc-options: -Wall
 
 dependencies:
   - base >= 4.7 && <4.10
-  - SHA
   - aeson
   - aeson-pretty
   - ansi-pretty
@@ -20,47 +19,43 @@ dependencies:
   - bifunctors
   - binary-orphans
   - binary-tagged
+  - blaze-html
   - bytestring
   - case-insensitive
   - deepseq
   - directory
+  - either
   - env-config
   - exceptions
   - filepath
+  - flowdock-rest
+  - futulogo
   - futurice-prelude
+  - futurice-servant
   - github
+  - gitrev
   - hashable >= 1.2
   - http-client
   - http-client-tls
   - http-types
   - lens
+  - markdown
   - optparse-applicative
   - regex-applicative
   - regex-applicative-text
   - regex-compat
   - semigroups
+  - servant >=0.6 && <0.8
+  - servant-server
+  - SHA
+  - stm
   - tagged
   - text
   - transformers
   - transformers-compat
   - unordered-containers
   - vector
-  - flowdock-rest
-  # Servant
-  - either
-  - servant >=0.6 && <0.8
-  - servant-status
-  - servant-cache
-  - servant-server
-  - servant-docs
-  - markdown
-  - futulogo
-  - servant-blaze
-  - stm
-  - blaze-html
   - wai
-  - warp
-  - gitrev
 
 library:
   source-dirs: src
