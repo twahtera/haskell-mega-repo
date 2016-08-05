@@ -46,6 +46,7 @@ library
     , swagger2
     , text
     , wai
+    , wai-extra
     , warp
   exposed-modules:
       Futurice.Servant

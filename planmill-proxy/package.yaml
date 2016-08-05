@@ -1,0 +1,58 @@
+name: planmill-proxy
+version: "0"
+synopsis: Planmill proxy
+description: New and fancy
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/haskell-mega-repo
+category: Web
+tested-with: GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
+extra-source-files:
+- README.md
+
+ghc-options: -Wall  -fcontext-stack=30
+
+dependencies:
+  - base >=4.7   && <4.10
+  - constraints
+  - env-config
+  - futurice-prelude
+  - haxl
+  - planmill-client
+  - http-client
+  - http-client-tls
+
+default-extensions:
+  - DeriveDataTypeable
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveGeneric
+  - DeriveTraversable
+  - ScopedTypeVariables
+
+library:
+  source-dirs: src
+  dependencies:
+    - bytestring
+    - binary
+    - binary-tagged
+    - futurice-servant
+    - servant
+    - servant-server
+    - servant-binary-tagged
+
+executables:
+  planmill-proxy-client:
+    ghc-options: -threaded
+    main: Main.hs
+    source-dirs: cli
+    dependencies:
+      - ansi-pretty
+
+  planmill-proxy-server:
+    ghc-options: -threaded
+    main: Main.hs
+    source-dirs: srv
+    dependencies:
+     - planmill-proxy

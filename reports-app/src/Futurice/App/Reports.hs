@@ -60,7 +60,7 @@ defaultMain = futuriceServerMain
     "Various reports"
     (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
     getConfig cfgPort
-    reportsApi server
+    reportsApi server futuriceNoMiddleware
     $ \cfg cache -> do
         manager <- newManager tlsManagerSettings
         return (cache, manager, cfg)

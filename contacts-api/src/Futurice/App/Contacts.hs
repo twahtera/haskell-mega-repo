@@ -33,7 +33,7 @@ defaultMain = futuriceServerMain
     "All employees and externals"
     (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
     getConfig cfgPort
-    contactsApi server
+    contactsApi server futuriceNoMiddleware
     $ \Config {..} cache -> do
         let getContacts = execute contacts
                 cfgGhOrg

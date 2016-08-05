@@ -35,20 +35,18 @@ module Futurice.Colour (
     SAccentColour(..),
     ) where
 
-import Codec.Picture.Types (PixelRGB8 (..), PixelCMYK8(..))
-import Control.DeepSeq     (NFData)
-import Data.Hashable       (Hashable)
-import Data.Monoid         ((<>))
-import Data.Tagged         (Tagged (..), untag)
-import Data.Text           (Text)
-import Data.Typeable       (Typeable)
-import GHC.Generics        (Generic)
+import Futurice.Prelude
+import Prelude ()
+
+import Clay.Color          (Color, rgba)
+import Codec.Picture.Types (PixelCMYK8 (..), PixelRGB8 (..))
+import Data.Swagger        (ToParamSchema (..), format)
+
 #if MIN_VERSION_servant(0,5,0)
-import Servant.API         (FromHttpApiData (..), ToHttpApiData (..))
+import Servant.API (FromHttpApiData (..), ToHttpApiData (..))
 #else
 import Servant.Common.Text (FromText (..), ToText (..))
 #endif
-import Clay.Color (Color, rgba)
 
 ------------------------------------------------------------------------------
 -- Types
@@ -373,3 +371,11 @@ deriving instance Typeable 'FutuBlack
 deriving instance Typeable 'FutuLightGreen
 deriving instance Typeable 'FutuDarkGreen
 deriving instance Typeable 'FutuAccent
+
+-------------------------------------------------------------------------------
+-- Swagger
+-------------------------------------------------------------------------------
+
+instance ToParamSchema Colour where
+    toParamSchema _ = mempty
+        & format ?~ "futurice colour"

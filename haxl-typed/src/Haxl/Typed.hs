@@ -28,7 +28,6 @@ module Haxl.Typed (
 import Prelude          ()
 import Futurice.Prelude 
 
-import Data.Tagged    (Tagged (..))
 import Futurice.Has   (IsSubset', IsElem')
 import Futurice.Peano (Image, Index)
 
