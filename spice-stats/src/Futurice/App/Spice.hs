@@ -14,16 +14,14 @@ import Prelude          ()
 
 import Control.Monad.Trans.Class  (lift)
 import Control.Monad.Trans.Except (ExceptT (..))
-import Development.GitRev         (gitHash)
 import Network.HTTP.Client        (Manager, newManager)
 import Network.HTTP.Client.TLS    (tlsManagerSettings)
 import Network.Wai
 import Servant
-import Servant.Cache.Class        (DynMapCache, cachedIO)
 import System.IO                  (hPutStrLn, stderr)
+import Futurice.Servant
 
 import qualified Network.Wai.Handler.Warp      as Warp
-import qualified Servant.Cache.Internal.DynMap as DynMap
 
 import Futurice.App.Spice.Config
 import Futurice.App.Spice.Logic
@@ -42,21 +40,24 @@ server ctx = pure "Hello from spice stats app"
     :<|> serveSpiceStats ctx
 
 -- | Server with docs and cache and status
-server' :: DynMapCache -> String -> Ctx -> Server SpiceAPI'
-server' cache versionHash ctx = serverAvatarApi cache versionHash (server ctx)
+server' :: DynMapCache -> Ctx -> Server SpiceAPI'
+server' cache ctx = futuriceServer
+    "Spice stats API"
+    "Open source contribution stats"
+    cache spiceStatsApi (server ctx)
 
 -- | Wai application
-app :: DynMapCache -> String -> Ctx -> Application
-app cache versionHash ctx = serve avatarApi' (server' cache versionHash ctx)
+app :: DynMapCache -> Ctx -> Application
+app cache ctx = serve spiceStatsApi' (server' cache  ctx)
 
 defaultMain :: IO ()
 defaultMain = do
     hPutStrLn stderr "Hello, spice-stats-server is alive"
     cfg <- getConfig
     mgr <- newManager tlsManagerSettings
-    cache <- DynMap.newIO
+    cache <- newDynMapCache 
     let ctx = (cache, mgr, cfg)
-    let app' = app cache $(gitHash) ctx
+    let app' = app cache ctx
     hPutStrLn stderr $ "Starting web server in port " ++ show (cfgPort cfg)
     Warp.run (cfgPort cfg) app'
 

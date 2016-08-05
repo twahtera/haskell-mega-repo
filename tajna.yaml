@@ -46,3 +46,6 @@ envs:
 
     REPORTS_GH_REPOSURL:
       secret: reports-gh-repos
+
+    # spice stats       
+    FD_FLOW: "open-source"

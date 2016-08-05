@@ -16,10 +16,10 @@ module Futurice.App.Spice.Logic (
     ) where
 
 import Futurice.Prelude
-import Prelude          ()
+import Prelude ()
 
-import Control.Lens        (Fold, Traversal', failing, folded, folding,
-                            (^..), _2, _Just)
+import Control.Lens
+       (Fold, Traversal', failing, folded, folding, to, (^..), _2, _Just)
 import Data.Char           (isAlphaNum, isDigit, isSpace)
 import Network.HTTP.Client (Manager)
 
@@ -72,10 +72,13 @@ githubRe = mk <$ RE.string "github.com/" <*> some (RE.psym p) <* RE.sym '/' <*> 
   where p c = isAlphaNum c || c `L.elem` ("-_." :: String)
         mk owner repo = (GH.mkOwnerName $ T.pack owner, GH.mkRepoName $ T.pack repo)
 
+author :: FD.Author -> Author
+author (FD.Author n e a) = Author n e a
+
 extractContribution :: FD.Discussion -> Maybe Contribution
 extractContribution discussion = constructor $ Contribution
     (fromMaybe 0 hours)
-    (discussion ^. FD.discussionAuthor)
+    (discussion ^. FD.discussionAuthor . to author)
     subject
     github
   where
@@ -93,8 +96,8 @@ extractContribution discussion = constructor $ Contribution
 discussionContribution :: Fold FD.Discussion Contribution
 discussionContribution = folding extractContribution
 
-authorNameOrEmail :: Traversal' FD.Author Text
-authorNameOrEmail = FD.authorName . _Just `failing` FD.authorEmail . _Just
+authorNameOrEmail :: Traversal' Author Text
+authorNameOrEmail = authorName . _Just `failing` authorEmail . _Just
 
 spiceStats :: Manager -> [FD.Message] -> GH.Auth -> IO Stats
 spiceStats mgr msgs auth =
