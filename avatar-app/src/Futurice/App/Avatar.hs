@@ -74,7 +74,7 @@ defaultMain = futuriceServerMain
     "Serve smaller versions of your favourite images"
     (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
     getConfig cfgPort
-    avatarApi server
+    avatarApi server futuriceNoMiddleware
     $ \_cfg cache -> do
         mgr <- newManager tlsManagerSettings
         return (cache, mgr)

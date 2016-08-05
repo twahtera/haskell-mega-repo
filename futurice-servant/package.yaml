@@ -40,4 +40,5 @@ library:
     - swagger2
     - text
     - wai
+    - wai-extra
     - warp

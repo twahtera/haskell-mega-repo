@@ -79,6 +79,8 @@ initDataSourceBatch mgr req = QueryFunction queryFunction
             = ("Content-Type", "application/json")
             : ("Accept", "application/binary-tagged")
             : HTTP.requestHeaders req
+        , HTTP.method
+            = "POST"
         }
     queryFunction blockedFetches = AsyncFetch $ \inner -> do
         a <- async $ do

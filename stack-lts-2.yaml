@@ -25,9 +25,11 @@ packages:
 - monad-http/
 - periocron/
 - planmill-client/
+- planmill-proxy/
 - postgresql-simple-url/
 - proxy-app/
 - reports-app/
+- servant-binary-tagged/
 - servant-cache/
 - servant-status/
 - spice-stats/

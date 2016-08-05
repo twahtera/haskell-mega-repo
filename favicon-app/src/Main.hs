@@ -41,7 +41,7 @@ main = futuriceServerMain
     "Futurice favicons"
     (Proxy :: Proxy 'FutuBlack)
     getConfig cfgPort
-    api server
+    api server futuriceNoMiddleware
     $ \_cfg -> return
 
 getConfig :: IO Int 
@@ -64,11 +64,3 @@ instance ToHtml IndexPage where
 
 instance ToSchema IndexPage where
     declareNamedSchema _ = pure $ NamedSchema (Just "Indexpage") mempty
-
--- /TODO/: move to prelude
-instance ToSchema (Image a) where
-    declareNamedSchema _ = pure $ NamedSchema (Just "Image") mempty
-
--- /TODO/: move to prelude
-instance ToParamSchema Colour where
-    toParamSchema = mempty

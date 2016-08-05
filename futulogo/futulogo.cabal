@@ -30,6 +30,7 @@ library
   ghc-options: -Wall
   build-depends:
       base                  >=4.7      && <4.10
+    , futurice-prelude
     , JuicyPixels           >=3.2.7    && <3.3
     , base-compat           >=0.6      && <0.10
     , bytestring            >=0.10.4.0 && <0.11
@@ -41,6 +42,7 @@ library
     , servant               >=0.4.4.5  && <0.8
     , servant-server        >=0.4.4.5  && <0.8
     , tagged                >=0.7.3    && <0.9
+    , swagger2              >=2.0      && <2.2
     , text
     , servant-JuicyPixels   >=0.3.0.0  && <0.4
   exposed-modules:

@@ -17,6 +17,7 @@ import PlanMill.Internal.Prelude
 
 import Numeric.Interval.NonEmpty (Interval)
 import Data.Constraint
+import Data.Swagger (ToSchema (..), NamedSchema (..))
 
 import qualified Data.Text as T
 
@@ -75,6 +76,7 @@ queryToRequest _                       = error "queryToRequest: not -implemented
 -- But than we have problems with writing instances.
 -- This special case should be good for fit for us.
 data SomeQuery where SomeQuery :: Query a -> SomeQuery
+deriving instance Show SomeQuery
 
 -- Helper to make deserialisation of SomeQuery simpler
 data SomeQueryTag where SomeQueryTag :: QueryTag a -> SomeQueryTag
@@ -185,6 +187,9 @@ instance ToJSON (Query a) where
 
 instance ToJSON SomeQuery where
     toJSON (SomeQuery q) = toJSON q
+
+instance ToSchema SomeQuery where
+    declareNamedSchema _ = pure $ NamedSchema (Just "PlanMill Query") mempty
 
 instance FromJSON SomeQuery where
     parseJSON = withObject "Query" $ \obj -> do

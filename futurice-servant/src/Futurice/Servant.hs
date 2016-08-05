@@ -7,6 +7,8 @@
 module Futurice.Servant (
     -- * @main@ boilerplate
     futuriceServerMain,
+    futuriceNoMiddleware,
+    liftFuturiceMiddleware,
     -- * HTML (lucid)
     HTML,
     -- * Swagger
@@ -28,10 +30,13 @@ module Futurice.Servant (
     futuriceServer,
     -- ** WAI
     Application,
+    Middleware,
     -- ** Cache
     DynMapCache,
     newDynMapCache,
     cachedIO,
+    -- * Middlewares
+    logStdoutDev,
     ) where
 
 -- TOOD: add middleware
@@ -44,7 +49,8 @@ import Data.Swagger
 import Development.GitRev       (gitCommitDate, gitHash)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
-import Network.Wai              (Application)
+import Network.Wai              (Application, Middleware)
+import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import Servant
 import Servant.Cache.Class      (DynMapCache, cachedIO)
 import Servant.Futurice.Favicon (FutuFaviconAPI, serveFutuFavicon)
@@ -114,17 +120,18 @@ futuriceServer t d cache papi server
 futuriceServerMain
     :: forall cfg ctx api proxy proxy' colour.
        (HasSwagger api,  HasServer api '[], SColour colour)
-    => Text                 -- ^ Service name
-    -> Text                 -- ^ Service description
+    => Text                        -- ^ Service name
+    -> Text                        -- ^ Service description
     -> proxy colour
-    -> IO cfg               -- ^ Read config
-    -> (cfg -> Int)         -- ^ Get port from the config
+    -> IO cfg                      -- ^ Read config
+    -> (cfg -> Int)                -- ^ Get port from the config
     -> proxy' api
-    -> (ctx -> Server api)  -- ^ Application
+    -> (ctx -> Server api)         -- ^ Application
+    -> (cfg -> ctx -> Middleware)  -- ^ Middleware
     -> (cfg -> DynMapCache -> IO ctx)
        -- ^ Initialise the context for application
     -> IO ()
-futuriceServerMain t d _proxyColour getConfig cfgPort _proxyApi server makeCtx = do
+futuriceServerMain t d _proxyColour getConfig cfgPort _proxyApi server middleware makeCtx = do
     T.hPutStrLn stderr $ "Hello, " <> t <> " is alive"
     cfg         <- getConfig
     let p       = cfgPort cfg
@@ -135,13 +142,20 @@ futuriceServerMain t d _proxyColour getConfig cfgPort _proxyApi server makeCtx =
     T.hPutStrLn stderr $ "Starting " <> t <> " at port " <> show p ^. packed
     T.hPutStrLn stderr $ "- http://localhost:" <> show p ^. packed <> "/"
     T.hPutStrLn stderr $ "- http://localhost:" <> show p ^. packed <> "/swagger-ui/"
-    Warp.run p (serve proxyApi' server')
+    Warp.run p $ middleware cfg ctx $ serve proxyApi' server'
   where
     proxyApi :: Proxy api
     proxyApi = Proxy
 
     proxyApi' :: Proxy (FuturiceAPI api colour)
     proxyApi' = Proxy
+
+futuriceNoMiddleware :: cfg -> ctx -> Middleware
+futuriceNoMiddleware = liftFuturiceMiddleware id
+
+-- | Lift config-less middleware for use with 'futuriceServerMain'.
+liftFuturiceMiddleware :: Middleware -> cfg -> ctx -> Middleware
+liftFuturiceMiddleware mw _ _ = mw
 
 -------------------------------------------------------------------------------
 -- Other stuff

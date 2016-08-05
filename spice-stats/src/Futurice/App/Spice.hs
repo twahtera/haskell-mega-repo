@@ -39,7 +39,7 @@ defaultMain = futuriceServerMain
     "Open source contribution stats"
     (Proxy :: Proxy ('FutuAccent 'AF3 'AC2))
     getConfig cfgPort
-    spiceStatsApi server
+    spiceStatsApi server futuriceNoMiddleware
     $ \cfg cache -> do
         mgr <- newManager tlsManagerSettings
         return (cache, mgr, cfg)
