@@ -47,5 +47,4 @@ executable favicon
     , time
     , transformers
     , transformers-compat
-    , warp
   default-language: Haskell2010

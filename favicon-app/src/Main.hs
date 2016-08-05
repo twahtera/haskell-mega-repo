@@ -17,9 +17,6 @@ import Lucid               hiding (for_)
 import Servant
 import Servant.JuicyPixels (PNG)
 import System.Environment  (lookupEnv)
-import System.IO           (hPutStrLn, stderr)
-
-import qualified Network.Wai.Handler.Warp as Warp
 
 type IconAPI = "icon" :> Capture "colour" Colour :> Get '[PNG] (Image PixelRGBA8)
 
@@ -27,13 +24,8 @@ type API =
     Get '[HTML] IndexPage
     :<|> IconAPI
 
-type API' = FuturiceAPI API 'FutuBlack
-
 api :: Proxy API
 api = Proxy
-
-api' :: Proxy API'
-api' = Proxy
 
 iconEndpoint :: Proxy IconAPI
 iconEndpoint = Proxy
@@ -43,18 +35,20 @@ server cache = pure IndexPage :<|> liftIO . makeLogo'
  where
    makeLogo' c = cachedIO cache 3600 c (evaluate $!! makeLogo c)
 
-app :: DynMapCache -> Application
-app cache = serve api' $ futuriceServer
-    "Favicon API"
-    "Serve favicons in different colours"
-    cache api $ server cache
-
 main :: IO ()
-main = do
-  hPutStrLn stderr "Hello, I'm alive"
-  port <- fromMaybe 8000 . (>>= readMaybe) <$> lookupEnv "PORT"
-  cache <- newDynMapCache
-  Warp.run port (app cache)
+main = futuriceServerMain
+    "Favicon API"
+    "Futurice favicons"
+    (Proxy :: Proxy 'FutuBlack)
+    getConfig cfgPort
+    api server
+    $ \_cfg -> return
+
+getConfig :: IO Int 
+getConfig = fromMaybe 8000 . (>>= readMaybe) <$> lookupEnv "PORT"
+
+cfgPort :: Int -> Int
+cfgPort = id
 
 -------------------------------------------------------------------------------
 -- IndexPage

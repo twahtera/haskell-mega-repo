@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -20,7 +19,6 @@ import System.IO                  (hPutStrLn, stderr)
 import qualified Data.ByteString.Lazy     as LBS
 import qualified Data.Text                as T
 import qualified Data.Text.Encoding       as TE
-import qualified Network.Wai.Handler.Warp as Warp
 
 import Network.HTTP.Client
        (Manager, httpLbs, newManager, parseUrl, responseBody)
@@ -70,22 +68,13 @@ server :: Ctx -> Server AvatarAPI
 server ctx = pure "Hello from avatar app"
     :<|> mkAvatar ctx
 
-server' :: DynMapCache -> Ctx -> Server AvatarAPI'
-server' cache  ctx = futuriceServer
+defaultMain :: IO ()
+defaultMain = futuriceServerMain
     "Avatar API"
     "Serve smaller versions of your favourite images"
-    cache avatarApi (server ctx)
-
-app :: DynMapCache -> Ctx -> Application
-app cache ctx = serve avatarApi' (server' cache ctx)
-
-defaultMain :: IO ()
-defaultMain = do
-    hPutStrLn stderr "Hello, avatar-app is alive"
-    Config{..} <- getConfig
-    mgr <- newManager tlsManagerSettings
-    cache <- newDynMapCache
-    let ctx = (cache, mgr)
-    let app' = app cache ctx
-    hPutStrLn stderr "Starting web server"
-    Warp.run cfgPort app'
+    (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
+    getConfig cfgPort
+    avatarApi server
+    $ \_cfg cache -> do
+        mgr <- newManager tlsManagerSettings
+        return (cache, mgr)

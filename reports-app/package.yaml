@@ -70,7 +70,6 @@ dependencies:
   - transformers-compat
   - unordered-containers
   - vector
-  - warp
 
 library:
   source-dirs: src

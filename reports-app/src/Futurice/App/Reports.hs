@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -18,7 +17,6 @@ import Network.HTTP.Client
        (Manager, httpLbs, newManager, parseUrl, responseBody)
 import Network.HTTP.Client.TLS    (tlsManagerSettings)
 import Servant
-import System.IO                  (hPutStrLn, stderr)
 
 import Futurice.Reflection.TypeLits (reifyTypeableSymbol)
 
@@ -26,7 +24,6 @@ import qualified Data.ByteString.Lazy     as LBS
 import qualified Data.Text                as T
 import qualified Data.Text.Encoding       as TE
 import qualified GitHub                   as GH
-import qualified Network.Wai.Handler.Warp as Warp
 
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.Logic
@@ -57,27 +54,16 @@ server ctx = pure IndexPage
     :<|> serveIssues ctx
     :<|> serveFumGitHubReport ctx
 
--- | Server with docs and cache and status
-server' :: DynMapCache -> Ctx -> Server ReportsAPI'
-server' cache ctx = futuriceServer
+defaultMain :: IO ()
+defaultMain = futuriceServerMain
     "Report API"
     "Various reports"
-    cache reportsApi (server ctx)
-
--- | Wai application
-app :: DynMapCache -> Ctx -> Application
-app cache ctx = serve reportsApi' (server' cache ctx)
-
-defaultMain :: IO ()
-defaultMain = do
-    hPutStrLn stderr "Hello, github-dashaboard-server is alive"
-    cfg@Config {..} <- getConfig
-    mgr <- newManager tlsManagerSettings
-    cache <- newDynMapCache
-    let ctx = (cache, mgr, cfg)
-    let app' = app cache ctx
-    hPutStrLn stderr $ "Starting web server in port " ++ show cfgPort
-    Warp.run cfgPort app'
+    (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
+    getConfig cfgPort
+    reportsApi server
+    $ \cfg cache -> do
+        manager <- newManager tlsManagerSettings
+        return (cache, manager, cfg)
 
 -------------------------------------------------------------------------------
 -- Temporary
@@ -93,4 +79,3 @@ repos mgr url = do
     f line = case T.words line of
       [o, n] -> Just $ GitHubRepo (GH.mkOwnerName o) (GH.mkRepoName n)
       _      -> Nothing
-

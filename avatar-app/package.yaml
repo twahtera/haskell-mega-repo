@@ -47,8 +47,6 @@ library:
     - transformers-compat
     - unordered-containers
     - vector
-    - wai
-    - warp
 
   when:
     - condition: flag(aeson-compat)

@@ -38,4 +38,6 @@ library:
     - servant-swagger-ui
     - stm
     - swagger2
+    - text
     - wai
+    - warp

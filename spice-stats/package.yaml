@@ -56,7 +56,6 @@ dependencies:
   - unordered-containers
   - vector
   - wai
-  - warp
 
 library:
   source-dirs: src

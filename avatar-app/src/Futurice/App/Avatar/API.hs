@@ -11,7 +11,6 @@ import Futurice.Prelude
 import Prelude ()
 
 import Codec.Picture       (DynamicImage)
-import Futurice.Servant
 import Servant
 import Servant.JuicyPixels (PNG)
 
@@ -22,10 +21,5 @@ type AvatarAPI =
                   :> QueryFlag "grey"
                   :> Get '[PNG] (Headers '[Header "Cache-Control" Text] DynamicImage)
 
-type AvatarAPI' = FuturiceAPI AvatarAPI  ('FutuAccent 'AF5 'AC2)
-
 avatarApi :: Proxy AvatarAPI
 avatarApi = Proxy
-
-avatarApi' :: Proxy AvatarAPI'
-avatarApi' = Proxy

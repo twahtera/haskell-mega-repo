@@ -85,7 +85,6 @@ library
     , transformers-compat
     , unordered-containers
     , vector
-    , warp
   exposed-modules:
       Futurice.App.Reports
       Futurice.App.Reports.Config
@@ -159,6 +158,5 @@ executable reports-app-server
     , transformers-compat
     , unordered-containers
     , vector
-    , warp
     , reports-app
   default-language: Haskell2010

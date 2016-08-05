@@ -59,8 +59,6 @@ library
     , transformers-compat
     , unordered-containers
     , vector
-    , wai
-    , warp
   if flag(aeson-compat)
     build-depends:
         aeson-compat >=0.3.0.0 && <0.4
