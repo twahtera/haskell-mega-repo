@@ -45,6 +45,7 @@ library
     , exceptions
     , futurice-servant
     , monad-logger
+    , periocron
     , postgresql-simple
     , postgresql-simple-url
     , resource-pool
