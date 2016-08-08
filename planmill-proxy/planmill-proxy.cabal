@@ -51,6 +51,7 @@ library
     , servant
     , servant-binary-tagged
     , servant-server
+    , unordered-containers
   exposed-modules:
       Futurice.App.PlanMillProxy
       Futurice.App.PlanMillProxy.API

@@ -41,6 +41,7 @@ dependencies:
   - containers
   - cryptohash
   - deepseq
+  - dependent-sum
   - DRBG
   - entropy
   - exceptions

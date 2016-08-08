@@ -1,5 +1,5 @@
-{-# LANGUAGE GADTs              #-}
 {-# LANGUAGE ConstraintKinds    #-}
+{-# LANGUAGE GADTs              #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE RankNTypes         #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -15,11 +15,18 @@ module PlanMill.Types.Query (
 
 import PlanMill.Internal.Prelude
 
-import Numeric.Interval.NonEmpty (Interval)
 import Data.Constraint
-import Data.Swagger (ToSchema (..), NamedSchema (..))
+import Data.Type.Equality
+import Data.GADT.Compare         (GEq (..), defaultEq)
 
-import qualified Data.Text as T
+import Control.Monad             (guard)
+import Data.Swagger              (NamedSchema (..), ToSchema (..))
+import Numeric.Interval.NonEmpty (Interval)
+
+import qualified Data.Aeson.Compat                    as Aeson
+import qualified Data.Text                            as T
+import qualified Database.PostgreSQL.Simple.FromField as Postgres
+import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 
 import PlanMill.Types.Me             (Me)
 import PlanMill.Types.Request
@@ -31,6 +38,10 @@ import PlanMill.Types.Timereport     (Timereports)
 import PlanMill.Types.UrlPart        (UrlParts)
 import PlanMill.Types.User           (User, UserId)
 import PlanMill.Types.UserCapacity   (UserCapacities)
+
+-------------------------------------------------------------------------------
+-- Types
+-------------------------------------------------------------------------------
 
 -- | Arbitrary queries are tagged by this values
 data QueryTag a where
@@ -89,6 +100,14 @@ data SomeQueryTag where SomeQueryTag :: QueryTag a -> SomeQueryTag
 instance Eq (QueryTag a) where _ == _ = True
 instance Ord (QueryTag a) where compare _ _ = EQ
 
+instance GEq QueryTag where
+    geq QueryTagMe QueryTagMe     = Just Refl
+    geq QueryTagUser QueryTagUser = Just Refl
+    geq _ _                       = Nothing
+
+instance Eq SomeQueryTag where
+    SomeQueryTag t == SomeQueryTag t' = defaultEq t t'
+
 instance Show (QueryTag a) where
     showsPrec _ r = case r of
         QueryTagMe   -> showString "QueryTagMe"
@@ -117,6 +136,21 @@ instance FromJSON SomeQueryTag where
 
 deriving instance Eq (Query a)
 -- deriving instance Ord (Query a)
+
+instance GEq Query where
+    geq (QueryGet t q p) (QueryGet t' q' p') = do
+        Refl <- geq t t'
+        guard (q == q' && p == p')
+        pure Refl
+    geq (QueryPagedGet t q p) (QueryPagedGet t' q' p') = do
+        Refl <- geq t t'
+        guard (q == q' && p == p')
+        pure Refl
+    geq (QueryTimereports i u) (QueryTimereports i' u')
+        | i == i' && u == u' = Just Refl
+    geq (QueryCapacities i u) (QueryCapacities i' u')
+        | i == i' && u == u' = Just Refl
+    geq _ _ = Nothing
 
 instance Show (Query a) where
     showsPrec d r = showParen (d > 10) $ case r of
@@ -185,6 +219,20 @@ instance ToJSON (Query a) where
         , "uid"      .= u
         ]
 
+-- | Encoded as JSON
+instance Postgres.ToField (Query a) where
+    toField = Postgres.toField . Aeson.encode
+
+-------------------------------------------------------------------------------
+-- SomeQuery instances
+-------------------------------------------------------------------------------
+
+instance Eq SomeQuery where
+    SomeQuery q == SomeQuery q' = defaultEq q q';
+
+instance Hashable SomeQuery where
+    hashWithSalt salt (SomeQuery q) = hashWithSalt salt q
+
 instance ToJSON SomeQuery where
     toJSON (SomeQuery q) = toJSON q
 
@@ -217,6 +265,17 @@ instance FromJSON SomeQuery where
             SomeQueryTag t' -> SomeQuery (QueryPagedGet t' q p)
         mkSomeQueryTimereports i u = SomeQuery (QueryTimereports i u)
         mkSomeQueryCapacities i u = SomeQuery (QueryCapacities i u)
+
+-- | Encoded as JSON
+instance Postgres.ToField SomeQuery where
+    toField (SomeQuery q) = Postgres.toField q
+
+instance Postgres.FromField SomeQuery where
+    fromField f mbs = do
+        bs <- Postgres.fromField f mbs
+        case Aeson.eitherDecode bs of
+            Right x  -> pure x
+            Left err -> Postgres.conversionError (Aeson.AesonException err)
 
 -------------------------------------------------------------------------------
 -- Query dictionaries
