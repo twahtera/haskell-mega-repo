@@ -44,14 +44,17 @@ instance KnownSymbol k => FromJSON (EnumDesc k) where
         k' :: Text
         k' = T.pack $ "Enumeration values." <> symbolVal (Proxy :: Proxy k)
 
-instance ForallFSymbol NFData     EnumDesc where instFSymbol _ _ _ = Dict
-instance ForallFSymbol AnsiPretty EnumDesc where instFSymbol _ _ _ = Dict
-instance ForallFSymbol Binary     EnumDesc where instFSymbol _ _ _ = Dict
-instance ForallFSymbol HasSemanticVersion EnumDesc where instFSymbol _ _ _ = Dict
-instance ForallFSymbol FromJSON   EnumDesc where instFSymbol _ _ _ = Dict
-instance ForallFSymbol Show       EnumDesc where instFSymbol _ _ _ = Dict
+instance ForallFSymbol NFData     EnumDesc where instFSymbol = Dict
+instance ForallFSymbol AnsiPretty EnumDesc where instFSymbol = Dict
+instance ForallFSymbol Binary     EnumDesc where instFSymbol = Dict
+instance ForallFSymbol HasSemanticVersion EnumDesc where instFSymbol = Dict
+instance ForallFSymbol FromJSON   EnumDesc where instFSymbol = Dict
+instance ForallFSymbol Show       EnumDesc where instFSymbol = Dict
 instance ForallFSymbol Typeable   EnumDesc where
-    instFSymbol _ _ ps = reifyTypeableSymbol ps $ Dict
+  instFSymbol = dict
+     where
+       dict :: forall k. KnownSymbol k => Dict (Typeable (EnumDesc k))
+       dict =reifyTypeableSymbol (Proxy :: Proxy k) $ Dict
 
 data SomeEnumDesc where
     MkSomeEnumDesc :: KnownSymbol k => EnumDesc k -> SomeEnumDesc
@@ -95,6 +98,6 @@ deriveGeneric ''EnumValue
 
 instance HasStructuralInfo (EnumDesc k) where structuralInfo = sopStructuralInfo
 instance ForallFSymbol HasStructuralInfo EnumDesc where
-    instFSymbol _ _ _ = Dict
+    instFSymbol = Dict
 instance HasStructuralInfo  (EnumValue entity field)
   where structuralInfo = sopStructuralInfo

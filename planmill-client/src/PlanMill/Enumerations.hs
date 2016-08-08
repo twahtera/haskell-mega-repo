@@ -50,11 +50,13 @@ enumerationForField entityProxy fieldNameProxy = do
     m <- planmillAction (meta entityProxy)
     case lookupFieldEnum m (T.pack $ symbolVal fieldNameProxy) of
         Nothing -> return Nothing -- TODO: Throw an unknown field exception?
-        Just enumName  -> reifyTextSymbol enumName $ \enumProxy ->
-            case instFSymbol (Proxy :: Proxy (MonadPlanMillC m)) (Proxy :: Proxy EnumDesc) enumProxy of
-                Dict -> do
-                    desc <- planmillAction $ enumerations enumProxy
-                    return $ Just $ MkSomeEnumDesc desc
+        Just enumName  -> reifyTextSymbol enumName e
+  where
+    e :: forall k. KnownSymbol k => Proxy k -> m (Maybe SomeEnumDesc)
+    e enumProxy = case instFSymbol :: Dict (MonadPlanMillC m (EnumDesc k)) of
+        Dict -> do
+            desc <- planmillAction $ enumerations enumProxy
+            return $ Just $ MkSomeEnumDesc desc
 
 enumerationValue
     :: forall entity field m.

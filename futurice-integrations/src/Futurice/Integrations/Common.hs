@@ -29,7 +29,7 @@ class HasGithubOrgName a where
 
 -- | Get list of active employees from FUM.
 fumEmployeeList
-    :: ( MonadFUM m, MonadFUMC m (Vector FUM.User)
+    :: ( MonadFUM m
        , MonadReader env m, HasFUMEmployeeListName env
        )
     => m (Vector FUM.User)
