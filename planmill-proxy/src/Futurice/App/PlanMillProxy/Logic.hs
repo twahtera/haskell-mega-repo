@@ -30,10 +30,12 @@ lookupCache ps = HM.fromList (Postgres.fromBinary <$$> ps)
 
 haxlEndpoint :: Ctx -> [SomeQuery] -> IO [Either Text ByteString]
 haxlEndpoint ctx qs = withResource (ctxPostgresPool ctx) $ \conn -> do
-    cacheResult <- lookupCache <$> Postgres.query conn selectQuery (Postgres.Only . Postgres.In $ qs)
+    _ <- Postgres.execute conn viewQuery postgresQs
+    cacheResult <- lookupCache <$> Postgres.query conn selectQuery postgresQs
     print $ HM.size cacheResult -- $ log how many we found
     traverse (fetch cacheResult conn) qs
   where
+    postgresQs = Postgres.Only . Postgres.In $ qs
 
     -- Fetch provides context for fetch', i.e. this is boilerplate :(
     fetch
@@ -80,6 +82,10 @@ haxlEndpoint ctx qs = withResource (ctxPostgresPool ctx) $ \conn -> do
 
     -- Planmill config
     planmillCfg   = ctxPlanmillCfg ctx
+
+    -- Used to update viewed counters
+    viewQuery :: Postgres.Query
+    viewQuery = "UPDATE planmillproxy.cache SET viewed = viewed + 1 WHERE query in ?"
 
     -- Used to delete invalid items (cannot decode)
     deleteQuery :: Postgres.Query
