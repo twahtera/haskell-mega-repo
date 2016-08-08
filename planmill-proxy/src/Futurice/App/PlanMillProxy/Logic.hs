@@ -11,12 +11,12 @@ import Data.Binary.Tagged               (taggedEncode, HasSemanticVersion, HasSt
 import Data.ByteString.Lazy             (ByteString)
 import Data.Constraint
 import Futurice.App.PlanMillProxy.H
-import Futurice.App.PlanMillProxy.Types (Ctx)
+import Futurice.App.PlanMillProxy.Types (Ctx (..))
 import Futurice.Servant                 (cachedIO)
 import PlanMill.Types.Query             (Query, SomeQuery (..), queryDict)
 
 haxlEndpoint :: Ctx -> [SomeQuery] -> IO [Either Text ByteString]
-haxlEndpoint (cache, cfg) = traverse fetch
+haxlEndpoint ctx = traverse fetch
   where
     fetch :: SomeQuery -> IO (Either Text ByteString)
     fetch (SomeQuery q) = case (binaryDict, semVerDict, structDict) of 
@@ -34,3 +34,6 @@ haxlEndpoint (cache, cfg) = traverse fetch
       where
         nfdataDict = queryDict (Proxy :: Proxy NFData) (Sub Dict) q
         typeableDict = queryDict (Proxy :: Proxy Typeable) (Sub Dict) q
+
+    cache = ctxCache ctx
+    cfg   = ctxPlanmillCfg ctx

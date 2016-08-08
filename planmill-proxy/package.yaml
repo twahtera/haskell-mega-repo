@@ -38,9 +38,13 @@ library:
     - binary
     - binary-tagged
     - futurice-servant
+    - monad-logger
+    - postgresql-simple
+    - resource-pool
+    - postgresql-simple-url
     - servant
-    - servant-server
     - servant-binary-tagged
+    - servant-server
 
 executables:
   planmill-proxy-client:

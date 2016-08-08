@@ -1,8 +1,16 @@
 module Futurice.App.PlanMillProxy.Types (
-    Ctx,
+    Ctx (..),
     ) where
 
-import Futurice.Servant (DynMapCache)
-import PlanMill         (Cfg)
+import Control.Monad.Logger       (LogLevel (..))
+import Data.Pool                  (Pool)
+import Database.PostgreSQL.Simple (Connection)
+import Futurice.Servant           (DynMapCache)
+import PlanMill                   (Cfg)
 
-type Ctx = (DynMapCache, Cfg)
+data Ctx = Ctx
+    { ctxCache        :: !DynMapCache
+    , ctxPlanmillCfg  :: !Cfg
+    , ctxPostgresPool :: !(Pool Connection)  -- TODO: write a lib to handle these
+    , ctxLogLevel     :: !LogLevel
+    }

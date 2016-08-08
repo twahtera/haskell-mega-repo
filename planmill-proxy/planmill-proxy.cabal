@@ -42,9 +42,13 @@ library
     , binary
     , binary-tagged
     , futurice-servant
+    , monad-logger
+    , postgresql-simple
+    , resource-pool
+    , postgresql-simple-url
     , servant
-    , servant-server
     , servant-binary-tagged
+    , servant-server
   exposed-modules:
       Futurice.App.PlanMillProxy
       Futurice.App.PlanMillProxy.API
