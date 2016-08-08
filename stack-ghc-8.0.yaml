@@ -46,12 +46,12 @@ packages:
     commit: b2a191aec365abf4891285a8e03a308a9c9a64b2
   extra-dep: true
 - location:
-    git: https://github.com/phadej/ekg-json.git
-    commit: 46c4d7dcf954edd842649afa20f6a9dddf325daf
+    git: https://github.com/tibbe/ekg-json.git
+    commit: 36e921ebcf985c42422fcb899577348bcad3c0f3
   extra-dep: true
 - location:
-    git: https://github.com/phadej/ekg.git
-    commit: 7e6e482a490a72d26ab58fe3ffa925536e1154d0
+    git: https://github.com/tibbe/ekg.git
+    commit: a712a174739586832a2f26e5bb7b4790aa3de1b2
   extra-dep: true
 - location:
     git: https://github.com/phadej/github.git
