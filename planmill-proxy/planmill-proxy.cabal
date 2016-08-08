@@ -38,14 +38,16 @@ library
     , planmill-client
     , http-client
     , http-client-tls
-    , bytestring
+    , aeson
     , binary
     , binary-tagged
+    , bytestring
+    , exceptions
     , futurice-servant
     , monad-logger
     , postgresql-simple
-    , resource-pool
     , postgresql-simple-url
+    , resource-pool
     , servant
     , servant-binary-tagged
     , servant-server
