@@ -9,3 +9,16 @@ stack build planmill-proxy
 tajna exec -s planmill-proxy-server  # Start the server
 tajna exec -s planmill-proxy-client  # Make test request
 ```
+
+## Example queries
+
+### `/me`
+
+```json
+[{
+    "tag": "get",
+    "type": "me",
+    "path": [ "me" ],
+    "query": []
+}]
+```

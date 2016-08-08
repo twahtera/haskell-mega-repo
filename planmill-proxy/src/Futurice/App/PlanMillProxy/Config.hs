@@ -4,15 +4,19 @@ module Futurice.App.PlanMillProxy.Config (
     ) where
 
 import Futurice.Prelude
-import Prelude          ()
+import Prelude ()
 
-import PlanMill (Cfg (..))
+import Control.Monad.Logger       (LogLevel (..))
+import Database.PostgreSQL.Simple (ConnectInfo)
+import PlanMill                   (Cfg (..))
 
 import Futurice.EnvConfig
 
 data Config = Config
-    { cfgCfg  :: !Cfg
-    , cfgPort :: !Int
+    { cfgCfg              :: !Cfg
+    , cfgPostgresConnInfo :: !ConnectInfo
+    , cfgLogLevel         :: !LogLevel
+    , cfgPort             :: !Int
     }
     deriving (Show)
 
@@ -21,6 +25,8 @@ getConfig = config
     <$> parseEnvVar "PLANMILL_ADMIN"
     <*> parseEnvVar "PLANMILL_SIGNATURE"
     <*> parseEnvVar "PLANMILL_BASEURL"
+    <*> getConnectInfo
+    <*> parseEnvVarWithDefault "PLANMILLPROXY_LOGLEVEL" LevelInfo
     <*> parseDefaultPort "PLANMILLPROXY"
   where
     config userid apikey baseurl =

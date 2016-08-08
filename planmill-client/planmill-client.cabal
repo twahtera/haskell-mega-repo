@@ -50,6 +50,7 @@ library
     , containers
     , cryptohash
     , deepseq
+    , dependent-sum
     , DRBG
     , entropy
     , exceptions
@@ -156,6 +157,7 @@ executable planmill-client
     , containers
     , cryptohash
     , deepseq
+    , dependent-sum
     , DRBG
     , entropy
     , exceptions
@@ -228,6 +230,7 @@ test-suite integration
     , containers
     , cryptohash
     , deepseq
+    , dependent-sum
     , DRBG
     , entropy
     , exceptions
@@ -293,6 +296,7 @@ test-suite test
     , containers
     , cryptohash
     , deepseq
+    , dependent-sum
     , DRBG
     , entropy
     , exceptions

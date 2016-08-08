@@ -34,13 +34,21 @@ default-extensions:
 library:
   source-dirs: src
   dependencies:
-    - bytestring
+    - aeson
     - binary
     - binary-tagged
+    - bytestring
+    - exceptions
     - futurice-servant
+    - monad-logger
+    - periocron
+    - postgresql-simple
+    - postgresql-simple-url
+    - resource-pool
     - servant
-    - servant-server
     - servant-binary-tagged
+    - servant-server
+    - unordered-containers
 
 executables:
   planmill-proxy-client:
