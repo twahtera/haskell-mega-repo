@@ -22,6 +22,7 @@ import Data.Binary          (encode)
 import Data.Binary.Tagged   (taggedDecodeFileOrFail, taggedEncodeFile)
 import Data.Constraint      (Dict (..), type (:-)(..), (\\))
 import Data.Digest.Pure.SHA (sha256, showDigest)
+import GHC.TypeLits         (KnownSymbol)
 
 import Control.Monad.PlanMill
 import PlanMill.Types
@@ -70,12 +71,13 @@ instance MonadPlanMillC m (EnumDesc s)         => CachingTC m (EnumDesc s)
 
 instance (MonadPlanMillC m (Vector a), CachingTC m a) => CachingTC m (Vector a)
 
-instance ForallFSymbol (MonadPlanMillC m) EnumDesc
-    => ForallFSymbol (CachingTC m) EnumDesc where
-    instFSymbol _ f s = case proxies of
+instance
+    ForallFSymbol (MonadPlanMillC m) EnumDesc
+    => ForallFSymbol (CachingTC m) EnumDesc
+  where
+    instFSymbol :: forall k. KnownSymbol k => Dict (CachingTC m (EnumDesc k))
+    instFSymbol = case instFSymbol :: Dict (MonadPlanMillC m (EnumDesc k)) of
         Dict -> Dict
-      where
-        proxies = instFSymbol (Proxy :: Proxy (MonadPlanMillC m)) f s
           
 instance
     (Applicative m, MonadPlanMillConstraint m)
