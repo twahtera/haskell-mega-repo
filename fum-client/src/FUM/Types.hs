@@ -1,18 +1,23 @@
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
+--
+{-# LANGUAGE FlexibleInstances #-}
 module FUM.Types where
 
 import Futurice.Prelude
-import Prelude          ()
+import Prelude ()
 
 import Data.Aeson.Compat
 import Data.Aeson.Types  (Parser)
 
 import qualified Data.Maybe.Strict as S
 import qualified Data.Text         as T
+
+import Unsafe.Coerce
 
 -------------------------------------------------------------------------------
 -- Authentication token
@@ -87,6 +92,9 @@ instance NFData UserName where rnf = genericRnf
 
 instance FromJSON UserName where
     parseJSON = withText "FUM UserName" $ pure . UserName
+
+instance ToJSON a => ToJSON (HashMap UserName a) where
+    toJSON m = toJSON (unsafeCoerce m :: HashMap Text a)
 
 -------------------------------------------------------------------------------
 -- List name

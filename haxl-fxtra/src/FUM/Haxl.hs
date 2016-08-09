@@ -11,6 +11,7 @@ module FUM.Haxl (
     fetchUsers,
     fetchList,
     initDataSource,
+    initDataSource',
     FumRequest(..),
     ) where
 
@@ -50,12 +51,21 @@ fetchList = request . FUM.fumListR
 instance StateKey FumRequest where
     data State FumRequest = FumState Manager FUM.AuthToken FUM.BaseUrl
 
-initDataSource :: FUM.AuthToken          -- ^ Authentication token
-               -> FUM.BaseUrl            -- ^ Base url
-               -> IO (State FumRequest)
+-- | /TODO:/ remove in favour of 'initDataSource''
+initDataSource
+    :: FUM.AuthToken          -- ^ Authentication token
+    -> FUM.BaseUrl            -- ^ Base url
+    -> IO (State FumRequest)
 initDataSource token baseUrl = do
     mgr <- newManager tlsManagerSettings
-    pure (FumState mgr token baseUrl)
+    pure (initDataSource' mgr token baseUrl)
+
+initDataSource'
+    :: Manager                -- ^ HTTP manager
+    -> FUM.AuthToken          -- ^ Authentication token
+    -> FUM.BaseUrl            -- ^ Base url
+    -> State FumRequest
+initDataSource' = FumState
 
 instance DataSourceName FumRequest where
     dataSourceName _ = "FumDataSource"

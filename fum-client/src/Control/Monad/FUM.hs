@@ -27,5 +27,5 @@ class
     type MonadFUMC m a :: Constraint
     type MonadFUMC m a = FromJSON a
 
-    fumAction :: MonadFUMC m a => FUM a -> m a
+    fumAction :: (Show a, Typeable a, MonadFUMC m a) => FUM a -> m a
 
