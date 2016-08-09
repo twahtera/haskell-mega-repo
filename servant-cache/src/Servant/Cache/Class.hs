@@ -12,9 +12,11 @@ module Servant.Cache.Class (
     I(..),
     cached,
     cachedIO,
+    genCachedIO,
+    CachePolicy (..),
     ) where
 
-import Prelude        ()
+import Prelude ()
 import Prelude.Compat hiding (lookup)
 
 import Control.Concurrent.Async    (Async, async, wait)
@@ -24,8 +26,8 @@ import Control.Monad.Base          (liftBase)
 import Control.Monad.Trans.Control (MonadBaseControl, liftBaseWith)
 import Data.Hashable               (Hashable)
 import Data.Proxy                  (Proxy (..))
-import Data.Time                   (NominalDiffTime, UTCTime, addUTCTime,
-                                    getCurrentTime)
+import Data.Time
+       (NominalDiffTime, UTCTime, addUTCTime, getCurrentTime)
 import Data.Typeable               (Typeable)
 import GHC.Generics                (Generic)
 
@@ -129,6 +131,11 @@ cached cache ttl key action = do
             liftBase $ wait r'
         Nothing -> cachedAction
 
+data CachePolicy
+    = ReturnOld   -- ^ Return elements even outdated, populate cache with new element in background
+    | RequestNew  -- ^ If element is outdated, request new and return it
+    deriving (Eq, Show, Typeable)
+
 -- | Cached action. Doesn't suffer from cold cache ....
 --
 -- Simple example:
@@ -137,17 +144,25 @@ cached cache ttl key action = do
 -- c <- mkCache
 -- cachedIO c 10 'k' (putStrLn "foo" >> pure 'v')
 -- @
-cachedIO :: forall c k v.
-            ( Cache c
-            , Typeable k, Eq k, Hashable k
-            , Typeable v
-            )
-         => c                -- ^ Cache
-         -> NominalDiffTime  -- ^ Time-to-live
-         -> k                -- ^ Cache key
-         -> IO v              -- ^ Value action
-         -> IO v
-cachedIO cache ttl key action = do
+cachedIO
+    :: forall c k v. (Cache c, Typeable k, Eq k, Hashable k, Typeable v)
+    => c                -- ^ Cache
+    -> NominalDiffTime  -- ^ Time-to-live
+    -> k                -- ^ Cache key
+    -> IO v             -- ^ Value action
+    -> IO v
+cachedIO = genCachedIO ReturnOld
+
+-- | More general version of 'cachedIO'
+genCachedIO
+    :: forall c k v. (Cache c, Typeable k, Eq k, Hashable k, Typeable v)
+    => CachePolicy
+    -> c                -- ^ Cache
+    -> NominalDiffTime  -- ^ Time-to-live
+    -> k                -- ^ Cache key
+    -> IO v             -- ^ Value action
+    -> IO v
+genCachedIO policy cache ttl key action = do
     now <- getCurrentTime
     let expirationMoment = ttl `addUTCTime` now
     ro <- atomically $ lookup' key cache $ \r ->
@@ -161,8 +176,9 @@ cachedIO cache ttl key action = do
                 -- requests will still reuse old value.  But return
                 -- nothing, so this request will be handled by the actual
                 -- application.
-                | otherwise -> do
-                     SP (Just expirationMoment) (Just $ SP r' True)
+                | otherwise -> case policy of
+                    ReturnOld  -> SP (Just expirationMoment) (Just $ SP r' True)
+                    RequestNew -> SP Nothing Nothing
 
     --  Action, which updates the cache
     let cachedAction :: IO v
