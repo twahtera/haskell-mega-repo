@@ -11,7 +11,6 @@ module Futurice.App.FutuHours.Precalc where
 
 import Futurice.Prelude
 
-import Control.Monad.Trans.Class  (MonadTrans (..))
 import Control.Monad.Trans.Except (ExceptT)
 import Futurice.AVar              (readAVarIO, writeAVarIO)
 import Generics.SOP

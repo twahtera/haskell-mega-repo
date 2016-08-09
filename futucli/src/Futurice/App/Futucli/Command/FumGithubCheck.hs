@@ -3,7 +3,7 @@ module Futurice.App.Futucli.Command.FumGithubCheck (fumGithubCheck) where
 
 import Futurice.Prelude
 
-import Control.Lens            (to, (^..), _Just)
+import Control.Lens            (to)
 import Network.HTTP.Client     (Manager, newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import System.IO               (stderr)

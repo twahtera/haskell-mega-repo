@@ -9,7 +9,6 @@ module Futurice.App.Reports (defaultMain) where
 
 import Futurice.Prelude
 
-import Control.Monad.Trans.Class  (lift)
 import Control.Monad.Trans.Except (ExceptT (..))
 import Data.Maybe                 (mapMaybe)
 import Futurice.Servant

@@ -19,7 +19,6 @@ import Data.Constraint
 import Data.Type.Equality
 import Data.GADT.Compare         (GEq (..), defaultEq)
 
-import Control.Monad             (guard)
 import Data.Swagger              (NamedSchema (..), ToSchema (..))
 import Numeric.Interval.NonEmpty (Interval)
 

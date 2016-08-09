@@ -5,10 +5,10 @@ module Futurice.App.MegaRepoTool.Command.BuildDocker (
     ) where
 
 import Futurice.Prelude hiding (fold)
-import Turtle           hiding ((<>))
+import Turtle           hiding (when, (<>))
 
-import System.IO     (hClose, hFlush)
-import System.Exit   (exitFailure)
+import System.Exit (exitFailure)
+import System.IO   (hClose, hFlush)
 
 import qualified Control.Foldl as Fold
 import qualified Data.Text     as T
@@ -50,7 +50,7 @@ buildDocker = do
     shells ("git rev-parse --verify " <> githash) empty
     T.putStrLn $ "Git hash aka tag for images: " <> githash
 
-    -- Check that binaries are build with current hash 
+    -- Check that binaries are build with current hash
     githashBuild <- (T.strip <$> T.readFile "build/git-hash.txt") `catch` onIOError "<none>"
     when (githashBuild /= githash) $ do
         T.putStrLn $ "Git hash in build directory don't match: " <> githashBuild  <> " != " <> githash

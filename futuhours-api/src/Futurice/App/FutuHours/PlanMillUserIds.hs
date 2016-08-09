@@ -5,7 +5,6 @@ module Futurice.App.FutuHours.PlanMillUserIds (planMillUserIds) where
 
 import Futurice.Prelude
 
-import Control.Lens                (_1)
 import Data.Maybe                  (mapMaybe)
 import Database.PostgreSQL.Simple  (Connection)
 import Network.HTTP.Client         (newManager)

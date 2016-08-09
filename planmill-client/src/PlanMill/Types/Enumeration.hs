@@ -18,7 +18,6 @@ module PlanMill.Types.Enumeration (
 
 import PlanMill.Internal.Prelude
 
-import Control.Lens                     (_1)
 import Data.Aeson.Types                 (Parser)
 import Futurice.Constraint.ForallSymbol (Dict (..), ForallFSymbol (..))
 import Futurice.Reflection.TypeLits     (reifyTypeableSymbol)

@@ -16,7 +16,6 @@ module Futurice.App.Reports.Types where
 
 import Futurice.Prelude
 
-import Control.Monad.Trans.Class (lift)
 import Data.Aeson                (ToJSON (..))
 import Data.Constraint           (Dict (..))
 import Data.Swagger              (ToSchema (..), NamedSchema (..))
