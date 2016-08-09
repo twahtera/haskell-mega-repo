@@ -36,6 +36,7 @@ library
     , fum-client
     , futurice-prelude
     , github
+    , http-client
     , monad-logger
     , planmill-client
     , postgresql-simple

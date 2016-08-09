@@ -8,6 +8,7 @@ import Control.Monad.Logger           (LogLevel (..))
 import Data.Char                      (toUpper)
 import Database.PostgreSQL.Simple     (ConnectInfo (..))
 import Database.PostgreSQL.Simple.URL (parseDatabaseUrl)
+import Network.HTTP.Client            (Request, parseUrl)
 import System.Environment             (lookupEnv)
 
 import qualified Chat.Flowdock.REST as FD
@@ -108,6 +109,9 @@ instance FromEnvVar Bool where
     fromEnvVar "1" = Just True
     fromEnvVar "0" = Just False
     fromEnvVar _   = Nothing
+
+instance FromEnvVar Request where
+    fromEnvVar s = fromEnvVar s >>= parseUrl
 
 -------------------------------------------------------------------------------
 -- FUM
