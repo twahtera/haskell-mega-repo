@@ -12,6 +12,7 @@ module Futurice.Periocron (
     -- * Intervals
     Intervals,
     every,
+    shifted,
     ) where
 
 import Futurice.Prelude
@@ -83,6 +84,9 @@ type Intervals = [NominalDiffTime]
 
 every :: NominalDiffTime -> Intervals
 every interval = iterate (+ interval) 0
+
+shifted :: NominalDiffTime -> Intervals -> Intervals
+shifted diff = map (+ diff)
 
 -------------------------------------------------------------------------------
 -- Merge helpers
