@@ -19,7 +19,7 @@ import Futurice.Prelude
 import Prelude ()
 
 import Control.Lens
-       (Fold, Traversal', failing, folded, folding, to, (^..), _2, _Just)
+       (Fold, Traversal', failing, folded, folding, to)
 import Data.Char           (isAlphaNum, isDigit, isSpace)
 import Network.HTTP.Client (Manager)
 

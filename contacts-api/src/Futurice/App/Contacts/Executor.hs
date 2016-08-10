@@ -14,7 +14,6 @@ import Futurice.Integrations
 import Futurice.Prelude
 
 import Control.Monad.Reader      (ReaderT, runReaderT)
-import Control.Monad.Trans.Class (lift)
 import Data.Aeson                (FromJSON)
 
 import Haxl.Typed

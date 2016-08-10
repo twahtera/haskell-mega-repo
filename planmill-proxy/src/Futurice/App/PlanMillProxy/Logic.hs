@@ -10,7 +10,6 @@ module Futurice.App.PlanMillProxy.Logic (
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Monad                    (when)
 import Control.Monad.Catch              (handle)
 import Control.Monad.Logger             (LoggingT, filterLogger)
 import Control.Monad.PlanMill           (planmillQuery)
