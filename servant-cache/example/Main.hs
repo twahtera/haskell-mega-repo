@@ -1,28 +1,20 @@
-{-# LANGUAGE CPP                #-}
-{-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TupleSections      #-}
-{-# LANGUAGE TypeOperators      #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections     #-}
+{-# LANGUAGE TypeOperators     #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Main (main) where
 
-import Prelude        ()
-import Prelude.Compat
+import Futurice.Prelude
+import Prelude ()
 
-import Control.Monad         (forM_)
-import Data.Functor.Identity (Identity)
-import Data.Maybe            (fromMaybe)
-import Data.Text             (Text)
-import Data.Typeable         (Typeable)
-import Lucid
-import Network.Wai           (Application)
+import Lucid              hiding (for_)
+import Network.Wai        (Application)
 import Servant
 import Servant.Cache
 import Servant.HTML.Lucid
-import System.Environment    (getArgs, lookupEnv)
-import Text.Read             (readMaybe)
+import System.Environment (getArgs, lookupEnv)
 
 import qualified Data.Text                as T
 import qualified Network.Wai.Handler.Warp as Warp
@@ -57,13 +49,8 @@ main = do
         _ -> putStrLn "To run, pass run argument"
 
 indexPage :: Html ()
-indexPage = doctypehtml_ $ body_ $ ul_ $ forM_ exampleWords $ \word ->
+indexPage = doctypehtml_ $ body_ $ ul_ $ for_ exampleWords $ \word ->
     let link = T.pack $ show $ safeLink api upperEndpoint word
     in li_ $ a_ [href_ link] $ toHtml word
   where
     exampleWords = ["kissa", "kassi", "kassa"]
-
--- Orphans
-#if !MIN_VERSION_transformers_compat(0,5,0)
-deriving instance Typeable Identity
-#endif

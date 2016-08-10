@@ -1,4 +1,4 @@
-resolver: nightly-2016-05-29
+resolver: nightly-2016-08-06
 packages:
 - ansi-pretty/
 - avar/
@@ -46,60 +46,22 @@ packages:
     commit: b2a191aec365abf4891285a8e03a308a9c9a64b2
   extra-dep: true
 - location:
-    git: https://github.com/tibbe/ekg-json.git
-    commit: 36e921ebcf985c42422fcb899577348bcad3c0f3
-  extra-dep: true
-- location:
-    git: https://github.com/tibbe/ekg.git
-    commit: a712a174739586832a2f26e5bb7b4790aa3de1b2
-  extra-dep: true
-- location:
     git: https://github.com/phadej/github.git
     commit: 718c8dc50a16dc3afeb669b61d6174096787736e
   extra-dep: true
-- location:
-    git: https://github.com/phadej/stm-containers.git
-    commit: 0b00f8ed025eb67ecf3234045b40139306502666
-  extra-dep: true
-- location:
-    git: https://github.com/snapframework/io-streams-haproxy.git
-    commit: 9da30089240bc8c36ab9aea0a221d62fa3562e09
-  extra-dep: true
-- location:
-    git: https://github.com/snapframework/snap-core.git
-    commit: 01c544a2a4b9674dbac20be5d3bf5da0fe15aa8c
-  extra-dep: true
-- location:
-    git: https://github.com/snapframework/snap-server.git
-    commit: 7a5c389046e071bafe7d196378c678ced0ab985f
-  extra-dep: true
 extra-deps:
-- ad-4.3.2.1
+- aeson-0.11.2.1
 - aeson-compat-0.3.4.0
-- data-reify-0.6.1
-- ekg-core-0.1.1.1
-- friendly-time-0.4
+- data-default-0.6.0
+- data-default-instances-base-0.1.0.1
+- ekg-0.4.0.10
 - generics-sop-lens-0.1.1.0
-- http-streams-0.8.3.3
-- linear-1.20.5
+- io-streams-haproxy-1.0.0.0
 - lucid-foundation-0.0.2.1
-- managed-1.0.5
 - monad-http-0.2.0.0
-- mwc-random-monad-0.7.3.1
-- optional-args-1.0.1
-- parsers-0.12.4
-- placeholders-0.1
-- readable-0.3.1
-- rfc5051-0.1.0.3
-- servant-swagger-1.1
-- servant-swagger-ui-0.1.0.2.1.4
-- stm-containers-0.2.12
+- snap-core-1.0.0.0
+- snap-server-1.0.0.0
 - swagger2-2.1
-- threads-0.5.1.4
-- time-parsers-0.1.0.0
-- these-0.7.1
-- turtle-1.2.8
 - tz-0.1.1.1
 - wai-cors-0.2.4
-- wai-middleware-metrics-0.2.3
 flags: {}

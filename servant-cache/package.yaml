@@ -35,6 +35,7 @@ dependencies:
   - monad-control
   - transformers-base
   - list-t
+  - futurice-prelude
 
 library:
   source-dirs: src
