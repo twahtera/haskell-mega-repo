@@ -47,7 +47,7 @@ extra-deps:
 - base-orphans-0.5.4
 - base-prelude-0.1.21
 - bifunctors-5.2
-- binary-orphans-0.1.3.0
+- binary-orphans-0.1.5.1
 - binary-tagged-0.1.4.0
 - bytestring-builder-0.10.8.1.0
 - carray-0.1.6.1
@@ -144,7 +144,7 @@ extra-deps:
 - wai-extra-3.0.16.1
 - wai-logger-2.2.7
 - wai-middleware-metrics-0.2.3
-- warp-3.2.7
+- warp-3.2.8
 - x509-1.6.3
 - x509-store-1.6.1
 - x509-system-1.6.3

@@ -43,6 +43,7 @@ extra-deps:
 - base-compat-0.9.1
 - base-orphans-0.5.4
 - bifunctors-5.2
+- binary-orphans-0.1.5.1
 - binary-tagged-0.1.4.0
 - bytestring-builder-0.10.8.1.0
 - carray-0.1.6.4
@@ -112,5 +113,5 @@ extra-deps:
 - wai-extra-3.0.16.1
 - wai-logger-2.2.7
 - wai-middleware-metrics-0.2.3
-- warp-3.2.7
+- warp-3.2.8
 flags: {}

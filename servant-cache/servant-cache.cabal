@@ -50,6 +50,7 @@ library
     , monad-control
     , transformers-base
     , list-t
+    , futurice-prelude
   exposed-modules:
       Servant.Cache
       Servant.Cache.Class
@@ -87,6 +88,7 @@ test-suite example
     , monad-control
     , transformers-base
     , list-t
+    , futurice-prelude
     , servant-cache
     , servant-lucid >=0.5 && <0.8
     , lucid
@@ -122,6 +124,7 @@ test-suite unit-tests
     , monad-control
     , transformers-base
     , list-t
+    , futurice-prelude
     , servant-cache
     , tasty
     , tasty-hunit
