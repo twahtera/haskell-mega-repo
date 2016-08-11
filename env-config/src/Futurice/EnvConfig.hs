@@ -47,7 +47,7 @@ parseEnvVar var =
 -- Returns 'Nothing' if var is not set
 -- Will throw an exception if var cannot be parsed
 parseEnvVarMaybe
-    :: FromEnvVar a  -- ^ Environment variable
+    :: FromEnvVar a
     => String        -- ^ Default value
     -> IO (Maybe a)
 parseEnvVarMaybe var = do

@@ -24,7 +24,7 @@ import Control.Concurrent.ParallelIO.Local (parallel_, withPool)
 import Control.Exception
 import Haxl.Core
 
--- | TODO: for githubRequestToTrue
+-- TODO: for githubRequestToTrue
 import Unsafe.Coerce     (unsafeCoerce)
 
 import qualified GitHub as GH
