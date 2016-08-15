@@ -1,9 +1,9 @@
 {-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
-{-# LANGUAGE FlexibleInstances      #-}
 -- | Types user in checklist logic.
 --
 -- Currently missing:
@@ -53,8 +53,11 @@ module Futurice.App.Checklist.Types (
     taskItemUser, taskItemTask, taskItemDone,
     ) where
 
+import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
+
+import qualified Test.QuickCheck      as QC
 
 -- | TODO: change to uuid
 newtype Identifier a = Identifier Word64
@@ -215,6 +218,20 @@ instance HasTaskName TaskItem where
     taskName = taskItemTask
 
 -------------------------------------------------------------------------------
+-- Identifier instances
+-------------------------------------------------------------------------------
+
+instance Arbitrary (Identifier a) where
+    arbitrary = Identifier <$> QC.elements [1..100]
+
+instance Arbitrary FUMLogin where
+    arbitrary = FUMLogin <$> gen
+      where
+        gen        = mk <$> g <*> g <*> g <*> g
+        mk a b c d = [a,b,c,d] ^. packed
+        g          = QC.elements ['a'..'z']
+
+-------------------------------------------------------------------------------
 -- instances
 -------------------------------------------------------------------------------
 
@@ -227,3 +244,15 @@ deriveGeneric ''CheckCondition
 deriveGeneric ''TaskRole
 deriveGeneric ''Checklist
 deriveGeneric ''TaskItem
+
+instance Arbitrary User where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
+
+instance Arbitrary Location where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
+
+instance Arbitrary ContractType where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
