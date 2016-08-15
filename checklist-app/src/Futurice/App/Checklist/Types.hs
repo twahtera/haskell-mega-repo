@@ -56,9 +56,6 @@ module Futurice.App.Checklist.Types (
 import Futurice.Prelude
 import Prelude ()
 
--- Should be in Futurice.Prelude
-import Control.Lens (makeWrapped)
-
 -- | TODO: change to uuid
 newtype Identifier a = Identifier Word64
     deriving (Eq, Ord, Show, Typeable, Generic)

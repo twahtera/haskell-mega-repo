@@ -19,7 +19,6 @@ import Network.HTTP.Types  (Header, statusIsSuccessful)
 import qualified Data.ByteString.Base64     as Base64
 import qualified Data.ByteString.Char8      as BS8
 import qualified Data.ByteString.Lazy       as LBS
-import qualified Data.ByteString.Lazy.Char8 as LBS8
 import qualified Data.Text                  as T
 import qualified Data.Text.Encoding         as TE
 import qualified Data.Vector                as V
@@ -71,15 +70,15 @@ evalPlanMill pm = do
         $(logInfo) $ T.pack $ "Request: " <> url
         res <- httpLbs req'
         $(logDebug) $ "response status: " <> textShow (responseStatus res)
-        if LBS.null (responseBody res)
+        if isn't _Empty (responseBody res)
             then do
-                $(logDebug) "empty response"
-                d
-            else do
-                $(logDebug) $ T.pack $ "response body: " <> LBS8.unpack (responseBody res)
+                $(logDebug) $ "response body: " <> TE.decodeUtf8 (responseBody res ^. strict)
                 if statusIsSuccessful (responseStatus res)
                     then parseResult url $ responseBody res
                     else throwM $ parseError url $ responseBody res
+            else do
+                $(logDebug) "empty response"
+                d
 
     setQueryString' :: QueryString -> Request -> Request
     setQueryString' qs = setQueryString (f <$> qs)
