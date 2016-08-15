@@ -68,5 +68,5 @@ instance Monoid Stats where
 lineStats :: Text -> Stats
 lineStats t = Stats 1 ne
   where
-    ne | T.null t  = 0
-       | otherwise = 1
+    ne | isn't _Empty t = 1
+       | otherwise      = 0

@@ -15,7 +15,6 @@ import Data.Aeson.Compat
 import Data.Aeson.Types  (Parser)
 
 import qualified Data.Maybe.Strict as S
-import qualified Data.Text         as T
 
 import Unsafe.Coerce
 
@@ -59,7 +58,7 @@ instance HasBaseUrl BaseUrl where
     baseUrl = id
 
 instance FromJSON BaseUrl where
-    parseJSON = withText "FUM BaseUrl" $ pure . BaseUrl . T.unpack
+    parseJSON = withText "FUM BaseUrl" $ pure . BaseUrl . view (from packed)
 
 -------------------------------------------------------------------------------
 -- Cfg
@@ -183,5 +182,5 @@ obj .:?? key = view strict <$> obj .:? key
 
 emptyToNothing :: Text -> Maybe Text
 emptyToNothing t
-    | T.null t   = Nothing
-    | otherwise  = Just t
+    | isn't _Empty t = Just t
+    | otherwise      = Nothing
