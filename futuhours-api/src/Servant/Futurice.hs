@@ -5,7 +5,6 @@
 module Servant.Futurice (
     FuturiceAPI,
     futuriceApiServer,
-    SwaggerSchemaEndpoint,
     swaggerDoc,
     ) where
 
@@ -23,11 +22,8 @@ import Servant.Swagger.UI
 
 import qualified Servant.Cache.Internal.DynMap as DynMap
 
-type SwaggerSchemaEndpoint = "swagger.js" :> Get '[JSON] Swagger
-
 type FuturiceAPI api colour = api
-    :<|> SwaggerSchemaEndpoint
-    :<|> SwaggerUI "ui" SwaggerSchemaEndpoint (SwaggerSchemaEndpoint :<|> api)
+    :<|> SwaggerSchemaUI "swagger-ui" "swagger.json"
     :<|> FutuFaviconAPI colour
     :<|> StatusAPI
 
@@ -53,7 +49,6 @@ futuriceApiServer
     -> Server api
     -> Server (FuturiceAPI api colour)
 futuriceApiServer cache papi server = server
-    :<|> return (swaggerDoc papi)
-    :<|> swaggerUIServer
+    :<|> swaggerSchemaUIServer (swaggerDoc papi)
     :<|> serveFutuFavicon
     :<|> serveStatus (stats cache)
