@@ -119,7 +119,7 @@ extra-deps:
 - servant-lucid-0.6
 - servant-server-0.6
 - servant-swagger-1.0.3
-- servant-swagger-ui-0.1.0.2.1.4
+- servant-swagger-ui-0.2.0.2.1.5
 - strict-base-types-0.4.0
 - swagger2-2.0.2
 - these-0.7.1

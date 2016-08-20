@@ -64,12 +64,9 @@ import qualified Data.Text.IO                  as T
 import qualified Servant.Cache.Internal.DynMap as DynMap
 import qualified Network.Wai.Handler.Warp      as Warp
 
-type SwaggerSchemaEndpoint = "swagger.json" :> Get '[JSON] Swagger
-
 type FuturiceAPI api colour =
     FutuFaviconAPI colour
-    :<|> SwaggerSchemaEndpoint
-    :<|> SwaggerUI "swagger-ui" SwaggerSchemaEndpoint (SwaggerSchemaEndpoint :<|> api)
+    :<|> SwaggerSchemaUI "swagger-ui" "swagger.json"
     :<|> StatusAPI
     :<|> api
 
@@ -107,8 +104,7 @@ futuriceServer
     -> Server (FuturiceAPI api colour)
 futuriceServer t d cache papi server
     = serveFutuFavicon
-    :<|> return (swaggerDoc t d papi)
-    :<|> swaggerUIServer
+    :<|> swaggerSchemaUIServer (swaggerDoc t d papi)
     :<|> serveStatus (stats cache)
     :<|> server
 

@@ -35,7 +35,7 @@ library:
     - servant-server
     - servant-status
     - servant-swagger
-    - servant-swagger-ui
+    - servant-swagger-ui == 0.2.*
     - stm
     - swagger2
     - text
