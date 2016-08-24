@@ -251,7 +251,7 @@ missingHoursEndpoint
 missingHoursEndpoint = DefaultableEndpoint
     { defEndTag = EMissingHours
     , defEndDefaultParsedParam = do
-        b <- getCurrentDayInFinland
+        b <- pred <$> getCurrentDayInFinland  -- Do not include today
         let a = beginningOfPrevMonth b
         return (fromJust $ PM.mkInterval a b, [])
     , defEndDefaultParams = I Nothing :* I Nothing :* I Nothing :* Nil
