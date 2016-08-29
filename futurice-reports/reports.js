@@ -1,6 +1,10 @@
 // Progressive enhancement
 (function () {
     "use strict";
+
+    // Maximum amount of distinct values to make a select
+    var MAX_ENUM_VALUES = 10;
+
     window.addEventListener("load", function () {
         console.log("Initialising reports");
         document.querySelectorAll("table.futu-report").forEach(initFutuReport);
@@ -34,8 +38,43 @@
             return _.slice(arguments);
         }]));
 
+        // Selects
+        var selects =_.map(ths, function (th, column) {
+            var name = th.innerText;
+
+            var values = _.map(trs, function (tr) {
+                return tr.children[column].innerText;
+            });
+
+            var uniqValues = _.sortedUniq(values.sort());
+
+            if (uniqValues.length <= MAX_ENUM_VALUES) {
+                return dom("select", {
+                    multiple: "multiple",
+                    change: function (ev) {
+                        var select = ev.target || ev.srcElement;
+                        var options = _.chain(select.options)
+                            .filter(function (o) { return o.selected; })
+                            .map(function (o) { return o.value; })
+                            .value();
+
+                        menrva.transaction()
+                            .set(filters[column], options)
+                            .commit();
+                    }
+                }, _.map(uniqValues, function (v) {
+                    return dom("option", {
+                        value: v
+                    }, [ v ]);
+                }));
+            } else {
+                return null;
+            }
+        });
+
         // Filtering logic
         allFilter.onValue(function (xss) {
+            // Update visibilities of rows
             function visible(tr) {
                 return _.every(xss, function (xs, i) {
                     if (xs.length === 0) { return true; }
@@ -49,6 +88,16 @@
             _.zipWith(trs, visibilities, function (tr, visible) {
                 tr.style.display = visible ? "" : "none";
             });
+
+            // feedback select selected options
+            // needed for clear and click on the cells
+            _.zipWith(xss, selects, function (xs, select) {
+                if (!select) { return ; }
+
+                _.each(select.options, function (option) {
+                    option.selected = xs.indexOf(option.value) !== -1;
+                });
+            });
         });
 
         // control panel
@@ -57,44 +106,16 @@
                 className: "futu-unfilter",
                 innerText: "Show all entries" ,
                 click: unfilter
-            })
+            }),
+            dom("hr")
         ];
 
+        // selects
         _.each(ths, function (th, column) {
-            var name = th.innerText;
-
-            var values = _.map(trs, function (tr) {
-                return tr.children[column].innerText;
-            });
-
-            var uniqValues = _.sortedUniq(values.sort());
-
-            if (uniqValues.length <= 10) {
-
-                var el = row12([
-                    dom("label", [
-                        name,
-                        dom("select", {
-                            multiple: "multiple",
-                            change: function (ev) {
-                                var select = ev.target || ev.srcElement;
-                                var options = _.chain(select.options)
-                                    .filter((o) => o.selected)
-                                    .map(o => o.value)
-                                    .value();
-
-                                menrva.transaction()
-                                    .set(filters[column], options)
-                                    .commit();
-                            }
-                        }, _.map(uniqValues, function (v) {
-                            return dom("option", {
-                                value: v
-                            }, [ v ]);
-                        }))
-                    ])
-                ]);
-
+            var select = selects[column];
+            if (select) {
+                var name = th.innerText;
+                var el = row12([dom("label", [name, select])]);
                 controls.push(el);
             }
         });
