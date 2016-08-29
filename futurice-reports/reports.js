@@ -42,7 +42,7 @@
 
                     var value = tr.children[i].innerText;
                     return xs.indexOf(value) !== -1;
-                })
+                });
             }
 
             var visibilities = _.map(trs, visible);
@@ -70,15 +70,36 @@
             var uniqValues = _.sortedUniq(values.sort());
 
             if (uniqValues.length <= 10) {
-                // console.log(uniqValues);
+
+                var el = row12([
+                    dom("label", [
+                        name,
+                        dom("select", {
+                            multiple: "multiple",
+                            change: function (ev) {
+                                var select = ev.target || ev.srcElement;
+                                var options = _.chain(select.options)
+                                    .filter((o) => o.selected)
+                                    .map(o => o.value)
+                                    .value();
+
+                                menrva.transaction()
+                                    .set(filters[column], options)
+                                    .commit();
+                            }
+                        }, _.map(uniqValues, function (v) {
+                            return dom("option", {
+                                value: v
+                            }, [ v ]);
+                        }))
+                    ])
+                ]);
+
+                controls.push(el);
             }
         });
 
-        var controlWrapper = dom("div", { className: "row" }, [
-            dom("div", { className: "columns large-12" }, [
-                dom("div", { className: "callout" }, controls)
-            ])
-        ]);
+        var controlWrapper = row12([dom("div", { className: "callout" }, controls)]);
 
         // insert control panel
         row.parentElement.insertBefore(controlWrapper, row);
@@ -147,7 +168,7 @@
     }
 
     // Utilities
-    var eventNames = [ "click" ];
+    var eventNames = [ "click", "change" ];
 
     function dom(elName, args, children) {
         if (_.isArray(args)) {
@@ -169,7 +190,11 @@
         });
 
         children.forEach(function (child) {
-            el.appendChild(child);
+            if (_.isString(child)) {
+                el.appendChild(domText(child));
+            } else {
+                el.appendChild(child);
+            }
         });
 
         return el;
@@ -177,5 +202,11 @@
 
     function domText(t) {
         return document.createTextNode(t);
+    }
+
+    function row12(children) {
+        return dom("div", { className: "row" }, [
+            dom("div", { className: "columns large-12" }, children)
+        ]);
     }
 }());
