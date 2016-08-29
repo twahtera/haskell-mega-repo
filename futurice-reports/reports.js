@@ -2,12 +2,12 @@
 (function () {
     "use strict";
     window.addEventListener("load", function () {
-        console.log("Initialising reports"); 
+        console.log("Initialising reports");
         document.querySelectorAll("table.futu-report").forEach(initFutuReport);
     });
 
     function getColumn(td) {
-        return Array.prototype.slice.call(td.parentElement.children).indexOf(td);
+        return _.indexOf(td.parentElement.children, td);
     }
 
     function initFutuReport(table) {
@@ -16,51 +16,93 @@
         var tds = table.querySelectorAll("tbody td");
         var tbody = table.querySelector("tbody");
 
-        // because looking up information in DOM is slow
-        // (when interleaved with style changes)
-        var values = _.map(trs, function (tr) {
-            return _.map(tr.children, function (td) {
-                return td.innerText;
+        // The enclosing foundation row
+        var row = table;
+        while (row.className !== "row" && row !== null) {
+            row = row.parentElement;
+        }
+        if (!row) {
+            row = table;
+        }
+
+        // Model signals
+        var filters = _.map(ths, function () {
+            return menrva.source([], _.isEqual);
+        });
+
+        var allFilter = menrva.combine.apply(null, filters.concat([function () {
+            return _.slice(arguments);
+        }]));
+
+        // Filtering logic
+        allFilter.onValue(function (xss) {
+            function visible(tr) {
+                return _.every(xss, function (xs, i) {
+                    if (xs.length === 0) { return true; }
+
+                    var value = tr.children[i].innerText;
+                    return xs.indexOf(value) !== -1;
+                })
+            }
+
+            var visibilities = _.map(trs, visible);
+            _.zipWith(trs, visibilities, function (tr, visible) {
+                tr.style.display = visible ? "" : "none";
             });
         });
 
+        // control panel
+        var controls = [
+            dom("a", {
+                className: "futu-unfilter",
+                innerText: "Show all entries" ,
+                click: unfilter
+            })
+        ];
+
+        _.each(ths, function (th, column) {
+            var name = th.innerText;
+
+            var values = _.map(trs, function (tr) {
+                return tr.children[column].innerText;
+            });
+
+            var uniqValues = _.sortedUniq(values.sort());
+
+            if (uniqValues.length <= 10) {
+                // console.log(uniqValues);
+            }
+        });
+
+        var controlWrapper = dom("div", { className: "row" }, [
+            dom("div", { className: "columns large-12" }, [
+                dom("div", { className: "callout" }, controls)
+            ])
+        ]);
+
+        // insert control panel
+        row.parentElement.insertBefore(controlWrapper, row);
+
         // Unfilter
         function unfilter() {
-            console.info("Unfilter");
-            trs.forEach(function (tr) {
-                tr.style.display = "";
+            var tx = menrva.transaction();
+            _.each(filters, function (f) {
+                tx.set(f, []);
             });
-        }
-
-        // we add "show all" to column
-        // TODO: there should be better place to add this?
-        function addUnfilter(column) {
-            var th = ths[column];
-
-            if (th.querySelectorAll(".futu-unfilter").length === 0) {
-                th.appendChild(domText(" "));
-                
-                var el = dom("a", {
-                    className: "futu-unfilter",
-                    innerText: "show all" ,
-                    click: unfilter
-                });
-
-                th.appendChild(el);
-            }
+            tx.commit();
         }
 
         // sort by column
         ths.forEach(function (th) {
             var column = getColumn(th);
             var text = th.innerText;
-          
+
             var el = dom("a", {
                 href: "#",
                 className: "futu-sort",
                 innerText: text,
                 click: function () {
-                    console.log("sort based on column", column); 
+                    console.log("sort based on column", column);
 
                     // sort rows
                     var sortedTrs = _.sortBy(trs, function (tr) {
@@ -96,13 +138,9 @@
             td.addEventListener("click", function () {
                 // atm only values with no links
                 if (!hasLink) {
-                    addUnfilter(column);
-                    trs.forEach(function (tr, i) {
-                        var value2 = values[i][column];
-                        if (value !== value2) {
-                            tr.style.display = "none";
-                        }
-                    });
+                    menrva.transaction()
+                        .set(filters[column], [value])
+                        .commit();
                 }
             });
         });
@@ -110,7 +148,7 @@
 
     // Utilities
     var eventNames = [ "click" ];
-    
+
     function dom(elName, args, children) {
         if (_.isArray(args)) {
             children = args;

@@ -330,7 +330,10 @@ instance (KnownSymbol name, ToHtml params, ToReportRow a, IsReport params a)
         proxyA = Proxy :: Proxy a
         title = symbolVal (Proxy :: Proxy name)
         pageParams = defPageParams
-            & pageJs .~ [ $(embedStringFile "reports.js") ]
+            & pageJs .~
+                [ $(embedStringFile "menrva.standalone.js")
+                , $(embedStringFile "reports.js")
+                ]
 
         cls' :: Set Text -> [Attribute]
         cls' cs

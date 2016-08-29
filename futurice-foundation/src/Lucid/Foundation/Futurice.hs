@@ -33,7 +33,7 @@ embeddedFoundationStyle_ =
 
 embeddedLodash_ :: Monad m => HtmlT m ()
 embeddedLodash_ =
-    script_ ($(embedStringFile "lodash.core.js") :: Text)
+    script_ ($(embedStringFile "lodash.js") :: Text)
 
 row_ :: Monad m => HtmlT m () -> HtmlT m ()
 row_ = div_ [class_ "row"]

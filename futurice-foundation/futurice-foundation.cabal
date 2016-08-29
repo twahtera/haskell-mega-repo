@@ -32,8 +32,8 @@ library
       base                  >=4.7   && <4.10
     , clay
     , file-embed
-    , lens
     , futurice-prelude
+    , lens
     , lucid
     , text
   exposed-modules:
