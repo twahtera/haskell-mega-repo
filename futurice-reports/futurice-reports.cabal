@@ -36,6 +36,7 @@ library
     , cassava
     , constraints
     , containers
+    , file-embed
     , futurice-foundation
     , futurice-prelude
     , lucid

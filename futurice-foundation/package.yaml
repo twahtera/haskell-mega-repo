@@ -17,7 +17,9 @@ library:
   source-dirs: src
   dependencies:
     - base                  >=4.7   && <4.10
+    - clay
     - file-embed
+    - lens
+    - futurice-prelude
     - lucid
-    - lucid-foundation
     - text

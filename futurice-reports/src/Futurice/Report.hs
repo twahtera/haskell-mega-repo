@@ -1,17 +1,18 @@
-{-# LANGUAGE ConstraintKinds      #-}
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE DefaultSignatures    #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE InstanceSigs         #-}
-{-# LANGUAGE KindSignatures       #-}
-{-# LANGUAGE GADTs                #-}
-{-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE RankNTypes           #-}
-{-# LANGUAGE TypeOperators        #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DefaultSignatures     #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 -- | The report i.e. fancy table.
 module Futurice.Report (
     -- * Reports
@@ -30,28 +31,29 @@ module Futurice.Report (
     ReportGenerated(..),
     ) where
 
-import Futurice.Prelude
 import Futurice.Peano
+import Futurice.Prelude
 
-import Data.Functor.Identity (Identity (..))
-import Control.Monad.Trans.Identity (IdentityT(..))
-import Data.Aeson.Compat (FromJSON (..), ToJSON (..), object, withObject,
-                          (.:), (.=))
-import Data.These        (These (..))
-import Data.Constraint   (Constraint)
-import Data.Swagger      (ToSchema (..))
-import GHC.TypeLits      (KnownSymbol, Symbol, symbolVal)
-import Lucid hiding (for_)
-import Lucid.Base (HtmlT(..))
-import Lucid.Foundation.Futurice (large_, page_, row_)
+import Control.Monad.Trans.Identity (IdentityT (..))
+import Data.Aeson.Compat
+       (FromJSON (..), ToJSON (..), object, withObject, (.:), (.=))
+import Data.Constraint              (Constraint)
+import Data.FileEmbed               (embedStringFile)
+import Data.Functor.Identity        (Identity (..))
+import Data.Swagger                 (ToSchema (..))
+import Data.These                   (These (..))
+import GHC.TypeLits                 (KnownSymbol, Symbol, symbolVal)
+import Lucid                        hiding (for_)
+import Lucid.Base                   (HtmlT (..))
+import Lucid.Foundation.Futurice    (defPageParams, large_, pageJs, page_, row_)
 
-import Servant.API (MimeRender (..))
-import Servant.CSV.Cassava (EncodeOpts(..), CSV')
+import Servant.API         (MimeRender (..))
+import Servant.CSV.Cassava (CSV', EncodeOpts (..))
 
+import qualified Data.Csv    as Csv
+import qualified Data.Set    as Set
+import qualified Data.Text   as T
 import qualified Futurice.IC as IList
-import qualified Data.Text as T
-import qualified Data.Set as Set
-import qualified Data.Csv as Csv
 
 -------------------------------------------------------------------------------
 -- ReportGenerated
@@ -315,10 +317,10 @@ instance (KnownSymbol name, ToHtml params, ToReportRow a, IsReport params a)
       where
         p :: forall n. (Applicative n, Monad n, ReportRowC a n) => HtmlT n ()
         p =
-          page_ (fromString title) $ do
+          page_ (fromString title) pageParams $ do
           row_ $ large_ 12 $ h1_ $ fromString title
           row_ $ large_ 12 $ div_ [class_ "callout"] $ toHtml params
-          row_ $ large_ 12 $ table_ [class_ "hover"] $ do
+          row_ $ large_ 12 $ table_ [class_ "futu-report hover"] $ do
               thead_ $
                   tr_ $ for_ (getReportHeader $ reportHeader proxyA) $ \h ->
                       th_ $ toHtml h
@@ -327,6 +329,8 @@ instance (KnownSymbol name, ToHtml params, ToReportRow a, IsReport params a)
 
         proxyA = Proxy :: Proxy a
         title = symbolVal (Proxy :: Proxy name)
+        pageParams = defPageParams
+            & pageJs .~ [ $(embedStringFile "reports.js") ]
 
         cls' :: Set Text -> [Attribute]
         cls' cs
