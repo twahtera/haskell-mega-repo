@@ -11,16 +11,21 @@ import Futurice.App.MegaRepoTool.Command.ListSnapshotDependencies
 import Futurice.App.MegaRepoTool.Command.BuildDocker
 import Futurice.App.MegaRepoTool.Scripts
 
+-- text argument
+textArgument :: IsString s => O.Mod O.ArgumentFields String -> O.Parser s
+textArgument m = fromString <$> O.strArgument m
+
 data Cmd
     = ListSnapshotDependencies 
-    | BuildDocker
+    | BuildDocker [Image]
     | Script (Turtle.Shell Text)
 
 listSnapshotDependenciesOptions :: O.Parser Cmd
 listSnapshotDependenciesOptions = pure ListSnapshotDependencies
 
 buildDockerOptions :: O.Parser Cmd
-buildDockerOptions = pure BuildDocker
+buildDockerOptions = BuildDocker
+    <$> many (textArgument $ mconcat [ O.metavar ":component", O.help "Component/image to build" ])
 
 packdepsOptions :: O.Parser Cmd
 packdepsOptions = pure $ Script packdepsScript
@@ -46,8 +51,8 @@ optsParser = O.subparser $ mconcat
 
 main' :: Cmd -> IO ()
 main' ListSnapshotDependencies = listSnapshotDependencies
-main' BuildDocker = buildDocker
-main' (Script cmd) = Turtle.stdout cmd
+main' (BuildDocker imgs)       = buildDocker imgs
+main' (Script cmd)             = Turtle.stdout cmd
 
 defaultMain :: IO ()
 defaultMain =

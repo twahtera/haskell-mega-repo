@@ -1,24 +1,27 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.MegaRepoTool.Command.BuildDocker (
-    buildDocker
+    buildDocker,
+    Image,
     ) where
 
 import Futurice.Prelude hiding (fold)
 import Turtle           hiding (when, (<>))
 
-import System.Exit (exitFailure)
-import System.IO   (hClose, hFlush)
+import Control.Lens (ifor_)
+import System.Exit  (exitFailure)
+import System.IO    (hClose, hFlush)
 
 import qualified Control.Foldl as Fold
+import qualified Data.Map      as Map
 import qualified Data.Text     as T
 import qualified Data.Text.IO  as T
 
 type Image = Text
 type Executable = Text
 
-apps :: [(Image, Executable)]
-apps =
+apps :: Map Image Executable
+apps = Map.fromList
     [ ("avatar", "avatar-server")
     , ("contacts-api", "contacts-server")
     , ("favicon", "favicon")
@@ -43,8 +46,10 @@ buildCmd = T.unwords
     , buildImage
     ]
 
-buildDocker :: IO ()
-buildDocker = do
+buildDocker :: [Image] -> IO ()
+buildDocker imgs = do
+    let apps' | null imgs = apps
+              | otherwise = Map.filterWithKey (\k _ -> k `elem` imgs) apps
     -- Get the hash of current commit
     githash <- fold (inshell "git log --pretty=format:'%h' -n 1" empty) $ Fold.lastDef "HEAD"
     shells ("git rev-parse --verify " <> githash) empty
@@ -59,7 +64,7 @@ buildDocker = do
         exitFailure
 
     -- Build docker images
-    for_ apps $ \(image, exe) -> sh $ do
+    ifor_ apps' $ \image exe -> sh $ do
         -- Write Dockerfile
         let dockerfile' = dockerfile exe
         (file,handle) <- using $ mktemp "build" "Dockerfile"
