@@ -62,7 +62,7 @@ missingHoursForUser interval uid = do
 
     reportedDays :: PM.Timereports -> Map Day Double
     reportedDays
-        = Map.fromList
+        = Map.fromListWith (+)
         . map (\x -> (PM.trStart x, PM.trAmount x / 60.0))
         . toList
 
