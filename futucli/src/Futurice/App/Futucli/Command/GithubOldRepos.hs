@@ -42,7 +42,7 @@ prettyR (R repo cs)
 fromName :: Manager -> Auth -> Name Organization -> Name Repo -> IO R
 fromName mgr auth org repo = do
     T.hPutStrLn stderr $ "asking about " <> untagName repo
-    cs <- executeRequestWithMgr mgr auth $ contributorsR (fromOrganizationName org) repo False $ Just 10
+    cs <- executeRequestWithMgr mgr auth $ contributorsR (fromOrganizationName org) repo False $ GH.FetchAtLeast 10
     pure . R repo . map simpleUserLogin . mapMaybe contributorToSimpleUser . V.toList $ cs
 
 repoOld :: UTCTime -> Integer -> (Repo, V.Vector Commit) -> Bool
@@ -61,7 +61,7 @@ repoSmall commitsCount
 
 getCommits :: Manager -> Auth -> Int -> Repo -> IO (Repo, V.Vector Commit)
 getCommits mgr auth commitsCount repo = (repo,) <$>
-    executeRequestWithMgr mgr auth (commitsForR (GH.simpleOwnerLogin . repoOwner $ repo) (repoName repo) (Just $ commitsCount + 1))
+    executeRequestWithMgr mgr auth (commitsForR (GH.simpleOwnerLogin . repoOwner $ repo) (repoName repo) (GH.FetchAtLeast $ fromIntegral commitsCount + 1))
 
 githubOldRepos :: Cfg -> Integer -> Int -> IO ()
 githubOldRepos cfg days commits = do
@@ -71,7 +71,7 @@ githubOldRepos cfg days commits = do
     now <- getCurrentTime
     mgr <- newManager tlsManagerSettings
 
-    repos' <- nub . V.toList <$> executeRequestWithMgr mgr a (organizationReposR org RepoPublicityAll Nothing)
+    repos' <- nub . V.toList <$> executeRequestWithMgr mgr a (organizationReposR org RepoPublicityAll GH.FetchAll)
     repos <- traverse (getCommits mgr a commits) repos'
 
     let privRepos = filter (repoPrivate . fst) repos

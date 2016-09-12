@@ -53,4 +53,4 @@ githubOrganisationMembers
     => m (Vector GH.SimpleUser)
 githubOrganisationMembers = do
     orgName <- view githubOrganisationName
-    githubReq $ GH.membersOfR orgName Nothing
+    githubReq $ GH.membersOfR orgName GH.FetchAll

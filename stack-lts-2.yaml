@@ -35,10 +35,10 @@ packages:
 - spice-stats/
 - location:
     git: https://github.com/phadej/github.git
-    commit: eb610e6b105ea108e6e11be7dd2429ea10ade48c
+    commit: 41f985d575393379954b76977c794d68de9dc6dd 
   extra-dep: true
 extra-deps:
-- aeson-compat-0.3.4.0
+- aeson-compat-0.3.6
 - aeson-extra-0.3.2.0
 - asn1-parse-0.9.4
 - asn1-types-0.3.2
@@ -80,6 +80,7 @@ extra-deps:
 - hspec-discover-2.2.3
 - hspec-expectations-0.7.2
 - http-api-data-0.2.2
+- http-client-0.4.31.1
 - http-link-header-1.0.1
 - http2-1.6.0
 - iso8601-time-0.1.4
@@ -90,7 +91,6 @@ extra-deps:
 - lens-4.13
 - linear-1.20.4
 - lucid-2.9.5
-- lucid-foundation-0.0.2.1
 - managed-1.0.5
 - memory-0.12
 - monad-time-0.1
@@ -100,6 +100,7 @@ extra-deps:
 - optional-args-1.0.1
 - optparse-applicative-0.12.1.0
 - path-0.5.2
+- postgresql-libpq-0.9.2.0
 - postgresql-simple-0.5.2.1
 - primitive-0.6.1.0
 - profunctors-5.2
@@ -134,7 +135,7 @@ extra-deps:
 - universe-base-1.0.2.1
 - universe-instances-base-1.0
 - universe-reverse-instances-1.0
-- unix-time-0.3.6
+- unix-time-0.3.7
 - uuid-1.3.12
 - vector-0.11.0.0
 - vector-binary-instances-0.2.3.2
@@ -142,7 +143,7 @@ extra-deps:
 - wai-3.2.1.1
 - wai-app-static-3.1.5
 - wai-cors-0.2.4
-- wai-extra-3.0.16.1
+- wai-extra-3.0.17
 - wai-logger-2.2.7
 - wai-middleware-metrics-0.2.3
 - warp-3.2.8

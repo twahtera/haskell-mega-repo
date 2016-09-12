@@ -11,7 +11,7 @@ import           Futurice.Constraint.Unit1               (Unit1)
 import           Futurice.EnvConfig                      (parseDefaultPort)
 import qualified Haxl.Core                               as H
 import           Network.HTTP.Client
-                 (Manager, Request, newManager, parseUrl)
+                 (Manager, Request, newManager, parseUrlThrow)
 import           Network.HTTP.Client.TLS                 (tlsManagerSettings)
 import qualified PlanMill                                as PM
 import qualified PlanMill.Queries                        as Q
@@ -24,7 +24,7 @@ main :: IO ()
 main = do
     port <- parseDefaultPort "PLANMILLPROXY"
     let baseUrl = "http://localhost:" ++ show port ++ "/haxl"
-    baseReq <- parseUrl baseUrl
+    baseReq <- parseUrlThrow baseUrl
     manager <- newManager tlsManagerSettings
     result <- runH manager baseReq script0
     putDoc . (<> linebreak) . ansiPretty $ result

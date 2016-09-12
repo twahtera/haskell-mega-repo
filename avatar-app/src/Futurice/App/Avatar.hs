@@ -21,7 +21,7 @@ import qualified Data.Text                as T
 import qualified Data.Text.Encoding       as TE
 
 import Network.HTTP.Client
-       (Manager, httpLbs, newManager, parseUrl, responseBody)
+       (Manager, httpLbs, newManager, parseUrlThrow, responseBody)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 
 -- Avatar modules
@@ -49,7 +49,7 @@ mkAvatar (cache, mgr) (Just url) msize grey = ExceptT . fmap (first f) $ do
         , " size: ", show msize
         , " grey: ", show grey
         ]
-    req <- parseUrl (T.unpack url)
+    req <- parseUrlThrow (T.unpack url)
     -- XXX: The cache will eventually fill if service is abused
     res <- cachedIO cache 3600 url $ httpLbs req mgr
     (fmap . fmap) (addHeader "public, max-age=3600")

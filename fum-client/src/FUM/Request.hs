@@ -12,14 +12,15 @@ module FUM.Request (
     ) where
 
 import Futurice.Prelude
-import Prelude          ()
+import Prelude ()
 
 import Control.Monad.Http.Class (MonadHttp, httpLbs)
 import Data.Aeson.Compat        (FromJSON (..), decode, withObject, (.:))
 
 import qualified Data.Text.Encoding  as TE (encodeUtf8)
 import qualified Data.Vector         as V (empty)
-import qualified Network.HTTP.Client as H (Request (..), parseUrl, responseBody)
+import qualified Network.HTTP.Client as H
+                 (Request (..), parseUrlThrow, responseBody)
 
 import FUM.Types
 
@@ -61,7 +62,7 @@ mkReq
 mkReq url = do
     AuthToken token <- view authToken
     BaseUrl base <- view baseUrl
-    baseReq <- H.parseUrl $ base <> url
+    baseReq <- H.parseUrlThrow $ base <> url
     let authHeader = ("Authorization", TE.encodeUtf8 $ "Token " <> token)
     return $ baseReq { H.requestHeaders = authHeader : H.requestHeaders baseReq }
 
@@ -70,7 +71,7 @@ getMulti
        , MonadReader env m, HasAuthToken env, HasBaseUrl env
        , FromJSON (Vector a)
        )
-    => URL 
+    => URL
     -> m (Vector a)
 getMulti url = do
     req <- mkReq url
@@ -83,7 +84,7 @@ getSingle
        , MonadReader env m, HasAuthToken env, HasBaseUrl env
        , FromJSON a
        )
-    => URL 
+    => URL
     -> m a
 getSingle url = do
     req <- mkReq url

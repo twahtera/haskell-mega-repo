@@ -9,8 +9,8 @@ import Futurice.Prelude
 import Data.Aeson.Compat       (FromJSON (..), decode, withObject, (.:))
 import Data.Char               (isSpace)
 import Data.Maybe              (mapMaybe)
-import Network.HTTP.Client     (httpLbs, newManager, parseUrl, requestHeaders,
-                                responseBody)
+import Network.HTTP.Client
+       (httpLbs, newManager, parseUrlThrow, requestHeaders, responseBody)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import System.Process          (readProcess)
 
@@ -49,7 +49,7 @@ instance FromJSON Snapshot where
 listSnapshotDependencies :: IO ()
 listSnapshotDependencies = do
     deps <- stackListDependencies
-    req' <- parseUrl $ "https://www.stackage.org/" <> snapshotName
+    req' <- parseUrlThrow $ "https://www.stackage.org/" <> snapshotName
     let req = req' { requestHeaders = acceptJson : requestHeaders req' }
     mgr <- newManager tlsManagerSettings
     snapshotBs <- responseBody <$> httpLbs req mgr
@@ -61,4 +61,4 @@ listSnapshotDependencies = do
     acceptJson = ("Accept", "application/json")
 
 snapshotName :: String
-snapshotName = "lts-6.3"
+snapshotName = "lts-6.16"

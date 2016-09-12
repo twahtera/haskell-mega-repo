@@ -1,4 +1,4 @@
-resolver: lts-6.3
+resolver: lts-6.16
 packages:
 - ansi-pretty/
 - avar/
@@ -37,27 +37,22 @@ packages:
 - theme-app/
 - location:
     git: https://github.com/phadej/github.git
-    commit: eb610e6b105ea108e6e11be7dd2429ea10ade48c
+    commit: 41f985d575393379954b76977c794d68de9dc6dd
   extra-dep: true
 extra-deps:
-- aeson-0.11.2.1
+- aeson-compat-0.3.6
 - bifunctors-5.4.1
-- binary-orphans-0.1.5.1
 - bytestring-builder-0.10.8.1.0
 - clay-0.11
-- conduit-extra-1.1.13.2
 - friendly-time-0.4
 - generics-sop-lens-0.1.1.0
 - github-0.15.0
-- lucid-foundation-0.0.2.1
+- lucid-2.9.5
 - monad-http-0.2.0.0
-- postgresql-simple-0.5.2.1
 - semigroupoids-5.1
 - servant-swagger-1.1
 - servant-swagger-ui-0.2.0.2.1.5
 - swagger2-2.1
 - these-0.7.1
 - transformers-compat-0.5.1.4
-- wai-extra-3.0.16.1
-- warp-3.2.8
 flags: {}

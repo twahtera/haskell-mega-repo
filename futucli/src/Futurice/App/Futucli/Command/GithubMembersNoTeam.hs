@@ -18,11 +18,11 @@ import Futurice.App.Futucli.Cfg
 githubMembersNoTeam :: Cfg -> IO ()
 githubMembersNoTeam cfg = do
     mgr <- newManager tlsManagerSettings
-    users <- executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.membersOfWithR (_cfgGhOrg cfg) GH.OrgMemberFilterAll GH.OrgMemberRoleAll Nothing
-    teams <- executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.teamsOfR (_cfgGhOrg cfg) Nothing
+    users <- executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.membersOfWithR (_cfgGhOrg cfg) GH.OrgMemberFilterAll GH.OrgMemberRoleAll GH.FetchAll
+    teams <- executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.teamsOfR (_cfgGhOrg cfg) GH.FetchAll
     let f t = do
           T.hPutStrLn stderr $ "Team: " <> GH.simpleTeamName t
-          executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.listTeamMembersR (GH.simpleTeamId t) GH.TeamMemberRoleAll Nothing
+          executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.listTeamMembersR (GH.simpleTeamId t) GH.TeamMemberRoleAll GH.FetchAll
     teamsMembers <- traverse f teams
     let usersSet = Set.fromList $ V.toList users
     let usersInTeams = Set.fromList $ concatMap V.toList $ V.toList teamsMembers

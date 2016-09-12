@@ -13,7 +13,7 @@ import Control.Monad.Trans.Except (ExceptT (..))
 import Data.Maybe                 (mapMaybe)
 import Futurice.Servant
 import Network.HTTP.Client
-       (Manager, httpLbs, newManager, parseUrl, responseBody)
+       (Manager, httpLbs, newManager, parseUrlThrow, responseBody)
 import Network.HTTP.Client.TLS    (tlsManagerSettings)
 import Servant
 
@@ -71,7 +71,7 @@ defaultMain = futuriceServerMain
 -- | We download the list
 repos :: Manager -> Text -> IO [GitHubRepo]
 repos mgr url = do
-    req <- parseUrl $ T.unpack url
+    req <- parseUrlThrow $ T.unpack url
     res <- TE.decodeUtf8 . LBS.toStrict . responseBody <$> httpLbs req mgr
     return $ mapMaybe f $ T.lines res
   where
