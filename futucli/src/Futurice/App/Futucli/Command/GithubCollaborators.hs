@@ -74,9 +74,9 @@ githubCollaborators :: Cfg -> IO ()
 githubCollaborators cfg = evalReaderMonadGithub cfg $ do
     let org = _cfgGhOrg cfg
     let owner =  GH.fromOrganizationName org
-    repos <- fmap (sort . fmap GH.repoName . V.toList) $ githubReq $ GH.organizationReposR org GH.RepoPublicityAll Nothing
+    repos <- fmap (sort . fmap GH.repoName . V.toList) $ githubReq $ GH.organizationReposR org GH.RepoPublicityAll GH.FetchAll
     pairs <- concat <$> traverse (\repoName -> fmap (,repoName) <$> fetchCollaborators owner repoName) repos
-    members <- githubReq $ GH.membersOfWithR org GH.OrgMemberFilterAll GH.OrgMemberRoleAll Nothing
+    members <- githubReq $ GH.membersOfWithR org GH.OrgMemberFilterAll GH.OrgMemberRoleAll GH.FetchAll
     let pairs' = sort $ filter (\p -> notElem (fst p) members) pairs
     traverse_ printPair pairs'
 
@@ -98,7 +98,7 @@ fetchCollaborators
     => GH.Name GH.Owner -> GH.Name GH.Repo -> m [GH.SimpleUser]
 fetchCollaborators owner repoName = do
     liftIO $ T.hPutStrLn stderr $ "Repo: " <> GH.untagName repoName
-    fmap V.toList $ githubReq $ GH.collaboratorsOnR owner repoName Nothing
+    fmap V.toList $ githubReq $ GH.collaboratorsOnR owner repoName GH.FetchAll
 
 executeRequestWithMgr :: (MonadIO m, MonadThrow m) => Manager -> GH.Auth -> GH.Request k a -> m a
 executeRequestWithMgr mgr auth r = do

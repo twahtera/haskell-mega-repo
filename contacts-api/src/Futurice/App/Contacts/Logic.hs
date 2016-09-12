@@ -140,7 +140,7 @@ addGithubInfo gh = fmap add
 fromDetailedOwner :: GH.User -> ContactGH Text
 fromDetailedOwner gh = ContactGH
     { cghNick   = GH.untagName . GH.userLogin $ gh
-    , cghAvatar = GH.userAvatarUrl gh
+    , cghAvatar = GH.getUrl $ GH.userAvatarUrl gh
     }
 
 addFlowdockInfo

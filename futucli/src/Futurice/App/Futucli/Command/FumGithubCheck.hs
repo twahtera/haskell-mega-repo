@@ -51,12 +51,12 @@ fumGithubCheck :: Cfg -> IO ()
 fumGithubCheck cfg = do
     let team = _cfgGhTeam cfg
     mgr <- newManager tlsManagerSettings
-    teams <- executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.teamsOfR (_cfgGhOrg cfg) Nothing
+    teams <- executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.teamsOfR (_cfgGhOrg cfg) GH.FetchAll
     case V.find ((team ==) . GH.mkTeamName . GH.simpleTeamName) teams of
         Nothing -> do
             T.hPutStrLn stderr $ "Cannot find team " <> GH.untagName team <> ", printed all users"
         Just t  -> do
-            teamUsers <- executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.listTeamMembersR (GH.simpleTeamId t) GH.TeamMemberRoleAll Nothing
+            teamUsers <- executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.listTeamMembersR (GH.simpleTeamId t) GH.TeamMemberRoleAll GH.FetchAll
             fumUsers <- FUM.fetchList mgr (_cfgFumToken cfg) (_cfgFumBaseurl cfg) (_cfgFumList cfg)
             logic teamUsers fumUsers
 

@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.0.
+-- This file has been generated from package.yaml by hpack version 0.14.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -31,7 +31,7 @@ library
   ghc-options: -Wall
   build-depends:
       aeson                 >=0.8     && <0.12
-    , aeson-compat          >=0.3.0.0 && <0.4
+    , aeson-compat          >=0.3.6 && <0.4
     , aeson-extra           >=0.3.0.0 && <0.4
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
@@ -59,7 +59,7 @@ library
     , hashable
     , hashable-time
     , haxl
-    , http-client           >=0.4   && <0.5
+    , http-client           >=0.4.31.1 && <0.5
     , http-client-tls       >=0.2.2 && <0.3
     , http-types
     , intervals
@@ -138,7 +138,7 @@ executable planmill-client
   ghc-options: -Wall
   build-depends:
       aeson                 >=0.8     && <0.12
-    , aeson-compat          >=0.3.0.0 && <0.4
+    , aeson-compat          >=0.3.6 && <0.4
     , aeson-extra           >=0.3.0.0 && <0.4
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
@@ -166,7 +166,7 @@ executable planmill-client
     , hashable
     , hashable-time
     , haxl
-    , http-client           >=0.4   && <0.5
+    , http-client           >=0.4.31.1 && <0.5
     , http-client-tls       >=0.2.2 && <0.3
     , http-types
     , intervals
@@ -211,7 +211,7 @@ test-suite integration
   ghc-options: -Wall
   build-depends:
       aeson                 >=0.8     && <0.12
-    , aeson-compat          >=0.3.0.0 && <0.4
+    , aeson-compat          >=0.3.6 && <0.4
     , aeson-extra           >=0.3.0.0 && <0.4
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
@@ -239,7 +239,7 @@ test-suite integration
     , hashable
     , hashable-time
     , haxl
-    , http-client           >=0.4   && <0.5
+    , http-client           >=0.4.31.1 && <0.5
     , http-client-tls       >=0.2.2 && <0.3
     , http-types
     , intervals
@@ -277,7 +277,7 @@ test-suite test
   ghc-options: -Wall
   build-depends:
       aeson                 >=0.8     && <0.12
-    , aeson-compat          >=0.3.0.0 && <0.4
+    , aeson-compat          >=0.3.6 && <0.4
     , aeson-extra           >=0.3.0.0 && <0.4
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
@@ -305,7 +305,7 @@ test-suite test
     , hashable
     , hashable-time
     , haxl
-    , http-client           >=0.4   && <0.5
+    , http-client           >=0.4.31.1 && <0.5
     , http-client-tls       >=0.2.2 && <0.3
     , http-types
     , intervals

@@ -48,7 +48,7 @@ request = dataFetch . GithubRequest . githubRequestToTrue
     githubRequestToTrue = unsafeCoerce
 
 membersOf :: GH.Name GH.Organization -> GenHaxl u (Vector GH.SimpleUser)
-membersOf = request . flip GH.membersOfR Nothing
+membersOf = request . flip GH.membersOfR GH.FetchAll
 
 userInfoFor :: GH.Name GH.User -> GenHaxl u GH.User
 userInfoFor = request . GH.userInfoForR

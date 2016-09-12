@@ -106,7 +106,7 @@ planMillPost d = PlanMillPost (encode d) . toUrlParts
 
 -- | Get an path part as 'UrlParts' of the request
 --
--- > req <- parseUrl $ baseUrl <> fromUrlParts (requestUrlParts planmillRequest)
+-- > req <- parseUrlThrow $ baseUrl <> fromUrlParts (requestUrlParts planmillRequest)
 requestUrlParts :: PlanMill a -> UrlParts
 requestUrlParts (PlanMillGet _ ps)                 = ps
 requestUrlParts (PlanMillPagedGet _ ps)            = ps

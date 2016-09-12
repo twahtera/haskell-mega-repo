@@ -33,7 +33,7 @@ apps = Map.fromList
     ]
 
 buildImage :: Text
-buildImage = "futurice/base-images:haskell-lts-6.3-1"
+buildImage = "futurice/base-images:haskell-lts-6.16-1"
 
 buildCmd :: Text
 buildCmd = T.unwords

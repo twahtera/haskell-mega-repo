@@ -35,7 +35,7 @@ issueReport mgr auth repos = do
   where
     fetch :: GitHubRepo -> IO (Per GitHubRepo (Vector IssueInfo))
     fetch ghr@(GitHubRepo owner repo) = Per ghr . fmap t . e <$>
-       GH.executeRequestWithMgr mgr auth (GH.issuesForRepoR owner repo opts Nothing)
+       GH.executeRequestWithMgr mgr auth (GH.issuesForRepoR owner repo opts GH.FetchAll)
 
     opts = [GH.Open]
 
@@ -43,7 +43,7 @@ issueReport mgr auth repos = do
         { _issueNumber  = GH.issueNumber pr
         , _issueTitle   = GH.issueTitle pr
         , _issueCreated = GH.issueCreatedAt pr
-        , _issueUrl     = fromMaybe "" $ GH.issueHtmlUrl pr
+        , _issueUrl     = maybe "" GH.getUrl $ GH.issueHtmlUrl pr
         }
 
     e (Right x) = x
@@ -74,12 +74,12 @@ fumGithubReport mgr cfg = do
     githubUsers :: IO (Vector GitHubUser)
     githubUsers = do
         let team = cfgGhTeam cfg
-        teams <- exec $ GH.teamsOfR (cfgGhOrg cfg) Nothing
+        teams <- exec $ GH.teamsOfR (cfgGhOrg cfg) GH.FetchAll
         case V.find ((team ==) . GH.simpleTeamName) teams of
             Nothing ->
-                traverse mk =<< exec (GH.membersOfR (cfgGhOrg cfg) Nothing)
+                traverse mk =<< exec (GH.membersOfR (cfgGhOrg cfg) GH.FetchAll)
             Just t ->
-                traverse mk =<< exec (GH.listTeamMembersR (GH.simpleTeamId t) GH.TeamMemberRoleAll Nothing)
+                traverse mk =<< exec (GH.listTeamMembersR (GH.simpleTeamId t) GH.TeamMemberRoleAll GH.FetchAll)
 
       where
         exec :: GH.Request k a -> IO a

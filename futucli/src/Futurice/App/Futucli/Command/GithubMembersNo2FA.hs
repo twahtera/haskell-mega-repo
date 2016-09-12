@@ -18,15 +18,15 @@ githubMembersNo2FA :: Cfg -> IO ()
 githubMembersNo2FA cfg = do
     let team = _cfgGhTeam cfg
     mgr <- newManager tlsManagerSettings
-    users <- executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.membersOfWithR (_cfgGhOrg cfg) GH.OrgMemberFilter2faDisabled GH.OrgMemberRoleAll Nothing
-    teams <- executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.teamsOfR (_cfgGhOrg cfg) Nothing
+    users <- executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.membersOfWithR (_cfgGhOrg cfg) GH.OrgMemberFilter2faDisabled GH.OrgMemberRoleAll GH.FetchAll
+    teams <- executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.teamsOfR (_cfgGhOrg cfg) GH.FetchAll
     case V.find ((team ==) . GH.mkTeamName . GH.simpleTeamName) teams of
         Nothing -> do
             T.hPutStrLn stderr $ "In total " <> textShow (V.length users) <> " users without 2fa"
             traverse_ (printSimpleUser mgr (_cfgGhToken cfg)) users
             T.hPutStrLn stderr $ "Cannot find team " <> GH.untagName team <> ", printed all users"
         Just t  -> do
-            teamUsers <- executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.listTeamMembersR (GH.simpleTeamId t) GH.TeamMemberRoleAll Nothing
+            teamUsers <- executeRequestWithMgr mgr (_cfgGhToken cfg) $ GH.listTeamMembersR (GH.simpleTeamId t) GH.TeamMemberRoleAll GH.FetchAll
             let teamUsersIds = GH.simpleUserId <$> teamUsers
             let users' = V.filter (\u -> GH.simpleUserId u `V.elem` teamUsersIds) users
             T.hPutStrLn stderr $ "There are " <> textShow (V.length teamUsers) <> " users in the team"

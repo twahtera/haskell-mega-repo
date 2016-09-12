@@ -12,7 +12,6 @@ import Futurice.Prelude
 import Prelude ()
 
 import Data.Aeson.Compat
-import Data.Aeson.Types  (Parser)
 
 import qualified Data.Maybe.Strict as S
 
