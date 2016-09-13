@@ -168,6 +168,16 @@ class ToReportRow a where
         :: (Monad m, ReportRowC a m)
         => a -> [ReportCsvRow m (ReportRowLen a)]
 
+instance ToReportRow () where
+    type ReportRowLen () = POne
+
+    reportHeader _ = ReportHeader
+        $ IList.cons "?"
+        $ IList.nil
+
+    reportRow _ = [ReportRow mempty $ IList.cons (pure ()) $ IList.nil ]
+    reportCsvRow _ = [ReportCsvRow $ IList.cons (pure mempty) $ IList.nil ]
+
 -- | Fold on the elements, keys discarded.
 instance ToReportRow v => ToReportRow (HashMap k v) where
     type ReportRowLen (HashMap k v) = ReportRowLen v
