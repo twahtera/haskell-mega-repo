@@ -31,8 +31,8 @@ library
   build-depends:
       base                  >=4.7   && <4.10
     , aeson
-    , base-compat
     , aeson-compat
+    , base-compat
     , bifunctors
     , blaze-html
     , bytestring
@@ -45,6 +45,8 @@ library
     , http-client-tls
     , lens
     , markdown
+    , postgresql-simple
+    , resource-pool
     , semigroups
     , servant
     , servant-blaze

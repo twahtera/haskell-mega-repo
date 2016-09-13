@@ -37,10 +37,7 @@ envs:
     GH_TEAM:
       secret: github-team
 
-
-    PROXYAPP_USER: timo
-    PROXYAPP_PASS: secret
-    FUTUHOURS_BASEURL: http://localhost:8081
+    FUTUHOURSAPI_BASEURL: http://localhost:8803
 
     REPORTS_GH_REPOSURL:
       secret: reports-gh-repos
@@ -57,6 +54,7 @@ envs:
     THEMEAPP_PORT:      "8806"
     REPORTSAPP_PORT:    "8807"
     PLANMILLPROXY_PORT: "8808"
+    PROXYMGMT_PORT:     "8809"
 
     # Legacy
     PORT: "8080"

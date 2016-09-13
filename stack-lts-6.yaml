@@ -29,6 +29,7 @@ packages:
 - planmill-proxy/
 - postgresql-simple-url/
 - proxy-app/
+- proxy-mgmt-app/
 - reports-app/
 - servant-binary-tagged/
 - servant-cache/

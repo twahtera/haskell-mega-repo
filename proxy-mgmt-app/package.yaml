@@ -1,17 +1,23 @@
-name: proxy-app
-version: 0.1.0.0
-synopsis: Proxy app
-description: Make a proxy of everything
+name: proxy-mgmt-app
+version: "0"
+synopsis: Proxy conf management
+description: Proxy conf management
 author: Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
 license: BSD3
-github: futurice/proxy-app
+github: futurice/haskell-mega-rpo
 category: Web
-tested-with: GHC==7.8.4, GHC==7.10.3
+tested-with: GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
 extra-source-files:
 - README.md
 
-ghc-options: -Wall
+default-extensions:
+  - DeriveDataTypeable
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveGeneric
+  - DeriveTraversable
+  - ScopedTypeVariables
 
 library:
   source-dirs: src
@@ -20,44 +26,28 @@ library:
     - aeson
     - aeson-compat
     - base-compat
-    - bifunctors
-    - blaze-html
-    - bytestring
-    - cassava
     - env-config
-    - futuhours-api
+    - futurice-foundation
     - futurice-prelude
+    - futurice-reports
     - futurice-servant
-    - http-client
-    - http-client-tls
-    - lens
-    - markdown
+    - generics-sop
+    - lucid
     - postgresql-simple
     - resource-pool
-    - semigroups
     - servant
-    - servant-blaze
-    - servant-cassava
-    - servant-client
     - servant-lucid
     - servant-server
-    - servant-swagger
-    - stm
     - swagger2
-    - text
     - time
-    - transformers
-    - unordered-containers
     - vector
-    - wai
-    - wai-extra
-    - warp
+
 
 executables:
-  proxy-app-server:
+  proxy-mgmt-app-server:
     ghc-options: -threaded
     main: Main.hs
     source-dirs: srv
     dependencies:
       - base
-      - proxy-app
+      - proxy-mgmt-app

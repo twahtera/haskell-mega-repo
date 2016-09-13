@@ -25,6 +25,7 @@ library:
     - file-embed
     - futurice-foundation
     - futurice-prelude
+    - generics-sop
     - lucid
     - mtl
     - servant
