@@ -1,11 +1,11 @@
 {-# LANGUAGE ConstraintKinds   #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 module Main (main) where
 
+import Prelude ()
 import Futurice.Prelude
 
 import Control.Monad.Http                      (evalHttpT)
@@ -15,8 +15,6 @@ import Control.Monad.Reader                    (runReaderT)
 import Data.Constraint
 import Futurice.Constraint.Unit1
 import Data.Maybe                              (isJust)
-import Data.Time                               (UTCTime (..))
-import Data.Time.TH                            (mkUTCTime)
 import System.Environment                      (getArgs, lookupEnv)
 import System.IO                               (hPutStrLn, stderr)
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty

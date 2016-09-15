@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
 module Github.TyHaxl (
@@ -28,6 +29,6 @@ userInfoFor
 userInfoFor = GenTyHaxl . Haxl.userInfoFor
 
 request
-    :: (Show a, Typeable a, IsElem' Haxl.GithubRequest r (Index Haxl.GithubRequest r))
-    =>  GH.Request k a -> GenTyHaxl r u a
+    :: (Eq a, Show a, Typeable a, IsElem' Haxl.GithubRequest r (Index Haxl.GithubRequest r))
+    =>  GH.Request 'GH.RA a -> GenTyHaxl r u a
 request = GenTyHaxl . Haxl.request

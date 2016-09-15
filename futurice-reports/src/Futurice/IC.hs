@@ -14,7 +14,7 @@ module Futurice.IC (
     replicateP,
     ) where
 
-import Futurice.Prelude hiding (empty, replicate)
+import Futurice.Prelude hiding (empty, replicate, nil)
 import Futurice.Peano
 
 import qualified Futurice.Prelude  as P

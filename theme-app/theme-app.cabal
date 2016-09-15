@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.0.
+-- This file has been generated from package.yaml by hpack version 0.15.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -35,7 +35,7 @@ library
     , futurice-prelude
     , futurice-servant
     , lucid
-    , servant >=0.6 && <0.8
+    , servant
     , servant-server
     , servant-swagger-ui
     , text
@@ -63,7 +63,7 @@ executable theme-app-server
     , futurice-prelude
     , futurice-servant
     , lucid
-    , servant >=0.6 && <0.8
+    , servant
     , servant-server
     , servant-swagger-ui
     , text

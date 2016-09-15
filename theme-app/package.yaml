@@ -20,7 +20,7 @@ dependencies:
   - futurice-prelude
   - futurice-servant
   - lucid
-  - servant >=0.6 && <0.8
+  - servant
   - servant-server
   - servant-swagger-ui
   - text

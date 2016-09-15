@@ -30,7 +30,7 @@ import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo (..), sopStructuralInfo)
 import Data.ByteString       (ByteString)
 import Data.Time
-       (UTCTime (..), ZonedTime, localDay, zonedTimeToLocalTime)
+       (ZonedTime, localDay, zonedTimeToLocalTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 
 import qualified Data.Text.Encoding as TE

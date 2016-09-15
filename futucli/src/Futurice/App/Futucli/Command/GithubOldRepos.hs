@@ -6,16 +6,15 @@ import Futurice.Prelude
 
 import Algebra.Lattice         ((\/))
 import Data.Maybe              (mapMaybe)
-import Data.Time               (Day (..), UTCTime (..), diffUTCTime,
-                                getCurrentTime)
+import Data.Time               (diffUTCTime, getCurrentTime)
 import Network.HTTP.Client     (Manager, newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import System.IO               (stderr)
 
-import GitHub (Auth (..), Commit, Name, Organization, Repo (..),
-               RepoPublicity (..), SimpleUser (..), User, commitsForR,
-               contributorToSimpleUser, contributorsR, fromOrganizationName,
-               organizationReposR, untagName)
+import GitHub
+       (Auth (..), Commit, Name, Organization, Repo (..), RepoPublicity (..),
+       SimpleUser (..), User, commitsForR, contributorToSimpleUser,
+       contributorsR, fromOrganizationName, organizationReposR, untagName)
 
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T

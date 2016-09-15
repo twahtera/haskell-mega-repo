@@ -19,7 +19,6 @@ import Futurice.Prelude
 import Data.Aeson                (ToJSON (..))
 import Data.Constraint           (Dict (..))
 import Data.Swagger              (ToSchema (..), NamedSchema (..))
-import Data.These                (These (..))
 import Data.Time.Format.Human    (humanReadableTime')
 import Futurice.Generics         (sopDeclareNamedSchema, sopToJSON)
 import Futurice.Peano            (PThree, PTwo)
@@ -195,7 +194,7 @@ instance ToReportRow FUMUser where
         $ IList.nil
 
     reportRow
-        :: forall m. (Applicative m, Monad m, ReportRowC FUMUser m)
+        :: forall m. (Monad m, ReportRowC FUMUser m)
         => FUMUser -> [ReportRow m (ReportRowLen FUMUser)]
     reportRow (FUMUser n l g) = case monadReaderUnwrap :: E HasFUMPublicURL m of
         MkE Dict -> let

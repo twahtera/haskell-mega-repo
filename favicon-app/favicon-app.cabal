@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.0.
+-- This file has been generated from package.yaml by hpack version 0.15.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -38,8 +38,8 @@ executable favicon
     , JuicyPixels
     , lucid
     , semigroups
-    , servant >=0.6 && <0.8
-    , servant-JuicyPixels >=0.3.0.0
+    , servant
+    , servant-JuicyPixels
     , servant-server
     , servant-status
     , stm

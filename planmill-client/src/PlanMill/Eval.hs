@@ -10,7 +10,7 @@ import PlanMill.Internal.Prelude
 import Control.Monad.Http  (MonadHttp (..), httpLbs)
 import Data.Aeson.Compat   (eitherDecode)
 import Network.HTTP.Client
-       (Request, RequestBody (..), checkStatus, method, parseUrlThrow, path,
+       (Request, RequestBody (..), method, parseRequest, path,
        queryString, requestBody, requestHeaders, responseBody, responseStatus,
        setQueryString)
 import Network.HTTP.Types  (Header, statusIsSuccessful)
@@ -55,7 +55,7 @@ evalPlanMill pm = do
     mkBaseReq planmill = do
         cfg <- askCfg
         let baseUrl = getPlanMillBaseUrl cfg
-        parseUrlThrow $ baseUrl <> fromUrlParts (requestUrlParts planmill)
+        parseRequest $ baseUrl <> fromUrlParts (requestUrlParts planmill)
 
     singleReq :: forall b. FromJSON b
               => Request
@@ -133,7 +133,6 @@ authHeader (Auth (Ident uid) (Nonce nonce) ts sig) = ("x-PlanMill-Auth",
 withAuthHeader :: Request -> Auth -> Request
 withAuthHeader req auth =
     req { requestHeaders = authHeader auth : requestHeaders req
-        , checkStatus = \_ _ _ -> Nothing
         }
 
 addHeader :: Header -> Request -> Request

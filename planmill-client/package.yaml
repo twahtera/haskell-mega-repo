@@ -21,7 +21,7 @@ when:
   ghc-options: -fcontext-stack=40
 
 dependencies:
-  - aeson                 >=0.8     && <0.12
+  - aeson                 >=1     && <1.1
   - aeson-compat          >=0.3.6 && <0.4
   - aeson-extra           >=0.3.0.0 && <0.4
   - ansi-pretty           >=0.1.2 && <0.2
@@ -50,8 +50,8 @@ dependencies:
   - hashable
   - hashable-time
   - haxl
-  - http-client           >=0.4.31.1 && <0.5
-  - http-client-tls       >=0.2.2 && <0.3
+  - http-client           >=0.4.31.1 && <0.6
+  - http-client-tls       >=0.2.2 && <0.4
   - http-types
   - intervals
   - lens

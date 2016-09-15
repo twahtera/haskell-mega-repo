@@ -1,3 +1,4 @@
+-- TODO: deprecate module?
 module Data.Csv.Futurice (
     -- * Futurice additions
     FutuCSV,
@@ -7,18 +8,13 @@ module Data.Csv.Futurice (
     module Data.Csv,
     ) where
 
-import Prelude        ()
-import Futurice.Prelude 
+import Futurice.Prelude ()
+import Prelude ()
 
 import Data.Csv
 import Servant.CSV.Cassava
 
-type FutuCSV = (CSV', FutuCSVOpts)
+type FutuCSV = (CSV', DefaultOpts)
 
-data FutuCSVOpts
-
-instance DecodeOpts FutuCSVOpts where
-    decodeOpts _ = decodeOpts (Proxy :: Proxy DefaultDecodeOpts)
-
-instance EncodeOpts FutuCSVOpts where
-    encodeOpts _ = encodeOpts (Proxy :: Proxy DefaultEncodeOpts)
+-- TODO: deprecate
+type FutuCSVOpts = DefaultOpts

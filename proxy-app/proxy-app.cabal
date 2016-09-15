@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.0.
+-- This file has been generated from package.yaml by hpack version 0.15.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -30,9 +30,9 @@ library
   ghc-options: -Wall
   build-depends:
       base                  >=4.7   && <4.10
-    , aeson                 >=0.8   && <0.12
+    , aeson
     , base-compat
-    , aeson-compat          >=0.3.0.0 && <0.4
+    , aeson-compat
     , bifunctors
     , blaze-html
     , bytestring
@@ -46,7 +46,7 @@ library
     , lens
     , markdown
     , semigroups
-    , servant >=0.6 && <0.8
+    , servant
     , servant-blaze
     , servant-cassava
     , servant-client

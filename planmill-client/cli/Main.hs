@@ -13,7 +13,6 @@ import Control.Monad.Http   (HttpT, evalHttpT)
 import Control.Monad.Logger (LogLevel (..), LogSource, LoggingT, filterLogger)
 import Control.Monad.Reader (ReaderT (..))
 import Data.Maybe           (isJust)
-import Data.Time.TH         (mkUTCTime)
 import Data.Yaml            (decodeFileEither)
 import System.Environment   (getArgs, lookupEnv)
 import System.IO            (hPutStrLn, stderr)
@@ -112,9 +111,7 @@ capacityCalendar :: (MonadPlanMill m, MonadIO m, MonadThrow m) => m ()
 capacityCalendar = do
     me' <- planmillAction me
     putPretty me'
-    interval <- mkInterval
-        (utctDay $(mkUTCTime "2016-01-01T00:00:00.000Z"))
-        (utctDay $(mkUTCTime "2016-02-01T00:00:00.000Z"))
+    interval <- mkInterval $(mkDay "2016-01-01") $(mkDay "2016-02-01")
     cc <- planmillVectorAction $ userCapacity interval $ Ident 17557
     putPretty cc
 

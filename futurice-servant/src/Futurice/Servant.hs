@@ -49,7 +49,7 @@ import Data.Swagger
 import Development.GitRev       (gitCommitDate, gitHash)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
-import Network.Wai              (Application, Middleware)
+import Network.Wai              (Middleware)
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import Servant
 import Servant.Cache.Class      (DynMapCache, cachedIO)

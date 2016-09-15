@@ -36,23 +36,53 @@ packages:
 - spice-stats/
 - theme-app/
 - location:
+    git: https://github.com/phadej/aeson-extra.git
+    commit: 83cdf5932cd333067a50209ed63b8604749a33d2
+  extra-dep: true
+- location:
     git: https://github.com/phadej/github.git
-    commit: 41f985d575393379954b76977c794d68de9dc6dd
+    commit: dd149a469cad0fb4ecbb75a76efc633d92870a0c
+  extra-dep: true
+# Not ours
+- location:
+    git: https://github.com/snapframework/snap.git
+    commit: ed168734edd0b19083924d922822e9ad1314bb8a
+  extra-dep: true
+- location:
+    git: https://github.com/facebook/Haxl.git
+    commit: 528bba55657c5bd379397da5da2efc42c610d3c8
   extra-dep: true
 extra-deps:
+- aeson-1.0.0.0
 - aeson-compat-0.3.6
 - bifunctors-5.4.1
-- bytestring-builder-0.10.8.1.0
 - clay-0.11
 - friendly-time-0.4
+- ekg-0.4.0.11
+- ekg-json-0.1.0.3
 - generics-sop-lens-0.1.1.0
-- github-0.15.0
-- lucid-2.9.5
+- heist-1.0.0.0
+- http-streams-0.8.4.0
+- insert-ordered-containers-0.2.0.0
+- io-streams-haproxy-1.0.0.1
 - monad-http-0.2.0.0
+- recursion-schemes-5
 - semigroupoids-5.1
-- servant-swagger-1.1
+- semigroups-0.18.2
+- servant-0.8.1
+- servant-cassava-0.8
+- servant-client-0.8.1
+- servant-docs-0.8.1
+- servant-server-0.8.1
+- servant-swagger-1.1.2
 - servant-swagger-ui-0.2.0.2.1.5
-- swagger2-2.1
-- these-0.7.1
+- snap-core-1.0.0.0
+- snap-server-1.0.1.0
+- swagger2-2.1.2.1
+- these-0.7.2
+- time-parsers-0.1.1.0
 - transformers-compat-0.5.1.4
-flags: {}
+flags:
+  semigroups:
+    bytestring-builder: false
+        

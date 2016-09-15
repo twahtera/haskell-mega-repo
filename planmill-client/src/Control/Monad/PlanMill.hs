@@ -51,7 +51,7 @@ type MonadPlanMillTypes =
 -- | Superclass for providing constraints for 'MonadPlanMill' and 
 -- 'MonadPlanMillQuery'.
 class
-    ( Applicative m, Monad m
+    ( Monad m
     -- Unfortunately we have to write all of those down
     , MonadPlanMillC m Absence
     , MonadPlanMillC m Assignment
@@ -109,7 +109,7 @@ planmillVectorQuery
 planmillVectorQuery = planmillQuery \\  -- hello CPP
     entailMonadPlanMillCVector (Proxy :: Proxy m) (Proxy :: Proxy a)
 
-instance (Applicative m, Monad m)
+instance Monad m
     => MonadPlanMillConstraint (ReaderT env m)
   where
     type MonadPlanMillC (ReaderT env m) = FromJSON

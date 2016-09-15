@@ -55,13 +55,13 @@ dependencies:
   - regex-compat
   - resource-pool
   - semigroups
-  - servant >=0.6 && <0.8
-  - servant-cassava
+  - servant
+  - servant-cassava ==0.8.*
   - servant-lucid
   - servant-server
   - SHA
   - stm
-  - swagger2 >= 2.0.2
+  - swagger2
   - tagged
   - text
   - these

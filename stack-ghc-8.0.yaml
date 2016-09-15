@@ -1,4 +1,4 @@
-resolver: nightly-2016-08-06
+resolver: nightly-2016-09-14
 packages:
 - ansi-pretty/
 - avar/
@@ -34,38 +34,29 @@ packages:
 - servant-status/
 - spice-stats/
 - location:
-    git: https://github.com/ekmett/recursion-schemes.git
-    commit: 129df9bb5c5630781ba0c2dd6def698fce0f44df
-  extra-dep: true
-- location:
     git: https://github.com/facebook/Haxl.git
-    commit: f09fc218c32e9bc2a57bb25baeaa1a76a3d192d1
+    commit: 528bba55657c5bd379397da5da2efc42c610d3c8
   extra-dep: true
 - location:
     git: https://github.com/phadej/aeson-extra.git
-    commit: b2a191aec365abf4891285a8e03a308a9c9a64b2
+    commit: 83cdf5932cd333067a50209ed63b8604749a33d2
   extra-dep: true
 - location:
     git: https://github.com/phadej/github.git
-    commit: 41f985d575393379954b76977c794d68de9dc6dd
+    commit: dd149a469cad0fb4ecbb75a76efc633d92870a0c
+  extra-dep: true
+- location:
+    git: https://github.com/snapframework/snap.git
+    commit: ed168734edd0b19083924d922822e9ad1314bb8a
   extra-dep: true
 extra-deps:
-- aeson-0.11.2.1
-- aeson-compat-0.3.6
-- data-default-0.6.0
-- data-default-instances-base-0.1.0.1
-- ekg-0.4.0.10
-- generics-sop-lens-0.1.1.0
-- http-client-0.4.31.1
-- io-streams-haproxy-1.0.0.0
+- aeson-1.0.0.0
+- heist-1.0.0.0
+- http-client-0.5.3.1
+- http-client-tls-0.3.1.1
+- insert-ordered-containers-0.2.0.0
+- map-syntax-0.2.0.1
 - monad-http-0.2.0.0
-- postgresql-libpq-0.9.2.0
-- servant-swagger-ui-0.2.0.2.1.5
-- snap-core-1.0.0.0
-- snap-server-1.0.0.0
-- swagger2-2.1
-- tz-0.1.1.1
-- unix-time-0.3.7
-- wai-cors-0.2.4
-- wai-extra-3.0.17
+- recursion-schemes-5
+- tz-0.1.2.0
 flags: {}

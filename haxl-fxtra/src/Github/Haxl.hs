@@ -24,28 +24,22 @@ import Control.Concurrent.ParallelIO.Local (parallel_, withPool)
 import Control.Exception
 import Haxl.Core
 
--- TODO: for githubRequestToTrue
-import Unsafe.Coerce     (unsafeCoerce)
-
 import qualified GitHub as GH
 
 data GithubRequest a where
-    GithubRequest :: Show a => GH.Request 'True a -> GithubRequest a
+    GithubRequest :: Show a => GH.Request 'GH.RA a -> GithubRequest a
 
 deriving instance Show (GithubRequest a)
 deriving instance Typeable GithubRequest
-deriving instance Eq (GithubRequest a)
+deriving instance Eq a => Eq (GithubRequest a)
 
 instance Show1 GithubRequest where show1 = show
 
 instance Hashable (GithubRequest a) where
   hashWithSalt salt (GithubRequest gh) = hashWithSalt salt gh
 
-request :: (Show a, Typeable a) => GH.Request k a -> GenHaxl u a
-request = dataFetch . GithubRequest . githubRequestToTrue
-  where
-    githubRequestToTrue :: GH.Request k' a' -> GH.Request 'True a'
-    githubRequestToTrue = unsafeCoerce
+request :: (Eq a, Show a, Typeable a) => GH.Request 'GH.RA a -> GenHaxl u a
+request = dataFetch . GithubRequest
 
 membersOf :: GH.Name GH.Organization -> GenHaxl u (Vector GH.SimpleUser)
 membersOf = request . flip GH.membersOfR GH.FetchAll
@@ -56,8 +50,9 @@ userInfoFor = request . GH.userInfoForR
 instance StateKey GithubRequest where
     data State GithubRequest = GithubDataState GH.Auth
 
-initDataSource :: GH.Auth           -- ^ Authentication token
-               -> IO (State GithubRequest)
+initDataSource
+    :: GH.Auth           -- ^ Authentication token
+    -> IO (State GithubRequest)
 initDataSource auth =
     pure (GithubDataState auth)
 

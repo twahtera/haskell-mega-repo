@@ -22,8 +22,8 @@ dependencies:
 - JuicyPixels
 - lucid
 - semigroups
-- servant >=0.6 && <0.8
-- servant-JuicyPixels >=0.3.0.0
+- servant
+- servant-JuicyPixels
 - servant-server
 - servant-status
 - stm

@@ -25,9 +25,9 @@ data Project = Project
     , pName                       :: !Text
     , pAccount                    :: !(Maybe AccountId) -- @TODO AccountId
     , pAccountName                :: !(Maybe Text)
-    , pActualCost                 :: !(Maybe Int)
+    , pActualCost                 :: !(Maybe Double) -- Currency unit
     , pActualEffort               :: !(Maybe Int)
-    , pActualRevenue              :: !(Maybe Int)
+    , pActualRevenue              :: !(Maybe Double) -- Currency unit
     , pBillableStatus             :: !(Maybe Int) -- @TODO enum;!SCHEMA NULL
     , pCategory                   :: !(Maybe Int)
     , pFinish                     :: !(Maybe UTCTime)
@@ -35,7 +35,7 @@ data Project = Project
     , pFixedWork                  :: !(Maybe Int)
     , pFixedWorkEffort            :: !(Maybe Int)
     , pInvoiceAppendix            :: !(Maybe Int)
-    , pInvoicedRevenue            :: !(Maybe Int)
+    , pInvoicedRevenue            :: !(Maybe Double) -- TODO: better type
     -- , pOperationalId              :: !(Maybe Int) -- TODO: failed to parse field operationalId: expected Int, encountered String"
     , pPlannedEffort              :: !(Maybe Int)
     , pPortfolio                  :: !Int
@@ -44,10 +44,10 @@ data Project = Project
     , pReportedHours              :: !(Maybe Int)
     , pStart                      :: !(Maybe UTCTime)
     , pStatus                     :: !Int -- @TODO type
-    , pTotalCost                  :: !(Maybe Int)
+    , pTotalCost                  :: !(Maybe Double) -- TODO: better type
     , pTotalEffort                :: !(Maybe Int)
     , pTotalRemainingEffort       :: !(Maybe Int)
-    , pTotalRevenue               :: !(Maybe Int)
+    , pTotalRevenue               :: !(Maybe Double) -- TODO: currency
     , pType                       :: !(Maybe Int) -- [1] @TODO type
     , pWorkCompleteness           :: !(Maybe Int) -- [2] !SCHEMA NULL
     , pWorkCompletenessPercentage :: !(Maybe Int) -- [2] !SCHEMA NULL

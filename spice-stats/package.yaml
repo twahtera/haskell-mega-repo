@@ -45,7 +45,7 @@ dependencies:
   - regex-applicative-text
   - regex-compat
   - semigroups
-  - servant >=0.6 && <0.8
+  - servant
   - servant-server
   - SHA
   - stm

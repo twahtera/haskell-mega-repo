@@ -8,7 +8,6 @@ module Futurice.App.MegaRepoTool.Command.BuildDocker (
 import Futurice.Prelude hiding (fold)
 import Turtle           hiding (when, (<>))
 
-import Control.Lens (ifor_)
 import System.Exit  (exitFailure)
 import System.IO    (hClose, hFlush)
 

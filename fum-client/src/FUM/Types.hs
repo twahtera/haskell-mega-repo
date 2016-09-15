@@ -27,7 +27,7 @@ newtype AuthToken = AuthToken { _getAuthToken :: Text }
 
 makeLenses ''AuthToken
 instance Hashable AuthToken
-instance NFData AuthToken where rnf = genericRnf
+instance NFData AuthToken
 
 class HasAuthToken a where
     authToken :: Lens' a AuthToken
@@ -48,7 +48,7 @@ newtype BaseUrl = BaseUrl { _getBaseUrl :: String }
 
 makeLenses ''BaseUrl
 instance Hashable BaseUrl
-instance NFData BaseUrl where rnf = genericRnf
+instance NFData BaseUrl
 
 class HasBaseUrl a where
     baseUrl :: Lens' a BaseUrl
@@ -71,7 +71,7 @@ data Cfg = Cfg
 
 makeLenses ''Cfg
 instance Hashable Cfg
-instance NFData Cfg where rnf = genericRnf
+instance NFData Cfg
 
 instance HasAuthToken Cfg where authToken = cfgAuthToken
 instance HasBaseUrl Cfg where baseUrl = cfgBaseUrl
@@ -86,7 +86,7 @@ newtype UserName = UserName { _getUserName :: Text }
 
 makeLenses ''UserName
 instance Hashable UserName
-instance NFData UserName where rnf = genericRnf
+instance NFData UserName
 
 instance FromJSON UserName where
     parseJSON = withText "FUM UserName" $ pure . UserName
@@ -104,7 +104,7 @@ newtype ListName = ListName { _getListName :: Text }
 
 makeLenses ''ListName
 instance Hashable ListName
-instance NFData ListName where rnf = genericRnf
+instance NFData ListName
 
 instance FromJSON ListName where
     parseJSON = withText "FUM ListName" $ pure . ListName
@@ -121,7 +121,7 @@ data UserStatus
 
 makePrisms ''UserStatus
 instance Hashable UserStatus
-instance NFData UserStatus where rnf = genericRnf
+instance NFData UserStatus
 
 instance FromJSON UserStatus where
     parseJSON = withText "User status" $ \t ->
@@ -154,7 +154,7 @@ data User = User
 
 makeLenses ''User
 instance Hashable User
-instance NFData User where rnf = genericRnf
+instance NFData User
 
 instance FromJSON User where
     parseJSON = withObject "User object" $ \v -> User

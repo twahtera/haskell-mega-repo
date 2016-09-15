@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.0.
+-- This file has been generated from package.yaml by hpack version 0.14.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -35,7 +35,7 @@ library
     , futulogo
     , futurice-prelude
     , gitrev >=1.2.0
-    , servant
+    , servant ==0.8.1
     , servant-cache
     , servant-lucid
     , servant-server

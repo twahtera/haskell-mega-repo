@@ -10,7 +10,6 @@ import Prelude.Compat
 import Data.Maybe              (fromMaybe)
 import Data.Semigroup          ((<>))
 import Data.Text               (Text)
-import Network.Wai             (Application)
 import Servant
 import Servant.Futurice.Status
 import System.Environment      (getArgs, lookupEnv)
