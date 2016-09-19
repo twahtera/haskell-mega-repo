@@ -1,18 +1,22 @@
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DefaultSignatures     #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE InstanceSigs          #-}
-{-# LANGUAGE KindSignatures        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE CPP                     #-}
+{-# LANGUAGE ConstraintKinds         #-}
+{-# LANGUAGE DataKinds               #-}
+{-# LANGUAGE DefaultSignatures       #-}
+{-# LANGUAGE FlexibleContexts        #-}
+{-# LANGUAGE FlexibleInstances       #-}
+{-# LANGUAGE GADTs                   #-}
+{-# LANGUAGE InstanceSigs            #-}
+{-# LANGUAGE KindSignatures          #-}
+{-# LANGUAGE MultiParamTypeClasses   #-}
+{-# LANGUAGE OverloadedStrings       #-}
+{-# LANGUAGE RankNTypes              #-}
+{-# LANGUAGE TemplateHaskell         #-}
+{-# LANGUAGE TypeFamilies            #-}
+{-# LANGUAGE TypeOperators           #-}
+{-# LANGUAGE UndecidableInstances    #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# LANGUAGE UndecidableSuperClasses #-}
+#endif
 -- | The report i.e. fancy table.
 module Futurice.Report (
     -- * Reports
@@ -41,6 +45,9 @@ import Data.Constraint              (Constraint)
 import Data.FileEmbed               (embedStringFile)
 import Data.Functor.Identity        (Identity (..))
 import Data.Swagger                 (ToSchema (..))
+import Data.Type.Equality
+import Generics.SOP
+       (All, I (..), NP (..), SList (..), SListI (..))
 import GHC.TypeLits                 (KnownSymbol, Symbol, symbolVal)
 import Lucid                        hiding (for_)
 import Lucid.Base                   (HtmlT (..))
@@ -168,6 +175,36 @@ class ToReportRow a where
         :: (Monad m, ReportRowC a m)
         => a -> [ReportCsvRow m (ReportRowLen a)]
 
+instance ToReportRow () where
+    type ReportRowLen () = POne
+
+    reportHeader _ = ReportHeader
+        $ IList.cons "?"
+        $ IList.nil
+
+    reportRow _ = [ReportRow mempty $ IList.cons (pure ()) $ IList.nil ]
+    reportCsvRow _ = [ReportCsvRow $ IList.cons (pure mempty) $ IList.nil ]
+
+instance ToReportRow Text where
+    type ReportRowLen Text = POne
+
+    reportHeader _ = ReportHeader
+        $ IList.cons "?"
+        $ IList.nil
+
+    reportRow t = [ReportRow mempty $ IList.cons (toHtml t) $ IList.nil ]
+    reportCsvRow t = [ReportCsvRow $ IList.cons (pure $ Csv.toField t) $ IList.nil ]
+
+instance ToReportRow UTCTime where
+    type ReportRowLen UTCTime = POne
+
+    reportHeader _ = ReportHeader
+        $ IList.cons "?"
+        $ IList.nil
+
+    reportRow t = [ReportRow mempty $ IList.cons (toHtml $ show t) $ IList.nil ]
+    reportCsvRow t = [ReportCsvRow $ IList.cons (pure $ Csv.toField $ show t) $ IList.nil ]
+
 -- | Fold on the elements, keys discarded.
 instance ToReportRow v => ToReportRow (HashMap k v) where
     type ReportRowLen (HashMap k v) = ReportRowLen v
@@ -280,6 +317,58 @@ readerReportExec
     => params
     -> E a c
 readerReportExec params = MkE (\x -> x params)
+
+-------------------------------------------------------------------------------
+-- NP I instances
+-------------------------------------------------------------------------------
+
+class ReportRowC a m => ReportRowC' m a
+instance ReportRowC a m => ReportRowC' m a
+
+type family SumReportRowLen (xs :: [*]) :: Peano where
+    SumReportRowLen '[]       = PZero
+    SumReportRowLen (x ': xs) = PAdd (ReportRowLen x) (SumReportRowLen xs)
+
+instance All ToReportRow xs => ToReportRow (NP I xs) where
+    type ReportRowLen (NP I xs)  = SumReportRowLen xs
+    type ReportRowC (NP I xs) m = All (ReportRowC' m) xs
+
+    reportHeader p = case sList :: SList xs of
+        SNil  -> ReportHeader IList.nil
+        SCons -> reportHeader' p
+      where
+        reportHeader'
+            :: forall y ys. (ToReportRow y, All ToReportRow ys)
+            => Proxy (NP I (y ': ys))
+            -> ReportHeader (ReportRowLen (NP I (y ': ys)))
+        reportHeader' _ =
+            let ReportHeader a = reportHeader (Proxy :: Proxy y)
+                ReportHeader b = reportHeader (Proxy :: Proxy (NP I ys))
+            in ReportHeader (IList.append a b)
+
+    reportRow Nil           = []
+    reportRow cons@(_ :* _) = reportRow' cons
+      where
+        reportRow'
+            :: forall m y ys.
+               ( Monad m, ToReportRow y, All ToReportRow ys
+               , ReportRowC y m, All (ReportRowC' m) ys
+               )
+            => NP I (y ': ys)
+            -> [ReportRow m (ReportRowLen (NP I (y ': ys)))]
+        reportRow' (I x :* Nil) =
+            case proofPAddNZero :: PAdd (ReportRowLen y) PZero :~: ReportRowLen y of
+                Refl -> reportRow x
+        reportRow' (I x :* xs) = do
+            ReportRow cls  row  <- reportRow x
+            ReportRow cls' row' <- reportRow xs
+            pure $ ReportRow (cls <> cls') (IList.append row row')
+
+    -- TODO: implement me
+    reportCsvRow = error "reportCsvRow for NP is unimplemented"
+
+instance All (ReportRowC' Identity) xs => IsReport params (Vector :$ NP I xs) where
+    reportExec = defaultReportExec
 
 -------------------------------------------------------------------------------
 -- Aeson instances

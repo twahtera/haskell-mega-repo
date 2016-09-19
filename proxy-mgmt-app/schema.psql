@@ -1,0 +1,14 @@
+-- CREATE SCHEMA proxyapp;
+
+CREATE TABLE proxyapp.credentials (
+  username TEXT PRIMARY KEY,
+  passtext TEXT, -- if null it's disabled
+  createdby TEXT NOT NULL,
+  createdat TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE proxyapp.accesslog (
+  username TEXT NOT NULL references proxyapp.credentials(username),
+  updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  endpoint TEXT NOT NULL
+);
