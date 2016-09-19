@@ -61,4 +61,4 @@ listSnapshotDependencies = do
     acceptJson = ("Accept", "application/json")
 
 snapshotName :: String
-snapshotName = "lts-6.16"
+snapshotName = "lts-6.18"
