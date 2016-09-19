@@ -29,6 +29,8 @@ import Numeric.Interval.NonEmpty.Internal (Interval (..))
 import PlanMill.Types.Request (QueryString)
 import PlanMill.Types.UOffset (showPlanmillUTCTime)
 
+import qualified Data.Map as Map
+
 -- | Interval field.
 data IntervalType = IntervalStart
                   | IntervalFinish
@@ -39,7 +41,7 @@ data IntervalType = IntervalStart
 -- | Map to query string value.
 intervalToQueryString :: ResultInterval -> QueryString
 intervalToQueryString (ResultInterval t i) =
-    [ ("interval", t')
+    Map.fromList [ ("interval", t')
     , ("intervalstart", fromString . showPlanmillUTCTime $ inf i)
     , ("intervalfinish", fromString . showPlanmillUTCTime $ sup i)
     ]

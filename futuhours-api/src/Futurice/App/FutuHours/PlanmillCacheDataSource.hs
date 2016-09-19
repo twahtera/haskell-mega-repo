@@ -126,9 +126,9 @@ instance DataSource u PlanmillCacheRequest where
 
             qs' :: Text
             qs' = textShow $ case req of
-                PM.PlanMillGet qs _ -> qs
+                PM.PlanMillGet qs _      -> qs
                 PM.PlanMillPagedGet qs _ -> qs
-                PM.PlanMillPost _ _ -> []
+                PM.PlanMillPost _ _      -> mempty
 
             url :: Text
             url = url' <> qs'

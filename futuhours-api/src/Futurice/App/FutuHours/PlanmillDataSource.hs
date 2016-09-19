@@ -122,7 +122,7 @@ makeP bf@(BlockedFetch (PMR req) _) = P key bf
     qs = textShow $ case req of
         PM.PlanMillGet qs' _      -> qs'
         PM.PlanMillPagedGet qs' _ -> qs'
-        PM.PlanMillPost _ _       -> []
+        PM.PlanMillPost _ _       -> mempty
 
 -- | Results from DB
 type CacheLookup = HashMap Key BSL.ByteString
