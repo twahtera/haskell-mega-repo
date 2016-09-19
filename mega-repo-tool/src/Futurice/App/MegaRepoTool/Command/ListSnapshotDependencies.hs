@@ -1,14 +1,17 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.MegaRepoTool.Command.ListSnapshotDependencies (
     listSnapshotDependencies
     ) where
 
 import Futurice.Prelude
+import Prelude ()
 
 import Data.Aeson.Compat       (FromJSON (..), decode, withObject, (.:))
+import Data.Aeson.Extra        (getSingObject)
 import Data.Char               (isSpace)
 import Data.Maybe              (mapMaybe)
+import Data.Yaml               (decodeFileEither)
 import Network.HTTP.Client
        (httpLbs, newManager, parseUrlThrow, requestHeaders, responseBody)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
@@ -48,6 +51,9 @@ instance FromJSON Snapshot where
 
 listSnapshotDependencies :: IO ()
 listSnapshotDependencies = do
+    snapshotName <-
+        either throwM (pure . getSingObject (Proxy :: Proxy "resolver"))
+        =<< decodeFileEither "stack.yaml"
     deps <- stackListDependencies
     req' <- parseUrlThrow $ "https://www.stackage.org/" <> snapshotName
     let req = req' { requestHeaders = acceptJson : requestHeaders req' }
@@ -59,6 +65,3 @@ listSnapshotDependencies = do
  where
     pad s = "  " <> s <> " \\"
     acceptJson = ("Accept", "application/json")
-
-snapshotName :: String
-snapshotName = "lts-6.18"

@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.0.
+-- This file has been generated from package.yaml by hpack version 0.14.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -31,6 +31,7 @@ library
   build-depends:
       aeson
     , aeson-compat
+    , aeson-extra
     , base >=4.7   && <4.10
     , base-compat
     , bytestring

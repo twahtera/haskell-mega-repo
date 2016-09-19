@@ -1,0 +1,18 @@
+docker-base-image: futurice/base-images:haskell-lts-6.18-1
+apps:
+  avatar:
+    executable: avatar-server
+  contacts-api:
+    executable: contacts-server
+  favicon:
+    executable: favicon
+  futuhours-api:
+    executable: futuhours-api-server
+  proxy-app:
+    executable: proxy-app-server
+  reports-app:
+    executable: reports-app-server
+  spice-stats:
+    executable: spice-stats-server
+  theme-app:
+    executable: theme-app-server

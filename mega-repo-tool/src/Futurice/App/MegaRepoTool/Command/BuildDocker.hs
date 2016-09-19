@@ -1,41 +1,53 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.MegaRepoTool.Command.BuildDocker (
     buildDocker,
-    Image,
+    ImageName,
     ) where
 
+import Data.Aeson       (FromJSON (..), withObject, (.:))
+import Data.Yaml        (decodeFileEither)
 import Futurice.Prelude hiding (fold)
+import Prelude ()
 import Turtle           hiding (when, (<>))
 
-import System.Exit  (exitFailure)
-import System.IO    (hClose, hFlush)
+import System.Exit (exitFailure)
+import System.IO   (hClose, hFlush)
 
 import qualified Control.Foldl as Fold
 import qualified Data.Map      as Map
 import qualified Data.Text     as T
 import qualified Data.Text.IO  as T
 
-type Image = Text
-type Executable = Text
+-------------------------------------------------------------------------------
+-- Types
+-------------------------------------------------------------------------------
 
-apps :: Map Image Executable
-apps = Map.fromList
-    [ ("avatar", "avatar-server")
-    , ("contacts-api", "contacts-server")
-    , ("favicon", "favicon")
-    , ("futuhours-api", "futuhours-api-server")
-    , ("proxy-app", "proxy-app-server")
-    , ("reports-app", "reports-app-server")
-    , ("spice-stats", "spice-stats-server")
-    , ("theme-app", "theme-app-server")
-    ]
+type ImageName = Text
 
-buildImage :: Text
-buildImage = "futurice/base-images:haskell-lts-6.18-1"
+newtype ImageDefinition = ImageDefinition Text
+  deriving (Show)
 
-buildCmd :: Text
-buildCmd = T.unwords
+instance FromJSON ImageDefinition where
+    parseJSON = withObject "ImageDefinition" $ \obj -> ImageDefinition
+        <$> obj .: "executable"
+
+data MRTConfig = MRTConfig
+    { mrtDockerBaseImage :: !Text
+    , mrtApps            :: !(Map ImageName ImageDefinition)
+    }
+  deriving (Show)
+
+instance FromJSON MRTConfig where
+    parseJSON = withObject "MRTConfig" $ \obj -> MRTConfig
+        <$> obj .: "docker-base-image"
+        <*> obj .: "apps"
+
+-------------------------------------------------------------------------------
+-- Constants
+-------------------------------------------------------------------------------
+
+buildCmd :: Text -> Text
+buildCmd buildImage = T.unwords
     [ "docker run"
     , "--rm"
     , "-ti"
@@ -45,10 +57,18 @@ buildCmd = T.unwords
     , buildImage
     ]
 
-buildDocker :: [Image] -> IO ()
+-------------------------------------------------------------------------------
+-- Command
+
+buildDocker :: [ImageName] -> IO ()
 buildDocker imgs = do
-    let apps' | null imgs = apps
-              | otherwise = Map.filterWithKey (\k _ -> k `elem` imgs) apps
+    -- Read config
+    cfg <- either throwM pure =<< decodeFileEither ".mega-repo-tool.yaml"
+
+    -- What apps to build?
+    let apps | null imgs = mrtApps cfg
+             | otherwise = Map.filterWithKey (\k _ -> k `elem` imgs) $ mrtApps cfg
+
     -- Get the hash of current commit
     githash <- fold (inshell "git log --pretty=format:'%h' -n 1" empty) $ Fold.lastDef "HEAD"
     shells ("git rev-parse --verify " <> githash) empty
@@ -59,11 +79,11 @@ buildDocker imgs = do
     when (githashBuild /= githash) $ do
         T.putStrLn $ "Git hash in build directory don't match: " <> githashBuild  <> " != " <> githash
         T.putStrLn $ "Run following command to build image:"
-        T.putStrLn $ buildCmd
+        T.putStrLn $ buildCmd $ mrtDockerBaseImage cfg
         exitFailure
 
     -- Build docker images
-    ifor_ apps' $ \image exe -> sh $ do
+    ifor_ apps $ \image (ImageDefinition exe) -> sh $ do
         -- Write Dockerfile
         let dockerfile' = dockerfile exe
         (file,handle) <- using $ mktemp "build" "Dockerfile"
@@ -76,7 +96,7 @@ buildDocker imgs = do
         let fullimage = "futurice/" <> image <> ":" <> githash
         procs "docker" ["build", "-t", fullimage, "-f", format fp file, "build" ] empty
 
-dockerfile :: Executable -> Text
+dockerfile :: Text -> Text
 dockerfile exe = T.unlines $
     [ "FROM ubuntu:trusty"
     , "MAINTAINER Oleg Grenrus <oleg.grenrus@iki.fi>"

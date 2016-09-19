@@ -18,6 +18,7 @@ library:
   dependencies:
     - aeson
     - aeson-compat
+    - aeson-extra
     - base >=4.7   && <4.10
     - base-compat
     - bytestring
