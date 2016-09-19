@@ -8,7 +8,6 @@ module Futurice.App.MegaRepoTool.Command.BuildDocker (
 import Futurice.Prelude hiding (fold)
 import Turtle           hiding (when, (<>))
 
-import Control.Lens (ifor_)
 import System.Exit  (exitFailure)
 import System.IO    (hClose, hFlush)
 
@@ -33,7 +32,7 @@ apps = Map.fromList
     ]
 
 buildImage :: Text
-buildImage = "futurice/base-images:haskell-lts-6.16-1"
+buildImage = "futurice/base-images:haskell-lts-6.18-1"
 
 buildCmd :: Text
 buildCmd = T.unwords

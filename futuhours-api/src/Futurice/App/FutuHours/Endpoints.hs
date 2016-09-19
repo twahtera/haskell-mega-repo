@@ -35,13 +35,12 @@ import Futurice.Prelude
 
 import Control.Concurrent.STM           (readTVarIO)
 import Control.Monad.Trans.Except       (ExceptT)
-import Data.Aeson.Extra                 (M (..))
 import Data.BinaryFromJSON              (BinaryFromJSON)
 import Data.Maybe                       (fromJust)
 import Data.Monoid                      (Sum (..))
 import Data.Ord                         (comparing)
 import Data.Pool                        (withResource)
-import Data.Time                        (UTCTime (..), addDays, getCurrentTime)
+import Data.Time                        (addDays, getCurrentTime)
 import Data.Time.Fxtra
        (beginningOfPrevMonth, getCurrentDayInFinland)
 import Database.PostgreSQL.Simple.Fxtra (execute)
@@ -364,7 +363,7 @@ powerAbsencesEndpoint = DefaultableEndpoint
             , powerAbsenceStart        = PM.absenceStart ab
             , powerAbsenceEnd          = PM.absenceFinish ab
             , powerAbsencePlanmillId   = ab ^. PM.identifier
-            , powerAbsenceCapacities   = M uc'
+            , powerAbsenceCapacities   = uc'
             , powerAbsenceBusinessDays = length uc'
             }
           where

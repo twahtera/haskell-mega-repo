@@ -115,6 +115,6 @@ instance MonadGitHub Wrap where
 -- Constraint for Wrap
 -------------------------------------------------------------------------------
 
-class (Show a, Typeable a, FromJSON a) => ShowTypeable a
-instance (Show a, Typeable a, FromJSON a) => ShowTypeable (Vector a)
+class (Eq a, Show a, Typeable a, FromJSON a) => ShowTypeable a
+instance (Eq a, Show a, Typeable a, FromJSON a) => ShowTypeable (Vector a)
 instance ShowTypeable GH.User

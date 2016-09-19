@@ -1,6 +1,6 @@
-{-# LANGUAGE CPP                #-}
-{-# LANGUAGE ConstraintKinds    #-}
-{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE CPP              #-}
+{-# LANGUAGE ConstraintKinds  #-}
+{-# LANGUAGE FlexibleContexts #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
 -- License   : BSD3
@@ -20,9 +20,8 @@ module PlanMill.Classes (
 
 import PlanMill.Internal.Prelude
 
-import Control.Monad.CryptoRandom (CRandT (..), GenError, MonadCRandom (..),
-                                   evalCRandT)
-import Control.Monad.Time         (MonadTime (..))
+import Control.Monad.CryptoRandom
+       (CRandT (..), GenError, MonadCRandom (..), evalCRandT)
 
 import PlanMill.Types
 

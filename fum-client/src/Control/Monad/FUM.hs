@@ -19,7 +19,7 @@ import FUM.Types   (User)
 
 -- | Class of monads which can perform FUM actions
 class
-    ( Applicative m, Monad m
+    ( Monad m
     , MonadFUMC m (Vector User)
     )
     => MonadFUM m

@@ -41,7 +41,6 @@ import Data.Constraint              (Constraint)
 import Data.FileEmbed               (embedStringFile)
 import Data.Functor.Identity        (Identity (..))
 import Data.Swagger                 (ToSchema (..))
-import Data.These                   (These (..))
 import GHC.TypeLits                 (KnownSymbol, Symbol, symbolVal)
 import Lucid                        hiding (for_)
 import Lucid.Base                   (HtmlT (..))
@@ -162,11 +161,11 @@ class ToReportRow a where
 
     reportHeader :: Proxy a -> ReportHeader (ReportRowLen a)
     reportRow
-        :: (Applicative m, Monad m, ReportRowC a m)
+        :: (Monad m, ReportRowC a m)
         => a -> [ReportRow m (ReportRowLen a)]
 
     reportCsvRow
-        :: (Applicative m, Monad m, ReportRowC a m)
+        :: (Monad m, ReportRowC a m)
         => a -> [ReportCsvRow m (ReportRowLen a)]
 
 -- | Fold on the elements, keys discarded.
@@ -262,7 +261,7 @@ data Report (name :: Symbol) params a = Report
 -- TODO: Eq, Show, Ord instances
 
 data E a c where
-    MkE :: ((forall m. (Monad m, Applicative m, ReportRowC a m) => m c) -> c) -> E a c
+    MkE :: ((forall m. (Monad m, ReportRowC a m) => m c) -> c) -> E a c
 
 -- | Class to provide context for cell generation.
 class IsReport params a where
@@ -315,7 +314,7 @@ instance (KnownSymbol name, ToHtml params, ToReportRow a, IsReport params a)
     toHtml (Report params d) = case reportExec params :: E a (HtmlT m ()) of
         MkE f -> f (HtmlT . return <$> runHtmlT p)
       where
-        p :: forall n. (Applicative n, Monad n, ReportRowC a n) => HtmlT n ()
+        p :: forall n. (Monad n, ReportRowC a n) => HtmlT n ()
         p =
           page_ (fromString title) pageParams $ do
           row_ $ large_ 12 $ h1_ $ fromString title

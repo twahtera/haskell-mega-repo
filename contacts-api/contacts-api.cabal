@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.0.
+-- This file has been generated from package.yaml by hpack version 0.15.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -35,7 +35,7 @@ library
   ghc-options: -Wall  -fcontext-stack=30
   build-depends:
       base                  >=4.7   && <4.10
-    , aeson                 >=0.8   && <0.12
+    , aeson                 >=1.0   && <1.1
     , base-compat
     , bifunctors
     , binary-orphans
@@ -60,8 +60,8 @@ library
     , haxl                  >=0.3   && <0.4
     , haxl-fxtra
     , haxl-typed
-    , http-client           >=0.4   && <0.5
-    , http-client-tls       >=0.2.2 && <0.3
+    , http-client           >=0.4.30 && <0.6
+    , http-client-tls       >=0.2.2 && <0.4
     , http-types
     , JuicyPixels
     , JuicyPixels-scale-dct
@@ -71,7 +71,7 @@ library
     , parallel-io
     , rfc5051
     , semigroups
-    , servant >=0.6 && <0.8
+    , servant
     , servant-JuicyPixels
     , servant-lucid
     , servant-server

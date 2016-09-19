@@ -28,7 +28,7 @@ class (Applicative m, Monad m) => MonadGithub m where
     type MonadGithubC m a :: Constraint
     type MonadGithubC m a = ()
 
-    githubReq :: MonadGithubC m a => GH.Request 'False a -> m a
+    githubReq :: MonadGithubC m a => GH.Request 'GH.RA a -> m a
 
 data GithubCfg = GithubCfg !Manager !GH.Auth
 
@@ -56,7 +56,7 @@ instance (Applicative m, MonadIO m, MonadThrow m, HasGithubCfg env) => MonadGith
 handleIOError :: a -> IOError -> a
 handleIOError = const
 
-encodeR :: GH.Request k a -> String
+encodeR :: Binary a => GH.Request k a -> String
 encodeR = BSL8.unpack . Base64L.encode . B.encode
 
 evalReaderMonadGithub' :: Manager -> GH.Auth -> ReaderT GithubCfg IO a -> IO a

@@ -53,7 +53,7 @@ instance ForallFSymbol Typeable   EnumDesc where
   instFSymbol = dict
      where
        dict :: forall k. KnownSymbol k => Dict (Typeable (EnumDesc k))
-       dict =reifyTypeableSymbol (Proxy :: Proxy k) $ Dict
+       dict = reifyTypeableSymbol (Proxy :: Proxy k) $ Dict
 
 data SomeEnumDesc where
     MkSomeEnumDesc :: KnownSymbol k => EnumDesc k -> SomeEnumDesc

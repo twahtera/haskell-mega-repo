@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.0.
+-- This file has been generated from package.yaml by hpack version 0.15.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -70,13 +70,13 @@ library
     , regex-compat
     , resource-pool
     , semigroups
-    , servant >=0.6 && <0.8
-    , servant-cassava
+    , servant
+    , servant-cassava ==0.8.*
     , servant-lucid
     , servant-server
     , SHA
     , stm
-    , swagger2 >= 2.0.2
+    , swagger2
     , tagged
     , text
     , these
@@ -143,13 +143,13 @@ executable reports-app-server
     , regex-compat
     , resource-pool
     , semigroups
-    , servant >=0.6 && <0.8
-    , servant-cassava
+    , servant
+    , servant-cassava ==0.8.*
     , servant-lucid
     , servant-server
     , SHA
     , stm
-    , swagger2 >= 2.0.2
+    , swagger2
     , tagged
     , text
     , these

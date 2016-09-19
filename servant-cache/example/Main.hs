@@ -10,7 +10,6 @@ import Futurice.Prelude
 import Prelude ()
 
 import Lucid              hiding (for_)
-import Network.Wai        (Application)
 import Servant
 import Servant.Cache
 import Servant.HTML.Lucid

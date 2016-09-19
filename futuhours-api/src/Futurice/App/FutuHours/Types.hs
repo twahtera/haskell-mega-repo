@@ -42,7 +42,7 @@ module Futurice.App.FutuHours.Types (
 
 import Futurice.Prelude
 
-import Data.Aeson.Extra   (FromJSON (..), M, ToJSON (..), Value (..), object,
+import Data.Aeson.Extra   (FromJSON (..), ToJSON (..), Value (..), object,
                            (.=))
 import Data.Csv           (DefaultOrdered (..), ToField (..),
                            ToNamedRecord (..))
@@ -54,7 +54,6 @@ import Futurice.Generics  (sopDeclareNamedSchema, sopHeaderOrder, sopParseJSON,
 import Lucid              hiding (for_)
 import Servant            (Capture, FromHttpApiData (..))
 import Servant.Docs       (DocCapture (..), ToCapture (..))
-
 
 import qualified Futurice.IC     as IList
 import           Futurice.Peano
@@ -124,23 +123,22 @@ getFUMUsername (FUMUsername name) = name
 
 instance ToJSON FUMUsername where
     toJSON (FUMUsername n) = toJSON n
-#if MIN_VERSION_aeson(0,10,0)
     toEncoding (FUMUsername n) = toEncoding n
-#endif
+
+instance Aeson.FromJSON FUMUsername where
+    parseJSON = fmap FUMUsername . parseJSON
+
+instance Aeson.ToJSONKey FUMUsername where
+    toJSONKey = Aeson.toJSONKeyText getFUMUsername
+
+instance Aeson.FromJSONKey FUMUsername where
+    fromJSONKey = Aeson.fromJSONKeyCoerce
+
 instance ToSchema FUMUsername
 instance ToParamSchema FUMUsername
 
 instance ToSchema a => ToSchema (HashMap FUMUsername a) where
     declareNamedSchema _ = declareNamedSchema (Proxy :: Proxy (HashMap String a))
-
-hmMapKey :: (Eq k', Hashable k') => (k -> k') -> HashMap k v -> HashMap k' v
-hmMapKey f = HM.fromList . map (first f) . HM.toList
-
-instance ToJSON a => ToJSON (HashMap FUMUsername a) where
-    toJSON = toJSON . hmMapKey getFUMUsername
-
-instance FromJSON a => FromJSON (HashMap FUMUsername a) where
-    parseJSON = fmap (hmMapKey FUMUsername) . parseJSON
 
 instance ToCapture (Capture "fum-id" FUMUsername) where
     toCapture _ = DocCapture "fum-id" "FUM username"
@@ -499,7 +497,7 @@ data PowerAbsence = PowerAbsence
     , powerAbsenceStart        :: !Day
     , powerAbsenceEnd          :: !Day
     , powerAbsencePlanmillId   :: !PM.AbsenceId
-    , powerAbsenceCapacities   :: !(M (Map Day Double))
+    , powerAbsenceCapacities   :: !(Map Day Double)
     , powerAbsenceBusinessDays :: !Int
     }
     deriving (Eq, Ord, Show, Typeable, Generic)

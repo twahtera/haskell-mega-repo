@@ -12,11 +12,11 @@ import Prelude ()
 
 import Futurice.Servant
 import Servant
-import Servant.CSV.Cassava (CSV', DefaultEncodeOpts)
+import Servant.CSV.Cassava (CSV', DefaultOpts)
 
 import Futurice.App.Reports.Types
 
-type ReportTypes = '[HTML, (CSV', DefaultEncodeOpts), JSON]
+type ReportTypes = '[HTML, (CSV', DefaultOpts), JSON]
 
 type ReportsAPI = Get '[HTML] IndexPage
     :<|> "issues" :> Get ReportTypes IssueReport

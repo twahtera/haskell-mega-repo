@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.0.
+-- This file has been generated from package.yaml by hpack version 0.15.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -59,7 +59,7 @@ library
     , regex-applicative-text
     , regex-compat
     , semigroups
-    , servant >=0.6 && <0.8
+    , servant
     , servant-server
     , SHA
     , stm
@@ -118,7 +118,7 @@ executable spice-stats
     , regex-applicative-text
     , regex-compat
     , semigroups
-    , servant >=0.6 && <0.8
+    , servant
     , servant-server
     , SHA
     , stm
@@ -172,7 +172,7 @@ executable spice-stats-server
     , regex-applicative-text
     , regex-compat
     , semigroups
-    , servant >=0.6 && <0.8
+    , servant
     , servant-server
     , SHA
     , stm

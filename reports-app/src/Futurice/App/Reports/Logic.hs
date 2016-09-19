@@ -9,10 +9,7 @@ module Futurice.App.Reports.Logic (
 import Futurice.Prelude
 
 import Control.Arrow ((&&&))
-import Data.These          (These (..))
 import Data.Maybe (mapMaybe)
-import Data.Align          (Align(..))
-import Data.Time           (getCurrentTime)
 import Futurice.Report     (Per (..), Report (..), ReportGenerated (..))
 import Network.HTTP.Client (Manager)
 
@@ -30,14 +27,14 @@ issueReport
     -> [GitHubRepo]
     -> IO IssueReport
 issueReport mgr auth repos = do
-    now <- getCurrentTime
+    now <- currentTime
     Report (ReportGenerated now) . V.fromList <$> traverse fetch repos
   where
     fetch :: GitHubRepo -> IO (Per GitHubRepo (Vector IssueInfo))
     fetch ghr@(GitHubRepo owner repo) = Per ghr . fmap t . e <$>
        GH.executeRequestWithMgr mgr auth (GH.issuesForRepoR owner repo opts GH.FetchAll)
 
-    opts = [GH.Open]
+    opts = GH.stateOpen
 
     t pr = IssueInfo
         { _issueNumber  = GH.issueNumber pr
@@ -54,7 +51,7 @@ fumGithubReport
     -> Config
     -> IO FumGitHubReport
 fumGithubReport mgr cfg = do
-    now <- getCurrentTime
+    now <- currentTime
     fs <- fumUsers
     gs <- githubUsers
     return $ Report (FumGithubReportParams now $ cfgFumPubUrl cfg) $ makeReport gs fs
