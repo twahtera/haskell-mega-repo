@@ -21,13 +21,12 @@ module PlanMill.Types.Request (
 
 import PlanMill.Internal.Prelude
 
-import Data.Aeson.Compat         (encode)
+import Data.Aeson.Compat      (encode)
+import PlanMill.Types.UrlPart (ToUrlParts (..), UrlParts)
 
 import qualified Data.ByteString.Lazy as LBS
 
-import PlanMill.Types.UrlPart      (ToUrlParts (..), UrlParts)
-
-type QueryString = [(Text, Text)]
+type QueryString = Map Text Text
 
 -- | Planmill API request.
 --
@@ -86,7 +85,7 @@ instance NFData (PlanMill a) where
 -------------------------------------------------------------------------------
 
 planMillGet :: (ToUrlParts p) => p -> PlanMill a
-planMillGet = PlanMillGet [] . toUrlParts
+planMillGet = PlanMillGet mempty. toUrlParts
 
 -- | Like 'planMillGet', but with 'QueryString'.
 planMillGetQs :: (ToUrlParts p) => QueryString -> p -> PlanMill a
@@ -94,7 +93,7 @@ planMillGetQs qs = PlanMillGet qs . toUrlParts
 
 -- | Like 'planMillGet', but for paged requests (i.e. collections)
 planMillPagedGet :: (ToUrlParts p) => p -> PlanMill (Vector a)
-planMillPagedGet = PlanMillPagedGet [] . toUrlParts
+planMillPagedGet = PlanMillPagedGet mempty . toUrlParts
 
 -- | Like 'planMillPagedGet', but with 'QueryString'.
 planMillPagedGetQs :: (ToUrlParts p)

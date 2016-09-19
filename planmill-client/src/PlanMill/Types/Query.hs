@@ -16,13 +16,14 @@ module PlanMill.Types.Query (
 import PlanMill.Internal.Prelude
 
 import Data.Constraint
+import Data.GADT.Compare  (GEq (..), defaultEq)
 import Data.Type.Equality
-import Data.GADT.Compare         (GEq (..), defaultEq)
 
 import Data.Swagger              (NamedSchema (..), ToSchema (..))
 import Numeric.Interval.NonEmpty (Interval)
 
 import qualified Data.Aeson.Compat                    as Aeson
+import qualified Data.Map                             as Map
 import qualified Data.Text                            as T
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
@@ -63,7 +64,7 @@ queryToRequest :: Query a -> PlanMill a
 queryToRequest (QueryGet _ qs ps)      = PlanMillGet qs ps
 queryToRequest (QueryPagedGet _ qs ps) = PlanMillPagedGet  qs ps
 queryToRequest (QueryTimereports i u) =
-    planMillPagedGetQs (qs ++ qs') ("timereports" :: Text)
+    planMillPagedGetQs (qs <> qs') ("timereports" :: Text)
   where
     qs :: QueryString
     qs = intervalToQueryString
@@ -71,7 +72,7 @@ queryToRequest (QueryTimereports i u) =
         $ intervalDayToIntervalUTC i
 
     qs' :: QueryString
-    qs' = [ ("person", T.pack $ show u)
+    qs' = Map.fromList [ ("person", T.pack $ show u)
           ]
 queryToRequest _                       = error "queryToRequest: not -implemented"
 

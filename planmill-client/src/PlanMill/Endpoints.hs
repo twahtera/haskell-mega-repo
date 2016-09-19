@@ -55,6 +55,7 @@ import GHC.TypeLits (KnownSymbol, symbolVal)
 import PlanMill.Types
 
 import qualified Data.Text as T
+import qualified Data.Map as Map
 
 -- | Get a list of absences.
 --
@@ -147,15 +148,16 @@ timereport i = planMillGet $ t "timereports" // i
 --
 -- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#timereports_get>
 timereports :: PlanMill Timereports
-timereports = planMillPagedGetQs [] $ t "timereports"
+timereports = planMillPagedGetQs mempty $ t "timereports"
 
 timereportsFor :: UserId -> PlanMill Timereports
 timereportsFor (Ident uid) =
     planMillPagedGetQs qs' $ t "timereports"
   where
     qs' :: QueryString
-    qs' = [ ("person", fromString $ show uid)
-          ]
+    qs' = Map.fromList
+        [ ("person", fromString $ show uid)
+        ]
 
 -- | Get a list of timereports from specified interval.
 timereportsFromInterval :: ResultInterval -> PlanMill Timereports
@@ -166,13 +168,14 @@ timereportsFromInterval ri =
 
 timereportsFromIntervalFor :: ResultInterval -> UserId -> PlanMill Timereports
 timereportsFromIntervalFor ri (Ident uid) =
-    planMillPagedGetQs (qs ++ qs') $ t "timereports"
+    planMillPagedGetQs (qs <> qs') $ t "timereports"
   where
     qs :: QueryString
     qs = intervalToQueryString ri
     qs' :: QueryString
-    qs' = [ ("person", fromString $ show uid)
-          ]
+    qs' = Map.fromList
+        [ ("person", fromString $ show uid)
+        ]
 
 -- | View details of single task.
 --
@@ -212,7 +215,7 @@ capacitycalendars = planMillGet $ t "capacitycalendars"
 userCapacity :: Interval Day -> UserId -> PlanMill UserCapacities
 userCapacity interval uid = planMillGetQs qs $ t "users" // uid // t "capacity"
   where
-    qs = flip elimInterval interval $ \a b ->
+    qs = flip elimInterval interval $ \a b -> Map.fromList
         [ ("start",  fromString . showPlanmillUTCTime $ UTCTime a 0)
         , ("finish", fromString . showPlanmillUTCTime $ UTCTime b 0)
         ]
@@ -240,7 +243,8 @@ actions = planMillGet $ t "actions"
 -- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#enumerations_get>
 enumerations :: KnownSymbol k => Proxy k -> PlanMill (EnumDesc k)
 enumerations p = planMillGetQs qs $ t "enumerations"
-  where qs = [ ("name", T.pack $ symbolVal p) ]
+  where
+    qs = Map.fromList [ ("name", T.pack $ symbolVal p) ]
 
 -------------------------------------------------------------------------------
 -- Utilities

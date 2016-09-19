@@ -10,18 +10,19 @@ import PlanMill.Internal.Prelude
 import Control.Monad.Http  (MonadHttp (..), httpLbs)
 import Data.Aeson.Compat   (eitherDecode)
 import Network.HTTP.Client
-       (Request, RequestBody (..), method, parseRequest, path,
-       queryString, requestBody, requestHeaders, responseBody, responseStatus,
+       (Request, RequestBody (..), method, parseRequest, path, queryString,
+       requestBody, requestHeaders, responseBody, responseStatus,
        setQueryString)
 import Network.HTTP.Types  (Header, statusIsSuccessful)
 
 -- Qualified imports
-import qualified Data.ByteString.Base64     as Base64
-import qualified Data.ByteString.Char8      as BS8
-import qualified Data.ByteString.Lazy       as LBS
-import qualified Data.Text                  as T
-import qualified Data.Text.Encoding         as TE
-import qualified Data.Vector                as V
+import qualified Data.ByteString.Base64 as Base64
+import qualified Data.ByteString.Char8  as BS8
+import qualified Data.ByteString.Lazy   as LBS
+import qualified Data.Map               as Map
+import qualified Data.Text              as T
+import qualified Data.Text.Encoding     as TE
+import qualified Data.Vector            as V
 
 -- PlanMill import
 import PlanMill.Auth    (Auth (..), getAuth)
@@ -49,7 +50,7 @@ evalPlanMill pm = do
         PlanMillPost body _ ->
             let req = addHeader ("Content-Type", "application/json;charset=UTF-8") $
                     baseReq { method = "POST", requestBody = RequestBodyLBS body }
-            in singleReq req [] (throwM emptyError)
+            in singleReq req mempty (throwM emptyError)
   where
     mkBaseReq :: forall b. PlanMill b -> m Request
     mkBaseReq planmill = do
@@ -81,7 +82,7 @@ evalPlanMill pm = do
                 d
 
     setQueryString' :: QueryString -> Request -> Request
-    setQueryString' qs = setQueryString (f <$> qs)
+    setQueryString' qs = setQueryString (f <$> Map.toList qs)
       where
         f (a, b) = (TE.encodeUtf8 a, Just $ TE.encodeUtf8 b)
 
@@ -112,10 +113,11 @@ evalPlanMill pm = do
         go acc = do
             -- We are for one too much, because if `nextrows` is over amount
             -- the collection from beginning is returned
-            let qs' = [ ("rowcount", T.pack $ show $ rowCount + 1)
-                      , ("nextrows", T.pack $ show $ V.length acc + 1)
-                      ]
-            res <- singleReq req (qs ++ qs') (pure V.empty)
+            let qs' = Map.fromList
+                    [ ("rowcount", T.pack $ show $ rowCount + 1)
+                    , ("nextrows", T.pack $ show $ V.length acc + 1)
+                    ]
+            res <- singleReq req (qs <> qs') (pure V.empty)
             if V.length res <= rowCount
                 then pure (acc <> res)
                 else go (acc <> V.take rowCount res)

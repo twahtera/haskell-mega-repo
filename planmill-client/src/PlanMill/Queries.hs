@@ -31,11 +31,11 @@ capacities i u = planmillVectorQuery (QueryCapacities i u)
 -- | Get "me"
 me :: MonadPlanMillQuery m => m Me
 me = planmillQuery
-    $ QueryGet QueryTagMe []
+    $ QueryGet QueryTagMe mempty
     $ toUrlParts ("me" :: Text)
 
 -- | Get all users.
 users :: MonadPlanMillQuery m => m Users
 users = planmillVectorQuery
-    $ QueryPagedGet QueryTagUser []
+    $ QueryPagedGet QueryTagUser mempty
     $ toUrlParts ("users" :: Text)
