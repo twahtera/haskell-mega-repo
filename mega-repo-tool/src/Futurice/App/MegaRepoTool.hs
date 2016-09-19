@@ -17,7 +17,7 @@ textArgument m = fromString <$> O.strArgument m
 
 data Cmd
     = ListSnapshotDependencies 
-    | BuildDocker [Image]
+    | BuildDocker [ImageName]
     | Script (Turtle.Shell Text)
 
 listSnapshotDependenciesOptions :: O.Parser Cmd
