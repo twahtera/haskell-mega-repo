@@ -19,28 +19,30 @@ import Futurice.App.Checklist.Clay
 import Futurice.App.Checklist.Types
 
 -- TODO: make to .Types.Ctx
-type Ctx = ()
+type Ctx = World
 
 server :: Ctx -> Server ChecklistAPI
-server _ = liftIO indexPage
+server ctx = liftIO (indexPage ctx)
 
 currentDay :: IO Day
 currentDay = utctDay <$> currentTime
 
+-- TODO: use safe link
 locHtml :: Monad m => Location -> HtmlT m ()
-locHtml l = a_ [ href_ "#" ] $ case l of
-    LocHelsinki  -> "Hel"
-    LocTampere   -> "Tre"
-    LocBerlin    -> "Ber"
-    LocLondon    -> "Lon"
-    LocStockholm -> "Sto"
-    LocMunich    -> "Mun"
-    LocOther     -> "Oth"
+locHtml l = a_ [ href_ $ "/location/" <> locSlug ] $ toHtml locSlug
+  where
+    locSlug = case l of
+        LocHelsinki  -> "Hel"
+        LocTampere   -> "Tre"
+        LocBerlin    -> "Ber"
+        LocLondon    -> "Lon"
+        LocStockholm -> "Sto"
+        LocMunich    -> "Mun"
+        LocOther     -> "Oth"
 
-indexPage :: IO (Page "indexpage")
-indexPage = do
+indexPage :: Ctx -> IO (Page "indexpage")
+indexPage world = do
     today <- currentDay
-    world <- generate (resize 200 arbitrary)
     let users = world ^. worldUsers
     pure $ Page $ page_ "Checklist" pageParams $ table_ $ do
         thead_ $ tr_ $ do
@@ -81,4 +83,4 @@ defaultMain = futuriceServerMain
     (pure ()) (const 8000) -- getConfig cfgPort
     checklistApi server futuriceNoMiddleware
     $ \_ _cache -> -- do
-        pure ()
+        generate (resize 200 arbitrary)
