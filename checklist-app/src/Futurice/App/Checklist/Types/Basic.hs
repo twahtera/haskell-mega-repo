@@ -21,6 +21,9 @@ import qualified Test.QuickCheck as QC
 newtype Identifier a = Identifier UUID
     deriving (Eq, Ord, Show, Typeable, Generic)
 
+identifierToText :: Identifier a -> Text
+identifierToText (Identifier uuid) = UUID.toText uuid
+
 newtype Name a = Name Text
     deriving (Eq, Ord, Show, Typeable, Generic)
 

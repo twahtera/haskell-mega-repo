@@ -27,6 +27,7 @@ module Futurice.App.Checklist.Types (
     TaskAppliance(..),
     -- ** Wrappers
     Identifier(..),
+    identifierToText,
     HasIdentifier (..),
     Name (..),
     HasTaskName (..),

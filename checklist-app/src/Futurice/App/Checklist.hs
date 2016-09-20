@@ -5,6 +5,7 @@ module Futurice.App.Checklist (defaultMain) where
 import Futurice.Prelude
 import Prelude ()
 
+import Control.Lens              (to)
 import Futurice.Servant
 import Lucid                     hiding (for_)
 import Lucid.Foundation.Futurice
@@ -55,7 +56,8 @@ indexPage = do
             tr_ [class_ $ etaClass eta] $ do
                 td_ "X"
                 td_ $ locHtml $ user ^. userLocation
-                td_ $ a_ [href_ "#"] $ toHtml $
+                -- TODO: use safeLink
+                td_ $ a_ [href_ $ "/user/" <> user ^. identifier ^. to identifierToText ] $ toHtml $
                     user ^. userFirstName <> " " <> user ^. userLastName
                 td_ "TODO"
                 td_ $ toHtml $ show $ user ^. userStartingDay
