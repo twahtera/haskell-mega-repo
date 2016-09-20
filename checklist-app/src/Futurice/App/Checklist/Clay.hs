@@ -12,12 +12,15 @@ pageParams =
 
 css :: Css
 css = do
+    a ? do
+        color (darken 0.2 green)
+        hover & color green
     table ? tbody ? tr ? do
         nthChild "even" & do
             ".eta-today" & backgroundColor yellow
             ".eta-future" & backgroundColor green
-            ".eta-past" & backgroundColor (lighten 0.9 red)
+            ".eta-past" & backgroundColor (lighten 0.95 red)
         nthChild "odd" & do
             ".eta-today" & backgroundColor yellow
             ".eta-future" & backgroundColor green
-            ".eta-past" & backgroundColor (lighten 0.95 red)
+            ".eta-past" & backgroundColor (lighten 0.97 red)

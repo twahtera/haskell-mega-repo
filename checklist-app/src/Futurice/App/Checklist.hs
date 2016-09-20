@@ -24,6 +24,16 @@ server _ = liftIO indexPage
 currentDay :: IO Day
 currentDay = utctDay <$> currentTime
 
+locHtml :: Monad m => Location -> HtmlT m ()
+locHtml l = a_ [ href_ "#" ] $ case l of
+    LocHelsinki  -> "Hel"
+    LocTampere   -> "Tre"
+    LocBerlin    -> "Ber"
+    LocLondon    -> "Lon"
+    LocStockholm -> "Sto"
+    LocMunich    -> "Mun"
+    LocOther     -> "Oth"
+
 indexPage :: IO (Page "indexpage")
 indexPage = do
     today <- currentDay
@@ -44,8 +54,9 @@ indexPage = do
             let eta = toModifiedJulianDay today - toModifiedJulianDay (user ^. userStartingDay)
             tr_ [class_ $ etaClass eta] $ do
                 td_ "X"
-                td_ $ toHtml $ show $ user ^. userLocation
-                td_ $ toHtml $ user ^. userFirstName <> " " <> user ^. userLastName
+                td_ $ locHtml $ user ^. userLocation
+                td_ $ a_ [href_ "#"] $ toHtml $
+                    user ^. userFirstName <> " " <> user ^. userLastName
                 td_ "TODO"
                 td_ $ toHtml $ show $ user ^. userStartingDay
                 td_ $ toHtml $ show $ user ^. userConfirmed
