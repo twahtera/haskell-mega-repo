@@ -93,6 +93,8 @@ data Task = Task
     }
     deriving (Typeable, Generic)
 
+-- TODO: Show Task debugging instance
+
 -- |
 data CheckResult
     = CheckResultSuccess

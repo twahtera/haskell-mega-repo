@@ -56,7 +56,11 @@ module Futurice.App.Checklist.Types (
     -- * World
     World,
     mkWorld,
-    worldValid,
+    -- ** Lenses
+    worldUsers,
+    worldTasks,
+    worldLists,
+    worldTaskItems,
     ) where
 
 import Futurice.App.Checklist.Types.Basic

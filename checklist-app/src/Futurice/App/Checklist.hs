@@ -9,9 +9,10 @@ import Futurice.Servant
 import Lucid                     hiding (for_)
 import Lucid.Foundation.Futurice
 import Servant
-import Test.QuickCheck           (arbitrary, sample')
+import Test.QuickCheck           (arbitrary, generate, resize)
 
 import Futurice.App.Checklist.API
+import Futurice.App.Checklist.Clay
 import Futurice.App.Checklist.Types
 
 -- TODO: make to .Types.Ctx
@@ -20,11 +21,42 @@ type Ctx = ()
 server :: Ctx -> Server ChecklistAPI
 server _ = liftIO indexPage
 
+currentDay :: IO Day
+currentDay = utctDay <$> currentTime
+
 indexPage :: IO (Page "indexpage")
 indexPage = do
-    users <- sample' arbitrary
-    pure $ Page $ page_ "Checklist" $ ul_ $ for_ users $ \user ->
-        li_ $ toHtml $ (show :: User -> String) user
+    today <- currentDay
+    world <- generate (resize 200 arbitrary)
+    let users = world ^. worldUsers
+    pure $ Page $ page_ "Checklist" pageParams $ table_ $ do
+        thead_ $ tr_ $ do
+            th_ "Sts"
+            th_ "Loc"
+            th_ "Name"
+            th_ "List"
+            th_ "Starts"
+            th_ "Confirmed"
+            th_ "ETA"
+            th_ "Group items?"
+            th_ "Items"
+        tbody_ $ for_ users $ \user -> do
+            let eta = toModifiedJulianDay today - toModifiedJulianDay (user ^. userStartingDay)
+            tr_ [class_ $ etaClass eta] $ do
+                td_ "X"
+                td_ $ toHtml $ show $ user ^. userLocation
+                td_ $ toHtml $ user ^. userFirstName <> " " <> user ^. userLastName
+                td_ "TODO"
+                td_ $ toHtml $ show $ user ^. userStartingDay
+                td_ $ toHtml $ show $ user ^. userConfirmed
+                td_ $ toHtml $ show eta
+                td_ "TODO"
+                td_ "TODO"
+  where
+    etaClass eta = case compare 0 eta of
+        EQ -> "eta-today"
+        LT -> "eta-past"
+        GT -> "eta-future"
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain

@@ -1,8 +1,8 @@
-{-# LANGUAGE TemplateHaskell        #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Checklist.Types.World (
     World,
     mkWorld,
-    worldValid,
     -- * Lenses
     worldUsers,
     worldTasks,
@@ -15,9 +15,9 @@ import Futurice.Prelude
 import Prelude ()
 
 import Control.Lens     (contains, filtered, folded, (%~))
-import Data.Set.Lens    (setOf)
-import Data.Vector.Lens (toVectorOf)
+import Data.Vector.Lens (toVectorOf, vector)
 
+import qualified Data.Map        as Map
 import qualified Test.QuickCheck as QC
 
 import Futurice.App.Checklist.Types.Basic
@@ -50,15 +50,18 @@ mkWorld
     -> Vector TaskItem
     -> World
 mkWorld us ts ls is =
-    let uids             = setOf (folded . identifier) us
-        tids             = setOf (folded . taskName) ts
+    let us'             = mapBy (view identifier) us
+        ts'             = mapBy (view taskName) ts
+        uids            = Map.keysSet us'
+        tids            = Map.keysSet ts'
         -- Validation predicates
         validUid uid     = uids ^. contains uid
         validTid tid     = tids ^. contains tid
         validTaskItem ti =
             validTid (ti ^. taskName) && validUid (ti ^. taskItemUser)
         -- Cleaned up inputs
-        ts' = ts
+        us'' = toVectorOf folded us'
+        ts'' = ts
             & traverse . taskDependencies
             %~ toVectorOf (folded . filtered validTid)
         ls' = ls
@@ -68,15 +71,57 @@ mkWorld us ts ls is =
             & toVectorOf (folded . filtered validTaskItem)
         -- Extra fields
         -- ...
-    in World us ts' ls' is'
+    in World us'' ts'' ls' is'
 
--- | Check world invariants
---
--- * there should be.. /todo/
-worldValid :: World -> Either String World
-worldValid = pure
-
--- | Generates consistent (see 'worldValid') worlds.
+-- | Generates consistent worlds.
 instance QC.Arbitrary World where
-    -- /TODO:/ make better me
-    arbitrary = mkWorld <$> QC.arbitrary <*> QC.arbitrary <*> QC.arbitrary <*> QC.arbitrary
+    arbitrary = do
+        uids <- nub <$> QC.listOf1 QC.arbitrary
+        tids <- nub <$> QC.listOf1 QC.arbitrary
+        let uidGen = QC.elements uids
+        let tidGen = QC.elements tids
+
+        -- Users
+        us <- for uids $ \uid -> do
+            user      <- QC.arbitrary
+            firstName <- QC.elements ["Mikko", "Antti", "Ville", "Anni"]
+            lastName  <- QC.elements ["Kikka", "Kukka", "Kukko"]
+            pure $ user
+                & identifier .~ uid
+                & userFirstName .~ firstName
+                & userLastName .~ lastName
+
+        -- Tasks
+        ts <- for tids $ \tid -> do
+            task <- QC.arbitrary
+            deps <- QC.listOf tidGen
+            pure $ task
+                & taskName .~ tid
+                & taskDependencies .~ deps ^. vector
+
+        -- Checklists
+        let clTaskGen :: QC.Gen (Vector (Name Task, Maybe TaskAppliance))
+            clTaskGen = view vector <$> QC.listOf ((,) <$> tidGen <*> QC.arbitrary)
+        ls <- QC.listOf $
+            Checklist <$> QC.arbitrary <*> clTaskGen
+
+        -- TaskItems
+        iids <- nub <$> QC.listOf QC.arbitrary
+        is <- for iids $ \iid -> TaskItem iid
+            <$> uidGen
+            <*> tidGen
+            <*> QC.arbitrary
+
+        -- World
+        return $ mkWorld
+            (us ^. vector)
+            (ts ^. vector)
+            (ls ^. vector)
+            (is ^. vector)
+
+mapBy
+    :: (Foldable f, Ord k)
+    => (v -> k)  -- ^ Function to extract key, @g@
+    -> f v       -- ^ values
+    -> Map k v   -- ^ Map with invariant for all @k, v@ pairs @k = g v@
+mapBy g = Map.fromList . map (\x -> (g x, x)) . toList
