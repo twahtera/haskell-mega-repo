@@ -6,6 +6,8 @@ import Futurice.Prelude
 import Prelude ()
 
 import Control.Lens              (to)
+import Data.List                 (sortOn)
+import Data.Ord                  (Down (..))
 import Futurice.Servant
 import Lucid                     hiding (for_)
 import Lucid.Foundation.Futurice
@@ -51,7 +53,7 @@ indexPage = do
             th_ "ETA"
             th_ "Group items?"
             th_ "Items"
-        tbody_ $ for_ users $ \user -> do
+        tbody_ $ for_ (sortOn (Down . view userStartingDay) $ toList users) $ \user -> do
             let eta = toModifiedJulianDay today - toModifiedJulianDay (user ^. userStartingDay)
             tr_ [class_ $ etaClass eta] $ do
                 td_ "X"
@@ -62,7 +64,7 @@ indexPage = do
                 td_ "TODO"
                 td_ $ toHtml $ show $ user ^. userStartingDay
                 td_ $ toHtml $ show $ user ^. userConfirmed
-                td_ $ toHtml $ show eta
+                td_ $ toHtml $ show eta <> " days"
                 td_ "TODO"
                 td_ "TODO"
   where

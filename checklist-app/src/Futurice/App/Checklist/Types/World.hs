@@ -83,13 +83,16 @@ instance QC.Arbitrary World where
 
         -- Users
         us <- for uids $ \uid -> do
-            user      <- QC.arbitrary
-            firstName <- QC.elements ["Mikko", "Antti", "Ville", "Anni"]
-            lastName  <- QC.elements ["Kikka", "Kukka", "Kukko"]
+            user        <- QC.arbitrary
+            firstName   <- QC.elements ["Mikko", "Antti", "Ville", "Anni"]
+            lastName    <- QC.elements ["Kikka", "Kukka", "Kukko"]
+            startingDay <- toEnum <$> QC.choose
+                (fromEnum $(mkDay "2016-08-01"), fromEnum $(mkDay "2017-01-01"))
             pure $ user
-                & identifier .~ uid
-                & userFirstName .~ firstName
-                & userLastName .~ lastName
+                & identifier      .~ uid
+                & userFirstName   .~ firstName
+                & userLastName    .~ lastName
+                & userStartingDay .~ startingDay
 
         -- Tasks
         ts <- for tids $ \tid -> do

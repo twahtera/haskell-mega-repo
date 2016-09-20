@@ -17,10 +17,10 @@ css = do
         hover & color green
     table ? tbody ? tr ? do
         nthChild "even" & do
-            ".eta-today" & backgroundColor yellow
-            ".eta-future" & backgroundColor green
-            ".eta-past" & backgroundColor (lighten 0.95 red)
+            ".eta-today"  & backgroundColor (lighten 0.95 yellow)
+            ".eta-future" & backgroundColor (lighten 0.95 green)
+            ".eta-past"   & backgroundColor (lighten 0.95 red)
         nthChild "odd" & do
-            ".eta-today" & backgroundColor yellow
-            ".eta-future" & backgroundColor green
-            ".eta-past" & backgroundColor (lighten 0.97 red)
+            ".eta-today"  & backgroundColor (lighten 0.97 yellow)
+            ".eta-future" & backgroundColor (lighten 0.97 green)
+            ".eta-past"   & backgroundColor (lighten 0.97 red)
