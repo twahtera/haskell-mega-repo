@@ -5,15 +5,14 @@ module Futurice.App.Checklist (defaultMain) where
 import Futurice.Prelude
 import Prelude ()
 
-import Lucid.Foundation.Futurice
 import Futurice.Servant
+import Lucid                     hiding (for_)
+import Lucid.Foundation.Futurice
 import Servant
-import Lucid hiding (for_)
-import Test.QuickCheck (sample', arbitrary)
+import Test.QuickCheck           (arbitrary, sample')
 
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Types
-import Futurice.App.Checklist.Types.Page
 
 -- TODO: make to .Types.Ctx
 type Ctx = ()
