@@ -12,9 +12,6 @@ pageParams =
 
 css :: Css
 css = do
-{-    a ? do
-        color (rgb 51 102 153)
-        hover & color (rgb 51 -}
     table ? tbody ? tr ? do
         nthChild "even" & do
             ".eta-today"  & backgroundColor (lighten 0.92 yellow)

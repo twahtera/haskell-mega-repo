@@ -48,6 +48,8 @@ locHtml l = a_ [ href_ ("/location/" <> locSlug), title_ locName ] $ toHtml locS
         LocMunich    -> "Munich"
         LocOther     -> "Other"
 
+-- | Permamant status isn't shown, because it's common scenario: other contract
+-- types stand up better.
 contractTypeHtml :: Monad m => ContractType -> HtmlT m ()
 contractTypeHtml ContractTypePermanent    = pure ()
 contractTypeHtml ContractTypeExternal     = span_ [title_ "External"]      "Ext"
