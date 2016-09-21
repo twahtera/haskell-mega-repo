@@ -4,8 +4,6 @@
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
--- TODO: remove no-orphans
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 -- | Basic types
 module Futurice.App.Checklist.Types.Basic where
 
@@ -13,25 +11,19 @@ import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Lens (Iso', iso)
+import Futurice.App.Checklist.Types.Identifier
 
-import qualified Data.UUID       as UUID
 import qualified Test.QuickCheck as QC
 
-newtype Identifier a = Identifier UUID
-    deriving (Eq, Ord, Show, Typeable, Generic)
-
-identifierToText :: Identifier a -> Text
-identifierToText (Identifier uuid) = UUID.toText uuid
-
 newtype Name a = Name Text
-    deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic)
 
 -- | All checklist tasks are tied to the user
 --
 -- /TODO:/ add more fields? Is 'Employee' better name?
 data User = User
     { _userId           :: Identifier User
+    , _userChecklist    :: Identifier Checklist
     , _userFirstName    :: !Text
     , _userLastName     :: !Text
     , _userContractType :: !ContractType
@@ -51,7 +43,7 @@ data User = User
     , _userFUMLogin     :: !(Maybe FUMLogin)
     , _userHRNumber     :: !(Maybe Int) -- TODO: make a newtype for this
     }
-    deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic)
 
 -- | Contract type affect what's need to be done.
 data ContractType
@@ -60,7 +52,7 @@ data ContractType
     | ContractTypeFixedTerm
     | ContractTypePartTimer
     | ContractTypeSummerWorker
-    deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
 
 
 -- | Tasks can be location specific.
@@ -72,7 +64,7 @@ data Location
     | LocStockholm
     | LocMunich
     | LocOther
-    deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
 
 -- |
 --
@@ -82,11 +74,12 @@ newtype FUMLogin = FUMLogin Text
 
 -- | 'Task' describes a particular task needs to be done. For example /"add to fum"/ or /"order a laptop".
 data Task = Task
-    { _taskName'        :: !(Name Task)
-      -- ^ Name also acts as a primary key
+    { _taskId           :: !(Identifier Task)
+    , _taskName         :: !(Name Task)
+      -- ^ Display name
     , _taskCanBeDone    :: User -> Bool
       -- ^ Some tasks cannot be yet done, if some information is missing.
-    , _taskDependencies :: !(Vector :$ Name Task)
+    , _taskDependencies :: !(Vector :$ Identifier Task)
       -- ^ Some tasks can be done only after some other tasks are done.
     , _taskCheck        :: User -> IO CheckResult
       -- ^ Tasks can check themselves whether they are done. For example if 'userFUMLogin' is known,
@@ -94,7 +87,7 @@ data Task = Task
     , _taskRole         :: !TaskRole
       -- ^ Tasks can be fullfilled by different roles.
     }
-    deriving (Typeable, Generic)
+  deriving (Typeable, Generic)
 
 -- TODO: Show Task debugging instance
 
@@ -106,7 +99,7 @@ data CheckResult
       -- ^ Non definitive answer, but doesn't prevent from completing task. E.g. long cache time might make user still invisible in FUM.
     | CheckResultFailure
       -- ^ Definitively not ok, 'TaskItem' cannot be completed.
-    deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
 
 
 -- | The role which is primarily interested in the task.
@@ -115,32 +108,33 @@ data TaskRole
     | TaskRoleHR
     | TaskRoleSupervisor
     | TaskRoleOther
-    deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
 
 
 -- | Checklist is collection of tasks. Used to group tasks together to create 'TaskItem's together.
 --  Example lists are "new full-time employee in Helsinki"
 data Checklist = Checklist
-    { _checklistName  :: !Text -- tagged!
-    , _checklistTasks :: !(Vector (Name Task, Maybe TaskAppliance))
+    { _checklistId    :: !(Identifier Checklist)
+    , _checklistName  :: !(Name Checklist)
+    , _checklistTasks :: !(Vector (Identifier Task, Maybe TaskAppliance))
     }
-    deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic)
 
 
 -- | 'TaskItem' is an instance of 'Task'. I.e. the actual task needed to be done.
 data TaskItem = TaskItem
     { _taskItemId   :: !(Identifier TaskItem)
     , _taskItemUser :: !(Identifier User)
-    , _taskItemTask :: !(Name Task)
+    , _taskItemTask :: !(Identifier Task)
     , _taskItemDone :: !Bool
     }
-    deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic)
 
 -- | Task appliance, e.g. this task is /"only for Helsinki and permanent employees"/.
 --
 -- /TODO;/ define my. maybe depend on 'Contract' and 'Location'.
 data TaskAppliance = TaskApplianceAll
-    deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic)
 
 -------------------------------------------------------------------------------
 -- Lenses
@@ -157,39 +151,27 @@ makeLenses ''Checklist
 makeLenses ''TaskItem
 
 -------------------------------------------------------------------------------
--- Classy lenses
+-- HasIdentifier instances
 -------------------------------------------------------------------------------
-
-class HasIdentifier entity ident | entity -> ident where
-    identifier :: Lens' entity (Identifier ident)
-
-instance HasIdentifier (Identifier e) e where
-    identifier = id
 
 instance HasIdentifier User User where
     identifier = userId
 
+instance HasIdentifier Task Task where
+    identifier = taskId
+
+instance HasIdentifier Checklist Checklist where
+    identifier = checklistId
+
 instance HasIdentifier TaskItem TaskItem where
     identifier = taskItemId
 
-class HasTaskName entity where
-    taskName :: Lens' entity (Name Task)
-
-instance HasTaskName Task where
-    taskName = taskName'
-
-instance HasTaskName TaskItem where
-    taskName = taskItemTask
-
 -------------------------------------------------------------------------------
--- Identifier instances
+-- Some arbitraries
 -------------------------------------------------------------------------------
-
-instance Arbitrary (Identifier a) where
-    arbitrary = Identifier <$> arbitrary
 
 instance Arbitrary (Name a) where
-    arbitrary = Name . view packed <$> QC.listOf (QC.elements ['a'..'z'])
+    arbitrary = Name . view packed <$> QC.vectorOf 20 (QC.elements ['a'..'z'])
 
 instance Arbitrary FUMLogin where
     arbitrary = FUMLogin <$> gen
@@ -245,23 +227,10 @@ instance Arbitrary TaskAppliance where
 instance Arbitrary Task where
     arbitrary = Task
         <$> arbitrary
+        <*> arbitrary
         <*> pure (const True)
         <*> arbitrary
         <*> pure (const (pure CheckResultMaybe))
         <*> arbitrary
 
     shrink    = const []
-
--------------------------------------------------------------------------------
--- Orphans: move to futurice-prelude
--------------------------------------------------------------------------------
-
-uuidWords :: Iso' UUID (Word32, Word32, Word32, Word32)
-uuidWords = iso UUID.toWords fromWords'
-  where
-    fromWords' :: (Word32, Word32, Word32, Word32) -> UUID
-    fromWords' (a, b, c, d) = UUID.fromWords a b c d
-
-instance Arbitrary UUID where
-    arbitrary = view (from uuidWords) <$> arbitrary
-    shrink = fmap (view $ from uuidWords) . shrink . view uuidWords

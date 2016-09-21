@@ -17,17 +17,18 @@ import Prelude ()
 import Control.Lens     (contains, filtered, folded, (%~))
 import Data.Vector.Lens (toVectorOf, vector)
 
-import qualified Data.Map        as Map
 import qualified Test.QuickCheck as QC
 
-import Futurice.App.Checklist.Types.Basic
+import           Futurice.App.Checklist.Types.Basic
+import           Futurice.App.Checklist.Types.IdMap       (IdMap)
+import qualified Futurice.App.Checklist.Types.IdMap       as IdMap
 
 -- | World desribes the state of the db.
 data World = World
-    { _worldUsers     :: !(Vector User)
-    , _worldTasks     :: !(Vector Task)
-    , _worldLists     :: !(Vector Checklist)
-    , _worldTaskItems :: !(Vector TaskItem)
+    { _worldUsers     :: !(IdMap User)
+    , _worldTasks     :: !(IdMap Task)
+    , _worldLists     :: !(IdMap Checklist)
+    , _worldTaskItems :: !(IdMap TaskItem)
     -- lazy fields, updated on need when accessed
     }
 
@@ -44,87 +45,90 @@ makeLenses ''World
 -- * Removes 'TaskItem's with non-existing users or tasks.
 --
 mkWorld
-    :: Vector User
-    -> Vector Task
-    -> Vector Checklist
-    -> Vector TaskItem
+    :: IdMap User
+    -> IdMap Task
+    -> IdMap Checklist
+    -> IdMap TaskItem
     -> World
 mkWorld us ts ls is =
-    let us'             = mapBy (view identifier) us
-        ts'             = mapBy (view taskName) ts
-        uids            = Map.keysSet us'
-        tids            = Map.keysSet ts'
+    let uids            = IdMap.keysSet us
+        tids            = IdMap.keysSet ts
+        cids            = IdMap.keysSet ls
         -- Validation predicates
         validUid uid     = uids ^. contains uid
         validTid tid     = tids ^. contains tid
+        validCid cid     = cids ^. contains cid
         validTaskItem ti =
-            validTid (ti ^. taskName) && validUid (ti ^. taskItemUser)
+            validTid (ti ^. taskItemTask) && validUid (ti ^. taskItemUser)
+
         -- Cleaned up inputs
-        us'' = toVectorOf folded us'
-        ts'' = ts
-            & traverse . taskDependencies
+        us' = us
+            & IdMap.toIdMapOf (folded . filtered (\u -> validCid $ u ^. userChecklist))
+
+        ts' = ts
+            & IdMap.unsafeTraversal . taskDependencies
             %~ toVectorOf (folded . filtered validTid)
+
         ls' = ls
-            & traverse . checklistTasks
+            & IdMap.unsafeTraversal . checklistTasks
             %~ toVectorOf (folded . filtered (validTid . fst))
+
         is' = is
-            & toVectorOf (folded . filtered validTaskItem)
-        -- Extra fields
-        -- ...
-    in World us'' ts'' ls' is'
+            & IdMap.toIdMapOf (folded . filtered validTaskItem)
+
+        -- TODO: create extra fields
+    in World us' ts' ls' is'
 
 -- | Generates consistent worlds.
 instance QC.Arbitrary World where
     arbitrary = do
-        uids <- nub <$> QC.listOf1 QC.arbitrary
-        tids <- nub <$> QC.listOf1 QC.arbitrary
-        let uidGen = QC.elements uids
-        let tidGen = QC.elements tids
+        -- Generate raw data
+        us <- QC.arbitrary
+        ts <- QC.arbitrary
+
+        let uids = IdMap.keysSet us
+            tids = IdMap.keysSet ts
+            uidGen = QC.elements (toList uids)
+            tidGen = QC.elements (toList tids)
+
+        let checklistItemGen = (,)
+                <$> tidGen
+                <*> QC.arbitrary
+
+        cs <- fmap IdMap.fromFoldable . QC.listOf1 $ Checklist
+            <$> QC.arbitrary
+            <*> QC.arbitrary
+            <*> fmap (view vector) (QC.listOf1 checklistItemGen)
+
+        let cids = IdMap.keysSet cs
+            cidGen = QC.elements (toList cids)
 
         -- Users
-        us <- for uids $ \uid -> do
-            user        <- QC.arbitrary
+        us' <- flip IdMap.unsafeTraversal us $ \user -> do
             firstName   <- QC.elements ["Mikko", "Antti", "Ville", "Anni"]
             lastName    <- QC.elements ["Kikka", "Kukka", "Kukko"]
+            cid         <- cidGen
             startingDay <- toEnum <$> QC.choose
                 (fromEnum $(mkDay "2016-08-01"), fromEnum $(mkDay "2017-01-01"))
             pure $ user
-                & identifier      .~ uid
+                & userChecklist   .~ cid
                 & userFirstName   .~ firstName
                 & userLastName    .~ lastName
                 & userStartingDay .~ startingDay
 
         -- Tasks
-        ts <- for tids $ \tid -> do
-            task <- QC.arbitrary
+        -- TODO: we can still generate cyclic tasks!
+        ts' <- flip IdMap.unsafeTraversal ts $ \task -> do
             deps <- QC.listOf tidGen
             pure $ task
-                & taskName .~ tid
                 & taskDependencies .~ deps ^. vector
 
-        -- Checklists
-        let clTaskGen :: QC.Gen (Vector (Name Task, Maybe TaskAppliance))
-            clTaskGen = view vector <$> QC.listOf ((,) <$> tidGen <*> QC.arbitrary)
-        ls <- QC.listOf $
-            Checklist <$> QC.arbitrary <*> clTaskGen
-
         -- TaskItems
-        iids <- nub <$> QC.listOf QC.arbitrary
-        is <- for iids $ \iid -> TaskItem iid
-            <$> uidGen
+        is <- fmap IdMap.fromFoldable . QC.listOf $ TaskItem
+            <$> QC.arbitrary
+            <*> uidGen
             <*> tidGen
             <*> QC.arbitrary
 
         -- World
-        return $ mkWorld
-            (us ^. vector)
-            (ts ^. vector)
-            (ls ^. vector)
-            (is ^. vector)
-
-mapBy
-    :: (Foldable f, Ord k)
-    => (v -> k)  -- ^ Function to extract key, @g@
-    -> f v       -- ^ values
-    -> Map k v   -- ^ Map with invariant for all @k, v@ pairs @k = g v@
-mapBy g = Map.fromList . map (\x -> (g x, x)) . toList
+        pure $ mkWorld us' ts' cs is

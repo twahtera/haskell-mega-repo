@@ -5,7 +5,7 @@ module Futurice.App.Checklist (defaultMain) where
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Lens              (to)
+import Control.Lens              (to, at, non)
 import Data.List                 (sortOn)
 import Data.Ord                  (Down (..))
 import Futurice.Servant
@@ -57,6 +57,12 @@ contractTypeHtml ContractTypeFixedTerm    = span_ [title_ "Fixed term"]    "Fix"
 contractTypeHtml ContractTypePartTimer    = span_ [title_ "Part timer"]    "Part"
 contractTypeHtml ContractTypeSummerWorker = span_ [title_ "Summer worker"] "Sum"
 
+-- | TODO: better error
+checklistNameHtml :: Monad m => World -> Identifier Checklist -> HtmlT m ()
+checklistNameHtml world i =
+    a_ [ href_ $ "/checklist/" <> i ^. to identifierToText] $ toHtml $
+        world ^. worldLists . at i . non (error "Inconsisten world") . checklistName . to show
+
 indexPage :: Ctx -> IO (Page "indexpage")
 indexPage world = do
     today <- currentDay
@@ -78,9 +84,9 @@ indexPage world = do
                 td_ $ contractTypeHtml $ user ^. userContractType
                 td_ $ locHtml $ user ^. userLocation
                 -- TODO: use safeLink
-                td_ $ a_ [href_ $ "/user/" <> user ^. identifier ^. to identifierToText ] $ toHtml $
+                td_ $ a_ [ href_ $ "/user/" <> user ^. identifier ^. to identifierToText ] $ toHtml $
                     user ^. userFirstName <> " " <> user ^. userLastName
-                td_ "TODO"
+                td_ $ checklistNameHtml world (user ^. userChecklist)
                 td_ $ toHtml $ show $ user ^. userStartingDay
                 td_ $ toHtml $ show $ user ^. userConfirmed
                 td_ $ toHtml $ show eta <> " days"
