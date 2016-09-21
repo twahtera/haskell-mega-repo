@@ -55,6 +55,7 @@ envs:
     REPORTSAPP_PORT:    "8807"
     PLANMILLPROXY_PORT: "8808"
     PROXYMGMT_PORT:     "8809"
+    FUTUHOURSMOCK_PORT: "8810"
 
     # Legacy
     PORT: "8080"
