@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.1.
+-- This file has been generated from package.yaml by hpack version 0.15.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -41,6 +41,7 @@ library
     , generics-sop
     , lens
     , lucid
+    , planmill-client
     , postgresql-simple
     , QuickCheck
     , resource-pool
@@ -50,11 +51,19 @@ library
     , swagger2
     , time
     , vector
+    , pretty-show
+    , random
+    , stm
+    , text
+    , time-locale-compat
+    , transformers
+    , containers
   exposed-modules:
       Futurice.App.FutuhoursMock
       Futurice.App.FutuhoursMock.API
       Futurice.App.FutuhoursMock.Config
       Futurice.App.FutuhoursMock.Logic
+      Futurice.App.FutuhoursMock.MockData
       Futurice.App.FutuhoursMock.Types
   default-language: Haskell2010
 

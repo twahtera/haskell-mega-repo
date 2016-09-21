@@ -34,6 +34,7 @@ library:
     - generics-sop
     - lens
     - lucid
+    - planmill-client
     - postgresql-simple
     - QuickCheck
     - resource-pool
@@ -43,6 +44,13 @@ library:
     - swagger2
     - time
     - vector
+    - pretty-show
+    - random
+    - stm
+    - text
+    - time-locale-compat
+    - transformers
+    - containers
 
 
 executables:
