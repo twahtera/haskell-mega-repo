@@ -15,9 +15,9 @@ css = do
     table ? tbody ? tr ? do
         nthChild "even" & do
             ".eta-today"  & backgroundColor (lighten 0.92 yellow)
-            ".eta-future" & backgroundColor (lighten 0.92 green)
-            ".eta-past"   & backgroundColor (lighten 0.92 red)
+            ".eta-past"   & backgroundColor (lighten 0.92 green)
+            ".eta-future" & backgroundColor (lighten 0.92 red)
         nthChild "odd" & do
             ".eta-today"  & backgroundColor (lighten 0.95 yellow)
-            ".eta-future" & backgroundColor (lighten 0.95 green)
-            ".eta-past"   & backgroundColor (lighten 0.95 red)
+            ".eta-past"   & backgroundColor (lighten 0.95 green)
+            ".eta-future" & backgroundColor (lighten 0.95 red)

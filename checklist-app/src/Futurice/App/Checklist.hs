@@ -7,7 +7,6 @@ import Prelude ()
 
 import Control.Lens              (to, at, non)
 import Data.List                 (sortOn)
-import Data.Ord                  (Down (..))
 import Futurice.Servant
 import Lucid                     hiding (for_)
 import Lucid.Foundation.Futurice
@@ -67,19 +66,19 @@ indexPage :: Ctx -> IO (Page "indexpage")
 indexPage world = do
     today <- currentDay
     let users = world ^. worldUsers
-    pure $ Page $ page_ "Checklist" pageParams $ table_ $ do
+    pure $ Page $ page_ "Checklist" pageParams $ row_ $ large_ 12 $ table_ $ do
         thead_ $ tr_ $ do
             th_ [title_ "Status"]                      "S"
             th_ [title_ "Location"]                    "Loc"
             th_ [title_ "Name" ]                       "Name"
             th_ [title_ "Checklist"]                   "List"
-            th_ [title_ "Starting day"]                "Starts at"
+            th_ [title_ "Due date"]                    "Due date"
             th_ [title_ "Confirmed - contract signed"] "Confirmed"
             th_ [title_ "Days till start"]             "ETA"
             th_ "Group items?"
             th_ [title_ "Task items todo/done"]        "Items"
-        tbody_ $ for_ (sortOn (Down . view userStartingDay) $ toList users) $ \user -> do
-            let eta = toModifiedJulianDay today - toModifiedJulianDay (user ^. userStartingDay)
+        tbody_ $ for_ (sortOn (view userStartingDay) $ toList users) $ \user -> do
+            let eta =  toModifiedJulianDay (user ^. userStartingDay) - toModifiedJulianDay today
             tr_ [class_ $ etaClass eta] $ do
                 td_ $ contractTypeHtml $ user ^. userContractType
                 td_ $ locHtml $ user ^. userLocation
@@ -93,7 +92,7 @@ indexPage world = do
                 td_ "TODO"
                 td_ "TODO"
   where
-    etaClass eta = case compare 0 eta of
+    etaClass eta = case compare eta 0 of
         EQ -> "eta-today"
         LT -> "eta-past"
         GT -> "eta-future"
