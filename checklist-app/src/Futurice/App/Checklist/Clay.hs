@@ -12,6 +12,9 @@ pageParams =
 
 css :: Css
 css = do
+    header ? do
+        marginTop $ em 1
+        marginBottom $ em 1
     table ? tbody ? tr ? do
         nthChild "even" & do
             ".eta-today"  & backgroundColor (lighten 0.92 yellow)
