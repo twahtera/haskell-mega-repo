@@ -14,8 +14,9 @@ module PlanMill.Types.Identifier (
 
 import PlanMill.Internal.Prelude
 
-import qualified Data.Csv     as Csv
-import           Data.Swagger (ToSchema)
+import qualified Data.Csv        as Csv
+import           Data.Swagger    (ToSchema)
+import           Test.QuickCheck (Arbitrary (..))
 
 import qualified Database.PostgreSQL.Simple.ToField as Postgres
 
@@ -51,3 +52,7 @@ instance ToSchema (Identifier a)
 
 instance Postgres.ToField (Identifier a) where
     toField (Ident x) = Postgres.toField x
+
+instance Arbitrary (Identifier a) where
+    arbitrary        = Ident <$> arbitrary
+    shrink (Ident i) = Ident <$> shrink i

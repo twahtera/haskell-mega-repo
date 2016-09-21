@@ -19,14 +19,14 @@ import Prelude ()
 import Futurice.Prelude
 import Futurice.Generics
 
+import qualified PlanMill as PM
+
 -------------------------------------------------------------------------------
 -- Project
 -------------------------------------------------------------------------------
 
-type ProjectId = Int
-
 data Project = Project
-    { _projectId     :: ProjectId
+    { _projectId     :: PM.ProjectId
     , _projectName   :: !Text
 --  ,  tasks     :: [Task]
     , _projectClosed :: !Bool

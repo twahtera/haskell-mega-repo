@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.15.0.
+-- This file has been generated from package.yaml by hpack version 0.14.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -71,6 +71,7 @@ library
     , mtl
     , operational
     , postgresql-simple
+    , QuickCheck
     , reflection >= 2 && <2.3
     , regex-applicative-text
     , semigroups
@@ -178,6 +179,7 @@ executable planmill-client
     , mtl
     , operational
     , postgresql-simple
+    , QuickCheck
     , reflection >= 2 && <2.3
     , regex-applicative-text
     , semigroups
@@ -251,6 +253,7 @@ test-suite integration
     , mtl
     , operational
     , postgresql-simple
+    , QuickCheck
     , reflection >= 2 && <2.3
     , regex-applicative-text
     , semigroups
@@ -317,6 +320,7 @@ test-suite test
     , mtl
     , operational
     , postgresql-simple
+    , QuickCheck
     , reflection >= 2 && <2.3
     , regex-applicative-text
     , semigroups

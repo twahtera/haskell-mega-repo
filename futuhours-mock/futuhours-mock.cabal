@@ -41,6 +41,7 @@ library
     , generics-sop
     , lens
     , lucid
+    , planmill-client
     , postgresql-simple
     , QuickCheck
     , resource-pool
