@@ -22,6 +22,7 @@ dependencies:
   - mmorph
   - QuickCheck
   - servant
+  - reducers
   - servant-lucid
   - servant-server
   - uuid

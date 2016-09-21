@@ -8,20 +8,25 @@ module Futurice.App.Checklist.Types.World (
     worldTasks,
     worldLists,
     worldTaskItems,
+    -- * Getters
+    worldTaskItemsByUser,
     ) where
 
 -- import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Lens     (contains, filtered, folded, (%~))
-import Data.Vector.Lens (toVectorOf, vector)
+import Control.Lens         (contains, filtered, folded, (%~))
+import Data.Semigroup.Union (UnionWith (..))
+import Data.Vector.Lens     (toVectorOf, vector)
 
+import qualified Data.Map        as Map
 import qualified Test.QuickCheck as QC
 
 import           Futurice.App.Checklist.Types.Basic
-import           Futurice.App.Checklist.Types.IdMap       (IdMap)
-import qualified Futurice.App.Checklist.Types.IdMap       as IdMap
+import           Futurice.App.Checklist.Types.Identifier
+import           Futurice.App.Checklist.Types.IdMap      (IdMap)
+import qualified Futurice.App.Checklist.Types.IdMap      as IdMap
 
 -- | World desribes the state of the db.
 data World = World
@@ -30,9 +35,15 @@ data World = World
     , _worldLists     :: !(IdMap Checklist)
     , _worldTaskItems :: !(IdMap TaskItem)
     -- lazy fields, updated on need when accessed
+    , _worldTaskItemsByUser :: (Map (Identifier User) [TaskItem])
     }
 
 makeLenses ''World
+
+{-
+worldTaskItemsByUser :: Getter World (Map (Identifier User) [TaskItem])
+worldTaskItemsByUser = to _worldTaskItemsByUser
+-}
 
 -- | Create world from users, tasks, checklists, and items.
 --
@@ -78,6 +89,15 @@ mkWorld us ts ls is =
 
         -- TODO: create extra fields
     in World us' ts' ls' is'
+        (mkTaskItemsByUser is')
+
+mkTaskItemsByUser
+    :: Foldable f
+    => f TaskItem
+    -> Map (Identifier User) [TaskItem]
+mkTaskItemsByUser = getUnionWith . foldMap (UnionWith . f)
+  where
+    f ti = Map.singleton (ti ^. taskItemUser) [ti]
 
 -- | Generates consistent worlds.
 instance QC.Arbitrary World where

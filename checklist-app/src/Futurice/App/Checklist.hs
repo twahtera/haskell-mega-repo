@@ -5,7 +5,7 @@ module Futurice.App.Checklist (defaultMain) where
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Lens              (to, at, non)
+import Control.Lens              (to, at, non, folded, foldMapOf)
 import Data.List                 (sortOn)
 import Futurice.Servant
 import Lucid                     hiding (for_)
@@ -104,12 +104,33 @@ indexPage world = do
                     td_ $ toHtmlRaw $ bool ("&#8868;" :: Text) "&#8869;" $ user ^. userConfirmed
                     td_ $ toHtml $ show eta <> " days"
                     td_ "TODO"
-                    td_ "TODO"
+                    td_ $ toHtml $ foldMapOf
+                        (worldTaskItemsByUser . at (user ^. identifier) . non mempty . folded)
+                        taskItemToTodoCounter
+                        world
   where
     etaClass eta = case compare eta 0 of
         EQ -> "eta-today"
         LT -> "eta-past"
         GT -> "eta-future"
+
+taskItemToTodoCounter :: TaskItem -> TodoCounter
+taskItemToTodoCounter ti
+    | ti ^. taskItemDone = TodoCounter 1 1
+    | otherwise          = TodoCounter 0 1
+
+data TodoCounter = TodoCounter !Int !Int
+instance Semigroup TodoCounter where
+    TodoCounter a b <> TodoCounter a' b' = TodoCounter (a + a') (b + b')
+instance Monoid TodoCounter where
+    mempty = TodoCounter 0 0
+    mappend = (<>)
+instance ToHtml TodoCounter where
+    toHtmlRaw = toHtml
+    toHtml (TodoCounter a b) = do
+        toHtml (show a)
+        "/"
+        toHtml (show b)
 
 bool :: a -> a -> Bool -> a
 bool t _ True  = t

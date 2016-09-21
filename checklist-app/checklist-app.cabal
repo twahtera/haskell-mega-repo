@@ -37,6 +37,7 @@ library
     , mmorph
     , QuickCheck
     , servant
+    , reducers
     , servant-lucid
     , servant-server
     , uuid
@@ -44,6 +45,7 @@ library
       Futurice.App.Checklist
       Futurice.App.Checklist.API
       Futurice.App.Checklist.Clay
+      Futurice.App.Checklist.Markup
       Futurice.App.Checklist.Types
       Futurice.App.Checklist.Types.Basic
       Futurice.App.Checklist.Types.Identifier
@@ -69,6 +71,7 @@ executable checklist-app-server
     , mmorph
     , QuickCheck
     , servant
+    , reducers
     , servant-lucid
     , servant-server
     , uuid

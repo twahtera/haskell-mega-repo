@@ -61,6 +61,7 @@ module Futurice.App.Checklist.Types (
     worldTasks,
     worldLists,
     worldTaskItems,
+    worldTaskItemsByUser
     ) where
 
 import Futurice.App.Checklist.Types.Basic
