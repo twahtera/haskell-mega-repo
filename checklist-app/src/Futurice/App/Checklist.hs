@@ -29,7 +29,7 @@ currentDay = utctDay <$> currentTime
 
 -- TODO: use safe link
 locHtml :: Monad m => Location -> HtmlT m ()
-locHtml l = a_ [ href_ $ "/location/" <> locSlug ] $ toHtml locSlug
+locHtml l = a_ [ href_ ("/location/" <> locSlug), title_ locName ] $ toHtml locSlug
   where
     locSlug = case l of
         LocHelsinki  -> "Hel"
@@ -39,6 +39,21 @@ locHtml l = a_ [ href_ $ "/location/" <> locSlug ] $ toHtml locSlug
         LocStockholm -> "Sto"
         LocMunich    -> "Mun"
         LocOther     -> "Oth"
+    locName = case l of
+        LocHelsinki  -> "Helsnki"
+        LocTampere   -> "Tampere"
+        LocBerlin    -> "Berlin"
+        LocLondon    -> "London"
+        LocStockholm -> "Stockholm"
+        LocMunich    -> "Munich"
+        LocOther     -> "Other"
+
+contractTypeHtml :: Monad m => ContractType -> HtmlT m ()
+contractTypeHtml ContractTypePermanent    = pure ()
+contractTypeHtml ContractTypeExternal     = span_ [title_ "External"]      "Ext"
+contractTypeHtml ContractTypeFixedTerm    = span_ [title_ "Fixed term"]    "Fix"
+contractTypeHtml ContractTypePartTimer    = span_ [title_ "Part timer"]    "Part"
+contractTypeHtml ContractTypeSummerWorker = span_ [title_ "Summer worker"] "Sum"
 
 indexPage :: Ctx -> IO (Page "indexpage")
 indexPage world = do
@@ -46,19 +61,19 @@ indexPage world = do
     let users = world ^. worldUsers
     pure $ Page $ page_ "Checklist" pageParams $ table_ $ do
         thead_ $ tr_ $ do
-            th_ "Sts"
-            th_ "Loc"
-            th_ "Name"
-            th_ "List"
-            th_ "Starts"
-            th_ "Confirmed"
-            th_ "ETA"
+            th_ [title_ "Status"]                      "S"
+            th_ [title_ "Location"]                    "Loc"
+            th_ [title_ "Name" ]                       "Name"
+            th_ [title_ "Checklist"]                   "List"
+            th_ [title_ "Starting day"]                "Starts at"
+            th_ [title_ "Confirmed - contract signed"] "Confirmed"
+            th_ [title_ "Days till start"]             "ETA"
             th_ "Group items?"
-            th_ "Items"
+            th_ [title_ "Task items todo/done"]        "Items"
         tbody_ $ for_ (sortOn (Down . view userStartingDay) $ toList users) $ \user -> do
             let eta = toModifiedJulianDay today - toModifiedJulianDay (user ^. userStartingDay)
             tr_ [class_ $ etaClass eta] $ do
-                td_ "X"
+                td_ $ contractTypeHtml $ user ^. userContractType
                 td_ $ locHtml $ user ^. userLocation
                 -- TODO: use safeLink
                 td_ $ a_ [href_ $ "/user/" <> user ^. identifier ^. to identifierToText ] $ toHtml $
