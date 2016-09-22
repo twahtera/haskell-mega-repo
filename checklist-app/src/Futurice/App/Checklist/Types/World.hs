@@ -8,6 +8,7 @@ module Futurice.App.Checklist.Types.World (
     worldTasks,
     worldLists,
     worldTaskItems,
+    worldUsers,
     -- * Getters
     worldTaskItems',
     ) where
@@ -28,12 +29,15 @@ import           Futurice.App.Checklist.Types.Identifier
 import           Futurice.App.Checklist.Types.IdMap      (IdMap)
 import qualified Futurice.App.Checklist.Types.IdMap      as IdMap
 
+import qualified FUM
+
 -- | World desribes the state of the db.
 data World = World
-    { _worldEmployees     :: !(IdMap Employee)
-    , _worldTasks     :: !(IdMap Task)
-    , _worldLists     :: !(IdMap Checklist)
-    , _worldTaskItems :: !(Map (Identifier Employee) (Map (Identifier Task) TaskItemDone))
+    { _worldEmployees  :: !(IdMap Employee)
+    , _worldTasks      :: !(IdMap Task)
+    , _worldLists      :: !(IdMap Checklist)
+    , _worldTaskItems  :: !(Map (Identifier Employee) (Map (Identifier Task) TaskItemDone))
+    , _worldUsers      :: !(Map FUM.UserName TaskRole)
     -- lazy fields, updated on need when accessed
     , _worldTaskItems' :: Map (Identifier Task) (Map (Identifier Employee) TaskItemDone)
       -- ^ isomorphic with 'worldTaskItems'
@@ -56,8 +60,9 @@ mkWorld
     -> IdMap Task
     -> IdMap Checklist
     -> Map (Identifier Employee) (Map (Identifier Task) TaskItemDone)
+    -> Map FUM.UserName TaskRole
     -> World
-mkWorld us ts ls is =
+mkWorld es ts ls is us =
     let tids            = IdMap.keysSet ts
         cids            = IdMap.keysSet ls
         -- Validation predicates
@@ -65,7 +70,7 @@ mkWorld us ts ls is =
         validCid cid     = cids ^. contains cid
 
         -- Cleaned up inputs
-        us' = us
+        es' = es
             & IdMap.toIdMapOf (folded . filtered (\u -> validCid $ u ^. employeeChecklist))
 
         ts' = ts
@@ -76,8 +81,8 @@ mkWorld us ts ls is =
             & IdMap.unsafeTraversal . checklistTasks
             %~ toMapOf (ifolded . ifiltered (\k _v -> validTid k))
 
-        -- TODO: create extra fields
-    in World us' ts' ls' is (swapMapMap is)
+        -- TODO: validate is
+    in World es' ts' ls' is us (swapMapMap is)
 
 -- | Generates consistent worlds.
 instance QC.Arbitrary World where
@@ -129,5 +134,8 @@ instance QC.Arbitrary World where
         is <- QC.listOf taskItemGen
         let is' = Map.fromListWith Map.union is
 
+        -- Users of checklist, hardcoded in mock
+        us <- pure $ Map.fromList [(FUM.UserName "phadej", TaskRoleIT)]
+
         -- World
-        pure $ mkWorld es' ts' cs is'
+        pure $ mkWorld es' ts' cs is' us

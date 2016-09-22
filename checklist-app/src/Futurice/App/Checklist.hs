@@ -67,12 +67,29 @@ checklistNameHtml world i =
     a_ [ href_ $ "/checklist/" <> i ^. to identifierToText] $ toHtml $
         world ^. worldLists . at i . non (error "Inconsisten world") . checklistName . to show
 
--- | TODO: context
-viewerRole :: TaskRole
-viewerRole = TaskRoleIT
-
 indexPage :: Ctx -> Maybe FUM.UserName -> IO (Page "indexpage")
-indexPage world fu = do
+indexPage world _fu = case userInfo of
+    Nothing        -> pure nonAuthorizedPage
+    Just userInfo' -> indexPage' world userInfo'
+  where
+    -- Temporary
+    fu :: Maybe FUM.UserName
+    fu = Just $ FUM.UserName "phadej"
+
+    userInfo :: Maybe (FUM.UserName, TaskRole)
+    userInfo = do
+        fu' <- fu
+        tr  <- world ^? worldUsers . ix fu'
+        pure (fu', tr)
+
+nonAuthorizedPage :: Page sym
+nonAuthorizedPage = Page $ page_ "Non-authorized" pageParams $ do
+    row_ $ large_ 12 $ header_ $ h1_ $ "Non-authorized"
+    row_ $ large_ 12 $ p_ $
+        "Ask IT-team to create you an account."
+
+indexPage' :: Ctx -> (FUM.UserName, TaskRole) -> IO (Page "indexpage")
+indexPage' world (fu, viewerRole) = do
     today <- currentDay
     let employees = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
     pure $ Page $ page_ "Checklist" pageParams $ do
@@ -89,7 +106,9 @@ indexPage world fu = do
             div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
                 li_ [ class_ "menu-text" ] $ do
                     "Hello "
-                    maybe (em_ "Guest") (toHtml . view FUM.getUserName) fu
+                    toHtml $ fu ^. FUM.getUserName
+                    ", you are "
+                    toHtml (showRole viewerRole)
 
         row_ $ large_ 12 $ header_ $ h1_ $ "Active employees"
 
@@ -102,7 +121,7 @@ indexPage world fu = do
                 th_ [title_ "Due date"]                    "Due date"
                 th_ [title_ "Confirmed - contract signed"] "Confirmed"
                 th_ [title_ "Days till start"]             "ETA"
-                th_ [title_ "IT task todo/done"]           "IT items" -- Title based on viewerRole
+                viewerItemsHeader viewerRole
                 th_ [title_ "Task items todo/done"]        "Items"
             tbody_ $ for_ employees $ \employee -> do
                 let eid = employee ^. identifier
@@ -134,6 +153,18 @@ indexPage world fu = do
                         TodoCounter a b i j -> do
                             td_ $ toHtml (show a) *> "/" *> toHtml (show b)
                             td_ $ toHtml (show i) *> "/" *> toHtml (show j)
+
+viewerItemsHeader :: Monad m => TaskRole -> HtmlT m ()
+viewerItemsHeader TaskRoleIT         = th_ [title_ "IT tasks todo/done"]          "IT items"
+viewerItemsHeader TaskRoleHR         = th_ [title_ "HR tasks todo/done"]          "HR items"
+viewerItemsHeader TaskRoleSupervisor = th_ [title_ "Supervisor tasks todo/done"]  "Supervisor items"
+viewerItemsHeader TaskRoleOther      = th_ [title_ "Other tasks todo/done"]       "non-IT/HR/Supevisor items"
+
+showRole :: TaskRole -> Text
+showRole TaskRoleIT         = "IT"
+showRole TaskRoleHR         = "HR"
+showRole TaskRoleSupervisor = "supervisor"
+showRole TaskRoleOther      = "specatator"
 
 toTodoCounter :: World -> TaskRole -> Identifier Task -> TaskItemDone -> TodoCounter
 toTodoCounter world tr tid td =
