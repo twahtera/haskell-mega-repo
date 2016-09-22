@@ -8,7 +8,7 @@ import Prelude ()
 
 import Control.Lens              (Getter, at, has, ix, filtered, folded, non, to, (^?), only)
 import Data.List                 (sortOn)
-import Data.Time                 (addDays)
+import Data.Time                 (addDays, diffDays)
 import Futurice.Servant
 import Lucid                     hiding (for_)
 import Lucid.Foundation.Futurice
@@ -100,6 +100,7 @@ indexPage world = do
             tbody_ $ for_ users $ \user -> do
                 let uid = user ^. identifier
                 let firstFutureDay = users ^? folded . userStartingDay . filtered (> today)
+                let startingDay = user ^. userStartingDay
                 let etaClass day = case compare day today of
                         -- TODO: magic numbers
                         LT | day < addDays (- 30) today          -> "eta-far-past"
@@ -108,17 +109,16 @@ indexPage world = do
                         GT | maybe False (day <=) firstFutureDay -> "eta-near-future"
                            | day > addDays 30 today              -> "eta-far-future"
                            | otherwise                           -> "eta-future"
-                let eta =  toModifiedJulianDay (user ^. userStartingDay) - toModifiedJulianDay today
                 tr_ [ class_ $ etaClass $ user ^. userStartingDay ] $ do
                     td_ $ contractTypeHtml $ user ^. userContractType
                     td_ $ locHtml $ user ^. userLocation
                     -- TODO: use safeLink
-                    td_ $ a_ [ href_ $ "/user/" <> user ^. identifier ^. to identifierToText ] $ toHtml $
+                    td_ $ a_ [ href_ $ "/user/" <> user ^. identifier . to identifierToText ] $ toHtml $
                         user ^. userFirstName <> " " <> user ^. userLastName
                     td_ $ checklistNameHtml world (user ^. userChecklist)
-                    td_ $ toHtml $ show $ user ^. userStartingDay
+                    td_ $ toHtml $ show startingDay
                     td_ $ bool (toHtmlRaw ("&#8868;" :: Text)) (pure ()) $ user ^. userConfirmed
-                    td_ $ toHtml $ show eta <> " days"
+                    td_ $ toHtml $ show (diffDays startingDay today) <> " days"
                     case world ^. worldTaskItemsByUser . at uid . non mempty . folded . toTodoCounter world viewerRole of
                         TodoCounter a b i j -> do
                             td_ $ toHtml (show a) *> "/" *> toHtml (show b)
