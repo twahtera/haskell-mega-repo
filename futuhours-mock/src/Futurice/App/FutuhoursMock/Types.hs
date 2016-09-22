@@ -29,7 +29,7 @@ import qualified PlanMill as PM
 data Project = Project
     { _projectId     :: PM.ProjectId
     , _projectName   :: !Text
-    ,  tasks     :: [Task]
+    , _projectTasks     :: [Task]
     , _projectClosed :: !Bool
     }
   deriving (Eq, Show, Typeable, Generic)
@@ -40,19 +40,19 @@ data Task = Task
   , _taskAbsence :: !Bool
   , _taskClosed :: !Bool
   , _taskLatestEntry :: Maybe Entry
-  , _taskHoursRemaining :: !Float
+  , _taskHoursRemaining :: !Float -- TODO: better type
   } deriving (Eq, Show, Typeable, Generic)
 -- LatestEntry: Hours UI feature. Previous Entry used as default values when marking new hours.
--- HoursRemaing: Task.taskTargetEffort - (totalHoursUsedByAssignedPersonnel)
+-- HoursRemaining: Task.taskTargetEffort - (totalHoursUsedByAssignedPersonnel)
 
 data Entry = Entry
   { _entryId :: PM.TimereportId
   , _entryProjectId :: PM.ProjectId
   , _entrytaskId :: PM.TaskId
-  , _latestEntryDate :: !UTCTime
+  , _entryDate :: !UTCTime
   , _entryDescription :: !Text
   , _entryClosed :: !Bool
-  , _entryhours :: !Float
+  , _entryHours :: !Float
   } deriving (Eq, Show, Typeable, Generic)
 
 makeLenses ''Project
