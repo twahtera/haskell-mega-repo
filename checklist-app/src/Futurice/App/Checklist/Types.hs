@@ -24,6 +24,7 @@ module Futurice.App.Checklist.Types (
     CheckResult(..),
     Checklist(..),
     TaskItem(..),
+    TaskItemDone (..),
     TaskAppliance(..),
     -- ** Wrappers
     Identifier(..),
@@ -51,6 +52,8 @@ module Futurice.App.Checklist.Types (
     checklistName, checklistTasks,
     -- ** TaskItem
     taskItemUser, taskItemTask, taskItemDone,
+    -- ** TaskItemDone
+    _TaskItemDone, _TaskItemTodo,
     -- * HTML
     Page (..),
     -- * World

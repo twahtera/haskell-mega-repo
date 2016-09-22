@@ -39,7 +39,7 @@ data User = User
       -- ^ /Note:/ ATM this is free form text.
     , _userInfo         :: !Text
       -- ^ Free text comments about the user.
-    --
+    -- Data filled up later:
     , _userFUMLogin     :: !(Maybe FUMLogin)
     , _userHRNumber     :: !(Maybe Int) -- TODO: make a newtype for this
     }
@@ -79,7 +79,7 @@ data Task = Task
       -- ^ Display name
     , _taskCanBeDone    :: User -> Bool
       -- ^ Some tasks cannot be yet done, if some information is missing.
-    , _taskDependencies :: !(Vector :$ Identifier Task)
+    , _taskDependencies :: !(Set :$ Identifier Task)
       -- ^ Some tasks can be done only after some other tasks are done.
     , _taskCheck        :: User -> IO CheckResult
       -- ^ Tasks can check themselves whether they are done. For example if 'userFUMLogin' is known,
@@ -116,8 +116,13 @@ data TaskRole
 data Checklist = Checklist
     { _checklistId    :: !(Identifier Checklist)
     , _checklistName  :: !(Name Checklist)
-    , _checklistTasks :: !(Vector (Identifier Task, Maybe TaskAppliance))
+    , _checklistTasks :: !(Map (Identifier Task) TaskAppliance)
     }
+  deriving (Eq, Ord, Show, Typeable, Generic)
+
+data TaskItemDone
+    = TaskItemDone
+    | TaskItemTodo
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -126,7 +131,7 @@ data TaskItem = TaskItem
     { _taskItemId   :: !(Identifier TaskItem)
     , _taskItemUser :: !(Identifier User)
     , _taskItemTask :: !(Identifier Task)
-    , _taskItemDone :: !Bool
+    , _taskItemDone :: !TaskItemDone
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
 
@@ -149,6 +154,7 @@ makePrisms ''CheckResult
 makePrisms ''TaskRole
 makeLenses ''Checklist
 makeLenses ''TaskItem
+makePrisms ''TaskItemDone
 
 -------------------------------------------------------------------------------
 -- HasIdentifier instances
@@ -193,12 +199,17 @@ deriveGeneric ''CheckResult
 deriveGeneric ''TaskRole
 deriveGeneric ''Checklist
 deriveGeneric ''TaskItem
+deriveGeneric ''TaskItemDone
 
 instance Arbitrary User where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
 instance Arbitrary TaskItem where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
+
+instance Arbitrary TaskItemDone where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 

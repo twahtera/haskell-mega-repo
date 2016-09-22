@@ -16,11 +16,14 @@ module Futurice.App.Checklist.Types.World (
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Lens         (contains, filtered, folded, (%~))
+import Control.Lens
+       (IndexedGetting, contains, filtered, folded, ifiltered, ifolded, iviews,
+       (%~))
 import Data.Semigroup.Union (UnionWith (..))
-import Data.Vector.Lens     (toVectorOf, vector)
 
 import qualified Data.Map        as Map
+import qualified Data.Set        as Set
+import qualified Data.Set.Lens   as Set
 import qualified Test.QuickCheck as QC
 
 import           Futurice.App.Checklist.Types.Basic
@@ -78,11 +81,11 @@ mkWorld us ts ls is =
 
         ts' = ts
             & IdMap.unsafeTraversal . taskDependencies
-            %~ toVectorOf (folded . filtered validTid)
+            %~ Set.setOf (folded . filtered validTid)
 
         ls' = ls
             & IdMap.unsafeTraversal . checklistTasks
-            %~ toVectorOf (folded . filtered (validTid . fst))
+            %~ toMapOf (ifolded . ifiltered (\k _v -> validTid k))
 
         is' = is
             & IdMap.toIdMapOf (folded . filtered validTaskItem)
@@ -118,7 +121,7 @@ instance QC.Arbitrary World where
         cs <- fmap IdMap.fromFoldable . QC.listOf1 $ Checklist
             <$> QC.arbitrary
             <*> QC.arbitrary
-            <*> fmap (view vector) (QC.listOf1 checklistItemGen)
+            <*> fmap Map.fromList (QC.listOf1 checklistItemGen)
 
         let cids = IdMap.keysSet cs
             cidGen = QC.elements (toList cids)
@@ -139,9 +142,9 @@ instance QC.Arbitrary World where
         -- Tasks
         -- TODO: we can still generate cyclic tasks!
         ts' <- flip IdMap.unsafeTraversal ts $ \task -> do
-            deps <- QC.listOf tidGen
+            deps <- Set.fromList <$> QC.listOf tidGen
             pure $ task
-                & taskDependencies .~ deps ^. vector
+                & taskDependencies .~ deps
 
         -- TaskItems
         is <- fmap IdMap.fromFoldable . QC.listOf $ TaskItem
@@ -152,3 +155,6 @@ instance QC.Arbitrary World where
 
         -- World
         pure $ mkWorld us' ts' cs is
+
+toMapOf :: IndexedGetting i (Map i a) s a -> s -> Map i a
+toMapOf l = iviews l Map.singleton
