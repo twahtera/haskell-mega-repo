@@ -6,7 +6,9 @@ module Futurice.App.Checklist (defaultMain) where
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Lens              (Getter, at, has, ix, filtered, folded, non, to, (^?), only)
+import Control.Lens
+       (at, filtered, folded, has, ifoldMapOf, ifolded, ix, non, only, to,
+       (^?))
 import Data.List                 (sortOn)
 import Data.Time                 (addDays, diffDays)
 import Futurice.Servant
@@ -95,7 +97,7 @@ indexPage world = do
                 th_ [title_ "Due date"]                    "Due date"
                 th_ [title_ "Confirmed - contract signed"] "Confirmed"
                 th_ [title_ "Days till start"]             "ETA"
-                th_ [title_ "IT task todo/done"]           "IT items" -- Title based on viewerRolw
+                th_ [title_ "IT task todo/done"]           "IT items" -- Title based on viewerRole
                 th_ [title_ "Task items todo/done"]        "Items"
             tbody_ $ for_ users $ \user -> do
                 let uid = user ^. identifier
@@ -119,14 +121,18 @@ indexPage world = do
                     td_ $ toHtml $ show startingDay
                     td_ $ bool (toHtmlRaw ("&#8868;" :: Text)) (pure ()) $ user ^. userConfirmed
                     td_ $ toHtml $ show (diffDays startingDay today) <> " days"
-                    case world ^. worldTaskItemsByUser . at uid . non mempty . folded . toTodoCounter world viewerRole of
+                    case ifoldMapOf
+                        (worldTaskItems . at uid . non mempty . ifolded)
+                        (toTodoCounter world viewerRole)
+                        world
+                      of
                         TodoCounter a b i j -> do
                             td_ $ toHtml (show a) *> "/" *> toHtml (show b)
                             td_ $ toHtml (show i) *> "/" *> toHtml (show j)
 
-toTodoCounter :: World -> TaskRole -> Getter TaskItem TodoCounter
-toTodoCounter world tr = to $ \ti ->
-    case (has (worldTasks . ix (ti ^. taskItemTask) . taskRole . only tr) world, ti ^. taskItemDone) of
+toTodoCounter :: World -> TaskRole -> Identifier Task -> TaskItemDone -> TodoCounter
+toTodoCounter world tr tid td =
+    case (has (worldTasks . ix tid . taskRole . only tr) world, td) of
         (True,  TaskItemDone) -> TodoCounter 1 1 1 1
         (True,  TaskItemTodo) -> TodoCounter 0 1 0 1
         (False, TaskItemDone) -> TodoCounter 0 0 1 1

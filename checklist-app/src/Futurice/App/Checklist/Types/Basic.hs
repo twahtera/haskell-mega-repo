@@ -98,7 +98,7 @@ data CheckResult
     | CheckResultMaybe
       -- ^ Non definitive answer, but doesn't prevent from completing task. E.g. long cache time might make user still invisible in FUM.
     | CheckResultFailure
-      -- ^ Definitively not ok, 'TaskItem' cannot be completed.
+      -- ^ Definitively not ok, task cannot be completed.
   deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
 
 
@@ -111,7 +111,7 @@ data TaskRole
   deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
 
 
--- | Checklist is collection of tasks. Used to group tasks together to create 'TaskItem's together.
+-- | Checklist is collection of tasks. Used to group tasks together to create task instances together.
 --  Example lists are "new full-time employee in Helsinki"
 data Checklist = Checklist
     { _checklistId    :: !(Identifier Checklist)
@@ -123,16 +123,6 @@ data Checklist = Checklist
 data TaskItemDone
     = TaskItemDone
     | TaskItemTodo
-  deriving (Eq, Ord, Show, Typeable, Generic)
-
-
--- | 'TaskItem' is an instance of 'Task'. I.e. the actual task needed to be done.
-data TaskItem = TaskItem
-    { _taskItemId   :: !(Identifier TaskItem)
-    , _taskItemUser :: !(Identifier User)
-    , _taskItemTask :: !(Identifier Task)
-    , _taskItemDone :: !TaskItemDone
-    }
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 -- | Task appliance, e.g. this task is /"only for Helsinki and permanent employees"/.
@@ -153,7 +143,6 @@ makeLenses ''Task
 makePrisms ''CheckResult
 makePrisms ''TaskRole
 makeLenses ''Checklist
-makeLenses ''TaskItem
 makePrisms ''TaskItemDone
 
 -------------------------------------------------------------------------------
@@ -168,9 +157,6 @@ instance HasIdentifier Task Task where
 
 instance HasIdentifier Checklist Checklist where
     identifier = checklistId
-
-instance HasIdentifier TaskItem TaskItem where
-    identifier = taskItemId
 
 -------------------------------------------------------------------------------
 -- Some arbitraries
@@ -198,14 +184,9 @@ deriveGeneric ''Task
 deriveGeneric ''CheckResult
 deriveGeneric ''TaskRole
 deriveGeneric ''Checklist
-deriveGeneric ''TaskItem
 deriveGeneric ''TaskItemDone
 
 instance Arbitrary User where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance Arbitrary TaskItem where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
