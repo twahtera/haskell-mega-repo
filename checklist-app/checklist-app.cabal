@@ -36,7 +36,6 @@ library
     , lucid
     , mmorph
     , QuickCheck
-    , reducers
     , servant
     , servant-lucid
     , servant-server
@@ -71,7 +70,6 @@ executable checklist-app-server
     , lucid
     , mmorph
     , QuickCheck
-    , reducers
     , servant
     , servant-lucid
     , servant-server

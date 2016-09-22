@@ -18,8 +18,7 @@ module Futurice.App.Spice.Logic (
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Lens
-       (Fold, Traversal', failing, folded, folding, to)
+import Control.Lens        (Fold, Traversal', failing, folding, to)
 import Data.Char           (isAlphaNum, isDigit, isSpace)
 import Network.HTTP.Client (Manager)
 
