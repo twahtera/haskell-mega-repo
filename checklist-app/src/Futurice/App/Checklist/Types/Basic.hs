@@ -18,30 +18,30 @@ import qualified Test.QuickCheck as QC
 newtype Name a = Name Text
   deriving (Eq, Ord, Show, Typeable, Generic)
 
--- | All checklist tasks are tied to the user
+-- | All checklist tasks are tied to the employee
 --
 -- /TODO:/ add more fields? Is 'Employee' better name?
-data User = User
-    { _userId           :: Identifier User
-    , _userChecklist    :: Identifier Checklist
-    , _userFirstName    :: !Text
-    , _userLastName     :: !Text
-    , _userContractType :: !ContractType
-    , _userLocation     :: !Location
-    , _userConfirmed    :: !Bool
+data Employee = Employee
+    { _employeeId           :: Identifier Employee
+    , _employeeChecklist    :: Identifier Checklist
+    , _employeeFirstName    :: !Text
+    , _employeeLastName     :: !Text
+    , _employeeContractType :: !ContractType
+    , _employeeLocation     :: !Location
+    , _employeeConfirmed    :: !Bool
       -- ^ /TODO:/ What is this?
-    , _userPhone        :: !Text
-    , _userContactEmail :: !Text
+    , _employeePhone        :: !Text
+    , _employeeContactEmail :: !Text
       -- ^ /Note:/ This is non-work email!
-    , _userStartingDay  :: !Day
-    , _userSupervisor   :: !FUMLogin
-    , _userTribe        :: !Text
+    , _employeeStartingDay  :: !Day
+    , _employeeSupervisor   :: !FUMLogin
+    , _employeeTribe        :: !Text
       -- ^ /Note:/ ATM this is free form text.
-    , _userInfo         :: !Text
-      -- ^ Free text comments about the user.
+    , _employeeInfo         :: !Text
+      -- ^ Free text comments about the employee.
     -- Data filled up later:
-    , _userFUMLogin     :: !(Maybe FUMLogin)
-    , _userHRNumber     :: !(Maybe Int) -- TODO: make a newtype for this
+    , _employeeFUMLogin     :: !(Maybe FUMLogin)
+    , _employeeHRNumber     :: !(Maybe Int) -- TODO: make a newtype for this
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
 
@@ -68,7 +68,7 @@ data Location
 
 -- |
 --
--- Maybe use 'FUM.UserName' ?
+-- Maybe use 'FUM.EmployeeName' ?
 newtype FUMLogin = FUMLogin Text
     deriving (Eq, Ord, Show, Typeable, Generic)
 
@@ -77,13 +77,13 @@ data Task = Task
     { _taskId           :: !(Identifier Task)
     , _taskName         :: !(Name Task)
       -- ^ Display name
-    , _taskCanBeDone    :: User -> Bool
+    , _taskCanBeDone    :: Employee -> Bool
       -- ^ Some tasks cannot be yet done, if some information is missing.
     , _taskDependencies :: !(Set :$ Identifier Task)
       -- ^ Some tasks can be done only after some other tasks are done.
-    , _taskCheck        :: User -> IO CheckResult
-      -- ^ Tasks can check themselves whether they are done. For example if 'userFUMLogin' is known,
-      --   then when such user is seen in FUM, we can see that task is probably done.
+    , _taskCheck        :: Employee -> IO CheckResult
+      -- ^ Tasks can check themselves whether they are done. For example if 'employeeFUMLogin' is known,
+      --   then when such employee is seen in FUM, we can see that task is probably done.
     , _taskRole         :: !TaskRole
       -- ^ Tasks can be fullfilled by different roles.
     }
@@ -96,7 +96,7 @@ data CheckResult
     = CheckResultSuccess
       -- ^ Everything is ok
     | CheckResultMaybe
-      -- ^ Non definitive answer, but doesn't prevent from completing task. E.g. long cache time might make user still invisible in FUM.
+      -- ^ Non definitive answer, but doesn't prevent from completing task. E.g. long cache time might make employee still invisible in FUM.
     | CheckResultFailure
       -- ^ Definitively not ok, task cannot be completed.
   deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
@@ -135,7 +135,7 @@ data TaskAppliance = TaskApplianceAll
 -- Lenses
 -------------------------------------------------------------------------------
 
-makeLenses ''User
+makeLenses ''Employee
 makePrisms ''ContractType
 makePrisms ''Location
 makeWrapped ''FUMLogin
@@ -149,8 +149,8 @@ makePrisms ''TaskItemDone
 -- HasIdentifier instances
 -------------------------------------------------------------------------------
 
-instance HasIdentifier User User where
-    identifier = userId
+instance HasIdentifier Employee Employee where
+    identifier = employeeId
 
 instance HasIdentifier Task Task where
     identifier = taskId
@@ -176,7 +176,7 @@ instance Arbitrary FUMLogin where
 -- instances
 -------------------------------------------------------------------------------
 
-deriveGeneric ''User
+deriveGeneric ''Employee
 deriveGeneric ''ContractType
 deriveGeneric ''Location
 deriveGeneric ''FUMLogin
@@ -186,7 +186,7 @@ deriveGeneric ''TaskRole
 deriveGeneric ''Checklist
 deriveGeneric ''TaskItemDone
 
-instance Arbitrary User where
+instance Arbitrary Employee where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 

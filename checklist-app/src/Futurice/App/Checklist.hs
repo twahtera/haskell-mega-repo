@@ -72,7 +72,7 @@ viewerRole = TaskRoleIT
 indexPage :: Ctx -> IO (Page "indexpage")
 indexPage world = do
     today <- currentDay
-    let users = sortOn (view userStartingDay) $ world ^.. worldUsers . folded
+    let employees = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
     pure $ Page $ page_ "Checklist" pageParams $ do
         -- http://foundation.zurb.com/sites/docs/top-bar.html
         div_ [ class_ "top-bar" ] $ do
@@ -80,12 +80,12 @@ indexPage world = do
                 li_ [ class_ "menu-text"] $ do
                     "Checklist"
                     sup_ "2"
-                li_ $ a_ [ href_ "#" ] "Users"
+                li_ $ a_ [ href_ "#" ] "Employees"
                 li_ $ a_ [ href_ "#" ] "Checklists"
                 li_ $ a_ [ href_ "#" ] "Tasks"
                 li_ $ a_ [ href_ "#" ] "Reminder lists"
 
-        row_ $ large_ 12 $ header_ $ h1_ $ "Active users"
+        row_ $ large_ 12 $ header_ $ h1_ $ "Active employees"
 
         row_ $ large_ 12 $ table_ $ do
             thead_ $ tr_ $ do
@@ -98,10 +98,10 @@ indexPage world = do
                 th_ [title_ "Days till start"]             "ETA"
                 th_ [title_ "IT task todo/done"]           "IT items" -- Title based on viewerRole
                 th_ [title_ "Task items todo/done"]        "Items"
-            tbody_ $ for_ users $ \user -> do
-                let uid = user ^. identifier
-                let firstFutureDay = users ^? folded . userStartingDay . filtered (> today)
-                let startingDay = user ^. userStartingDay
+            tbody_ $ for_ employees $ \employee -> do
+                let eid = employee ^. identifier
+                let firstFutureDay = employees ^? folded . employeeStartingDay . filtered (> today)
+                let startingDay = employee ^. employeeStartingDay
                 let etaClass day = case compare day today of
                         -- TODO: magic numbers
                         LT | day < addDays (- 30) today          -> "eta-far-past"
@@ -110,18 +110,18 @@ indexPage world = do
                         GT | maybe False (day <=) firstFutureDay -> "eta-near-future"
                            | day > addDays 30 today              -> "eta-far-future"
                            | otherwise                           -> "eta-future"
-                tr_ [ class_ $ etaClass $ user ^. userStartingDay ] $ do
-                    td_ $ contractTypeHtml $ user ^. userContractType
-                    td_ $ locHtml $ user ^. userLocation
+                tr_ [ class_ $ etaClass $ employee ^. employeeStartingDay ] $ do
+                    td_ $ contractTypeHtml $ employee ^. employeeContractType
+                    td_ $ locHtml $ employee ^. employeeLocation
                     -- TODO: use safeLink
-                    td_ $ a_ [ href_ $ "/user/" <> user ^. identifier . to identifierToText ] $ toHtml $
-                        user ^. userFirstName <> " " <> user ^. userLastName
-                    td_ $ checklistNameHtml world (user ^. userChecklist)
+                    td_ $ a_ [ href_ $ "/employee/" <> employee ^. identifier . to identifierToText ] $ toHtml $
+                        employee ^. employeeFirstName <> " " <> employee ^. employeeLastName
+                    td_ $ checklistNameHtml world (employee ^. employeeChecklist)
                     td_ $ toHtml $ show startingDay
-                    td_ $ bool (toHtmlRaw ("&#8868;" :: Text)) (pure ()) $ user ^. userConfirmed
+                    td_ $ bool (toHtmlRaw ("&#8868;" :: Text)) (pure ()) $ employee ^. employeeConfirmed
                     td_ $ toHtml $ show (diffDays startingDay today) <> " days"
                     case ifoldMapOf
-                        (worldTaskItems . ix uid . ifolded)
+                        (worldTaskItems . ix eid . ifolded)
                         (toTodoCounter world viewerRole)
                         world
                       of

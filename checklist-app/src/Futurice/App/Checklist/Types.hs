@@ -4,17 +4,17 @@
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
--- | Types user in checklist logic.
+-- | Types employee in checklist logic.
 --
 -- Currently missing:
 --
 -- * How to model construction and modification of 'CheckList'. We want to pick
---   only needed 'Task's based on initial 'User' data, and that information
+--   only needed 'Task's based on initial 'Employee' data, and that information
 --   should be configurable dynamically.
 module Futurice.App.Checklist.Types (
     -- * Core types
-    -- ** User / employee
-    User(..),
+    -- ** Employee / employee
+    Employee(..),
     ContractType(..),
     Location(..),
     FUMLogin(..),
@@ -31,10 +31,10 @@ module Futurice.App.Checklist.Types (
     HasIdentifier (..),
     Name (..),
     -- * Lenses
-    -- ** User
-    userFirstName, userLastName, userContractType, userLocation, userConfirmed,
-    userPhone, userContactEmail, userStartingDay, userSupervisor, userTribe,
-    userInfo, userFUMLogin, userHRNumber, userChecklist,
+    -- ** Employee
+    employeeFirstName, employeeLastName, employeeContractType, employeeLocation, employeeConfirmed,
+    employeePhone, employeeContactEmail, employeeStartingDay, employeeSupervisor, employeeTribe,
+    employeeInfo, employeeFUMLogin, employeeHRNumber, employeeChecklist,
     -- ** ContractType
     _ContractTypePermanent, _ContractTypeExternal, _ContractTypeFixedTerm,
     _ContractTypePartTimer, _ContractTypeSummerWorker,
@@ -57,7 +57,7 @@ module Futurice.App.Checklist.Types (
     World,
     mkWorld,
     -- ** Lenses
-    worldUsers,
+    worldEmployees,
     worldTasks,
     worldLists,
     worldTaskItems,
