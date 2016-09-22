@@ -21,7 +21,6 @@ dependencies:
   - lucid
   - mmorph
   - QuickCheck
-  - reducers
   - servant
   - servant-lucid
   - servant-server

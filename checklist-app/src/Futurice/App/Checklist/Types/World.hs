@@ -16,10 +16,7 @@ module Futurice.App.Checklist.Types.World (
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Lens
-       (IndexedGetting, contains, filtered, folded, ifiltered, ifoldMapOf,
-       ifolded, iviews, (%~), (<.>))
-import Data.Semigroup.Union (UnionWith (..))
+import Control.Lens (contains, filtered, ifiltered, (%~))
 
 import qualified Data.Map        as Map
 import qualified Data.Set        as Set
@@ -43,11 +40,6 @@ data World = World
     }
 
 makeLenses ''World
-
-{-
-worldTaskItemsByUser :: Getter World (Map (Identifier User) [TaskItem])
-worldTaskItemsByUser = to _worldTaskItemsByUser
--}
 
 -- | Create world from users, tasks, checklists, and items.
 --
@@ -87,11 +79,6 @@ mkWorld us ts ls is =
         -- TODO: create extra fields
     in World us' ts' ls' is (swapMapMap is)
 
-swapMapMap :: (Ord k, Ord k') => Map k (Map k' v) -> Map k' (Map k v)
-swapMapMap = getUnionWith . ifoldMapOf (ifolded <.> ifolded) f
-  where
-    f (k, k') v = UnionWith $ Map.singleton k' $ Map.singleton k v
-
 -- | Generates consistent worlds.
 instance QC.Arbitrary World where
     arbitrary = do
@@ -118,8 +105,8 @@ instance QC.Arbitrary World where
 
         -- Users
         us' <- flip IdMap.unsafeTraversal us $ \user -> do
-            firstName   <- QC.elements ["Mikko", "Antti", "Ville", "Anni"]
-            lastName    <- QC.elements ["Kikka", "Kukka", "Kukko"]
+            firstName   <- QC.elements ["Mikko", "Antti", "Ville", "Teemu", "Timo", "Anni", "Laura"]
+            lastName    <- QC.elements ["Kikka", "Kukka", "Kukko", "Korhonen", "Virtanen", "Nieminen", "Laine"]
             cid         <- cidGen
             startingDay <- toEnum <$> QC.choose
                 (fromEnum $(mkDay "2016-08-01"), fromEnum $(mkDay "2017-01-01"))
@@ -144,6 +131,3 @@ instance QC.Arbitrary World where
 
         -- World
         pure $ mkWorld us' ts' cs is'
-
-toMapOf :: IndexedGetting i (Map i a) s a -> s -> Map i a
-toMapOf l = iviews l Map.singleton

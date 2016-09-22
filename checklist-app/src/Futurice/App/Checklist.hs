@@ -7,8 +7,7 @@ import Futurice.Prelude
 import Prelude ()
 
 import Control.Lens
-       (at, filtered, folded, has, ifoldMapOf, ifolded, ix, non, only, to,
-       (^?))
+       (at, filtered, has, ifoldMapOf, ix, non, only, to, (^?))
 import Data.List                 (sortOn)
 import Data.Time                 (addDays, diffDays)
 import Futurice.Servant
@@ -122,7 +121,7 @@ indexPage world = do
                     td_ $ bool (toHtmlRaw ("&#8868;" :: Text)) (pure ()) $ user ^. userConfirmed
                     td_ $ toHtml $ show (diffDays startingDay today) <> " days"
                     case ifoldMapOf
-                        (worldTaskItems . at uid . non mempty . ifolded)
+                        (worldTaskItems . ix uid . ifolded)
                         (toTodoCounter world viewerRole)
                         world
                       of

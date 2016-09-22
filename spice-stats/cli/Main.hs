@@ -3,7 +3,7 @@ module Main (main, contrSubject, repoDescription, repoLanguage, repoOwner, repoN
 import Futurice.Prelude
 import Prelude          ()
 
-import Control.Lens            (folded, sumOf)
+import Control.Lens            (sumOf)
 import Network.HTTP.Client     (newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 
@@ -23,8 +23,8 @@ printStats s = do
 
 main :: IO ()
 main = do
-  cfg <- getConfig
-  mgr <- newManager tlsManagerSettings
-  msgs <- fetchMessagesLoop (cfgFdOrg cfg) (cfgFdFlow cfg) (cfgFdAuth cfg) mgr
-  s <- spiceStats mgr msgs (cfgGhAuth cfg)
-  printStats s
+    cfg <- getConfig
+    mgr <- newManager tlsManagerSettings
+    msgs <- fetchMessagesLoop (cfgFdOrg cfg) (cfgFdFlow cfg) (cfgFdAuth cfg) mgr
+    s <- spiceStats mgr msgs (cfgGhAuth cfg)
+    printStats s
