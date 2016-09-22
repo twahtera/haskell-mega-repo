@@ -110,8 +110,33 @@ indexPage' world (fu, viewerRole) = do
                     ", you are "
                     toHtml (showRole viewerRole)
 
+        -- Title
         row_ $ large_ 12 $ header_ $ h1_ $ "Active employees"
 
+        -- List filtering controls
+        row_ $ do
+            large_ 3 $ label_ $ do
+                "Location"
+                select_ $ do
+                    option_ [ value_ "" ] $ "Show all"
+                    -- TODO: value
+                    for_ [ minBound .. maxBound ] $ \loc ->
+                        option_ [ value_ "" ] $ toHtml $ showLocation loc
+            large_ 3 $ label_ $ do
+                "Checklist"
+                select_ $ do
+                    option_ [ value_ "" ] $ "Show all"
+                    -- TODO: list
+            large_ 5 $ label_ $ do
+                "Without task"
+                select_ $ do
+                    option_ [ value_ "" ] $ "Show all"
+                    -- TODO: list
+            large_ 1 $ label_ $ do
+                toHtmlRaw ("&nbsp;" :: Text)
+                button_ [ class_ "button" ] $ "Filter"
+
+        -- The table
         row_ $ large_ 12 $ table_ $ do
             thead_ $ tr_ $ do
                 th_ [title_ "Status"]                      "S"
@@ -165,6 +190,15 @@ showRole TaskRoleIT         = "IT"
 showRole TaskRoleHR         = "HR"
 showRole TaskRoleSupervisor = "supervisor"
 showRole TaskRoleOther      = "specatator"
+
+showLocation :: Location -> Text
+showLocation LocHelsinki  = "Helsinki"
+showLocation LocTampere   = "Tampere"
+showLocation LocBerlin    = "Berlin"
+showLocation LocLondon    = "London"
+showLocation LocStockholm = "Stockholm"
+showLocation LocMunich    = "Munich"
+showLocation LocOther     = "Other"
 
 toTodoCounter :: World -> TaskRole -> Identifier Task -> TaskItemDone -> TodoCounter
 toTodoCounter world tr tid td =
