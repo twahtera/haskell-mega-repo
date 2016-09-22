@@ -20,11 +20,13 @@ import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Clay
 import Futurice.App.Checklist.Types
 
+import qualified FUM
+
 -- TODO: make to .Types.Ctx
 type Ctx = World
 
 server :: Ctx -> Server ChecklistAPI
-server ctx = liftIO (indexPage ctx)
+server ctx = liftIO . indexPage ctx
 
 currentDay :: IO Day
 currentDay = utctDay <$> currentTime
@@ -69,8 +71,8 @@ checklistNameHtml world i =
 viewerRole :: TaskRole
 viewerRole = TaskRoleIT
 
-indexPage :: Ctx -> IO (Page "indexpage")
-indexPage world = do
+indexPage :: Ctx -> Maybe FUM.UserName -> IO (Page "indexpage")
+indexPage world fu = do
     today <- currentDay
     let employees = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
     pure $ Page $ page_ "Checklist" pageParams $ do
@@ -84,6 +86,10 @@ indexPage world = do
                 li_ $ a_ [ href_ "#" ] "Checklists"
                 li_ $ a_ [ href_ "#" ] "Tasks"
                 li_ $ a_ [ href_ "#" ] "Reminder lists"
+            div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
+                li_ [ class_ "menu-text" ] $ do
+                    "Hello "
+                    maybe (em_ "Guest") (toHtml . view FUM.getUserName) fu
 
         row_ $ large_ 12 $ header_ $ h1_ $ "Active employees"
 
