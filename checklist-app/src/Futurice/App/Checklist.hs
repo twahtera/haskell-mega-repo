@@ -101,7 +101,7 @@ indexPage world = do
                         user ^. userFirstName <> " " <> user ^. userLastName
                     td_ $ checklistNameHtml world (user ^. userChecklist)
                     td_ $ toHtml $ show $ user ^. userStartingDay
-                    td_ $ toHtmlRaw $ bool ("&#8868;" :: Text) "&#8869;" $ user ^. userConfirmed
+                    td_ $ bool (toHtmlRaw ("&#8868;" :: Text)) (pure ()) $ user ^. userConfirmed
                     td_ $ toHtml $ show eta <> " days"
                     td_ "TODO"
                     td_ $ toHtml $ foldMapOf
