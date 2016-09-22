@@ -27,14 +27,14 @@ module Futurice.App.Checklist.Types (
     TaskAppliance(..),
     -- ** Wrappers
     Identifier(..),
+    identifierToText,
     HasIdentifier (..),
     Name (..),
-    HasTaskName (..),
     -- * Lenses
     -- ** User
     userFirstName, userLastName, userContractType, userLocation, userConfirmed,
     userPhone, userContactEmail, userStartingDay, userSupervisor, userTribe,
-    userInfo, userFUMLogin, userHRNumber,
+    userInfo, userFUMLogin, userHRNumber, userChecklist,
     -- ** ContractType
     _ContractTypePermanent, _ContractTypeExternal, _ContractTypeFixedTerm,
     _ContractTypePartTimer, _ContractTypeSummerWorker,
@@ -56,9 +56,15 @@ module Futurice.App.Checklist.Types (
     -- * World
     World,
     mkWorld,
-    worldValid,
+    -- ** Lenses
+    worldUsers,
+    worldTasks,
+    worldLists,
+    worldTaskItems,
+    worldTaskItemsByUser
     ) where
 
 import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.Page
+import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.World

@@ -27,22 +27,29 @@ library
   ghc-options: -Wall
   build-depends:
       base >= 4.7 && <4.10
-    , QuickCheck
+    , clay
+    , containers
     , futurice-foundation
     , futurice-prelude
     , futurice-servant
     , lens
     , lucid
     , mmorph
+    , QuickCheck
     , servant
+    , reducers
     , servant-lucid
     , servant-server
     , uuid
   exposed-modules:
       Futurice.App.Checklist
       Futurice.App.Checklist.API
+      Futurice.App.Checklist.Clay
+      Futurice.App.Checklist.Markup
       Futurice.App.Checklist.Types
       Futurice.App.Checklist.Types.Basic
+      Futurice.App.Checklist.Types.Identifier
+      Futurice.App.Checklist.Types.IdMap
       Futurice.App.Checklist.Types.Page
       Futurice.App.Checklist.Types.World
   default-language: Haskell2010
@@ -54,14 +61,17 @@ executable checklist-app-server
   ghc-options: -Wall -Wall -threaded
   build-depends:
       base >= 4.7 && <4.10
-    , QuickCheck
+    , clay
+    , containers
     , futurice-foundation
     , futurice-prelude
     , futurice-servant
     , lens
     , lucid
     , mmorph
+    , QuickCheck
     , servant
+    , reducers
     , servant-lucid
     , servant-server
     , uuid
