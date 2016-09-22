@@ -39,7 +39,7 @@ data User = User
       -- ^ /Note:/ ATM this is free form text.
     , _userInfo         :: !Text
       -- ^ Free text comments about the user.
-    --
+    -- Data filled up later:
     , _userFUMLogin     :: !(Maybe FUMLogin)
     , _userHRNumber     :: !(Maybe Int) -- TODO: make a newtype for this
     }
@@ -79,7 +79,7 @@ data Task = Task
       -- ^ Display name
     , _taskCanBeDone    :: User -> Bool
       -- ^ Some tasks cannot be yet done, if some information is missing.
-    , _taskDependencies :: !(Vector :$ Identifier Task)
+    , _taskDependencies :: !(Set :$ Identifier Task)
       -- ^ Some tasks can be done only after some other tasks are done.
     , _taskCheck        :: User -> IO CheckResult
       -- ^ Tasks can check themselves whether they are done. For example if 'userFUMLogin' is known,
@@ -98,7 +98,7 @@ data CheckResult
     | CheckResultMaybe
       -- ^ Non definitive answer, but doesn't prevent from completing task. E.g. long cache time might make user still invisible in FUM.
     | CheckResultFailure
-      -- ^ Definitively not ok, 'TaskItem' cannot be completed.
+      -- ^ Definitively not ok, task cannot be completed.
   deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
 
 
@@ -111,23 +111,18 @@ data TaskRole
   deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
 
 
--- | Checklist is collection of tasks. Used to group tasks together to create 'TaskItem's together.
+-- | Checklist is collection of tasks. Used to group tasks together to create task instances together.
 --  Example lists are "new full-time employee in Helsinki"
 data Checklist = Checklist
     { _checklistId    :: !(Identifier Checklist)
     , _checklistName  :: !(Name Checklist)
-    , _checklistTasks :: !(Vector (Identifier Task, Maybe TaskAppliance))
+    , _checklistTasks :: !(Map (Identifier Task) TaskAppliance)
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
 
-
--- | 'TaskItem' is an instance of 'Task'. I.e. the actual task needed to be done.
-data TaskItem = TaskItem
-    { _taskItemId   :: !(Identifier TaskItem)
-    , _taskItemUser :: !(Identifier User)
-    , _taskItemTask :: !(Identifier Task)
-    , _taskItemDone :: !Bool
-    }
+data TaskItemDone
+    = TaskItemDone
+    | TaskItemTodo
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 -- | Task appliance, e.g. this task is /"only for Helsinki and permanent employees"/.
@@ -148,7 +143,7 @@ makeLenses ''Task
 makePrisms ''CheckResult
 makePrisms ''TaskRole
 makeLenses ''Checklist
-makeLenses ''TaskItem
+makePrisms ''TaskItemDone
 
 -------------------------------------------------------------------------------
 -- HasIdentifier instances
@@ -162,9 +157,6 @@ instance HasIdentifier Task Task where
 
 instance HasIdentifier Checklist Checklist where
     identifier = checklistId
-
-instance HasIdentifier TaskItem TaskItem where
-    identifier = taskItemId
 
 -------------------------------------------------------------------------------
 -- Some arbitraries
@@ -192,13 +184,13 @@ deriveGeneric ''Task
 deriveGeneric ''CheckResult
 deriveGeneric ''TaskRole
 deriveGeneric ''Checklist
-deriveGeneric ''TaskItem
+deriveGeneric ''TaskItemDone
 
 instance Arbitrary User where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance Arbitrary TaskItem where
+instance Arbitrary TaskItemDone where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 

@@ -1,12 +1,16 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 module Futurice.App.Checklist (defaultMain) where
 
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Lens              (to, at, non, folded, foldMapOf)
+import Control.Lens
+       (at, filtered, folded, has, ifoldMapOf, ifolded, ix, non, only, to,
+       (^?))
 import Data.List                 (sortOn)
+import Data.Time                 (addDays, diffDays)
 import Futurice.Servant
 import Lucid                     hiding (for_)
 import Lucid.Foundation.Futurice
@@ -62,10 +66,14 @@ checklistNameHtml world i =
     a_ [ href_ $ "/checklist/" <> i ^. to identifierToText] $ toHtml $
         world ^. worldLists . at i . non (error "Inconsisten world") . checklistName . to show
 
+-- | TODO: context
+viewerRole :: TaskRole
+viewerRole = TaskRoleIT
+
 indexPage :: Ctx -> IO (Page "indexpage")
 indexPage world = do
     today <- currentDay
-    let users = world ^. worldUsers
+    let users = sortOn (view userStartingDay) $ world ^.. worldUsers . folded
     pure $ Page $ page_ "Checklist" pageParams $ do
         -- http://foundation.zurb.com/sites/docs/top-bar.html
         div_ [ class_ "top-bar" ] $ do
@@ -89,48 +97,54 @@ indexPage world = do
                 th_ [title_ "Due date"]                    "Due date"
                 th_ [title_ "Confirmed - contract signed"] "Confirmed"
                 th_ [title_ "Days till start"]             "ETA"
-                th_ "Group items?"
+                th_ [title_ "IT task todo/done"]           "IT items" -- Title based on viewerRole
                 th_ [title_ "Task items todo/done"]        "Items"
-            tbody_ $ for_ (sortOn (view userStartingDay) $ toList users) $ \user -> do
-                let eta =  toModifiedJulianDay (user ^. userStartingDay) - toModifiedJulianDay today
-                tr_ [class_ $ etaClass eta] $ do
+            tbody_ $ for_ users $ \user -> do
+                let uid = user ^. identifier
+                let firstFutureDay = users ^? folded . userStartingDay . filtered (> today)
+                let startingDay = user ^. userStartingDay
+                let etaClass day = case compare day today of
+                        -- TODO: magic numbers
+                        LT | day < addDays (- 30) today          -> "eta-far-past"
+                           | otherwise                           -> "eta-past"
+                        EQ                                       -> "eta-today"
+                        GT | maybe False (day <=) firstFutureDay -> "eta-near-future"
+                           | day > addDays 30 today              -> "eta-far-future"
+                           | otherwise                           -> "eta-future"
+                tr_ [ class_ $ etaClass $ user ^. userStartingDay ] $ do
                     td_ $ contractTypeHtml $ user ^. userContractType
                     td_ $ locHtml $ user ^. userLocation
                     -- TODO: use safeLink
-                    td_ $ a_ [ href_ $ "/user/" <> user ^. identifier ^. to identifierToText ] $ toHtml $
+                    td_ $ a_ [ href_ $ "/user/" <> user ^. identifier . to identifierToText ] $ toHtml $
                         user ^. userFirstName <> " " <> user ^. userLastName
                     td_ $ checklistNameHtml world (user ^. userChecklist)
-                    td_ $ toHtml $ show $ user ^. userStartingDay
+                    td_ $ toHtml $ show startingDay
                     td_ $ bool (toHtmlRaw ("&#8868;" :: Text)) (pure ()) $ user ^. userConfirmed
-                    td_ $ toHtml $ show eta <> " days"
-                    td_ "TODO"
-                    td_ $ toHtml $ foldMapOf
-                        (worldTaskItemsByUser . at (user ^. identifier) . non mempty . folded)
-                        taskItemToTodoCounter
+                    td_ $ toHtml $ show (diffDays startingDay today) <> " days"
+                    case ifoldMapOf
+                        (worldTaskItems . at uid . non mempty . ifolded)
+                        (toTodoCounter world viewerRole)
                         world
-  where
-    etaClass eta = case compare eta 0 of
-        EQ -> "eta-today"
-        LT -> "eta-past"
-        GT -> "eta-future"
+                      of
+                        TodoCounter a b i j -> do
+                            td_ $ toHtml (show a) *> "/" *> toHtml (show b)
+                            td_ $ toHtml (show i) *> "/" *> toHtml (show j)
 
-taskItemToTodoCounter :: TaskItem -> TodoCounter
-taskItemToTodoCounter ti
-    | ti ^. taskItemDone = TodoCounter 1 1
-    | otherwise          = TodoCounter 0 1
+toTodoCounter :: World -> TaskRole -> Identifier Task -> TaskItemDone -> TodoCounter
+toTodoCounter world tr tid td =
+    case (has (worldTasks . ix tid . taskRole . only tr) world, td) of
+        (True,  TaskItemDone) -> TodoCounter 1 1 1 1
+        (True,  TaskItemTodo) -> TodoCounter 0 1 0 1
+        (False, TaskItemDone) -> TodoCounter 0 0 1 1
+        (False, TaskItemTodo) -> TodoCounter 0 0 0 1
 
-data TodoCounter = TodoCounter !Int !Int
+data TodoCounter = TodoCounter !Int !Int !Int !Int
 instance Semigroup TodoCounter where
-    TodoCounter a b <> TodoCounter a' b' = TodoCounter (a + a') (b + b')
+    TodoCounter a b c d <> TodoCounter a' b' c' d' =
+        TodoCounter (a + a') (b + b') (c + c') (d + d')
 instance Monoid TodoCounter where
-    mempty = TodoCounter 0 0
+    mempty = TodoCounter 0 0 0 0
     mappend = (<>)
-instance ToHtml TodoCounter where
-    toHtmlRaw = toHtml
-    toHtml (TodoCounter a b) = do
-        toHtml (show a)
-        "/"
-        toHtml (show b)
 
 bool :: a -> a -> Bool -> a
 bool t _ True  = t

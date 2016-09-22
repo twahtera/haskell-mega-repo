@@ -9,18 +9,21 @@ module Futurice.App.Checklist.Types.World (
     worldLists,
     worldTaskItems,
     -- * Getters
-    worldTaskItemsByUser,
+    worldTaskItems',
     ) where
 
 -- import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Lens         (contains, filtered, folded, (%~))
+import Control.Lens
+       (IndexedGetting, contains, filtered, folded, ifiltered, ifoldMapOf,
+       ifolded, iviews, (%~), (<.>))
 import Data.Semigroup.Union (UnionWith (..))
-import Data.Vector.Lens     (toVectorOf, vector)
 
 import qualified Data.Map        as Map
+import qualified Data.Set        as Set
+import qualified Data.Set.Lens   as Set
 import qualified Test.QuickCheck as QC
 
 import           Futurice.App.Checklist.Types.Basic
@@ -33,9 +36,10 @@ data World = World
     { _worldUsers     :: !(IdMap User)
     , _worldTasks     :: !(IdMap Task)
     , _worldLists     :: !(IdMap Checklist)
-    , _worldTaskItems :: !(IdMap TaskItem)
+    , _worldTaskItems :: !(Map (Identifier User) (Map (Identifier Task) TaskItemDone))
     -- lazy fields, updated on need when accessed
-    , _worldTaskItemsByUser :: (Map (Identifier User) [TaskItem])
+    , _worldTaskItems' :: Map (Identifier Task) (Map (Identifier User) TaskItemDone)
+      -- ^ isomorphic with 'worldTaskItems'
     }
 
 makeLenses ''World
@@ -59,18 +63,14 @@ mkWorld
     :: IdMap User
     -> IdMap Task
     -> IdMap Checklist
-    -> IdMap TaskItem
+    -> Map (Identifier User) (Map (Identifier Task) TaskItemDone)
     -> World
 mkWorld us ts ls is =
-    let uids            = IdMap.keysSet us
-        tids            = IdMap.keysSet ts
+    let tids            = IdMap.keysSet ts
         cids            = IdMap.keysSet ls
         -- Validation predicates
-        validUid uid     = uids ^. contains uid
         validTid tid     = tids ^. contains tid
         validCid cid     = cids ^. contains cid
-        validTaskItem ti =
-            validTid (ti ^. taskItemTask) && validUid (ti ^. taskItemUser)
 
         -- Cleaned up inputs
         us' = us
@@ -78,26 +78,19 @@ mkWorld us ts ls is =
 
         ts' = ts
             & IdMap.unsafeTraversal . taskDependencies
-            %~ toVectorOf (folded . filtered validTid)
+            %~ Set.setOf (folded . filtered validTid)
 
         ls' = ls
             & IdMap.unsafeTraversal . checklistTasks
-            %~ toVectorOf (folded . filtered (validTid . fst))
-
-        is' = is
-            & IdMap.toIdMapOf (folded . filtered validTaskItem)
+            %~ toMapOf (ifolded . ifiltered (\k _v -> validTid k))
 
         -- TODO: create extra fields
-    in World us' ts' ls' is'
-        (mkTaskItemsByUser is')
+    in World us' ts' ls' is (swapMapMap is)
 
-mkTaskItemsByUser
-    :: Foldable f
-    => f TaskItem
-    -> Map (Identifier User) [TaskItem]
-mkTaskItemsByUser = getUnionWith . foldMap (UnionWith . f)
+swapMapMap :: (Ord k, Ord k') => Map k (Map k' v) -> Map k' (Map k v)
+swapMapMap = getUnionWith . ifoldMapOf (ifolded <.> ifolded) f
   where
-    f ti = Map.singleton (ti ^. taskItemUser) [ti]
+    f (k, k') v = UnionWith $ Map.singleton k' $ Map.singleton k v
 
 -- | Generates consistent worlds.
 instance QC.Arbitrary World where
@@ -118,7 +111,7 @@ instance QC.Arbitrary World where
         cs <- fmap IdMap.fromFoldable . QC.listOf1 $ Checklist
             <$> QC.arbitrary
             <*> QC.arbitrary
-            <*> fmap (view vector) (QC.listOf1 checklistItemGen)
+            <*> fmap Map.fromList (QC.listOf1 checklistItemGen)
 
         let cids = IdMap.keysSet cs
             cidGen = QC.elements (toList cids)
@@ -139,16 +132,18 @@ instance QC.Arbitrary World where
         -- Tasks
         -- TODO: we can still generate cyclic tasks!
         ts' <- flip IdMap.unsafeTraversal ts $ \task -> do
-            deps <- QC.listOf tidGen
+            deps <- Set.fromList <$> QC.listOf tidGen
             pure $ task
-                & taskDependencies .~ deps ^. vector
+                & taskDependencies .~ deps
 
         -- TaskItems
-        is <- fmap IdMap.fromFoldable . QC.listOf $ TaskItem
-            <$> QC.arbitrary
-            <*> uidGen
-            <*> tidGen
-            <*> QC.arbitrary
+        let taskItemGen = (\uid tid done -> (uid, Map.singleton tid done))
+                <$> uidGen <*> tidGen <*> QC.arbitrary
+        is <- QC.listOf taskItemGen
+        let is' = Map.fromListWith Map.union is
 
         -- World
-        pure $ mkWorld us' ts' cs is
+        pure $ mkWorld us' ts' cs is'
+
+toMapOf :: IndexedGetting i (Map i a) s a -> s -> Map i a
+toMapOf l = iviews l Map.singleton
