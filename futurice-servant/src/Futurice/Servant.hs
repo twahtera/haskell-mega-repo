@@ -1,9 +1,12 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 module Futurice.Servant (
     -- * @main@ boilerplate
     futuriceServerMain,
@@ -24,6 +27,8 @@ module Futurice.Servant (
     Colour (..),
     AccentColour (..),
     AccentFamily (..),
+    -- * SSO user
+    SSOUser,
     -- * Lower-level
     -- ** Server API
     FuturiceAPI,
@@ -44,25 +49,30 @@ module Futurice.Servant (
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Concurrent.STM   (atomically)
+import Control.Concurrent.STM               (atomically)
+import Data.Char                            (isAlpha)
 import Data.Swagger
-import Development.GitRev       (gitCommitDate, gitHash)
+import Development.GitRev                   (gitCommitDate, gitHash)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
-import Network.Wai              (Middleware)
+import Network.Wai                          (Middleware, requestHeaders)
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import Servant
-import Servant.Cache.Class      (DynMapCache, cachedIO)
-import Servant.Futurice.Favicon (FutuFaviconAPI, serveFutuFavicon)
-import Servant.Futurice.Status  hiding (info)
-import Servant.HTML.Lucid       (HTML)
-import System.IO              (stderr)
+import Servant.Cache.Class                  (DynMapCache, cachedIO)
+import Servant.Futurice.Favicon             (FutuFaviconAPI, serveFutuFavicon)
+import Servant.Futurice.Status              hiding (info)
+import Servant.HTML.Lucid                   (HTML)
+import Servant.Server.Internal              (passToServer)
 import Servant.Swagger
 import Servant.Swagger.UI
+import System.IO                            (stderr)
 
+import qualified Data.Text                     as T
+import qualified Data.Text.Encoding            as TE
 import qualified Data.Text.IO                  as T
-import qualified Servant.Cache.Internal.DynMap as DynMap
+import qualified FUM
 import qualified Network.Wai.Handler.Warp      as Warp
+import qualified Servant.Cache.Internal.DynMap as DynMap
 
 type FuturiceAPI api colour =
     FutuFaviconAPI colour
@@ -159,3 +169,21 @@ liftFuturiceMiddleware mw _ _ = mw
 
 newDynMapCache :: IO DynMapCache
 newDynMapCache = DynMap.newIO
+
+-------------------------------------------------------------------------------
+-- SSO User
+-------------------------------------------------------------------------------
+
+data SSOUser
+
+instance HasServer api context => HasServer (SSOUser :> api) context where
+    type ServerT (SSOUser :> api) m = Maybe FUM.UserName -> ServerT api m
+
+    route Proxy context subserver =
+        route (Proxy :: Proxy api) context (passToServer subserver ssoUser)
+      where
+        ssoUser req = FUM.UserName . T.filter isAlpha . TE.decodeLatin1 <$>
+            lookup "HTTP_REMOTE_USER" (requestHeaders req)
+
+instance HasSwagger api => HasSwagger (SSOUser :> api) where
+    toSwagger _ = toSwagger (Proxy :: Proxy api)
