@@ -36,10 +36,11 @@ library
     , lucid
     , mmorph
     , QuickCheck
-    , servant
     , reducers
+    , servant
     , servant-lucid
     , servant-server
+    , time
     , uuid
   exposed-modules:
       Futurice.App.Checklist
@@ -70,10 +71,11 @@ executable checklist-app-server
     , lucid
     , mmorph
     , QuickCheck
-    , servant
     , reducers
+    , servant
     , servant-lucid
     , servant-server
+    , time
     , uuid
     , checklist-app
   default-language: Haskell2010

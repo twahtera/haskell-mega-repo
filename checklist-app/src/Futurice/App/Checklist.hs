@@ -5,8 +5,9 @@ module Futurice.App.Checklist (defaultMain) where
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Lens              (to, at, non, folded)
+import Control.Lens              (at, filtered, folded, non, to, (^?))
 import Data.List                 (sortOn)
+import Data.Time                 (addDays)
 import Futurice.Servant
 import Lucid                     hiding (for_)
 import Lucid.Foundation.Futurice
@@ -65,7 +66,7 @@ checklistNameHtml world i =
 indexPage :: Ctx -> IO (Page "indexpage")
 indexPage world = do
     today <- currentDay
-    let users = world ^. worldUsers
+    let users = sortOn (view userStartingDay) $ world ^.. worldUsers . folded
     pure $ Page $ page_ "Checklist" pageParams $ do
         -- http://foundation.zurb.com/sites/docs/top-bar.html
         div_ [ class_ "top-bar" ] $ do
@@ -91,9 +92,18 @@ indexPage world = do
                 th_ [title_ "Days till start"]             "ETA"
                 th_ "Group items?"
                 th_ [title_ "Task items todo/done"]        "Items"
-            tbody_ $ for_ (sortOn (view userStartingDay) $ toList users) $ \user -> do
+            tbody_ $ for_ users $ \user -> do
+                let firstFutureDay = users ^? folded . userStartingDay . filtered (> today)
+                let etaClass day = case compare day today of
+                        -- TODO: magic numbers
+                        LT | day < addDays (- 30) today          -> "eta-far-past"
+                           | otherwise                           -> "eta-past"
+                        EQ                                       -> "eta-today"
+                        GT | maybe False (day <=) firstFutureDay -> "eta-near-future"
+                           | day > addDays 30 today              -> "eta-far-future"
+                           | otherwise                           -> "eta-future"
                 let eta =  toModifiedJulianDay (user ^. userStartingDay) - toModifiedJulianDay today
-                tr_ [class_ $ etaClass eta] $ do
+                tr_ [ class_ $ etaClass $ user ^. userStartingDay ] $ do
                     td_ $ contractTypeHtml $ user ^. userContractType
                     td_ $ locHtml $ user ^. userLocation
                     -- TODO: use safeLink
@@ -111,11 +121,6 @@ indexPage world = do
                         . folded
                         . taskItemDone
                         . to taskItemToTodoCounter
-  where
-    etaClass eta = case compare eta 0 of
-        EQ -> "eta-today"
-        LT -> "eta-past"
-        GT -> "eta-future"
 
 taskItemToTodoCounter :: TaskItemDone -> TodoCounter
 taskItemToTodoCounter TaskItemDone = TodoCounter 1 1

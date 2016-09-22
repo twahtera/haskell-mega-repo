@@ -17,10 +17,16 @@ css = do
         marginBottom $ em 1
     table ? tbody ? tr ? do
         nthChild "even" & do
-            ".eta-today"  & backgroundColor (lighten 0.92 yellow)
-            ".eta-past"   & backgroundColor (lighten 0.92 green)
-            ".eta-future" & backgroundColor (lighten 0.92 red)
+            ".eta-far-past"    & backgroundColor (lighten 0.92 blue)
+            ".eta-past"        & backgroundColor (lighten 0.92 green)
+            ".eta-today"       & backgroundColor (lighten 0.92 yellow)
+            ".eta-near-future" & backgroundColor (lighten 0.90 orange)
+            ".eta-future"      & backgroundColor (lighten 0.92 red)
+            ".eta-far-future"  & backgroundColor (lighten 0.92 violet)
         nthChild "odd" & do
-            ".eta-today"  & backgroundColor (lighten 0.95 yellow)
-            ".eta-past"   & backgroundColor (lighten 0.95 green)
-            ".eta-future" & backgroundColor (lighten 0.95 red)
+            ".eta-far-past"    & backgroundColor (lighten 0.95 blue)
+            ".eta-past"        & backgroundColor (lighten 0.95 green)
+            ".eta-today"       & backgroundColor (lighten 0.95 yellow)
+            ".eta-near-future" & backgroundColor (lighten 0.92 orange)
+            ".eta-future"      & backgroundColor (lighten 0.95 red)
+            ".eta-far-future"  & backgroundColor (lighten 0.95 violet)

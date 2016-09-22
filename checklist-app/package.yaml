@@ -21,10 +21,11 @@ dependencies:
   - lucid
   - mmorph
   - QuickCheck
-  - servant
   - reducers
+  - servant
   - servant-lucid
   - servant-server
+  - time
   - uuid
 
 library:
