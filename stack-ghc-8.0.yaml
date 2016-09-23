@@ -35,6 +35,14 @@ packages:
 - servant-status/
 - spice-stats/
 - location:
+    git: https://github.com/phadej/swagger2.git
+    commit: cf77585c732e160bc9b246899ea55507a1446348
+  extra-dep: true
+- location:
+    git: https://github.com/phadej/http-api-data.git
+    commit: 101f0cce36c6140ae8027baefbe7540b2ac0783e
+  extra-dep: true
+- location:
     git: https://github.com/facebook/Haxl.git
     commit: 528bba55657c5bd379397da5da2efc42c610d3c8
   extra-dep: true

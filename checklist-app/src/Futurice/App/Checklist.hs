@@ -27,7 +27,7 @@ import qualified FUM
 type Ctx = World
 
 server :: Ctx -> Server ChecklistAPI
-server ctx = liftIO . indexPage ctx
+server ctx = indexPage ctx
 
 currentDay :: IO Day
 currentDay = utctDay <$> currentTime
@@ -68,10 +68,17 @@ checklistNameHtml world i =
     a_ [ href_ $ "/checklist/" <> i ^. to identifierToText] $ toHtml $
         world ^. worldLists . at i . non (error "Inconsisten world") . checklistName . to show
 
-indexPage :: Ctx -> Maybe FUM.UserName -> IO (Page "indexpage")
-indexPage world fu = case userInfo of
+indexPage
+    :: MonadIO m
+    => Ctx
+    -> Maybe FUM.UserName
+    -> Maybe Location
+    -> Maybe UUID
+    -> Maybe UUID
+    -> m (Page "indexpage")
+indexPage world fu _loc _cid _tid = case userInfo of
     Nothing        -> pure nonAuthorizedPage
-    Just userInfo' -> indexPage' world userInfo'
+    Just userInfo' -> liftIO $ indexPage' world userInfo'
   where
     userInfo :: Maybe (FUM.UserName, TaskRole, Location)
     userInfo = world ^? worldUsers . ix fu . _Just

@@ -27,6 +27,7 @@ library
   ghc-options: -Wall
   build-depends:
       base >= 4.7 && <4.10
+    , aeson-compat
     , clay
     , containers
     , env-config
@@ -41,6 +42,7 @@ library
     , servant
     , servant-lucid
     , servant-server
+    , swagger2
     , time
     , uuid
   exposed-modules:
@@ -64,6 +66,7 @@ executable checklist-app-server
   ghc-options: -Wall -Wall -threaded
   build-depends:
       base >= 4.7 && <4.10
+    , aeson-compat
     , clay
     , containers
     , env-config
@@ -78,6 +81,7 @@ executable checklist-app-server
     , servant
     , servant-lucid
     , servant-server
+    , swagger2
     , time
     , uuid
     , checklist-app
