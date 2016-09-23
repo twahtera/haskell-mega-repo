@@ -38,7 +38,7 @@ library:
     - servant
     - servant-blaze
     - servant-cassava
-    - servant-client
+    - servant-client >= 0.9
     - servant-lucid
     - servant-server
     - servant-swagger

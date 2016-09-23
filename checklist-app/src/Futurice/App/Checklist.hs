@@ -7,7 +7,7 @@ import Futurice.Prelude
 import Prelude ()
 
 import Control.Lens
-       (at, filtered, has, ifoldMapOf, ix, non, only, to, (^?))
+       (filtered, has, ifoldMapOf, non, only, to, (^?))
 import Data.List                 (sortOn)
 import Data.Time                 (addDays, diffDays)
 import Futurice.Servant

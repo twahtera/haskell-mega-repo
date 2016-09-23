@@ -46,30 +46,25 @@ packages:
   extra-dep: true
 # Not ours
 - location:
-    git: https://github.com/snapframework/snap.git
-    commit: ed168734edd0b19083924d922822e9ad1314bb8a
-  extra-dep: true
-- location:
     git: https://github.com/facebook/Haxl.git
     commit: 528bba55657c5bd379397da5da2efc42c610d3c8
   extra-dep: true
 extra-deps:
-- aeson-1.0.0.0
+- aeson-1.0.1.0
 - bifunctors-5.4.1
 - clay-0.11
 - friendly-time-0.4
 - generics-sop-lens-0.1.1.0
-- heist-1.0.0.0
-- http-streams-0.8.4.0
+- http-api-data-0.3
 - insert-ordered-containers-0.2.0.0
 - io-streams-haproxy-1.0.0.1
 - monad-http-0.2.0.0
 - semigroupoids-5.1
-- servant-0.8.1
+- servant-0.9
 - servant-cassava-0.8
-- servant-client-0.8.1
-- servant-docs-0.8.1
-- servant-server-0.8.1
+- servant-client-0.9
+- servant-docs-0.9
+- servant-server-0.9
 - servant-swagger-1.1.2
 - servant-swagger-ui-0.2.0.2.1.5
 - snap-core-1.0.0.0
@@ -77,4 +72,3 @@ extra-deps:
 - swagger2-2.1.2.1
 - these-0.7.2
 - transformers-compat-0.5.1.4
-        

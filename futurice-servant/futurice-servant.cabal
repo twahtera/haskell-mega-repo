@@ -36,7 +36,7 @@ library
     , futulogo
     , futurice-prelude
     , gitrev >=1.2.0
-    , servant ==0.8.1
+    , servant ==0.9
     , servant-cache
     , servant-lucid
     , servant-server

@@ -46,18 +46,17 @@ packages:
     git: https://github.com/phadej/github.git
     commit: dd149a469cad0fb4ecbb75a76efc633d92870a0c
   extra-dep: true
-- location:
-    git: https://github.com/snapframework/snap.git
-    commit: ed168734edd0b19083924d922822e9ad1314bb8a
-  extra-dep: true
 extra-deps:
-- aeson-1.0.0.0
-- heist-1.0.0.0
-- http-client-0.5.3.1
-- http-client-tls-0.3.1.1
+- aeson-1.0.1.0
+- http-api-data-0.3
+- http-client-0.5.3.2
+- http-client-tls-0.3.3
 - insert-ordered-containers-0.2.0.0
-- map-syntax-0.2.0.1
 - monad-http-0.2.0.0
 - recursion-schemes-5
+- servant-0.9
+- servant-client-0.9
+- servant-docs-0.9
+- servant-server-0.9
 - tz-0.1.2.0
 flags: {}
