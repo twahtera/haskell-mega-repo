@@ -115,24 +115,29 @@ indexPage' world (fu, viewerRole) = do
 
         -- List filtering controls
         row_ $ do
-            large_ 3 $ label_ $ do
+            largemed_ 3 $ label_ $ do
                 "Location"
                 select_ $ do
+                    -- TODO: Select chosen
                     option_ [ value_ "" ] $ "Show all"
                     -- TODO: value
                     for_ [ minBound .. maxBound ] $ \loc ->
                         option_ [ value_ "" ] $ toHtml $ showLocation loc
-            large_ 3 $ label_ $ do
+            largemed_ 3 $ label_ $ do
                 "Checklist"
                 select_ $ do
+                    -- TODO: select chosen
                     option_ [ value_ "" ] $ "Show all"
+                    for_ (world ^.. worldLists . folded) $ \cl ->
+                        option_ [ value_ $ cl ^. identifier . to identifierToText ]
+                            $ toHtml $ show $ cl ^.checklistName
                     -- TODO: list
-            large_ 5 $ label_ $ do
-                "Without task"
+            largemed_ 5 $ label_ $ do
+                "Task"
                 select_ $ do
                     option_ [ value_ "" ] $ "Show all"
                     -- TODO: list
-            large_ 1 $ label_ $ do
+            largemed_ 1 $ label_ $ do
                 toHtmlRaw ("&nbsp;" :: Text)
                 button_ [ class_ "button" ] $ "Filter"
 

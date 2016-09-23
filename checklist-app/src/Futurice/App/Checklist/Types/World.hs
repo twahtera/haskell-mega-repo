@@ -100,7 +100,8 @@ instance QC.Arbitrary World where
                 <$> tidGen
                 <*> QC.arbitrary
 
-        cs <- fmap IdMap.fromFoldable . QC.listOf1 $ Checklist
+        checkListCount <- QC.choose (5, 10)
+        cs <- fmap IdMap.fromFoldable . QC.vectorOf checkListCount $ Checklist
             <$> QC.arbitrary
             <*> QC.arbitrary
             <*> fmap Map.fromList (QC.listOf1 checklistItemGen)
