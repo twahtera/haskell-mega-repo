@@ -46,12 +46,11 @@ makeProxy
     :: forall api.
       ( Proxyable api
       , S (ProxyNamespace api :> ProxiedAPI api) ~ Server (ProxyNamespace api :> ProxiedAPI api)
-      , (Manager -> BaseUrl -> C (ProxiedAPI api)) ~ Client (ProxiedAPI api)
-      , (Manager -> BaseUrl -> C (ProxiedAPI api)) ~ Client (JSONAPI (ProxiedAPI api))
+      , C (ProxiedAPI api) ~ Client (JSONAPI (ProxiedAPI api))
       , HasClient (JSONAPI (ProxiedAPI api))
       )
     => Proxy api -> Ctx -> Server (ProxyNamespace api :> ProxiedAPI api)
-makeProxy _ ctx = proxy' p (client p' manager baseurl)
+makeProxy _ ctx = proxy' p (ClientEnv manager baseurl) (client p')
   where
     baseurl = ctxFutuhoursBaseurl ctx  -- TODO: make a class with Ctx -> BaseUrl
     manager = ctxManager ctx

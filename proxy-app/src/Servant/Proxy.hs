@@ -46,7 +46,7 @@ class Proxyable' api where
     type S api :: *
     type S api = Server api
 
-    proxy' :: Proxy api -> C api -> S api
+    proxy' :: Proxy api -> ClientEnv -> C api -> S api
 
 type family JSONAPI api where
     JSONAPI (Get cts a) = Get '[JSON] a
@@ -58,9 +58,9 @@ instance (KnownSymbol sym, Proxyable' api) => Proxyable' (sym :> api) where
     proxy' _ = proxy' (Proxy :: Proxy api)
 
 instance (MimeUnrender JSON a, AllCTRender cts a) => Proxyable' (Get cts a) where
-    type C (Get cts a) = ExceptT ServantError IO a
+    type C (Get cts a) = ClientM a
     type S (Get cts a) = ExceptT ServantErr IO a
-    proxy' _ cli = withExceptT f cli 
+    proxy' _ cenv cli = withExceptT f $ ExceptT $ runClientM cli cenv
       where
         f err = err504 { errBody = fromString $ show err }
 

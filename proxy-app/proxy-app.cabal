@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.15.0.
+-- This file has been generated from package.yaml by hpack version 0.14.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -51,7 +51,7 @@ library
     , servant
     , servant-blaze
     , servant-cassava
-    , servant-client
+    , servant-client >= 0.9
     , servant-lucid
     , servant-server
     , servant-swagger
