@@ -14,6 +14,7 @@ dependencies:
   - base >= 4.7 && <4.10
   - clay
   - containers
+  - env-config
   - fum-client
   - futurice-foundation
   - futurice-prelude

@@ -3,6 +3,7 @@
 module Futurice.App.Checklist.Types.World (
     World,
     mkWorld,
+    AuthCheck,
     -- * Lenses
     worldEmployees,
     worldTasks,
@@ -31,13 +32,17 @@ import qualified Futurice.App.Checklist.Types.IdMap      as IdMap
 
 import qualified FUM
 
+-- | Primitive ACL. Given possible username, return the actual username, role and location.
+type AuthCheck = Maybe FUM.UserName -> Maybe (FUM.UserName, TaskRole, Location)
+
 -- | World desribes the state of the db.
 data World = World
     { _worldEmployees  :: !(IdMap Employee)
     , _worldTasks      :: !(IdMap Task)
     , _worldLists      :: !(IdMap Checklist)
     , _worldTaskItems  :: !(Map (Identifier Employee) (Map (Identifier Task) TaskItemDone))
-    , _worldUsers      :: (FUM.UserName -> Maybe TaskRole)
+    , _worldUsers      :: AuthCheck
+      -- ^ ACL lookup
     -- lazy fields, updated on need when accessed
     , _worldTaskItems' :: Map (Identifier Task) (Map (Identifier Employee) TaskItemDone)
       -- ^ isomorphic with 'worldTaskItems'
@@ -60,7 +65,7 @@ mkWorld
     -> IdMap Task
     -> IdMap Checklist
     -> Map (Identifier Employee) (Map (Identifier Task) TaskItemDone)
-    -> (FUM.UserName -> Maybe TaskRole)
+    -> AuthCheck
     -> World
 mkWorld es ts ls is us =
     let tids            = IdMap.keysSet ts
@@ -136,9 +141,7 @@ instance QC.Arbitrary World where
         let is' = Map.fromListWith Map.union is
 
         -- Users of checklist, hardcoded in mock
-        us <- pure $ \fumLogin -> case fumLogin of
-             FUM.UserName "phadej" -> Just TaskRoleIT
-             _                     -> Nothing
+        us <- pure $ fmap (\u -> (u, TaskRoleIT, LocHelsinki))
 
         -- World
         pure $ mkWorld es' ts' cs is' us

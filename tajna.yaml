@@ -55,6 +55,10 @@ envs:
     REPORTSAPP_PORT:    "8807"
     PLANMILLPROXY_PORT: "8808"
     PROXYMGMT_PORT:     "8809"
+    CHECKLIST_PORT:     "8810"
+
+    ## Development
+    CHECKLIST_MOCKAUTH: "YES"
 
     # Legacy
     PORT: "8080"

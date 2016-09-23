@@ -29,6 +29,7 @@ library
       base >= 4.7 && <4.10
     , clay
     , containers
+    , env-config
     , fum-client
     , futurice-foundation
     , futurice-prelude
@@ -46,6 +47,7 @@ library
       Futurice.App.Checklist
       Futurice.App.Checklist.API
       Futurice.App.Checklist.Clay
+      Futurice.App.Checklist.Config
       Futurice.App.Checklist.Markup
       Futurice.App.Checklist.Types
       Futurice.App.Checklist.Types.Basic
@@ -64,6 +66,7 @@ executable checklist-app-server
       base >= 4.7 && <4.10
     , clay
     , containers
+    , env-config
     , fum-client
     , futurice-foundation
     , futurice-prelude

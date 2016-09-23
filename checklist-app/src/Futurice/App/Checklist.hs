@@ -17,6 +17,7 @@ import Servant
 import Test.QuickCheck           (arbitrary, generate, resize)
 
 import Futurice.App.Checklist.API
+import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Clay
 import Futurice.App.Checklist.Types
 
@@ -68,19 +69,12 @@ checklistNameHtml world i =
         world ^. worldLists . at i . non (error "Inconsisten world") . checklistName . to show
 
 indexPage :: Ctx -> Maybe FUM.UserName -> IO (Page "indexpage")
-indexPage world _fu = case userInfo of
+indexPage world fu = case userInfo of
     Nothing        -> pure nonAuthorizedPage
     Just userInfo' -> indexPage' world userInfo'
   where
-    -- Temporary
-    fu :: Maybe FUM.UserName
-    fu = Just $ FUM.UserName "phadej"
-
-    userInfo :: Maybe (FUM.UserName, TaskRole)
-    userInfo = do
-        fu' <- fu
-        tr  <- world ^? worldUsers . ix fu' . _Just
-        pure (fu', tr)
+    userInfo :: Maybe (FUM.UserName, TaskRole, Location)
+    userInfo = world ^? worldUsers . ix fu . _Just
 
 nonAuthorizedPage :: Page sym
 nonAuthorizedPage = Page $ page_ "Non-authorized" pageParams $ do
@@ -88,8 +82,8 @@ nonAuthorizedPage = Page $ page_ "Non-authorized" pageParams $ do
     row_ $ large_ 12 $ p_ $
         "Ask IT-team to create you an account."
 
-indexPage' :: Ctx -> (FUM.UserName, TaskRole) -> IO (Page "indexpage")
-indexPage' world (fu, viewerRole) = do
+indexPage' :: Ctx -> (FUM.UserName, TaskRole, Location) -> IO (Page "indexpage")
+indexPage' world (fu, viewerRole, _) = do
     today <- currentDay
     let employees = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
     pure $ Page $ page_ "Checklist" pageParams $ do
@@ -228,7 +222,13 @@ defaultMain = futuriceServerMain
     "Checklist API"
     "Super TODO"
     (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
-    (pure ()) (const 8000) -- getConfig cfgPort
+    getConfig cfgPort
     checklistApi server futuriceNoMiddleware
-    $ \_ _cache -> -- do
-        generate (resize 200 arbitrary)
+    $ \cfg _cache -> do
+        world0 <- generate (resize 200 arbitrary)
+        let world1 = if cfgMockAuth cfg
+            then world0 & worldUsers .~ const (Just mockCredentials)
+            else world0
+        pure world1
+  where
+    mockCredentials = (FUM.UserName "phadej", TaskRoleIT, LocHelsinki)
