@@ -8,6 +8,7 @@
 -- | Basic types
 module Futurice.App.Checklist.Types.Basic where
 
+import Control.Lens      (Prism', prism', (^?))
 import Data.Aeson.Compat (Value (String))
 import Data.Swagger
        (SwaggerType (SwaggerString), ToParamSchema (..), enum_, type_)
@@ -19,6 +20,7 @@ import Servant           (FromHttpApiData (..), ToHttpApiData (..))
 import Futurice.App.Checklist.Types.Identifier
 
 import qualified Data.Map        as Map
+import qualified Data.Text       as T
 import qualified Test.QuickCheck as QC
 
 newtype Name a = Name Text
@@ -237,19 +239,21 @@ instance Arbitrary Task where
 -------------------------------------------------------------------------------
 
 locationToText :: Location -> Text
-locationToText LocHelsinki  = "helsinki"
-locationToText LocTampere   = "tampere"
-locationToText LocBerlin    = "berlin"
-locationToText LocLondon    = "london"
-locationToText LocStockholm = "stockholm"
-locationToText LocMunich    = "munich"
-locationToText LocOther     = "other"
+locationToText LocHelsinki  = "Helsinki"
+locationToText LocTampere   = "Tampere"
+locationToText LocBerlin    = "Berlin"
+locationToText LocLondon    = "London"
+locationToText LocStockholm = "Stockholm"
+locationToText LocMunich    = "Munich"
+locationToText LocOther     = "Other"
 
-locationFromText :: Text -> Either Text Location
-locationFromText t =
-    maybe (Left $ "invalid location " <> t) Right $ Map.lookup t m
+locationFromText :: Text -> Maybe Location
+locationFromText t = Map.lookup (T.toLower t) m
   where
-    m = Map.fromList $ map (\x -> (locationToText x, x)) [minBound .. maxBound]
+    m = Map.fromList $ map (\x -> (T.toLower $ locationToText x, x)) [minBound .. maxBound]
+
+_Location :: Prism' Text Location
+_Location = prism' locationToText locationFromText
 
 -- | TODO: implement me
 instance ToParamSchema Location where
@@ -258,7 +262,8 @@ instance ToParamSchema Location where
           & enum_ ?~ (String . locationToText <$> [minBound .. maxBound])
 
 instance FromHttpApiData Location where
-    parseUrlPiece = locationFromText
+    parseUrlPiece t =
+        maybe (Left $ "invalid location " <> t) Right $ t ^? _Location
 
 instance ToHttpApiData Location where
     toUrlPiece = locationToText

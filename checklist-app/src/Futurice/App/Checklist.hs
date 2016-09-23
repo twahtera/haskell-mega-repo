@@ -123,7 +123,7 @@ indexPage' world (fu, viewerRole, _) = do
                     option_ [ value_ "" ] $ "Show all"
                     -- TODO: value
                     for_ [ minBound .. maxBound ] $ \loc ->
-                        option_ [ value_ "" ] $ toHtml $ showLocation loc
+                        option_ [ value_ "" ] $ toHtml $ locationToText loc
             largemed_ 3 $ label_ $ do
                 "Checklist"
                 select_ $ do
@@ -198,15 +198,6 @@ showRole :: TaskRole -> Text
 showRole TaskRoleIT         = "IT"
 showRole TaskRoleHR         = "HR"
 showRole TaskRoleSupervisor = "supervisor"
-
-showLocation :: Location -> Text
-showLocation LocHelsinki  = "Helsinki"
-showLocation LocTampere   = "Tampere"
-showLocation LocBerlin    = "Berlin"
-showLocation LocLondon    = "London"
-showLocation LocStockholm = "Stockholm"
-showLocation LocMunich    = "Munich"
-showLocation LocOther     = "Other"
 
 toTodoCounter :: World -> TaskRole -> Identifier Task -> TaskItemDone -> TodoCounter
 toTodoCounter world tr tid td =

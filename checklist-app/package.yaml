@@ -28,6 +28,7 @@ dependencies:
   - servant-lucid
   - servant-server
   - swagger2
+  - text
   - time
   - uuid
 

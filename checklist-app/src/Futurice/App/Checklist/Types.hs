@@ -39,8 +39,10 @@ module Futurice.App.Checklist.Types (
     _ContractTypePermanent, _ContractTypeExternal, _ContractTypeFixedTerm,
     _ContractTypePartTimer, _ContractTypeSummerWorker,
     -- ** Location
+    _Location,
     _LocHelsinki, _LocTampere, _LocBerlin, _LocLondon,
     _LocStockholm, _LocMunich, _LocOther,
+    locationToText, locationFromText,
     -- ** Task
     taskName, taskCanBeDone, taskDependencies, taskCheck, taskRole,
     -- ** CheckResult
