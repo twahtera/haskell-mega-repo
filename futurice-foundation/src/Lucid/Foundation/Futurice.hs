@@ -10,6 +10,7 @@ module Lucid.Foundation.Futurice (
     -- * Grid
     row_,
     large_,
+    largemed_,
     -- * Page
     page_,
     PageParams,
@@ -40,6 +41,10 @@ row_ = div_ [class_ "row"]
 
 large_ :: Monad m => Int -> HtmlT m () -> HtmlT m ()
 large_ n = div_ [class_ $ fromString $ "columns large-" ++ show n ]
+
+largemed_ :: Monad m => Int -> HtmlT m () -> HtmlT m ()
+largemed_ n = div_
+    [ class_ $ "columns large-" <> textShow n <> " medium-" <> textShow n ]
 
 data PageParams = PageParams
     { _pageCss :: [Css]
