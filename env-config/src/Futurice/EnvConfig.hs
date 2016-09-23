@@ -106,9 +106,11 @@ instance FromEnvVar LogLevel where
     fromEnvVar _       = Nothing
 
 instance FromEnvVar Bool where
-    fromEnvVar "1" = Just True
-    fromEnvVar "0" = Just False
-    fromEnvVar _   = Nothing
+    fromEnvVar "1"   = Just True
+    fromEnvVar "YES" = Just True
+    fromEnvVar "0"   = Just False
+    fromEnvVar "NO"  = Just False
+    fromEnvVar _     = Nothing
 
 instance FromEnvVar Request where
     -- TODO: change to parseRequest

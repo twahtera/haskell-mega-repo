@@ -1,18 +1,24 @@
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 -- | Basic types
 module Futurice.App.Checklist.Types.Basic where
 
+import Data.Aeson.Compat (Value (String))
+import Data.Swagger
+       (SwaggerType (SwaggerString), ToParamSchema (..), enum_, type_)
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
+import Servant           (FromHttpApiData (..), ToHttpApiData (..))
 
 import Futurice.App.Checklist.Types.Identifier
 
+import qualified Data.Map        as Map
 import qualified Test.QuickCheck as QC
 
 newtype Name a = Name Text
@@ -107,7 +113,6 @@ data TaskRole
     = TaskRoleIT
     | TaskRoleHR
     | TaskRoleSupervisor
-    | TaskRoleOther
   deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
 
 
@@ -226,3 +231,34 @@ instance Arbitrary Task where
         <*> arbitrary
 
     shrink    = const []
+
+-------------------------------------------------------------------------------
+-- Location servant schema
+-------------------------------------------------------------------------------
+
+locationToText :: Location -> Text
+locationToText LocHelsinki  = "helsinki"
+locationToText LocTampere   = "tampere"
+locationToText LocBerlin    = "berlin"
+locationToText LocLondon    = "london"
+locationToText LocStockholm = "stockholm"
+locationToText LocMunich    = "munich"
+locationToText LocOther     = "other"
+
+locationFromText :: Text -> Either Text Location
+locationFromText t =
+    maybe (Left $ "invalid location " <> t) Right $ Map.lookup t m
+  where
+    m = Map.fromList $ map (\x -> (locationToText x, x)) [minBound .. maxBound]
+
+-- | TODO: implement me
+instance ToParamSchema Location where
+    toParamSchema _ = mempty
+          & type_ .~ SwaggerString
+          & enum_ ?~ (String . locationToText <$> [minBound .. maxBound])
+
+instance FromHttpApiData Location where
+    parseUrlPiece = locationFromText
+
+instance ToHttpApiData Location where
+    toUrlPiece = locationToText

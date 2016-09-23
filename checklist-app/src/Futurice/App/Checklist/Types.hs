@@ -42,11 +42,11 @@ module Futurice.App.Checklist.Types (
     _LocHelsinki, _LocTampere, _LocBerlin, _LocLondon,
     _LocStockholm, _LocMunich, _LocOther,
     -- ** Task
-    taskCanBeDone, taskDependencies, taskCheck, taskRole,
+    taskName, taskCanBeDone, taskDependencies, taskCheck, taskRole,
     -- ** CheckResult
     _CheckResultSuccess, _CheckResultMaybe, _CheckResultFailure,
     -- ** TaskRole
-    _TaskRoleIT, _TaskRoleHR, _TaskRoleSupervisor, _TaskRoleOther,
+    _TaskRoleIT, _TaskRoleHR, _TaskRoleSupervisor,
     -- ** Checklist
     checklistName, checklistTasks,
     -- ** TaskItemDone
@@ -61,6 +61,7 @@ module Futurice.App.Checklist.Types (
     worldTasks,
     worldLists,
     worldTaskItems,
+    worldUsers,
     worldTaskItems',
     ) where
 

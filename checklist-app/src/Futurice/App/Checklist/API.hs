@@ -9,10 +9,17 @@ import Futurice.Servant   (SSOUser)
 import Servant.API
 import Servant.HTML.Lucid (HTML)
 
-import Futurice.App.Checklist.Types.Page
+import Futurice.App.Checklist.Types      (Location)
+import Futurice.App.Checklist.Types.Page (Page)
 
-type ChecklistAPI =
-    SSOUser :> Get '[HTML] (Page "indexpage")
+type ChecklistAPI = IndexPageEndpoint
 
 checklistApi :: Proxy ChecklistAPI
 checklistApi = Proxy
+
+type IndexPageEndpoint =
+    SSOUser :>
+    QueryParam "location" Location :>
+    QueryParam "checklist" UUID :>
+    QueryParam "task" UUID :>
+    Get '[HTML] (Page "indexpage")

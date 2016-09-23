@@ -3,11 +3,13 @@
 module Futurice.App.Checklist.Types.World (
     World,
     mkWorld,
+    AuthCheck,
     -- * Lenses
     worldEmployees,
     worldTasks,
     worldLists,
     worldTaskItems,
+    worldUsers,
     -- * Getters
     worldTaskItems',
     ) where
@@ -28,12 +30,19 @@ import           Futurice.App.Checklist.Types.Identifier
 import           Futurice.App.Checklist.Types.IdMap      (IdMap)
 import qualified Futurice.App.Checklist.Types.IdMap      as IdMap
 
+import qualified FUM
+
+-- | Primitive ACL. Given possible username, return the actual username, role and location.
+type AuthCheck = Maybe FUM.UserName -> Maybe (FUM.UserName, TaskRole, Location)
+
 -- | World desribes the state of the db.
 data World = World
-    { _worldEmployees     :: !(IdMap Employee)
-    , _worldTasks     :: !(IdMap Task)
-    , _worldLists     :: !(IdMap Checklist)
-    , _worldTaskItems :: !(Map (Identifier Employee) (Map (Identifier Task) TaskItemDone))
+    { _worldEmployees  :: !(IdMap Employee)
+    , _worldTasks      :: !(IdMap Task)
+    , _worldLists      :: !(IdMap Checklist)
+    , _worldTaskItems  :: !(Map (Identifier Employee) (Map (Identifier Task) TaskItemDone))
+    , _worldUsers      :: AuthCheck
+      -- ^ ACL lookup
     -- lazy fields, updated on need when accessed
     , _worldTaskItems' :: Map (Identifier Task) (Map (Identifier Employee) TaskItemDone)
       -- ^ isomorphic with 'worldTaskItems'
@@ -56,8 +65,9 @@ mkWorld
     -> IdMap Task
     -> IdMap Checklist
     -> Map (Identifier Employee) (Map (Identifier Task) TaskItemDone)
+    -> AuthCheck
     -> World
-mkWorld us ts ls is =
+mkWorld es ts ls is us =
     let tids            = IdMap.keysSet ts
         cids            = IdMap.keysSet ls
         -- Validation predicates
@@ -65,7 +75,7 @@ mkWorld us ts ls is =
         validCid cid     = cids ^. contains cid
 
         -- Cleaned up inputs
-        us' = us
+        es' = es
             & IdMap.toIdMapOf (folded . filtered (\u -> validCid $ u ^. employeeChecklist))
 
         ts' = ts
@@ -76,8 +86,8 @@ mkWorld us ts ls is =
             & IdMap.unsafeTraversal . checklistTasks
             %~ toMapOf (ifolded . ifiltered (\k _v -> validTid k))
 
-        -- TODO: create extra fields
-    in World us' ts' ls' is (swapMapMap is)
+        -- TODO: validate is
+    in World es' ts' ls' is us (swapMapMap is)
 
 -- | Generates consistent worlds.
 instance QC.Arbitrary World where
@@ -95,7 +105,8 @@ instance QC.Arbitrary World where
                 <$> tidGen
                 <*> QC.arbitrary
 
-        cs <- fmap IdMap.fromFoldable . QC.listOf1 $ Checklist
+        checkListCount <- QC.choose (5, 10)
+        cs <- fmap IdMap.fromFoldable . QC.vectorOf checkListCount $ Checklist
             <$> QC.arbitrary
             <*> QC.arbitrary
             <*> fmap Map.fromList (QC.listOf1 checklistItemGen)
@@ -129,5 +140,8 @@ instance QC.Arbitrary World where
         is <- QC.listOf taskItemGen
         let is' = Map.fromListWith Map.union is
 
+        -- Users of checklist, hardcoded in mock
+        us <- pure $ fmap (\u -> (u, TaskRoleIT, LocHelsinki))
+
         -- World
-        pure $ mkWorld es' ts' cs is'
+        pure $ mkWorld es' ts' cs is' us

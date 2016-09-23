@@ -17,6 +17,7 @@ import Servant
 import Test.QuickCheck           (arbitrary, generate, resize)
 
 import Futurice.App.Checklist.API
+import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Clay
 import Futurice.App.Checklist.Types
 
@@ -26,7 +27,7 @@ import qualified FUM
 type Ctx = World
 
 server :: Ctx -> Server ChecklistAPI
-server ctx = liftIO . indexPage ctx
+server ctx = indexPage ctx
 
 currentDay :: IO Day
 currentDay = utctDay <$> currentTime
@@ -67,12 +68,29 @@ checklistNameHtml world i =
     a_ [ href_ $ "/checklist/" <> i ^. to identifierToText] $ toHtml $
         world ^. worldLists . at i . non (error "Inconsisten world") . checklistName . to show
 
--- | TODO: context
-viewerRole :: TaskRole
-viewerRole = TaskRoleIT
+indexPage
+    :: MonadIO m
+    => Ctx
+    -> Maybe FUM.UserName
+    -> Maybe Location
+    -> Maybe UUID
+    -> Maybe UUID
+    -> m (Page "indexpage")
+indexPage world fu _loc _cid _tid = case userInfo of
+    Nothing        -> pure nonAuthorizedPage
+    Just userInfo' -> liftIO $ indexPage' world userInfo'
+  where
+    userInfo :: Maybe (FUM.UserName, TaskRole, Location)
+    userInfo = world ^? worldUsers . ix fu . _Just
 
-indexPage :: Ctx -> Maybe FUM.UserName -> IO (Page "indexpage")
-indexPage world fu = do
+nonAuthorizedPage :: Page sym
+nonAuthorizedPage = Page $ page_ "Non-authorized" pageParams $ do
+    row_ $ large_ 12 $ header_ $ h1_ $ "Non-authorized"
+    row_ $ large_ 12 $ p_ $
+        "Ask IT-team to create you an account."
+
+indexPage' :: Ctx -> (FUM.UserName, TaskRole, Location) -> IO (Page "indexpage")
+indexPage' world (fu, viewerRole, _) = do
     today <- currentDay
     let employees = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
     pure $ Page $ page_ "Checklist" pageParams $ do
@@ -89,10 +107,46 @@ indexPage world fu = do
             div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
                 li_ [ class_ "menu-text" ] $ do
                     "Hello "
-                    maybe (em_ "Guest") (toHtml . view FUM.getUserName) fu
+                    toHtml $ fu ^. FUM.getUserName
+                    ", you are "
+                    toHtml (showRole viewerRole)
 
+        -- Title
         row_ $ large_ 12 $ header_ $ h1_ $ "Active employees"
 
+        -- List filtering controls
+        row_ $ do
+            largemed_ 3 $ label_ $ do
+                "Location"
+                select_ $ do
+                    -- TODO: Select chosen
+                    option_ [ value_ "" ] $ "Show all"
+                    -- TODO: value
+                    for_ [ minBound .. maxBound ] $ \loc ->
+                        option_ [ value_ "" ] $ toHtml $ showLocation loc
+            largemed_ 3 $ label_ $ do
+                "Checklist"
+                select_ $ do
+                    -- TODO: select chosen
+                    option_ [ value_ "" ] $ "Show all"
+                    for_ (world ^.. worldLists . folded) $ \cl ->
+                        option_ [ value_ $ cl ^. identifier . to identifierToText ]
+                            $ toHtml $ show $ cl ^. checklistName
+                    -- TODO: list
+            largemed_ 5 $ label_ $ do
+                "Task"
+                select_ $ do
+                    -- TODO: select chosen
+                    option_ [ value_ "" ] $ "Show all"
+                    for_ (world ^.. worldTasks . folded) $ \task ->
+                        option_ [ value_ $ task ^. identifier . to identifierToText ]
+                            $ toHtml $ show $ task ^. taskName
+                    -- TODO: list
+            largemed_ 1 $ label_ $ do
+                toHtmlRaw ("&nbsp;" :: Text)
+                button_ [ class_ "button" ] $ "Filter"
+
+        -- The table
         row_ $ large_ 12 $ table_ $ do
             thead_ $ tr_ $ do
                 th_ [title_ "Status"]                      "S"
@@ -102,7 +156,7 @@ indexPage world fu = do
                 th_ [title_ "Due date"]                    "Due date"
                 th_ [title_ "Confirmed - contract signed"] "Confirmed"
                 th_ [title_ "Days till start"]             "ETA"
-                th_ [title_ "IT task todo/done"]           "IT items" -- Title based on viewerRole
+                viewerItemsHeader viewerRole
                 th_ [title_ "Task items todo/done"]        "Items"
             tbody_ $ for_ employees $ \employee -> do
                 let eid = employee ^. identifier
@@ -135,6 +189,25 @@ indexPage world fu = do
                             td_ $ toHtml (show a) *> "/" *> toHtml (show b)
                             td_ $ toHtml (show i) *> "/" *> toHtml (show j)
 
+viewerItemsHeader :: Monad m => TaskRole -> HtmlT m ()
+viewerItemsHeader TaskRoleIT         = th_ [title_ "IT tasks todo/done"]          "IT items"
+viewerItemsHeader TaskRoleHR         = th_ [title_ "HR tasks todo/done"]          "HR items"
+viewerItemsHeader TaskRoleSupervisor = th_ [title_ "Supervisor tasks todo/done"]  "Supervisor items"
+
+showRole :: TaskRole -> Text
+showRole TaskRoleIT         = "IT"
+showRole TaskRoleHR         = "HR"
+showRole TaskRoleSupervisor = "supervisor"
+
+showLocation :: Location -> Text
+showLocation LocHelsinki  = "Helsinki"
+showLocation LocTampere   = "Tampere"
+showLocation LocBerlin    = "Berlin"
+showLocation LocLondon    = "London"
+showLocation LocStockholm = "Stockholm"
+showLocation LocMunich    = "Munich"
+showLocation LocOther     = "Other"
+
 toTodoCounter :: World -> TaskRole -> Identifier Task -> TaskItemDone -> TodoCounter
 toTodoCounter world tr tid td =
     case (has (worldTasks . ix tid . taskRole . only tr) world, td) of
@@ -160,7 +233,13 @@ defaultMain = futuriceServerMain
     "Checklist API"
     "Super TODO"
     (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
-    (pure ()) (const 8000) -- getConfig cfgPort
+    getConfig cfgPort
     checklistApi server futuriceNoMiddleware
-    $ \_ _cache -> -- do
-        generate (resize 200 arbitrary)
+    $ \cfg _cache -> do
+        world0 <- generate (resize 200 arbitrary)
+        let world1 = if cfgMockAuth cfg
+            then world0 & worldUsers .~ const (Just mockCredentials)
+            else world0
+        pure world1
+  where
+    mockCredentials = (FUM.UserName "phadej", TaskRoleIT, LocHelsinki)

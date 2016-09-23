@@ -27,8 +27,10 @@ library
   ghc-options: -Wall
   build-depends:
       base >= 4.7 && <4.10
+    , aeson-compat
     , clay
     , containers
+    , env-config
     , fum-client
     , futurice-foundation
     , futurice-prelude
@@ -40,12 +42,14 @@ library
     , servant
     , servant-lucid
     , servant-server
+    , swagger2
     , time
     , uuid
   exposed-modules:
       Futurice.App.Checklist
       Futurice.App.Checklist.API
       Futurice.App.Checklist.Clay
+      Futurice.App.Checklist.Config
       Futurice.App.Checklist.Markup
       Futurice.App.Checklist.Types
       Futurice.App.Checklist.Types.Basic
@@ -62,8 +66,10 @@ executable checklist-app-server
   ghc-options: -Wall -Wall -threaded
   build-depends:
       base >= 4.7 && <4.10
+    , aeson-compat
     , clay
     , containers
+    , env-config
     , fum-client
     , futurice-foundation
     , futurice-prelude
@@ -75,6 +81,7 @@ executable checklist-app-server
     , servant
     , servant-lucid
     , servant-server
+    , swagger2
     , time
     , uuid
     , checklist-app

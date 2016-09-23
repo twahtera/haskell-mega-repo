@@ -12,8 +12,10 @@ ghc-options: -Wall
 
 dependencies:
   - base >= 4.7 && <4.10
+  - aeson-compat
   - clay
   - containers
+  - env-config
   - fum-client
   - futurice-foundation
   - futurice-prelude
@@ -25,6 +27,7 @@ dependencies:
   - servant
   - servant-lucid
   - servant-server
+  - swagger2
   - time
   - uuid
 
