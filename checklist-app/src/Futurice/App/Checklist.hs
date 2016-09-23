@@ -7,7 +7,7 @@ import Futurice.Prelude
 import Prelude ()
 
 import Control.Lens
-       (filtered, has, ifoldMapOf, non, only, to, (^?))
+       (filtered, has, ifoldMapOf, non, only, re, to, (^?))
 import Data.List                 (sortOn)
 import Data.Time                 (addDays, diffDays)
 import Futurice.Servant
@@ -17,8 +17,8 @@ import Servant
 import Test.QuickCheck           (arbitrary, generate, resize)
 
 import Futurice.App.Checklist.API
-import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Clay
+import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Types
 
 import qualified FUM
@@ -76,9 +76,9 @@ indexPage
     -> Maybe UUID
     -> Maybe UUID
     -> m (Page "indexpage")
-indexPage world fu _loc _cid _tid = case userInfo of
+indexPage world fu loc _cid _tid = case userInfo of
     Nothing        -> pure nonAuthorizedPage
-    Just userInfo' -> liftIO $ indexPage' world userInfo'
+    Just userInfo' -> liftIO $ indexPage' world userInfo' loc
   where
     userInfo :: Maybe (FUM.UserName, TaskRole, Location)
     userInfo = world ^? worldUsers . ix fu . _Just
@@ -89,10 +89,16 @@ nonAuthorizedPage = Page $ page_ "Non-authorized" pageParams $ do
     row_ $ large_ 12 $ p_ $
         "Ask IT-team to create you an account."
 
-indexPage' :: Ctx -> (FUM.UserName, TaskRole, Location) -> IO (Page "indexpage")
-indexPage' world (fu, viewerRole, _) = do
+indexPage'
+    :: Ctx
+    -> (FUM.UserName, TaskRole, Location)
+    -> Maybe Location
+    -> IO (Page "indexpage")
+indexPage' world (fu, viewerRole, _viewerLocation) mloc = do
     today <- currentDay
-    let employees = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
+    let employees  = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
+        employees0 = maybe id (\l -> filter (has $ employeeLocation . only l)) mloc $ employees
+        employees' = employees0
     pure $ Page $ page_ "Checklist" pageParams $ do
         -- http://foundation.zurb.com/sites/docs/top-bar.html
         div_ [ class_ "top-bar" ] $ do
@@ -115,15 +121,15 @@ indexPage' world (fu, viewerRole, _) = do
         row_ $ large_ 12 $ header_ $ h1_ $ "Active employees"
 
         -- List filtering controls
-        row_ $ do
+        row_ $ form_ [ action_ "/", method_ "get" ]$ do
             largemed_ 3 $ label_ $ do
                 "Location"
-                select_ $ do
+                select_ [ name_ "location"] $ do
                     -- TODO: Select chosen
                     option_ [ value_ "" ] $ "Show all"
                     -- TODO: value
                     for_ [ minBound .. maxBound ] $ \loc ->
-                        option_ [ value_ "" ] $ toHtml $ locationToText loc
+                        option_ [ value_ $ loc ^. re _Location ] $ toHtml $ locationToText loc
             largemed_ 3 $ label_ $ do
                 "Checklist"
                 select_ $ do
@@ -158,7 +164,7 @@ indexPage' world (fu, viewerRole, _) = do
                 th_ [title_ "Days till start"]             "ETA"
                 viewerItemsHeader viewerRole
                 th_ [title_ "Task items todo/done"]        "Items"
-            tbody_ $ for_ employees $ \employee -> do
+            tbody_ $ for_ employees' $ \employee -> do
                 let eid = employee ^. identifier
                 let firstFutureDay = employees ^? folded . employeeStartingDay . filtered (> today)
                 let startingDay = employee ^. employeeStartingDay
