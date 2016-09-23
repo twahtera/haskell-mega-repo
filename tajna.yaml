@@ -12,7 +12,7 @@ envs:
     FD_AUTH_TOKEN:
         secret: prod-fd-authtoken
     FD_ORGANISATION: "futurice"
-               
+
     # contacts is drunk
     FUM_USER_LIST: employees
     FUM_BASE_URL:
@@ -42,7 +42,7 @@ envs:
     REPORTS_GH_REPOSURL:
       secret: reports-gh-repos
 
-    # spice stats       
+    # spice stats
     FD_FLOW: "open-source"
 
     # PORTS

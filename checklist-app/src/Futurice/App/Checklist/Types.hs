@@ -42,7 +42,7 @@ module Futurice.App.Checklist.Types (
     _LocHelsinki, _LocTampere, _LocBerlin, _LocLondon,
     _LocStockholm, _LocMunich, _LocOther,
     -- ** Task
-    taskCanBeDone, taskDependencies, taskCheck, taskRole,
+    taskName, taskCanBeDone, taskDependencies, taskCheck, taskRole,
     -- ** CheckResult
     _CheckResultSuccess, _CheckResultMaybe, _CheckResultFailure,
     -- ** TaskRole

@@ -124,12 +124,16 @@ indexPage' world (fu, viewerRole, _) = do
                     option_ [ value_ "" ] $ "Show all"
                     for_ (world ^.. worldLists . folded) $ \cl ->
                         option_ [ value_ $ cl ^. identifier . to identifierToText ]
-                            $ toHtml $ show $ cl ^.checklistName
+                            $ toHtml $ show $ cl ^. checklistName
                     -- TODO: list
             largemed_ 5 $ label_ $ do
                 "Task"
                 select_ $ do
+                    -- TODO: select chosen
                     option_ [ value_ "" ] $ "Show all"
+                    for_ (world ^.. worldTasks . folded) $ \task ->
+                        option_ [ value_ $ task ^. identifier . to identifierToText ]
+                            $ toHtml $ show $ task ^. taskName
                     -- TODO: list
             largemed_ 1 $ label_ $ do
                 toHtmlRaw ("&nbsp;" :: Text)
