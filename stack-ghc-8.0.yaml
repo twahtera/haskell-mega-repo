@@ -40,7 +40,7 @@ packages:
   extra-dep: true
 - location:
     git: https://github.com/phadej/http-api-data.git
-    commit: 101f0cce36c6140ae8027baefbe7540b2ac0783e
+    commit: 042adad6bbfeea88b7454542e568d00936e5a9e0
   extra-dep: true
 - location:
     git: https://github.com/facebook/Haxl.git
