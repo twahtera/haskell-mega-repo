@@ -37,7 +37,7 @@ data World = World
     , _worldTasks      :: !(IdMap Task)
     , _worldLists      :: !(IdMap Checklist)
     , _worldTaskItems  :: !(Map (Identifier Employee) (Map (Identifier Task) TaskItemDone))
-    , _worldUsers      :: !(Map FUM.UserName TaskRole)
+    , _worldUsers      :: (FUM.UserName -> Maybe TaskRole)
     -- lazy fields, updated on need when accessed
     , _worldTaskItems' :: Map (Identifier Task) (Map (Identifier Employee) TaskItemDone)
       -- ^ isomorphic with 'worldTaskItems'
@@ -60,7 +60,7 @@ mkWorld
     -> IdMap Task
     -> IdMap Checklist
     -> Map (Identifier Employee) (Map (Identifier Task) TaskItemDone)
-    -> Map FUM.UserName TaskRole
+    -> (FUM.UserName -> Maybe TaskRole)
     -> World
 mkWorld es ts ls is us =
     let tids            = IdMap.keysSet ts
@@ -136,7 +136,9 @@ instance QC.Arbitrary World where
         let is' = Map.fromListWith Map.union is
 
         -- Users of checklist, hardcoded in mock
-        us <- pure $ Map.fromList [(FUM.UserName "phadej", TaskRoleIT)]
+        us <- pure $ \fumLogin -> case fumLogin of
+             FUM.UserName "phadej" -> Just TaskRoleIT
+             _                     -> Nothing
 
         -- World
         pure $ mkWorld es' ts' cs is' us

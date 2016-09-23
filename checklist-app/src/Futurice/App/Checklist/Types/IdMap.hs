@@ -34,14 +34,14 @@ fromFoldable :: (HasIdentifier a a, Foldable f) => f a -> IdMap a
 fromFoldable = IdMap . Map.fromList . map (\x -> (x ^. identifier, x)) . toList
 
 keysSet :: IdMap a -> Set (Identifier a)
-keysSet = Map.keysSet . unIdMap 
+keysSet = Map.keysSet . unIdMap
 
 -------------------------------------------------------------------------------
 -- Lens
 -------------------------------------------------------------------------------
 
 toIdMapOf :: HasIdentifier a a => Getting (Endo [a]) s a -> s -> IdMap a
-toIdMapOf l s = fromFoldable (toListOf l s) 
+toIdMapOf l s = fromFoldable (toListOf l s)
 
 -- | You must preserve the identifier of elements to this to be valid 'Traversal'
 unsafeTraversal :: Traversal' (IdMap a) a

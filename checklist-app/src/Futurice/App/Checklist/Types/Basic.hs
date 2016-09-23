@@ -107,7 +107,6 @@ data TaskRole
     = TaskRoleIT
     | TaskRoleHR
     | TaskRoleSupervisor
-    | TaskRoleOther
   deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
 
 

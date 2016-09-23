@@ -79,7 +79,7 @@ indexPage world _fu = case userInfo of
     userInfo :: Maybe (FUM.UserName, TaskRole)
     userInfo = do
         fu' <- fu
-        tr  <- world ^? worldUsers . ix fu'
+        tr  <- world ^? worldUsers . ix fu' . _Just
         pure (fu', tr)
 
 nonAuthorizedPage :: Page sym
@@ -188,13 +188,11 @@ viewerItemsHeader :: Monad m => TaskRole -> HtmlT m ()
 viewerItemsHeader TaskRoleIT         = th_ [title_ "IT tasks todo/done"]          "IT items"
 viewerItemsHeader TaskRoleHR         = th_ [title_ "HR tasks todo/done"]          "HR items"
 viewerItemsHeader TaskRoleSupervisor = th_ [title_ "Supervisor tasks todo/done"]  "Supervisor items"
-viewerItemsHeader TaskRoleOther      = th_ [title_ "Other tasks todo/done"]       "non-IT/HR/Supevisor items"
 
 showRole :: TaskRole -> Text
 showRole TaskRoleIT         = "IT"
 showRole TaskRoleHR         = "HR"
 showRole TaskRoleSupervisor = "supervisor"
-showRole TaskRoleOther      = "specatator"
 
 showLocation :: Location -> Text
 showLocation LocHelsinki  = "Helsinki"

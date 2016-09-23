@@ -46,7 +46,7 @@ module Futurice.App.Checklist.Types (
     -- ** CheckResult
     _CheckResultSuccess, _CheckResultMaybe, _CheckResultFailure,
     -- ** TaskRole
-    _TaskRoleIT, _TaskRoleHR, _TaskRoleSupervisor, _TaskRoleOther,
+    _TaskRoleIT, _TaskRoleHR, _TaskRoleSupervisor,
     -- ** Checklist
     checklistName, checklistTasks,
     -- ** TaskItemDone
