@@ -11,6 +11,8 @@ module Lucid.Foundation.Futurice (
     row_,
     large_,
     largemed_,
+    -- * Form
+    optionSelected_,
     -- * Page
     page_,
     PageParams,
@@ -36,6 +38,10 @@ embeddedLodash_ :: Monad m => HtmlT m ()
 embeddedLodash_ =
     script_ ($(embedStringFile "lodash.js") :: Text)
 
+-------------------------------------------------------------------------------
+-- Grid
+-------------------------------------------------------------------------------
+
 row_ :: Monad m => HtmlT m () -> HtmlT m ()
 row_ = div_ [class_ "row"]
 
@@ -45,6 +51,18 @@ large_ n = div_ [class_ $ fromString $ "columns large-" ++ show n ]
 largemed_ :: Monad m => Int -> HtmlT m () -> HtmlT m ()
 largemed_ n = div_
     [ class_ $ "columns large-" <> textShow n <> " medium-" <> textShow n ]
+
+-------------------------------------------------------------------------------
+-- Form
+-------------------------------------------------------------------------------
+
+optionSelected_ :: Term arg result => Bool -> arg -> result
+optionSelected_ True  = termWith "option" [ selected_ "selected "]
+optionSelected_ False = term "option"
+
+-------------------------------------------------------------------------------
+-- Page
+-------------------------------------------------------------------------------
 
 data PageParams = PageParams
     { _pageCss :: [Css]

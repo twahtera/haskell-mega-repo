@@ -129,7 +129,7 @@ indexPage' world (fu, viewerRole, _viewerLocation) mloc = do
                     option_ [ value_ "" ] $ "Show all"
                     -- TODO: value
                     for_ [ minBound .. maxBound ] $ \loc ->
-                        option_ [ value_ $ loc ^. re _Location ] $ toHtml $ locationToText loc
+                        optionSelected_ (Just loc == mloc) [ value_ $ loc ^. re _Location ] $ toHtml $ locationToText loc
             largemed_ 3 $ label_ $ do
                 "Checklist"
                 select_ $ do
