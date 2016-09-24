@@ -23,3 +23,6 @@ type IndexPageEndpoint =
     QueryParam "checklist" UUID :>
     QueryParam "task" UUID :>
     Get '[HTML] (Page "indexpage")
+
+indexPageEndpoint :: Proxy IndexPageEndpoint
+indexPageEndpoint = Proxy

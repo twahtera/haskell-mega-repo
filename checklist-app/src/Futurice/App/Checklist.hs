@@ -65,10 +65,15 @@ contractTypeHtml ContractTypePartTimer    = span_ [title_ "Part timer"]    "Part
 contractTypeHtml ContractTypeSummerWorker = span_ [title_ "Summer worker"] "Sum"
 
 -- | TODO: better error
-checklistNameHtml :: Monad m => World -> Identifier Checklist -> HtmlT m ()
-checklistNameHtml world i =
-    a_ [ href_ $ "/checklist/" <> i ^. to identifierToText] $ toHtml $
+checklistNameHtml :: Monad m => World -> Maybe Location -> Identifier Checklist -> HtmlT m ()
+checklistNameHtml world mloc i =
+    a_ [ href_ $ uriText $ safeLink checklistApi indexPageEndpoint mloc (Just $ i ^. uuid) Nothing ] $ toHtml $
         world ^. worldLists . at i . non (error "Inconsisten world") . checklistName . to show
+  where
+    uuid = to $ \(Identifier u) -> u
+
+uriText :: URI -> Text
+uriText (URI _ _ path query _) = (path <> query) ^. packed
 
 indexPage
     :: MonadIO m
@@ -194,7 +199,7 @@ indexPage' world (fu, viewerRole, _viewerLocation) mloc mlist = do
                     -- TODO: use safeLink
                     td_ $ a_ [ href_ $ "/employee/" <> employee ^. identifier . to identifierToText ] $ toHtml $
                         employee ^. employeeFirstName <> " " <> employee ^. employeeLastName
-                    td_ $ checklistNameHtml world (employee ^. employeeChecklist)
+                    td_ $ checklistNameHtml world mloc (employee ^. employeeChecklist)
                     td_ $ toHtml $ show startingDay
                     td_ $ bool (toHtmlRaw ("&#8868;" :: Text)) (pure ()) $ employee ^. employeeConfirmed
                     td_ $ toHtml $ show (diffDays startingDay today) <> " days"
