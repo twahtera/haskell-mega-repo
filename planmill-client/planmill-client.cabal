@@ -32,7 +32,7 @@ library
   build-depends:
       aeson                 >=1     && <1.1
     , aeson-compat          >=0.3.6 && <0.4
-    , aeson-extra           >=0.3.0.0 && <0.4
+    , aeson-extra
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
     , async
@@ -139,7 +139,7 @@ executable planmill-client
   build-depends:
       aeson                 >=1     && <1.1
     , aeson-compat          >=0.3.6 && <0.4
-    , aeson-extra           >=0.3.0.0 && <0.4
+    , aeson-extra
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
     , async
@@ -212,7 +212,7 @@ test-suite integration
   build-depends:
       aeson                 >=1     && <1.1
     , aeson-compat          >=0.3.6 && <0.4
-    , aeson-extra           >=0.3.0.0 && <0.4
+    , aeson-extra
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
     , async
@@ -278,7 +278,7 @@ test-suite test
   build-depends:
       aeson                 >=1     && <1.1
     , aeson-compat          >=0.3.6 && <0.4
-    , aeson-extra           >=0.3.0.0 && <0.4
+    , aeson-extra
     , ansi-pretty           >=0.1.2 && <0.2
     , ansi-wl-pprint
     , async

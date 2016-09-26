@@ -37,10 +37,6 @@ packages:
 - spice-stats/
 - theme-app/
 - location:
-    git: https://github.com/phadej/aeson-extra.git
-    commit: 83cdf5932cd333067a50209ed63b8604749a33d2
-  extra-dep: true
-- location:
     git: https://github.com/phadej/github.git
     commit: dd149a469cad0fb4ecbb75a76efc633d92870a0c
   extra-dep: true
@@ -61,6 +57,7 @@ packages:
   extra-dep: true
 extra-deps:
 - aeson-1.0.1.0
+- aeson-extra-0.4.0.0
 - bifunctors-5.4.1
 - clay-0.11
 - friendly-time-0.4

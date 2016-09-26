@@ -19,14 +19,22 @@ module Lucid.Foundation.Futurice (
     pageCss,
     pageJs,
     defPageParams,
+    -- * JavaScript
+    JS,
+    getJS,
+    makeJS,
+    embedJS,
+    menrvaJS,
     ) where
 
-import Prelude ()
 import Futurice.Prelude
+import Prelude ()
 
-import Data.FileEmbed (embedStringFile)
-import Clay (Css, render)
-import Lucid hiding (for_)
+import Clay                                    (Css, render)
+import Data.FileEmbed                          (embedStringFile)
+import Lucid                                   hiding (for_)
+import Lucid.Foundation.Futurice.JavaScript
+import Lucid.Foundation.Futurice.JavaScript.TH
 
 import qualified Data.Text as T
 
@@ -34,9 +42,13 @@ embeddedFoundationStyle_ :: Monad m => HtmlT m ()
 embeddedFoundationStyle_ =
     style_ [type_ "text/css"] ($(embedStringFile "foundation.min.css") :: String)
 
+-- | <https://lodash.com/ Lodash>.
 embeddedLodash_ :: Monad m => HtmlT m ()
-embeddedLodash_ =
-    script_ ($(embedStringFile "lodash.js") :: Text)
+embeddedLodash_ = toHtml $(embedJS "lodash.js")
+
+-- | Data-flow library <https://github.com/phadej/menrva menrva>.
+menrvaJS :: JS
+menrvaJS = $(embedJS "menrva.standalone.js")
 
 -------------------------------------------------------------------------------
 -- Grid
@@ -66,7 +78,7 @@ optionSelected_ False = term "option"
 
 data PageParams = PageParams
     { _pageCss :: [Css]
-    , _pageJs  :: [Text]
+    , _pageJs  :: [JS]
     }
 
 defPageParams :: PageParams
@@ -109,5 +121,5 @@ pageImpl t p b = doctypehtml_ $ do
         -- additional styles
         for_ (p ^. pageCss) $ style_ . view strict . render
         -- additional js
-        for_ (p ^. pageJs) $ script_ []
+        for_ (p ^. pageJs) $ toHtml
     body_ b
