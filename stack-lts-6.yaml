@@ -48,12 +48,12 @@ packages:
 # https://github.com/GetShopTV/swagger2/pull/81
 - location:
     git: https://github.com/phadej/swagger2.git
-    commit: cf77585c732e160bc9b246899ea55507a1446348
+    commit: 12dbb51230d6fafb9f248ce24bb4484a3045e3bc
   extra-dep: true
 # https://github.com/fizruk/http-api-data/pull/34
 - location:
     git: https://github.com/phadej/http-api-data.git
-    commit: 042adad6bbfeea88b7454542e568d00936e5a9e0
+    commit: 2c319815666e88eb871013f411442af0bd307520
   extra-dep: true
 - location:
     git: https://github.com/facebook/Haxl.git

@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 module Futurice.App.Checklist (defaultMain) where
@@ -31,13 +32,23 @@ type Ctx = World
 server :: Ctx -> Server ChecklistAPI
 server ctx = indexPage ctx
 
-currentDay :: IO Day
-currentDay = utctDay <$> currentTime
+indexPageHref
+    :: HasIdentifier c Checklist
+    => Maybe Location
+    -> Maybe c
+    -> Maybe (Identifier Task)
+    -> Attribute
+indexPageHref mloc mlist mtask =
+    href_ $ uriText $ safeLink checklistApi indexPageEndpoint
+        mloc (mlist ^? _Just . identifier . uuid) (view uuid <$> mtask)
 
--- TODO: use safe link
-locHtml :: Monad m => Location -> HtmlT m ()
-locHtml l = a_ [ href_ ("/location/" <> locSlug), title_ locName ] $ toHtml locSlug
+locHtml
+    :: (Monad m, HasIdentifier c Checklist)
+    => Maybe c -> Location -> HtmlT m ()
+locHtml mlist l = a_ [ href, title_ locName ] $ locSlug
   where
+    href = indexPageHref (Just l) mlist Nothing
+
     locSlug = case l of
         LocHelsinki  -> "Hel"
         LocTampere   -> "Tre"
@@ -67,10 +78,8 @@ contractTypeHtml ContractTypeSummerWorker = span_ [title_ "Summer worker"] "Sum"
 -- | TODO: better error
 checklistNameHtml :: Monad m => World -> Maybe Location -> Identifier Checklist -> HtmlT m ()
 checklistNameHtml world mloc i =
-    a_ [ href_ $ uriText $ safeLink checklistApi indexPageEndpoint mloc (Just $ i ^. uuid) Nothing ] $ toHtml $
+    a_ [ indexPageHref mloc (Just i) Nothing ] $ toHtml $
         world ^. worldLists . at i . non (error "Inconsisten world") . checklistName . to show
-  where
-    uuid = to $ \(Identifier u) -> u
 
 uriText :: URI -> Text
 uriText (URI _ _ path query _) = (path <> query) ^. packed
@@ -195,7 +204,7 @@ indexPage' world (fu, viewerRole, _viewerLocation) mloc mlist = do
                            | otherwise                           -> "eta-future"
                 tr_ [ class_ $ etaClass $ employee ^. employeeStartingDay ] $ do
                     td_ $ contractTypeHtml $ employee ^. employeeContractType
-                    td_ $ locHtml $ employee ^. employeeLocation
+                    td_ $ locHtml mlist $ employee ^. employeeLocation
                     -- TODO: use safeLink
                     td_ $ a_ [ href_ $ "/employee/" <> employee ^. identifier . to identifierToText ] $ toHtml $
                         employee ^. employeeFirstName <> " " <> employee ^. employeeLastName
