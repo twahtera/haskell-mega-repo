@@ -185,5 +185,9 @@ instance HasServer api context => HasServer (SSOUser :> api) context where
         ssoUser req = FUM.UserName . T.filter isAlpha . TE.decodeLatin1 <$>
             lookup "HTTP_REMOTE_USER" (requestHeaders req)
 
+instance HasLink api => HasLink (SSOUser :> api) where
+    type MkLink (SSOUser :> api) = MkLink api
+    toLink _ = toLink (Proxy :: Proxy api)
+
 instance HasSwagger api => HasSwagger (SSOUser :> api) where
     toSwagger _ = toSwagger (Proxy :: Proxy api)

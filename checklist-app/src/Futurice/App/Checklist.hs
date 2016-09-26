@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 module Futurice.App.Checklist (defaultMain) where
@@ -9,6 +10,7 @@ import Prelude ()
 import Control.Lens
        (filtered, has, ifoldMapOf, non, only, re, to, (^?))
 import Data.List                 (sortOn)
+import Data.Maybe                (catMaybes)
 import Data.Time                 (addDays, diffDays)
 import Futurice.Servant
 import Lucid                     hiding (for_)
@@ -21,6 +23,7 @@ import Futurice.App.Checklist.Clay
 import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Types
 
+import qualified Data.Text as T
 import qualified FUM
 
 -- TODO: make to .Types.Ctx
@@ -29,13 +32,23 @@ type Ctx = World
 server :: Ctx -> Server ChecklistAPI
 server ctx = indexPage ctx
 
-currentDay :: IO Day
-currentDay = utctDay <$> currentTime
+indexPageHref
+    :: HasIdentifier c Checklist
+    => Maybe Location
+    -> Maybe c
+    -> Maybe (Identifier Task)
+    -> Attribute
+indexPageHref mloc mlist mtask =
+    href_ $ uriText $ safeLink checklistApi indexPageEndpoint
+        mloc (mlist ^? _Just . identifier . uuid) (view uuid <$> mtask)
 
--- TODO: use safe link
-locHtml :: Monad m => Location -> HtmlT m ()
-locHtml l = a_ [ href_ ("/location/" <> locSlug), title_ locName ] $ toHtml locSlug
+locHtml
+    :: (Monad m, HasIdentifier c Checklist)
+    => Maybe c -> Location -> HtmlT m ()
+locHtml mlist l = a_ [ href, title_ locName ] $ locSlug
   where
+    href = indexPageHref (Just l) mlist Nothing
+
     locSlug = case l of
         LocHelsinki  -> "Hel"
         LocTampere   -> "Tre"
@@ -63,10 +76,13 @@ contractTypeHtml ContractTypePartTimer    = span_ [title_ "Part timer"]    "Part
 contractTypeHtml ContractTypeSummerWorker = span_ [title_ "Summer worker"] "Sum"
 
 -- | TODO: better error
-checklistNameHtml :: Monad m => World -> Identifier Checklist -> HtmlT m ()
-checklistNameHtml world i =
-    a_ [ href_ $ "/checklist/" <> i ^. to identifierToText] $ toHtml $
+checklistNameHtml :: Monad m => World -> Maybe Location -> Identifier Checklist -> HtmlT m ()
+checklistNameHtml world mloc i =
+    a_ [ indexPageHref mloc (Just i) Nothing ] $ toHtml $
         world ^. worldLists . at i . non (error "Inconsisten world") . checklistName . to show
+
+uriText :: URI -> Text
+uriText (URI _ _ path query _) = (path <> query) ^. packed
 
 indexPage
     :: MonadIO m
@@ -76,12 +92,16 @@ indexPage
     -> Maybe UUID
     -> Maybe UUID
     -> m (Page "indexpage")
-indexPage world fu loc _cid _tid = case userInfo of
+indexPage world fu loc cid _tid = case userInfo of
     Nothing        -> pure nonAuthorizedPage
-    Just userInfo' -> liftIO $ indexPage' world userInfo' loc
+    Just userInfo' -> liftIO $ indexPage' world userInfo' loc checklist
   where
     userInfo :: Maybe (FUM.UserName, TaskRole, Location)
     userInfo = world ^? worldUsers . ix fu . _Just
+
+    checklist = do
+        cid' <- cid
+        world ^? worldLists . ix (Identifier cid')
 
 nonAuthorizedPage :: Page sym
 nonAuthorizedPage = Page $ page_ "Non-authorized" pageParams $ do
@@ -89,16 +109,21 @@ nonAuthorizedPage = Page $ page_ "Non-authorized" pageParams $ do
     row_ $ large_ 12 $ p_ $
         "Ask IT-team to create you an account."
 
+nameToText :: Name a -> Text
+nameToText (Name n) = n
+
 indexPage'
     :: Ctx
     -> (FUM.UserName, TaskRole, Location)
     -> Maybe Location
+    -> Maybe Checklist
     -> IO (Page "indexpage")
-indexPage' world (fu, viewerRole, _viewerLocation) mloc = do
+indexPage' world (fu, viewerRole, _viewerLocation) mloc mlist = do
     today <- currentDay
-    let employees  = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
-        employees0 = maybe id (\l -> filter (has $ employeeLocation . only l)) mloc $ employees
-        employees' = employees0
+    let employees0  = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
+        employees1 = maybe id (\l -> filter (has $ employeeLocation . only l)) mloc $ employees0
+        employees2 = maybe id (\cl -> filter (has $ employeeChecklist . only (cl ^. identifier))) mlist $ employees1
+        employees' = employees2
     pure $ Page $ page_ "Checklist" pageParams $ do
         -- http://foundation.zurb.com/sites/docs/top-bar.html
         div_ [ class_ "top-bar" ] $ do
@@ -118,27 +143,29 @@ indexPage' world (fu, viewerRole, _viewerLocation) mloc = do
                     toHtml (showRole viewerRole)
 
         -- Title
-        row_ $ large_ 12 $ header_ $ h1_ $ "Active employees"
+        let titleParts = catMaybes
+                [ (^. re _Location) <$> mloc
+                , (^. checklistName . to nameToText ) <$> mlist
+                ]
+        row_ $ large_ 12 $ header_ $ h1_ $ toHtml $ if null titleParts
+            then "Active employees"
+            else T.intercalate " - " titleParts
 
         -- List filtering controls
         row_ $ form_ [ action_ "/", method_ "get" ]$ do
             largemed_ 3 $ label_ $ do
                 "Location"
                 select_ [ name_ "location"] $ do
-                    -- TODO: Select chosen
                     option_ [ value_ "" ] $ "Show all"
-                    -- TODO: value
                     for_ [ minBound .. maxBound ] $ \loc ->
                         optionSelected_ (Just loc == mloc) [ value_ $ loc ^. re _Location ] $ toHtml $ locationToText loc
             largemed_ 3 $ label_ $ do
                 "Checklist"
-                select_ $ do
-                    -- TODO: select chosen
+                select_ [ name_ "checklist"] $ do
                     option_ [ value_ "" ] $ "Show all"
                     for_ (world ^.. worldLists . folded) $ \cl ->
-                        option_ [ value_ $ cl ^. identifier . to identifierToText ]
+                        optionSelected_ (Just cl == mlist) [ value_ $ cl ^. identifier . to identifierToText ]
                             $ toHtml $ show $ cl ^. checklistName
-                    -- TODO: list
             largemed_ 5 $ label_ $ do
                 "Task"
                 select_ $ do
@@ -147,7 +174,6 @@ indexPage' world (fu, viewerRole, _viewerLocation) mloc = do
                     for_ (world ^.. worldTasks . folded) $ \task ->
                         option_ [ value_ $ task ^. identifier . to identifierToText ]
                             $ toHtml $ show $ task ^. taskName
-                    -- TODO: list
             largemed_ 1 $ label_ $ do
                 toHtmlRaw ("&nbsp;" :: Text)
                 button_ [ class_ "button" ] $ "Filter"
@@ -166,7 +192,7 @@ indexPage' world (fu, viewerRole, _viewerLocation) mloc = do
                 th_ [title_ "Task items todo/done"]        "Items"
             tbody_ $ for_ employees' $ \employee -> do
                 let eid = employee ^. identifier
-                let firstFutureDay = employees ^? folded . employeeStartingDay . filtered (> today)
+                let firstFutureDay = employees' ^? folded . employeeStartingDay . filtered (> today)
                 let startingDay = employee ^. employeeStartingDay
                 let etaClass day = case compare day today of
                         -- TODO: magic numbers
@@ -178,11 +204,11 @@ indexPage' world (fu, viewerRole, _viewerLocation) mloc = do
                            | otherwise                           -> "eta-future"
                 tr_ [ class_ $ etaClass $ employee ^. employeeStartingDay ] $ do
                     td_ $ contractTypeHtml $ employee ^. employeeContractType
-                    td_ $ locHtml $ employee ^. employeeLocation
+                    td_ $ locHtml mlist $ employee ^. employeeLocation
                     -- TODO: use safeLink
                     td_ $ a_ [ href_ $ "/employee/" <> employee ^. identifier . to identifierToText ] $ toHtml $
                         employee ^. employeeFirstName <> " " <> employee ^. employeeLastName
-                    td_ $ checklistNameHtml world (employee ^. employeeChecklist)
+                    td_ $ checklistNameHtml world mloc (employee ^. employeeChecklist)
                     td_ $ toHtml $ show startingDay
                     td_ $ bool (toHtmlRaw ("&#8868;" :: Text)) (pure ()) $ employee ^. employeeConfirmed
                     td_ $ toHtml $ show (diffDays startingDay today) <> " days"

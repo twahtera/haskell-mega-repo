@@ -39,9 +39,8 @@ import Data.BinaryFromJSON              (BinaryFromJSON)
 import Data.Maybe                       (fromJust)
 import Data.Ord                         (comparing)
 import Data.Pool                        (withResource)
-import Data.Time                        (addDays, getCurrentTime)
-import Data.Time.Fxtra
-       (beginningOfPrevMonth, getCurrentDayInFinland)
+import Data.Time                        (addDays)
+import Data.Time.Fxtra                  (beginningOfPrevMonth)
 import Database.PostgreSQL.Simple.Fxtra (execute)
 import Generics.SOP                     (All, I (..), NP (..))
 import Servant                          (ServantErr)
@@ -130,7 +129,7 @@ balanceReportEndpoint = DefaultableEndpoint
   where
     balanceReport :: Ctx -> () -> IO BalanceReport
     balanceReport ctx () = do
-        now <- getCurrentTime
+        now <- currentTime
         interval <- getInterval
         ids <- HM.toList <$> readTVarIO (ctxPlanmillUserLookup ctx)
         executeCachedAdminPlanmill ctx p $
@@ -142,7 +141,7 @@ balanceReportEndpoint = DefaultableEndpoint
         cmpPE = (comparing employeeTeam <> comparing employeeName) `on` perFst
 
         getInterval = do
-            b <- getCurrentDayInFinland
+            b <- currentDay
             let a = beginningOfPrevMonth b
             return (fromJust $ PM.mkInterval a b)
 
@@ -249,12 +248,12 @@ missingHoursEndpoint
 missingHoursEndpoint = DefaultableEndpoint
     { defEndTag = EMissingHours
     , defEndDefaultParsedParam = do
-        b <- pred <$> getCurrentDayInFinland  -- Do not include today
+        b <- pred <$> currentDay  -- Do not include today
         let a = beginningOfPrevMonth b
         return (fromJust $ PM.mkInterval a b, [])
     , defEndDefaultParams = I Nothing :* I Nothing :* I Nothing :* Nil
     , defEndParseParams = \(I a :* I b :* I usernames :* Nil) -> do
-        b' <- maybe getCurrentDayInFinland pure b
+        b' <- maybe currentDay pure b
         let a' = fromMaybe (beginningOfPrevMonth b') a
         interval <- maybe (throwError err400) pure $ PM.mkInterval a' b'
         let usernames' = maybe [] getFUMUsernamesParam usernames
@@ -264,7 +263,7 @@ missingHoursEndpoint = DefaultableEndpoint
   where
     missingHours' :: Ctx -> (PM.Interval Day, [FUMUsername]) -> IO MissingHoursReport
     missingHours' ctx (interval, usernames) = do
-        now <- getCurrentTime
+        now <-currentTime
         pmUsers <- readTVarIO (ctxPlanmillUserLookup ctx)
         executeCachedAdminPlanmill ctx p $ missingHours now pmUsers interval usernames
      where
@@ -314,13 +313,13 @@ powerAbsencesEndpoint
 powerAbsencesEndpoint = DefaultableEndpoint
     { defEndTag = EPowerAbsences
     , defEndDefaultParsedParam = do
-        m <- getCurrentDayInFinland
+        m <- currentDay
         let a = beginningOfPrevMonth m
         let b = addDays 365 m
         return $ fromJust $ PM.mkInterval a b
     , defEndDefaultParams = I Nothing :* I Nothing :* Nil
     , defEndParseParams = \(I a :* I b :* Nil) -> do
-        b' <- maybe (addDays 365 <$> getCurrentDayInFinland) pure b
+        b' <- maybe (addDays 365 <$> currentDay) pure b
         let a' = fromMaybe (addDays (-365) $ beginningOfPrevMonth b') a
         maybe (throwError err400) pure $ PM.mkInterval a' b'
     , defEndAction = powerAbsences

@@ -1,5 +1,5 @@
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
 -- TODO: remove no-orphans
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Futurice.App.Checklist.Types.Identifier (
@@ -14,16 +14,19 @@ import Prelude ()
 
 import Control.Lens (Iso', iso)
 
-import qualified Data.UUID       as UUID
+import qualified Data.UUID as UUID
 
 newtype Identifier a = Identifier UUID
     deriving (Eq, Ord, Show, Typeable, Generic)
 
 identifierToText :: Identifier a -> Text
-identifierToText (Identifier uuid) = UUID.toText uuid
+identifierToText (Identifier u) = UUID.toText u
 
 instance Arbitrary (Identifier a) where
     arbitrary = Identifier <$> arbitrary
+
+instance HasUUID (Identifier a) where
+    uuid = lens (\(Identifier u) -> u) (\_ u -> Identifier u)
 
 -------------------------------------------------------------------------------
 -- HasIdentifier
