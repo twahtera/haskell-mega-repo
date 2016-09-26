@@ -42,7 +42,6 @@ import Control.Monad.Trans.Identity (IdentityT (..))
 import Data.Aeson.Compat
        (FromJSON (..), ToJSON (..), object, withObject, (.:), (.=))
 import Data.Constraint              (Constraint)
-import Data.FileEmbed               (embedStringFile)
 import Data.Functor.Identity        (Identity (..))
 import Data.Swagger                 (ToSchema (..))
 import Data.Type.Equality
@@ -51,7 +50,8 @@ import Generics.SOP
 import GHC.TypeLits                 (KnownSymbol, Symbol, symbolVal)
 import Lucid                        hiding (for_)
 import Lucid.Base                   (HtmlT (..))
-import Lucid.Foundation.Futurice    (defPageParams, large_, pageJs, page_, row_)
+import Lucid.Foundation.Futurice
+       (defPageParams, embedJS, large_, menrvaJS, pageJs, page_, row_)
 
 import Servant.API         (MimeRender (..))
 import Servant.CSV.Cassava (CSV', EncodeOpts (..))
@@ -419,8 +419,8 @@ instance (KnownSymbol name, ToHtml params, ToReportRow a, IsReport params a)
         title = symbolVal (Proxy :: Proxy name)
         pageParams = defPageParams
             & pageJs .~
-                [ $(embedStringFile "menrva.standalone.js")
-                , $(embedStringFile "reports.js")
+                [ menrvaJS
+                , $(embedJS "reports.js")
                 ]
 
         cls' :: Set Text -> [Attribute]

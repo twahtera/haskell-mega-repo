@@ -5,6 +5,9 @@
     // Maximum amount of distinct values to make a select
     var MAX_ENUM_VALUES = 10;
 
+    // If there are a lot of values, but still relatively less than all values.
+    var UNIQ_VALUES_COEFFICIENT = 10;
+
     window.addEventListener("load", function () {
         console.log("Initialising reports");
         document.querySelectorAll("table.futu-report").forEach(initFutuReport);
@@ -48,7 +51,7 @@
 
             var uniqValues = _.sortedUniq(values.sort());
 
-            if (uniqValues.length <= MAX_ENUM_VALUES) {
+            if (uniqValues.length <= MAX_ENUM_VALUES || uniqValues.length * UNIQ_VALUES_COEFFICIENT <= values.length) {
                 return dom("select", {
                     multiple: "multiple",
                     change: function (ev) {
@@ -111,14 +114,24 @@
         ];
 
         // selects
-        _.each(ths, function (th, column) {
-            var select = selects[column];
-            if (select) {
-                var name = th.innerText;
-                var el = row12([dom("label", [name, select])]);
-                controls.push(el);
-            }
-        });
+        var domSelects = _.chain(ths)
+            .map(function (th, column) {
+                var select = selects[column];
+                if (select) {
+                    var name = th.innerText;
+                    return [dom("label", [name, select])];
+                } else {
+                    return undefined;
+                }
+            })
+            .compact()
+            .take(4)
+            .value();
+
+        var domSelectWidth = (12 / domSelects.length) | 0;
+        controls.push(dom("div", { className: "row"}, domSelects.map(function (ds) {
+            return dom("div", { className: "columns large-" + domSelectWidth }, ds)
+        })));
 
         var controlWrapper = row12([dom("div", { className: "callout" }, controls)]);
 

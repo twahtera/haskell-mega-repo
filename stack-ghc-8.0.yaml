@@ -49,15 +49,12 @@ packages:
     commit: 528bba55657c5bd379397da5da2efc42c610d3c8
   extra-dep: true
 - location:
-    git: https://github.com/phadej/aeson-extra.git
-    commit: 83cdf5932cd333067a50209ed63b8604749a33d2
-  extra-dep: true
-- location:
     git: https://github.com/phadej/github.git
     commit: dd149a469cad0fb4ecbb75a76efc633d92870a0c
   extra-dep: true
 extra-deps:
 - aeson-1.0.1.0
+- aeson-extra-0.4.0.0
 - http-api-data-0.3
 - http-client-0.5.3.2
 - http-client-tls-0.3.3
