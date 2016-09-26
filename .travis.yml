@@ -34,7 +34,7 @@ script:
 matrix:
   fast_finish: true
   include:
-  - env: GHCVER=7.10.3 STACK_YAML=stack-lts-6.yaml PEDANTIC=YES
+  - env: GHCVER=7.10.3 STACK_YAML=stack-lts-6.yaml
     addons:
       apt:
         sources:
