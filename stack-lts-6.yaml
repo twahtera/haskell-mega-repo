@@ -42,13 +42,15 @@ packages:
   extra-dep: true
 # Not ours
 # https://github.com/GetShopTV/swagger2/pull/81
+# https://github.com/GetShopTV/swagger2/pull/82
 - location:
-    git: https://github.com/GetShopTV/swagger2.git
-    commit: 2c26881ea5fc7c2db888b483e38c5c30c13a2f8f
+    git: https://github.com/phadej/swagger2.git
+    commit: 68e95a65ea8612a44cc516717e5af27370b738fa
   extra-dep: true
+# https://github.com/facebook/Haxl/pull/56/
 - location:
-    git: https://github.com/facebook/Haxl.git
-    commit: 528bba55657c5bd379397da5da2efc42c610d3c8
+    git: https://github.com/phadej/Haxl.git
+    commit: 230cdb50402dfa74e35dcf73c5d437b8711cf6ea
   extra-dep: true
 extra-deps:
 - aeson-1.0.1.0
