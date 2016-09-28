@@ -1,4 +1,4 @@
-resolver: lts-6.18
+resolver: lts-6.19
 packages:
 - ansi-pretty/
 - avar/
@@ -43,13 +43,8 @@ packages:
 # Not ours
 # https://github.com/GetShopTV/swagger2/pull/81
 - location:
-    git: https://github.com/phadej/swagger2.git
-    commit: 12dbb51230d6fafb9f248ce24bb4484a3045e3bc
-  extra-dep: true
-# https://github.com/fizruk/http-api-data/pull/34
-- location:
-    git: https://github.com/phadej/http-api-data.git
-    commit: 2c319815666e88eb871013f411442af0bd307520
+    git: https://github.com/GetShopTV/swagger2.git
+    commit: 2c26881ea5fc7c2db888b483e38c5c30c13a2f8f
   extra-dep: true
 - location:
     git: https://github.com/facebook/Haxl.git
@@ -62,10 +57,11 @@ extra-deps:
 - clay-0.11
 - friendly-time-0.4
 - generics-sop-lens-0.1.1.0
-- http-api-data-0.3
+- http-api-data-0.3.1
 - insert-ordered-containers-0.2.0.0
 - io-streams-haproxy-1.0.0.1
 - monad-http-0.2.0.0
+- QuickCheck-2.9.2
 - semigroupoids-5.1
 - servant-0.9
 - servant-cassava-0.8
