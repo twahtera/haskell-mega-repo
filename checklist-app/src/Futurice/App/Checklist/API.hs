@@ -28,6 +28,7 @@ type IndexPageEndpoint =
 type TasksPageEndpoint =
     "tasks" :>
     SSOUser :>
+    QueryParam "checklist" UUID :>
     Get '[HTML] (Page "tasks")
 
 indexPageEndpoint :: Proxy IndexPageEndpoint

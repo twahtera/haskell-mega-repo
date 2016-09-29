@@ -47,11 +47,16 @@ tasksPageImpl
     :: (MonadIO m)
     => Ctx
     -> Maybe FUM.UserName
+    -> Maybe UUID
     -> m (Page "tasks")
-tasksPageImpl ctx fu = withAuthUser ctx fu impl
+tasksPageImpl ctx fu cid = withAuthUser ctx fu impl
   where
     impl world userInfo =
-        pure $ tasksPage world userInfo
+        pure $ tasksPage world userInfo checklist
+      where
+        checklist = do
+            cid' <- cid
+            world ^? worldLists . ix (Identifier cid')
 
 -- | Read only pages
 withAuthUser

@@ -64,7 +64,7 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
             else T.intercalate " - " titleParts
 
         -- List filtering controls
-        row_ $ form_ [ action_ "/", method_ "get" ]$ do
+        row_ $ form_ [ action_ "/", method_ "get" ] $ do
             largemed_ 3 $ label_ $ do
                 "Location"
                 select_ [ name_ "location"] $ do
@@ -109,7 +109,7 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
                 th_ [title_ "Confirmed - contract signed"] "Confirmed"
                 th_ [title_ "Days till start"]             "ETA"
                 viewerItemsHeader viewerRole
-                th_ [title_ "Task items todo/done"]        "Items"
+                th_ [title_ "Task items todo/done"]        "Tasks"
             tbody_ $ for_ employees' $ \employee -> do
                 let eid = employee ^. identifier
                 let firstFutureDay = employees' ^? folded . employeeStartingDay . filtered (> today)
@@ -147,11 +147,46 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
 tasksPage
     :: World                                 -- ^ the world
     -> (FUM.UserName, TaskRole, Location)    -- ^ logged in user
+    -> Maybe Checklist
     -> Page "tasks"
-tasksPage _world authUser@(_fu, _viewerRole, _viewerLocation) =
-    Page $ page_ "Checklist - Tasks" pageParams $ do
+tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mlist =
+    let tasks0 = world ^.. worldTasks . folded
+        tasks1 = maybe id (filter . checklistPredicate) mlist tasks0
+        tasks' = tasks1
+
+        checklistPredicate :: Checklist -> Task -> Bool
+        checklistPredicate cl task = flip has world $
+            worldLists . ix (cl ^. identifier) . checklistTasks . ix (task ^. identifier)
+
+    in Page $ page_ "Checklist - Tasks" pageParams $ do
         navigation authUser
+
+        -- The title
         header "Tasks"
+
+        -- List filtering controls
+        row_ $ form_ [ action_ $ "/tasks", method_ "get" ] $ do
+            largemed_ 11 $ label_ $ do
+                "Checklist"
+                select_ [ name_ "checklist"] $ do
+                    option_ [ value_ "" ] $ "Show all"
+                    for_ (world ^.. worldLists . folded) $ \cl ->
+                        optionSelected_ (Just cl == mlist)
+                            [ value_ $ cl ^. identifier . to identifierToText ]
+                            $ cl ^. nameHtml
+            largemed_ 1 $ label_ $ do
+                toHtmlRaw ("&nbsp;" :: Text)
+                button_ [ class_ "button" ] $ "Filter"
+
+        -- The table
+        row_ $ large_ 12 $ table_ $ do
+            thead_ $ tr_ $ do
+                th_ [ title_ "Task" ]                       "Task"
+                th_ [ title_ "Active employees todo/done" ] "Employees"
+
+            tbody_ $ for_ tasks' $ \task -> tr_ $ do
+                td_ $ a_ [ indexPageHref Nothing mlist (Just task) ] $ task ^. nameHtml
+                td_ "(N/A)"
 
 -------------------------------------------------------------------------------
 -- Navigation
@@ -165,7 +200,7 @@ navigation (fu, viewerRole, _viewerLocation) = do
             li_ [ class_ "menu-text"] $ do
                 "Checklist"
                 sup_ "2"
-            li_ $ a_ [ indexPageHref Nothing (Nothing :: Maybe Checklist) Nothing ] "Employees"
+            li_ $ a_ [ indexPageHref Nothing (Nothing :: Maybe Checklist) (Nothing :: Maybe Task) ] "Employees"
             li_ $ a_ [ href_ "#"] "Checklists"
             li_ $ a_ [ tasksPageHref ] "Tasks"
             li_ $ a_ [ href_ "#" ] "Reminder lists"
@@ -194,17 +229,18 @@ nameHtml = nameText . to toHtml
 -------------------------------------------------------------------------------
 
 indexPageHref
-    :: HasIdentifier c Checklist
+    :: (HasIdentifier c Checklist, HasIdentifier t Task)
     => Maybe Location
     -> Maybe c
-    -> Maybe (Identifier Task)
+    -> Maybe t
     -> Attribute
 indexPageHref mloc mlist mtask =
-    href_ $ uriText $ safeLink checklistApi indexPageEndpoint
-        mloc (mlist ^? _Just . identifier . uuid) (view uuid <$> mtask)
+    href_ $ uriText $ safeLink checklistApi indexPageEndpoint mloc
+        (mlist ^? _Just . identifier . uuid)
+        (mtask ^? _Just . identifier . uuid)
 
 tasksPageHref :: Attribute
-tasksPageHref = href_ $ uriText $ safeLink checklistApi tasksPageEndpoint
+tasksPageHref = href_ $ uriText $ safeLink checklistApi tasksPageEndpoint Nothing
 
 -------------------------------------------------------------------------------
 -- Miscs
@@ -244,7 +280,7 @@ locHtml
     => Maybe c -> Location -> HtmlT m ()
 locHtml mlist l = a_ [ href, title_ locName ] $ locSlug
   where
-    href = indexPageHref (Just l) mlist Nothing
+    href = indexPageHref (Just l) mlist (Nothing :: Maybe Task)
 
     locSlug = case l of
         LocHelsinki  -> "Hel"
@@ -275,13 +311,11 @@ contractTypeHtml ContractTypeSummerWorker = span_ [title_ "Summer worker"] "Sum"
 -- | TODO: better error
 checklistNameHtml :: Monad m => World -> Maybe Location -> Identifier Checklist -> HtmlT m ()
 checklistNameHtml world mloc i =
-    a_ [ indexPageHref mloc (Just i) Nothing ] $
+    a_ [ indexPageHref mloc (Just i) (Nothing :: Maybe Task) ] $
         world ^. worldLists . at i . non (error "Inconsisten world") . nameHtml
 
 uriText :: URI -> Text
-uriText (URI _ _ path query _) = case path <> query of
-    "" -> "/"
-    t  -> t ^. packed
+uriText (URI _ _ path query _) = ("/" <> path <> query) ^. packed
 
 nameToText :: Name a -> Text
 nameToText (Name n) = n
