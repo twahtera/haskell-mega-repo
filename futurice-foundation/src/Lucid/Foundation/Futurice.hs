@@ -13,6 +13,7 @@ module Lucid.Foundation.Futurice (
     largemed_,
     -- * Form
     optionSelected_,
+    checkbox_,
     -- * Page
     page_,
     PageParams,
@@ -27,6 +28,7 @@ module Lucid.Foundation.Futurice (
     menrvaJS,
     -- * Lucid
     module Lucid,
+    attrfor_,
     ) where
 
 import Futurice.Prelude
@@ -38,6 +40,7 @@ import Lucid                                   hiding (for_)
 import Lucid.Foundation.Futurice.JavaScript
 import Lucid.Foundation.Futurice.JavaScript.TH
 
+import qualified Lucid as L
 import qualified Data.Text as T
 
 embeddedFoundationStyle_ :: Monad m => HtmlT m ()
@@ -51,6 +54,9 @@ embeddedLodash_ = toHtml $(embedJS "lodash.js")
 -- | Data-flow library <https://github.com/phadej/menrva menrva>.
 menrvaJS :: JS
 menrvaJS = $(embedJS "menrva.standalone.js")
+
+attrfor_ :: Text -> Attribute
+attrfor_ = L.for_
 
 -------------------------------------------------------------------------------
 -- Grid
@@ -73,6 +79,10 @@ largemed_ n = div_
 optionSelected_ :: Term arg result => Bool -> arg -> result
 optionSelected_ True  = termWith "option" [ selected_ "selected "]
 optionSelected_ False = term "option"
+
+checkbox_ :: Monad m => Bool -> [Attribute] -> HtmlT m ()
+checkbox_ True  attrs = input_ $ [ type_ "checkbox", checked_ ] <> attrs
+checkbox_ False attrs = input_ $ [ type_ "checkbox" ] <> attrs
 
 -------------------------------------------------------------------------------
 -- Page

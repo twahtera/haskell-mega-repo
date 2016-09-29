@@ -20,6 +20,7 @@ import Futurice.App.Checklist.Types
 import Lucid.Foundation.Futurice
 
 import qualified Data.Text as T
+import qualified Data.UUID as UUID
 import qualified FUM
 
 nonAuthorizedPage :: Page sym
@@ -91,7 +92,7 @@ indexPage world today (fu, viewerRole, _viewerLocation) mloc mlist mtask =
                     for_ (world ^.. worldLists . folded) $ \cl ->
                         optionSelected_ (Just cl == mlist)
                             [ value_ $ cl ^. identifier . to identifierToText ]
-                            $ cl ^. nameHtml 
+                            $ cl ^. nameHtml
             largemed_ 5 $ label_ $ do
                 "Task"
                 select_ [ name_ "task" ] $ do
@@ -137,7 +138,10 @@ indexPage world today (fu, viewerRole, _viewerLocation) mloc mlist mtask =
                     -- TODO: use safeLink
                     td_ $ a_ [ href_ $ "/employee/" <> employee ^. identifier . to identifierToText ] $ toHtml $
                         employee ^. employeeFirstName <> " " <> employee ^. employeeLastName
-                    td_ $ checklistNameHtml world mloc (employee ^. employeeChecklist)
+                    td_ $ maybe
+                        (checklistNameHtml world mloc $ employee ^. employeeChecklist)
+                        (taskCheckbox world employee)
+                        mtask
                     td_ $ toHtml $ show startingDay
                     td_ $ bool (toHtmlRaw ("&#8868;" :: Text)) (pure ()) $ employee ^. employeeConfirmed
                     td_ $ toHtml $ show (diffDays startingDay today) <> " days"
@@ -154,11 +158,29 @@ indexPage world today (fu, viewerRole, _viewerLocation) mloc mlist mtask =
 -- Building blocks
 -------------------------------------------------------------------------------
 
+taskCheckbox :: Monad m => World -> Employee -> Task -> HtmlT m ()
+taskCheckbox world employee task = do
+    checkbox_ checked [ id_ megaid ]
+    label_ [ attrfor_ megaid ] $ task ^. nameHtml
+  where
+    checked = flip has world
+        $ worldTaskItems
+        . ix (employee ^. identifier)
+        . ix (task ^. identifier)
+        . _TaskItemDone
+
+    megaid :: Text
+    megaid =
+        "task-checkbox-" <>
+        employee ^. identifier . uuid . to UUID.toText <>
+        "-" <>
+        task ^. identifier . uuid . to UUID.toText
+
 nameText :: HasName a => Getter a Text
 nameText = name . _Wrapped
 
 nameHtml :: (HasName a, Monad m) => Getter a (HtmlT m ())
-nameHtml = nameText . to toHtml 
+nameHtml = nameText . to toHtml
 
 indexPageHref
     :: HasIdentifier c Checklist
