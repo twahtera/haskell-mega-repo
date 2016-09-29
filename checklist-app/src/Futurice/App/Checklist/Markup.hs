@@ -11,7 +11,7 @@ import Futurice.Prelude
 import Prelude ()
 
 import Control.Lens
-       (Getter, filtered, has, ifoldMapOf, non, only, re, to, _Wrapped)
+       (Getter, filtered, has, ifoldMapOf, foldMapOf, non, only, re, to, _Wrapped)
 import Data.List           (sortOn)
 import Data.Maybe          (catMaybes)
 import Data.Time           (addDays, diffDays)
@@ -44,7 +44,7 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
     let employees0 = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
         employees1 = maybe id (\l -> filter (has $ employeeLocation . only l)) mloc $ employees0
         employees2 = maybe id (\cl -> filter (has $ employeeChecklist . only (cl ^. identifier))) mlist $ employees1
-        employees3 = maybe id (filter . taskPredicate) mtask $ employees2
+        employees3 = maybe id (filter . taskPredicate) mtask employees2
         employees' = employees3
 
         taskPredicate :: Task -> Employee -> Bool
@@ -55,13 +55,10 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
         navigation authUser
 
         -- Title
-        let titleParts = catMaybes
-                [ (^. re _Location) <$> mloc
-                , (^. checklistName . to nameToText ) <$> mlist
-                ]
-        header $ if null titleParts
-            then "Active employees"
-            else T.intercalate " - " titleParts
+        header "Active employees"
+            [ (^. re _Location) <$> mloc
+            , (^. nameText ) <$> mlist
+            ]
 
         -- List filtering controls
         row_ $ form_ [ action_ "/", method_ "get" ] $ do
@@ -124,7 +121,7 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
                            | otherwise                           -> "eta-future"
                 tr_ [ class_ $ etaClass $ employee ^. employeeStartingDay ] $ do
                     td_ $ contractTypeHtml $ employee ^. employeeContractType
-                    td_ $ locHtml mlist $ employee ^. employeeLocation
+                    td_ $ locationHtml mlist $ employee ^. employeeLocation
                     -- TODO: use safeLink
                     td_ $ a_ [ href_ $ "/employee/" <> employee ^. identifier . to identifierToText ] $ toHtml $
                         employee ^. employeeFirstName <> " " <> employee ^. employeeLastName
@@ -147,12 +144,17 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
 tasksPage
     :: World                                 -- ^ the world
     -> (FUM.UserName, TaskRole, Location)    -- ^ logged in user
+    -> Maybe TaskRole
     -> Maybe Checklist
     -> Page "tasks"
-tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mlist =
+tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
     let tasks0 = world ^.. worldTasks . folded
-        tasks1 = maybe id (filter . checklistPredicate) mlist tasks0
-        tasks' = tasks1
+        tasks1 = maybe id (filter . rolePredicate) mrole tasks0
+        tasks2 = maybe id (filter . checklistPredicate) mlist tasks1
+        tasks' = tasks2
+
+        rolePredicate :: TaskRole -> Task -> Bool
+        rolePredicate role task = role == task ^. taskRole
 
         checklistPredicate :: Checklist -> Task -> Bool
         checklistPredicate cl task = flip has world $
@@ -161,12 +163,23 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mlist =
     in Page $ page_ "Checklist - Tasks" pageParams $ do
         navigation authUser
 
-        -- The title
+        -- Title
         header "Tasks"
+            [ (^. re _TaskRole) <$> mrole
+            , (^. nameText ) <$> mlist
+            ]
 
         -- List filtering controls
         row_ $ form_ [ action_ $ "/tasks", method_ "get" ] $ do
-            largemed_ 11 $ label_ $ do
+            largemed_ 3 $ label_ $ do
+                "Role"
+                select_ [ name_ "role"] $ do
+                    option_ [ value_ "" ] $ "Show all"
+                    for_ [ minBound .. maxBound ] $ \role ->
+                        optionSelected_ (Just role == mrole)
+                            [ value_ $ role ^. re _TaskRole ]
+                            $ toHtml $ roleToText role
+            largemed_ 8 $ label_ $ do
                 "Checklist"
                 select_ [ name_ "checklist"] $ do
                     option_ [ value_ "" ] $ "Show all"
@@ -182,11 +195,19 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mlist =
         row_ $ large_ 12 $ table_ $ do
             thead_ $ tr_ $ do
                 th_ [ title_ "Task" ]                       "Task"
+                th_ [ title_ "Role" ]                       "Role"
                 th_ [ title_ "Active employees todo/done" ] "Employees"
 
             tbody_ $ for_ tasks' $ \task -> tr_ $ do
-                td_ $ a_ [ indexPageHref Nothing mlist (Just task) ] $ task ^. nameHtml
-                td_ "(N/A)"
+                let tid = task ^. identifier
+
+                td_ $ a_ [ indexPageHref Nothing mlist (Just tid) ] $ task ^. nameHtml
+                td_ $ roleHtml mlist (task ^. taskRole)
+                td_ $ case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
+                    TodoCounter _ _ i j -> td_ $ toHtml (show i) *> "/" *> toHtml (show j)
+ where
+  countUsers TaskItemDone = TodoCounter 0 0 1 1
+  countUsers TaskItemTodo = TodoCounter 0 0 0 1
 
 -------------------------------------------------------------------------------
 -- Navigation
@@ -202,17 +223,26 @@ navigation (fu, viewerRole, _viewerLocation) = do
                 sup_ "2"
             li_ $ a_ [ indexPageHref Nothing (Nothing :: Maybe Checklist) (Nothing :: Maybe Task) ] "Employees"
             li_ $ a_ [ href_ "#"] "Checklists"
-            li_ $ a_ [ tasksPageHref ] "Tasks"
+            li_ $ a_ [ tasksPageHref Nothing (Nothing :: Maybe Checklist) ] "Tasks"
             li_ $ a_ [ href_ "#" ] "Reminder lists"
         div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
             li_ [ class_ "menu-text" ] $ do
                 "Hello "
                 toHtml $ fu ^. FUM.getUserName
                 ", you are "
-                toHtml (showRole viewerRole)
+                roleHtml (Nothing :: Maybe Checklist) viewerRole
 
-header :: Monad m => Text -> HtmlT m ()
-header t = row_ $ large_ 12 $ header_ $ h1_ $ toHtml t
+header
+    :: Monad m
+    => Text          -- ^ default title
+    -> [Maybe Text]  -- ^ title parts
+    -> HtmlT m ()
+header title titleParts' = row_ $ large_ 12 $ header_ $ h1_ $ toHtml $
+    if null titleParts
+        then title
+        else T.intercalate " - " titleParts
+  where
+    titleParts = catMaybes titleParts'
 
 -------------------------------------------------------------------------------
 -- Name helpers
@@ -230,17 +260,18 @@ nameHtml = nameText . to toHtml
 
 indexPageHref
     :: (HasIdentifier c Checklist, HasIdentifier t Task)
-    => Maybe Location
-    -> Maybe c
-    -> Maybe t
-    -> Attribute
+    => Maybe Location -> Maybe c -> Maybe t -> Attribute
 indexPageHref mloc mlist mtask =
     href_ $ uriText $ safeLink checklistApi indexPageEndpoint mloc
         (mlist ^? _Just . identifier . uuid)
         (mtask ^? _Just . identifier . uuid)
 
-tasksPageHref :: Attribute
-tasksPageHref = href_ $ uriText $ safeLink checklistApi tasksPageEndpoint Nothing
+tasksPageHref
+    :: (HasIdentifier c Checklist)
+    => Maybe TaskRole -> Maybe c -> Attribute
+tasksPageHref mrole mlist =
+    href_ $ uriText $ safeLink checklistApi tasksPageEndpoint mrole
+        (mlist ^? _Just . identifier . uuid)
 
 -------------------------------------------------------------------------------
 -- Miscs
@@ -275,10 +306,10 @@ taskCheckbox world employee task = do
         "_" <>
         task ^. identifier . uuid . to UUID.toText
 
-locHtml
+locationHtml
     :: (Monad m, HasIdentifier c Checklist)
     => Maybe c -> Location -> HtmlT m ()
-locHtml mlist l = a_ [ href, title_ locName ] $ locSlug
+locationHtml mlist l = a_ [ href, title_ locName ] $ locSlug
   where
     href = indexPageHref (Just l) mlist (Nothing :: Maybe Task)
 
@@ -299,6 +330,14 @@ locHtml mlist l = a_ [ href, title_ locName ] $ locSlug
         LocMunich    -> "Munich"
         LocOther     -> "Other"
 
+roleHtml
+    :: (Monad m, HasIdentifier c Checklist)
+    => Maybe c -> TaskRole -> HtmlT m ()
+roleHtml mlist role = a_ [ href, title_ roleName ] $ toHtml $ roleName
+  where
+    roleName = role ^. re _TaskRole
+    href = tasksPageHref (Just role) mlist
+
 -- | Permamant status isn't shown, because it's common scenario: other contract
 -- types stand up better.
 contractTypeHtml :: Monad m => ContractType -> HtmlT m ()
@@ -317,18 +356,10 @@ checklistNameHtml world mloc i =
 uriText :: URI -> Text
 uriText (URI _ _ path query _) = ("/" <> path <> query) ^. packed
 
-nameToText :: Name a -> Text
-nameToText (Name n) = n
-
 viewerItemsHeader :: Monad m => TaskRole -> HtmlT m ()
 viewerItemsHeader TaskRoleIT         = th_ [title_ "IT tasks todo/done"]          "IT items"
 viewerItemsHeader TaskRoleHR         = th_ [title_ "HR tasks todo/done"]          "HR items"
 viewerItemsHeader TaskRoleSupervisor = th_ [title_ "Supervisor tasks todo/done"]  "Supervisor items"
-
-showRole :: TaskRole -> Text
-showRole TaskRoleIT         = "IT"
-showRole TaskRoleHR         = "HR"
-showRole TaskRoleSupervisor = "supervisor"
 
 toTodoCounter :: World -> TaskRole -> Identifier Task -> TaskItemDone -> TodoCounter
 toTodoCounter world tr tid td =

@@ -9,7 +9,7 @@ import Futurice.Servant   (SSOUser)
 import Servant.API
 import Servant.HTML.Lucid (HTML)
 
-import Futurice.App.Checklist.Types      (Location)
+import Futurice.App.Checklist.Types      (Location, TaskRole)
 import Futurice.App.Checklist.Types.Page (Page)
 
 type ChecklistAPI = IndexPageEndpoint
@@ -28,6 +28,7 @@ type IndexPageEndpoint =
 type TasksPageEndpoint =
     "tasks" :>
     SSOUser :>
+    QueryParam "role" TaskRole :>
     QueryParam "checklist" UUID :>
     Get '[HTML] (Page "tasks")
 

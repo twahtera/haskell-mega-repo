@@ -47,12 +47,13 @@ tasksPageImpl
     :: (MonadIO m)
     => Ctx
     -> Maybe FUM.UserName
+    -> Maybe TaskRole
     -> Maybe UUID
     -> m (Page "tasks")
-tasksPageImpl ctx fu cid = withAuthUser ctx fu impl
+tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
   where
     impl world userInfo =
-        pure $ tasksPage world userInfo checklist
+        pure $ tasksPage world userInfo role checklist
       where
         checklist = do
             cid' <- cid
