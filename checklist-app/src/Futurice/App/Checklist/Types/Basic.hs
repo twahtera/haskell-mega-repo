@@ -8,7 +8,7 @@
 -- | Basic types
 module Futurice.App.Checklist.Types.Basic where
 
-import Control.Lens      (Prism', prism', (^?))
+import Control.Lens      (Getter, Prism', prism')
 import Data.Aeson.Compat (Value (String))
 import Data.Swagger
        (SwaggerType (SwaggerString), ToParamSchema (..), enum_, type_)
@@ -142,6 +142,7 @@ data TaskAppliance = TaskApplianceAll
 -- Lenses
 -------------------------------------------------------------------------------
 
+makeWrapped ''Name
 makeLenses ''Employee
 makePrisms ''ContractType
 makePrisms ''Location
@@ -168,6 +169,10 @@ instance HasIdentifier Checklist Checklist where
 -------------------------------------------------------------------------------
 -- Some arbitraries
 -------------------------------------------------------------------------------
+
+class    HasName a         where name :: Getter a (Name a)
+instance HasName Task      where name = taskName
+instance HasName Checklist where name = checklistName
 
 instance Arbitrary (Name a) where
     arbitrary = Name . view packed <$> QC.vectorOf 20 (QC.elements ['a'..'z'])

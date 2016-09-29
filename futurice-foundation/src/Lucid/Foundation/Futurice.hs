@@ -25,6 +25,8 @@ module Lucid.Foundation.Futurice (
     makeJS,
     embedJS,
     menrvaJS,
+    -- * Lucid
+    module Lucid,
     ) where
 
 import Futurice.Prelude
