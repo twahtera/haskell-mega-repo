@@ -1,8 +1,10 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Futurice.App.Checklist.Markup where
-
+module Futurice.App.Checklist.Markup (
+    nonAuthorizedPage,
+    indexPage,
+    ) where
 
 import Futurice.Prelude
 import Prelude ()
@@ -55,8 +57,8 @@ indexPage world today (fu, viewerRole, _viewerLocation) mloc mlist mtask =
                 li_ [ class_ "menu-text"] $ do
                     "Checklist"
                     sup_ "2"
-                li_ $ a_ [ href_ "#" ] "Employees"
-                li_ $ a_ [ href_ "#" ] "Checklists"
+                li_ $ a_ [ indexPageHref Nothing (Nothing `as` mlist) Nothing ] "Employees"
+                li_ $ a_ [ href_ "#"] "Checklists"
                 li_ $ a_ [ href_ "#" ] "Tasks"
                 li_ $ a_ [ href_ "#" ] "Reminder lists"
             div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
@@ -99,8 +101,10 @@ indexPage world today (fu, viewerRole, _viewerLocation) mloc mlist mtask =
                     option_ [ value_ "" ] $ "Show all"
                     for_ (world ^.. worldTasks . folded) $ \task ->
                         optionSelected_ (mtask ^? _Just . identifier == Just (task ^. identifier))
-                            [ value_ $ task ^. identifier . to identifierToText ]
-                            $ task ^. nameHtml
+                            [ value_ $ task ^. identifier . to identifierToText ] $ do
+                                task ^. nameHtml
+                                " "
+                                countEmployeesWithTask world task employees2
             largemed_ 1 $ label_ $ do
                 toHtmlRaw ("&nbsp;" :: Text)
                 button_ [ class_ "button" ] $ "Filter"
@@ -158,6 +162,20 @@ indexPage world today (fu, viewerRole, _viewerLocation) mloc mlist mtask =
 -- Building blocks
 -------------------------------------------------------------------------------
 
+as :: a -> a -> a
+as = const
+
+countEmployeesWithTask :: Monad m => World -> Task -> [Employee] -> HtmlT m ()
+countEmployeesWithTask world task = toHtml' . foldMap f
+  where
+    toHtml' (TodoCounter _ _ i j) =
+      "(" *> toHtml (show i) *> "/" *> toHtml (show j) *> ")"
+
+    f employee = case world ^? worldTaskItems . ix (employee ^. identifier) . ix (task ^. identifier) of
+        Nothing           -> TodoCounter 0 0 0 0
+        Just TaskItemTodo -> TodoCounter 0 0 0 1
+        Just TaskItemDone -> TodoCounter 0 0 1 1
+
 taskCheckbox :: Monad m => World -> Employee -> Task -> HtmlT m ()
 taskCheckbox world employee task = do
     checkbox_ checked [ id_ megaid ]
@@ -173,7 +191,7 @@ taskCheckbox world employee task = do
     megaid =
         "task-checkbox-" <>
         employee ^. identifier . uuid . to UUID.toText <>
-        "-" <>
+        "_" <>
         task ^. identifier . uuid . to UUID.toText
 
 nameText :: HasName a => Getter a Text
@@ -232,7 +250,9 @@ checklistNameHtml world mloc i =
         world ^. worldLists . at i . non (error "Inconsisten world") . nameHtml
 
 uriText :: URI -> Text
-uriText (URI _ _ path query _) = (path <> query) ^. packed
+uriText (URI _ _ path query _) = case path <> query of
+    "" -> "/"
+    t  -> t ^. packed
 
 nameToText :: Name a -> Text
 nameToText (Name n) = n
