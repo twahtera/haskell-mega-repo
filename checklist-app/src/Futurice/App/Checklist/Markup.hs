@@ -4,6 +4,7 @@
 module Futurice.App.Checklist.Markup (
     nonAuthorizedPage,
     indexPage,
+    tasksPage,
     ) where
 
 import Futurice.Prelude
@@ -32,9 +33,9 @@ nonAuthorizedPage = Page $ page_ "Non-authorized" pageParams $ do
         "Ask IT-team to create you an account."
 
 indexPage
-    :: World                                 -- ^ the world
-    -> Day                                   -- ^ today
-    -> (FUM.UserName, TaskRole, Location)    -- ^ logged in user
+    :: World       -- ^ the world
+    -> Day         -- ^ today
+    -> AuthUser    -- ^ logged in user
     -> Maybe Location
     -> Maybe Checklist
     -> Maybe Task
@@ -58,7 +59,7 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
                 [ (^. re _Location) <$> mloc
                 , (^. checklistName . to nameToText ) <$> mlist
                 ]
-        row_ $ large_ 12 $ header_ $ h1_ $ toHtml $ if null titleParts
+        header $ if null titleParts
             then "Active employees"
             else T.intercalate " - " titleParts
 
@@ -143,12 +144,21 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
                             td_ $ toHtml (show a) *> "/" *> toHtml (show b)
                             td_ $ toHtml (show i) *> "/" *> toHtml (show j)
 
+tasksPage
+    :: World                                 -- ^ the world
+    -> (FUM.UserName, TaskRole, Location)    -- ^ logged in user
+    -> Page "tasks"
+tasksPage _world authUser@(_fu, _viewerRole, _viewerLocation) =
+    Page $ page_ "Checklist - Tasks" pageParams $ do
+        navigation authUser
+        header "Tasks"
+
 -------------------------------------------------------------------------------
 -- Navigation
 -------------------------------------------------------------------------------
 
 -- http://foundation.zurb.com/sites/docs/top-bar.html
-navigation :: Monad m => (FUM.UserName, TaskRole, Location) -> HtmlT m ()
+navigation :: Monad m => AuthUser -> HtmlT m ()
 navigation (fu, viewerRole, _viewerLocation) = do
     div_ [ class_ "top-bar" ] $ do
         div_ [ class_ "top-bar-left" ] $ ul_ [ class_ "dropdown menu" ] $ do
@@ -157,7 +167,7 @@ navigation (fu, viewerRole, _viewerLocation) = do
                 sup_ "2"
             li_ $ a_ [ indexPageHref Nothing (Nothing :: Maybe Checklist) Nothing ] "Employees"
             li_ $ a_ [ href_ "#"] "Checklists"
-            li_ $ a_ [ href_ "#" ] "Tasks"
+            li_ $ a_ [ tasksPageHref ] "Tasks"
             li_ $ a_ [ href_ "#" ] "Reminder lists"
         div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
             li_ [ class_ "menu-text" ] $ do
@@ -166,8 +176,38 @@ navigation (fu, viewerRole, _viewerLocation) = do
                 ", you are "
                 toHtml (showRole viewerRole)
 
+header :: Monad m => Text -> HtmlT m ()
+header t = row_ $ large_ 12 $ header_ $ h1_ $ toHtml t
+
 -------------------------------------------------------------------------------
--- Building blocks
+-- Name helpers
+-------------------------------------------------------------------------------
+
+nameText :: HasName a => Getter a Text
+nameText = name . _Wrapped
+
+nameHtml :: (HasName a, Monad m) => Getter a (HtmlT m ())
+nameHtml = nameText . to toHtml
+
+-------------------------------------------------------------------------------
+-- Hrefs
+-------------------------------------------------------------------------------
+
+indexPageHref
+    :: HasIdentifier c Checklist
+    => Maybe Location
+    -> Maybe c
+    -> Maybe (Identifier Task)
+    -> Attribute
+indexPageHref mloc mlist mtask =
+    href_ $ uriText $ safeLink checklistApi indexPageEndpoint
+        mloc (mlist ^? _Just . identifier . uuid) (view uuid <$> mtask)
+
+tasksPageHref :: Attribute
+tasksPageHref = href_ $ uriText $ safeLink checklistApi tasksPageEndpoint
+
+-------------------------------------------------------------------------------
+-- Miscs
 -------------------------------------------------------------------------------
 
 countEmployeesWithTask :: Monad m => World -> Task -> [Employee] -> HtmlT m ()
@@ -198,22 +238,6 @@ taskCheckbox world employee task = do
         employee ^. identifier . uuid . to UUID.toText <>
         "_" <>
         task ^. identifier . uuid . to UUID.toText
-
-nameText :: HasName a => Getter a Text
-nameText = name . _Wrapped
-
-nameHtml :: (HasName a, Monad m) => Getter a (HtmlT m ())
-nameHtml = nameText . to toHtml
-
-indexPageHref
-    :: HasIdentifier c Checklist
-    => Maybe Location
-    -> Maybe c
-    -> Maybe (Identifier Task)
-    -> Attribute
-indexPageHref mloc mlist mtask =
-    href_ $ uriText $ safeLink checklistApi indexPageEndpoint
-        mloc (mlist ^? _Just . identifier . uuid) (view uuid <$> mtask)
 
 locHtml
     :: (Monad m, HasIdentifier c Checklist)

@@ -13,6 +13,7 @@ import Futurice.App.Checklist.Types      (Location)
 import Futurice.App.Checklist.Types.Page (Page)
 
 type ChecklistAPI = IndexPageEndpoint
+    :<|> TasksPageEndpoint
 
 checklistApi :: Proxy ChecklistAPI
 checklistApi = Proxy
@@ -24,5 +25,13 @@ type IndexPageEndpoint =
     QueryParam "task" UUID :>
     Get '[HTML] (Page "indexpage")
 
+type TasksPageEndpoint =
+    "tasks" :>
+    SSOUser :>
+    Get '[HTML] (Page "tasks")
+
 indexPageEndpoint :: Proxy IndexPageEndpoint
 indexPageEndpoint = Proxy
+
+tasksPageEndpoint :: Proxy TasksPageEndpoint
+tasksPageEndpoint = Proxy
