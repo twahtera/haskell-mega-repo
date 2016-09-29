@@ -16,6 +16,7 @@ import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
 import Servant           (FromHttpApiData (..), ToHttpApiData (..))
+import Futurice.Arbitrary (arbitraryNoun, arbitraryAdjective, arbitraryVerb)
 
 import Futurice.App.Checklist.Types.Identifier
 
@@ -174,8 +175,21 @@ class    HasName a         where name :: Getter a (Name a)
 instance HasName Task      where name = taskName
 instance HasName Checklist where name = checklistName
 
-instance Arbitrary (Name a) where
-    arbitrary = Name . view packed <$> QC.vectorOf 20 (QC.elements ['a'..'z'])
+class ArbitraryName a where
+    arbitraryName :: QC.Gen (Name a)
+
+instance ArbitraryName Task where
+    arbitraryName = (\a b -> Name $ T.toTitle a <> " " <> b)
+        <$> arbitraryVerb
+        <*> arbitraryNoun
+
+instance ArbitraryName Checklist where
+    arbitraryName = (\a b -> Name $ T.toTitle a <> " " <> b)
+        <$> arbitraryAdjective
+        <*> arbitraryNoun
+
+instance ArbitraryName a => Arbitrary (Name a) where
+    arbitrary = arbitraryName
 
 instance Arbitrary FUMLogin where
     arbitrary = FUMLogin <$> gen
