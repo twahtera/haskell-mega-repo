@@ -54,10 +54,12 @@ library
       Futurice.App.Checklist.Markup
       Futurice.App.Checklist.Types
       Futurice.App.Checklist.Types.Basic
+      Futurice.App.Checklist.Types.Ctx
       Futurice.App.Checklist.Types.Identifier
       Futurice.App.Checklist.Types.IdMap
       Futurice.App.Checklist.Types.Page
       Futurice.App.Checklist.Types.World
+      Futurice.Arbitrary
   default-language: Haskell2010
 
 executable checklist-app-server

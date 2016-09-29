@@ -30,6 +30,7 @@ module Futurice.App.Checklist.Types (
     identifierToText,
     HasIdentifier (..),
     Name (..),
+    HasName (..),
     -- * Lenses
     -- ** Employee
     employeeFirstName, employeeLastName, employeeContractType, employeeLocation, employeeConfirmed,
@@ -65,9 +66,12 @@ module Futurice.App.Checklist.Types (
     worldTaskItems,
     worldUsers,
     worldTaskItems',
+    -- ** Context
+    Ctx,
     ) where
 
 import Futurice.App.Checklist.Types.Basic
-import Futurice.App.Checklist.Types.Page
+import Futurice.App.Checklist.Types.Ctx
 import Futurice.App.Checklist.Types.Identifier
+import Futurice.App.Checklist.Types.Page
 import Futurice.App.Checklist.Types.World
