@@ -39,7 +39,7 @@ indexPage
     -> Maybe Checklist
     -> Maybe Task
     -> Page "indexpage"
-indexPage world today (fu, viewerRole, _viewerLocation) mloc mlist mtask =
+indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mtask =
     let employees0 = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
         employees1 = maybe id (\l -> filter (has $ employeeLocation . only l)) mloc $ employees0
         employees2 = maybe id (\cl -> filter (has $ employeeChecklist . only (cl ^. identifier))) mlist $ employees1
@@ -51,22 +51,7 @@ indexPage world today (fu, viewerRole, _viewerLocation) mloc mlist mtask =
             worldTaskItems . ix (employee ^. identifier) . ix (task ^. identifier)
 
     in Page $ page_ "Checklist" pageParams $ do
-        -- http://foundation.zurb.com/sites/docs/top-bar.html
-        div_ [ class_ "top-bar" ] $ do
-            div_ [ class_ "top-bar-left" ] $ ul_ [ class_ "dropdown menu" ] $ do
-                li_ [ class_ "menu-text"] $ do
-                    "Checklist"
-                    sup_ "2"
-                li_ $ a_ [ indexPageHref Nothing (Nothing `as` mlist) Nothing ] "Employees"
-                li_ $ a_ [ href_ "#"] "Checklists"
-                li_ $ a_ [ href_ "#" ] "Tasks"
-                li_ $ a_ [ href_ "#" ] "Reminder lists"
-            div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
-                li_ [ class_ "menu-text" ] $ do
-                    "Hello "
-                    toHtml $ fu ^. FUM.getUserName
-                    ", you are "
-                    toHtml (showRole viewerRole)
+        navigation authUser
 
         -- Title
         let titleParts = catMaybes
@@ -159,11 +144,31 @@ indexPage world today (fu, viewerRole, _viewerLocation) mloc mlist mtask =
                             td_ $ toHtml (show i) *> "/" *> toHtml (show j)
 
 -------------------------------------------------------------------------------
--- Building blocks
+-- Navigation
 -------------------------------------------------------------------------------
 
-as :: a -> a -> a
-as = const
+-- http://foundation.zurb.com/sites/docs/top-bar.html
+navigation :: Monad m => (FUM.UserName, TaskRole, Location) -> HtmlT m ()
+navigation (fu, viewerRole, _viewerLocation) = do
+    div_ [ class_ "top-bar" ] $ do
+        div_ [ class_ "top-bar-left" ] $ ul_ [ class_ "dropdown menu" ] $ do
+            li_ [ class_ "menu-text"] $ do
+                "Checklist"
+                sup_ "2"
+            li_ $ a_ [ indexPageHref Nothing (Nothing :: Maybe Checklist) Nothing ] "Employees"
+            li_ $ a_ [ href_ "#"] "Checklists"
+            li_ $ a_ [ href_ "#" ] "Tasks"
+            li_ $ a_ [ href_ "#" ] "Reminder lists"
+        div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
+            li_ [ class_ "menu-text" ] $ do
+                "Hello "
+                toHtml $ fu ^. FUM.getUserName
+                ", you are "
+                toHtml (showRole viewerRole)
+
+-------------------------------------------------------------------------------
+-- Building blocks
+-------------------------------------------------------------------------------
 
 countEmployeesWithTask :: Monad m => World -> Task -> [Employee] -> HtmlT m ()
 countEmployeesWithTask world task = toHtml' . foldMap f
