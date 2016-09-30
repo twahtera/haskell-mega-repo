@@ -1,5 +1,5 @@
 name: proxy-app
-version: 0.1.0.0
+version: "0"
 synopsis: Proxy app
 description: Make a proxy of everything
 author: Oleg Grenrus <oleg.grenrus@iki.fi>

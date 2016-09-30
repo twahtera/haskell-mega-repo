@@ -3,7 +3,7 @@
 -- see: https://github.com/sol/hpack
 
 name:           servant-binary-tagged
-version:        0.1.0.0
+version:        0
 synopsis:       Servant support for binary-tagged
 description:    Servant support for binary-tagged
 category:       Web

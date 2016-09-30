@@ -2,6 +2,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Futurice.App.Futucli.Orphans () where
 
+import Prelude ()
 import Futurice.Prelude
 
 import Data.Aeson  (FromJSON (..), withText)

@@ -3,7 +3,7 @@
 -- see: https://github.com/sol/hpack
 
 name:           spice-stats
-version:        0.0.0.0
+version:        0
 synopsis:       Realm of Chilicorn
 description:    OmgLolKek
 category:       Web

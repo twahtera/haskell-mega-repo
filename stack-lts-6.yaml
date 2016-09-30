@@ -47,11 +47,6 @@ packages:
     git: https://github.com/phadej/swagger2.git
     commit: 68e95a65ea8612a44cc516717e5af27370b738fa
   extra-dep: true
-# https://github.com/facebook/Haxl/pull/56/
-- location:
-    git: https://github.com/phadej/Haxl.git
-    commit: 230cdb50402dfa74e35dcf73c5d437b8711cf6ea
-  extra-dep: true
 extra-deps:
 - aeson-1.0.1.0
 - aeson-extra-0.4.0.0
@@ -59,6 +54,7 @@ extra-deps:
 - clay-0.11
 - friendly-time-0.4
 - generics-sop-lens-0.1.1.0
+- haxl-0.4.0.0
 - http-api-data-0.3.1
 - insert-ordered-containers-0.2.0.0
 - io-streams-haproxy-1.0.0.1

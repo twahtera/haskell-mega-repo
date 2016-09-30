@@ -1,5 +1,5 @@
 name: futuhours-api
-version: 0.1.0.0
+version: "0"
 synopsis: Futuhours API
 description: New and fancy
 author: Oleg Grenrus <oleg.grenrus@iki.fi>
@@ -46,7 +46,7 @@ library:
     - generics-sop >=0.2.1.0 && <0.3
     - generics-sop-lens >=0.1.0.0 && <0.2
     - hashable
-    - haxl                  >=0.3   && <0.4
+    - haxl
     - haxl-fxtra
     - haxl-typed
     - http-client
@@ -102,7 +102,6 @@ library:
     - DeriveFunctor
     - DeriveGeneric
     - DeriveTraversable
-    - NoImplicitPrelude
     - ScopedTypeVariables
 
 executables:

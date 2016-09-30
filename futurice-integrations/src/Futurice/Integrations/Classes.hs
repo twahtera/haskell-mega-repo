@@ -11,6 +11,7 @@ module Futurice.Integrations.Classes (
     ) where
 
 import Futurice.Prelude
+import Prelude ()
 
 import Control.Monad.FUM (MonadFUM (..))
 import Data.Constraint   (Constraint)

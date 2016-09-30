@@ -1,5 +1,5 @@
 name: fum-client
-version: 0.1.0.0
+version: "0"
 synopsis: FUM REST API
 description: |
   Bindings to <https://github.com/futurice/futurice-ldap-user-manager FUM API>.

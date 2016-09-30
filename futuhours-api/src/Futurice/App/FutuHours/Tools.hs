@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards     #-}
 module Futurice.App.FutuHours.Tools where
 
+import Prelude ()
 import Futurice.Prelude
 
 import Control.Exception    (bracket)

@@ -6,8 +6,6 @@ module Flowdock.TyHaxl (
     Haxl.FlowdockRequest(..),
     ) where
 
-import Futurice.Prelude
-
 import qualified Chat.Flowdock.REST as FD
 import qualified Flowdock.Haxl      as Haxl
 import           Haxl.Typed

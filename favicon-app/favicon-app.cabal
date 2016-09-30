@@ -3,7 +3,7 @@
 -- see: https://github.com/sol/hpack
 
 name:           favicon-app
-version:        0.1.0.0
+version:        0
 synopsis:       Generate Futurice favicons
 description:    Fancy icons!
 category:       Web

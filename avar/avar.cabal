@@ -3,9 +3,9 @@
 -- see: https://github.com/sol/hpack
 
 name:           avar
-version:        0.0.0.0
+version:        0
 synopsis:       TVar that can be asynchronously set
-description:    ...
+description:    See the <http://docs.futurice.com/haskell-mega-repo/avar-0/Futurice-AVar.html haddocks>.
 category:       Web
 homepage:       https://github.com/futurice/haskell-mega-repo#readme
 bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
@@ -27,7 +27,7 @@ source-repository head
 library
   hs-source-dirs:
       src
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable NoImplicitPrelude ScopedTypeVariables
+  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
       base                  >=4.7   && <4.10

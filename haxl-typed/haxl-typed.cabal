@@ -3,7 +3,7 @@
 -- see: https://github.com/sol/hpack
 
 name:           haxl-typed
-version:        0.1.0.0
+version:        0
 synopsis:       Typed Haxl interface
 description:    Typed Haxl interface
 category:       Web
@@ -33,7 +33,7 @@ library
     , base-compat      >=0.9.1   && <0.10
     , exceptions       >=0.8.0.2 && <0.9
     , futurice-prelude >=0.1.5.0 && <0.2
-    , haxl             >=0.3.1.0 && <0.4
+    , haxl             >=0.3.1.0 && <0.5
     , tagged           >=0.7.3   && <0.9
   exposed-modules:
       Haxl.Typed
