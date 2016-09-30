@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE NoImplicitPrelude  #-}
 module Futurice.App.MegaRepoTool.Scripts (
     dotScript,
     packdepsScript,
@@ -7,6 +6,7 @@ module Futurice.App.MegaRepoTool.Scripts (
     ) where
 
 import Futurice.Prelude hiding (foldMap, fold)
+import Prelude ()
 
 import Control.Foldl (foldMap)
 import Turtle hiding ((<>))

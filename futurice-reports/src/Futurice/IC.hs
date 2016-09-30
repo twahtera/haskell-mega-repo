@@ -1,4 +1,5 @@
-{-# LANGUAGE DataKinds, KindSignatures #-}
+{-# LANGUAGE DataKinds      #-}
+{-# LANGUAGE KindSignatures #-}
 -- | Indexed container
 --
 -- *TODO:* Move to @futurice-prelude@
@@ -14,10 +15,11 @@ module Futurice.IC (
     replicateP,
     ) where
 
-import Futurice.Prelude hiding (empty, replicate, nil)
 import Futurice.Peano
+import Futurice.Prelude hiding (empty, nil, replicate)
+import Prelude ()
 
-import qualified Futurice.Prelude  as P
+import qualified Futurice.Prelude as P
 
 newtype IC c (n :: Peano) a = IC (c a)
     deriving (Functor, Foldable, Traversable)

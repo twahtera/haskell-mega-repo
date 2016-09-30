@@ -3,6 +3,7 @@ module Futurice.App.FutuHours.Config (
     getConfig,
     ) where
 
+import Prelude ()
 import Futurice.Prelude
 
 import Control.Monad.Logger       (LogLevel (..))

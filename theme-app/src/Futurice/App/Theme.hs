@@ -4,6 +4,7 @@
 module Futurice.App.Theme (defaultMain) where
 
 import Futurice.Prelude
+import Prelude ()
 
 import Futurice.Servant
 import Network.Wai.Application.Static (embeddedSettings, staticApp)

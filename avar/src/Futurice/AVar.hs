@@ -21,6 +21,7 @@ module Futurice.AVar (
     ) where
 
 import Prelude.Compat
+import Prelude ()
 
 import Control.Concurrent.Async     (Async, async, waitSTM)
 import Control.Concurrent.STM       (STM, atomically)
