@@ -3,7 +3,7 @@
 -- see: https://github.com/sol/hpack
 
 name:           haxl-fxtra
-version:        0.0.0.0
+version:        0
 synopsis:       Futurice extras for Haxl
 description:    Mostly bindings to various datasources
 category:       Web

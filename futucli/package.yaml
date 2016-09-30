@@ -1,5 +1,5 @@
 name: futucli
-version: 0.1.0.0
+version: "0"
 synopsis: Various commands as old good command line tool
 description: Various commands as old good command line tool
 author: Oleg Grenrus <oleg.grenrus@iki.fi>

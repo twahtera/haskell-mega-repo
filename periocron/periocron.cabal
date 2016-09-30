@@ -3,8 +3,8 @@
 -- see: https://github.com/sol/hpack
 
 name:           periocron
-version:        0.0.0.0
-synopsis:       TVar that can be asynchronously set
+version:        0
+synopsis:       Periodical cron
 description:    ...
 category:       Web
 homepage:       https://github.com/futurice/haskell-mega-repo#readme

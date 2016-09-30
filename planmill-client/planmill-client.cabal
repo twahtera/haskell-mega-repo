@@ -3,7 +3,7 @@
 -- see: https://github.com/sol/hpack
 
 name:           planmill-client
-version:        0.1.0.0
+version:        0
 synopsis:       PlanMill API
 description:    Bindings to <https://online.planmill.com/pmtrial/schemas/v1_5/index.html PlanMill API 1.5>.
 category:       Web

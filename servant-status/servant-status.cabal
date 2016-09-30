@@ -3,7 +3,7 @@
 -- see: https://github.com/sol/hpack
 
 name:           servant-status
-version:        0.1.0.0
+version:        0
 synopsis:       Servant status API
 description:    Servant status API
 category:       Web

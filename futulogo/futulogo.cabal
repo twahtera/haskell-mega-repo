@@ -3,7 +3,7 @@
 -- see: https://github.com/sol/hpack
 
 name:           futulogo
-version:        0.1.0.0
+version:        0
 synopsis:       Generate futurice logo
 description:    ... and other stuff
 category:       Web

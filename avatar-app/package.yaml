@@ -1,5 +1,5 @@
 name: avatar-app
-version: 0.1.0.0
+version: "0"
 synopsis: Avatar app
 description: Make an avatar of everything
 author: Oleg Grenrus <oleg.grenrus@iki.fi>
