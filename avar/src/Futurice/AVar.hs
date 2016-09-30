@@ -1,5 +1,15 @@
 {-# LANGUAGE Safe #-}
--- | AVar: 'TMVar' which cannot be emptied after filled once.
+-- | 'AVar' is something between 'TVar' and 'TMVar'.
+--
+-- * 'TVar' has to be given a value on creation.
+--
+-- * 'TMVar' can be emptied during its lifetime.
+--
+-- * 'AVar' constructor can be given an @'Async' a@ value.
+--
+-- /Note:/ if the initial 'Async' fails, the 'AVar' will be left empty,
+-- this should case large problems as 'readAVar' will block until the variable
+-- is eventually filled.
 module Futurice.AVar (
     -- * AVars
     AVar,
