@@ -57,7 +57,7 @@ library
     , futurice-servant
     , github >= 0.14
     , hashable
-    , haxl                  >=0.3   && <0.4
+    , haxl
     , haxl-fxtra
     , haxl-typed
     , http-client           >=0.4.30 && <0.6

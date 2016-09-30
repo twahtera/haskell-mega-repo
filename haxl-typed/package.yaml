@@ -18,7 +18,7 @@ dependencies:
   - base-compat      >=0.9.1   && <0.10
   - exceptions       >=0.8.0.2 && <0.9
   - futurice-prelude >=0.1.5.0 && <0.2
-  - haxl             >=0.3.1.0 && <0.4
+  - haxl             >=0.3.1.0 && <0.5
   - tagged           >=0.7.3   && <0.9
 
 library:
