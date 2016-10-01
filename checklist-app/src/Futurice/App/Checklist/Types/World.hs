@@ -98,7 +98,6 @@ instance QC.Arbitrary World where
 
         let eids = IdMap.keysSet es
             tids = IdMap.keysSet ts
-            eidGen = QC.elements (toList eids)
             tidGen = QC.elements (toList tids)
 
         let checklistItemGen = (,)
@@ -135,13 +134,15 @@ instance QC.Arbitrary World where
                 & taskDependencies .~ deps
 
         -- TaskItems
-        let taskItemGen = (\eid tid done -> (eid, Map.singleton tid done))
-                <$> eidGen <*> tidGen <*> QC.arbitrary
-        is <- QC.listOf taskItemGen
-        let is' = Map.fromListWith Map.union is
+        -- For all eid, tid pair generate none, todo, done - value
+        let is = [ (eid, tid) | eid <- eids ^.. folded , tid <- tids ^.. folded ]
+        is' <- traverse (\p -> (,) p <$> QC.arbitrary) is
+        let makeTaskItem ((eid, _tid), Nothing)  = (eid, Map.empty)
+            makeTaskItem ((eid, tid), Just done) = (eid, Map.singleton tid done)
+        let is'' = Map.fromListWith Map.union (map makeTaskItem is')
 
         -- Users of checklist, hardcoded in mock
         us <- pure $ fmap (\u -> (u, TaskRoleIT, LocHelsinki))
 
         -- World
-        pure $ mkWorld es' ts' cs is' us
+        pure $ mkWorld es' ts' cs is'' us

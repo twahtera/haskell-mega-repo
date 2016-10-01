@@ -274,7 +274,6 @@ locationFromText t = Map.lookup (T.toLower t) m
 _Location :: Prism' Text Location
 _Location = prism' locationToText locationFromText
 
--- | TODO: implement me
 instance ToParamSchema Location where
     toParamSchema _ = mempty
           & type_ .~ SwaggerString
@@ -286,3 +285,32 @@ instance FromHttpApiData Location where
 
 instance ToHttpApiData Location where
     toUrlPiece = locationToText
+
+-------------------------------------------------------------------------------
+-- Task role
+-------------------------------------------------------------------------------
+
+roleToText :: TaskRole -> Text
+roleToText TaskRoleIT         = "IT"
+roleToText TaskRoleHR         = "HR"
+roleToText TaskRoleSupervisor = "Supervisor"
+
+roleFromText :: Text -> Maybe TaskRole
+roleFromText t = Map.lookup (T.toLower t) m
+  where
+    m = Map.fromList $ map (\x -> (T.toLower $ roleToText x, x)) [minBound .. maxBound]
+
+_TaskRole :: Prism' Text TaskRole
+_TaskRole = prism' roleToText roleFromText
+
+instance ToParamSchema TaskRole where
+    toParamSchema _ = mempty
+          & type_ .~ SwaggerString
+          & enum_ ?~ (String . roleToText <$> [minBound .. maxBound])
+
+instance FromHttpApiData TaskRole where
+    parseUrlPiece t =
+        maybe (Left $ "invalid location " <> t) Right $ t ^? _TaskRole
+
+instance ToHttpApiData TaskRole where
+    toUrlPiece = roleToText

@@ -49,7 +49,9 @@ module Futurice.App.Checklist.Types (
     -- ** CheckResult
     _CheckResultSuccess, _CheckResultMaybe, _CheckResultFailure,
     -- ** TaskRole
+    _TaskRole,
     _TaskRoleIT, _TaskRoleHR, _TaskRoleSupervisor,
+    roleToText, roleFromText,
     -- ** Checklist
     checklistName, checklistTasks,
     -- ** TaskItemDone
@@ -68,6 +70,8 @@ module Futurice.App.Checklist.Types (
     worldTaskItems',
     -- ** Context
     Ctx,
+    -- * Access
+    AuthUser,
     ) where
 
 import Futurice.App.Checklist.Types.Basic
@@ -75,3 +79,7 @@ import Futurice.App.Checklist.Types.Ctx
 import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.Page
 import Futurice.App.Checklist.Types.World
+
+import qualified FUM (UserName)
+
+type AuthUser = (FUM.UserName, TaskRole, Location)

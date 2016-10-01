@@ -10,7 +10,7 @@ import Futurice.Servant
 import Servant
 import Test.QuickCheck  (arbitrary, generate, resize)
 
-import Futurice.App.Checklist.API 
+import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
@@ -19,6 +19,7 @@ import qualified FUM (UserName (..))
 
 server :: Ctx -> Server ChecklistAPI
 server ctx = indexPageImpl ctx
+    :<|> tasksPageImpl ctx
 
 indexPageImpl
     :: (MonadIO m, MonadTime m)
@@ -28,22 +29,48 @@ indexPageImpl
     -> Maybe UUID
     -> Maybe UUID
     -> m (Page "indexpage")
-indexPageImpl world fu loc cid tid = case userInfo of
-    Nothing        -> pure nonAuthorizedPage
-    Just userInfo' -> do
+indexPageImpl ctx fu loc cid tid = withAuthUser ctx fu impl
+  where
+    impl world userInfo = do
         today <- currentDay
-        pure $ indexPage world today userInfo' loc checklist task
+        pure $ indexPage world today userInfo loc checklist task
+      where
+        checklist = do
+            cid' <- cid
+            world ^? worldLists . ix (Identifier cid')
+
+        task = do
+            tid' <- tid
+            world ^? worldTasks . ix (Identifier tid')
+
+tasksPageImpl
+    :: (MonadIO m)
+    => Ctx
+    -> Maybe FUM.UserName
+    -> Maybe TaskRole
+    -> Maybe UUID
+    -> m (Page "tasks")
+tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
+  where
+    impl world userInfo =
+        pure $ tasksPage world userInfo role checklist
+      where
+        checklist = do
+            cid' <- cid
+            world ^? worldLists . ix (Identifier cid')
+
+-- | Read only pages
+withAuthUser
+    :: MonadIO m
+    => Ctx -> Maybe FUM.UserName
+    -> (World -> AuthUser -> m (Page a))
+    -> m (Page a)
+withAuthUser ctx fu f = case userInfo of
+    Nothing        -> pure nonAuthorizedPage
+    Just userInfo' -> f ctx userInfo'
   where
     userInfo :: Maybe (FUM.UserName, TaskRole, Location)
-    userInfo = world ^? worldUsers . ix fu . _Just
-
-    checklist = do
-        cid' <- cid
-        world ^? worldLists . ix (Identifier cid')
-
-    task = do
-        tid' <- tid
-        world ^? worldTasks . ix (Identifier tid')
+    userInfo = ctx ^? worldUsers . ix fu . _Just
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain
