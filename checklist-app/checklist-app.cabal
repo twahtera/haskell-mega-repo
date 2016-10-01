@@ -56,7 +56,6 @@ library
       Futurice.App.Checklist.Types.Basic
       Futurice.App.Checklist.Types.Ctx
       Futurice.App.Checklist.Types.Identifier
-      Futurice.App.Checklist.Types.IdMap
       Futurice.App.Checklist.Types.Page
       Futurice.App.Checklist.Types.World
       Futurice.Arbitrary
