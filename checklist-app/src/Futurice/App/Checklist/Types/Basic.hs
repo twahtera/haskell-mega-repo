@@ -8,15 +8,16 @@
 -- | Basic types
 module Futurice.App.Checklist.Types.Basic where
 
-import Control.Lens      (Getter, Prism', prism')
-import Data.Aeson.Compat (Value (String))
+import Control.Lens       (Getter, Prism', prism')
+import Data.Aeson.Compat  (Value (String))
 import Data.Swagger
        (SwaggerType (SwaggerString), ToParamSchema (..), enum_, type_)
+import Futurice.Arbitrary (arbitraryAdjective, arbitraryNoun, arbitraryVerb)
 import Futurice.Generics
+import Futurice.IdMap     (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
-import Servant           (FromHttpApiData (..), ToHttpApiData (..))
-import Futurice.Arbitrary (arbitraryNoun, arbitraryAdjective, arbitraryVerb)
+import Servant            (FromHttpApiData (..), ToHttpApiData (..))
 
 import Futurice.App.Checklist.Types.Identifier
 
@@ -158,14 +159,22 @@ makePrisms ''TaskItemDone
 -- HasIdentifier instances
 -------------------------------------------------------------------------------
 
-instance HasIdentifier Employee Employee where
-    identifier = employeeId
+instance HasKey Employee where
+    type Key Employee = Identifier Employee
+    key = employeeId
 
-instance HasIdentifier Task Task where
-    identifier = taskId
+instance HasKey Task where
+    type Key Task = Identifier Task
+    key = taskId
 
-instance HasIdentifier Checklist Checklist where
-    identifier = checklistId
+instance HasKey Checklist where
+    type Key Checklist = Identifier Checklist
+    key = checklistId
+
+
+instance HasIdentifier Employee Employee where identifier = key
+instance HasIdentifier Task Task where identifier = key
+instance HasIdentifier Checklist Checklist where identifier = key
 
 -------------------------------------------------------------------------------
 -- Some arbitraries

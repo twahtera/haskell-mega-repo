@@ -32,6 +32,7 @@ instance HasUUID (Identifier a) where
 -- HasIdentifier
 -------------------------------------------------------------------------------
 
+-- | TODO: evaluate if we really need this
 class HasIdentifier entity ident | entity -> ident where
     identifier :: Lens' entity (Identifier ident)
 

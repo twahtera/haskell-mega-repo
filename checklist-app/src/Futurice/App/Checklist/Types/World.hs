@@ -15,6 +15,7 @@ module Futurice.App.Checklist.Types.World (
     ) where
 
 -- import Futurice.Generics
+import Futurice.IdMap   (IdMap)
 import Futurice.Prelude
 import Prelude ()
 
@@ -23,12 +24,11 @@ import Control.Lens (contains, filtered, ifiltered, (%~))
 import qualified Data.Map        as Map
 import qualified Data.Set        as Set
 import qualified Data.Set.Lens   as Set
+import qualified Futurice.IdMap  as IdMap
 import qualified Test.QuickCheck as QC
 
-import           Futurice.App.Checklist.Types.Basic
-import           Futurice.App.Checklist.Types.Identifier
-import           Futurice.App.Checklist.Types.IdMap      (IdMap)
-import qualified Futurice.App.Checklist.Types.IdMap      as IdMap
+import Futurice.App.Checklist.Types.Basic
+import Futurice.App.Checklist.Types.Identifier
 
 import qualified FUM
 
