@@ -1,5 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
-module Lucid.Foundation.Futurice.JavaScript.TH (
+module Futurice.JavaScript.TH (
     embedJS,
     ) where
 
@@ -7,7 +7,7 @@ import Futurice.Prelude
 import Language.Haskell.TH
        (Exp, Lit (StringL), Q, appE, litE, runIO)
 import Language.Haskell.TH.Syntax           (qAddDependentFile)
-import Lucid.Foundation.Futurice.JavaScript
+import Futurice.JavaScript
 import Prelude ()
 
 import qualified Data.Text.IO as T

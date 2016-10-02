@@ -22,7 +22,6 @@ dependencies:
   - futurice-servant
   - lens
   - lucid
-  - mmorph
   - QuickCheck
   - servant
   - servant-lucid

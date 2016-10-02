@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Clay where
 
-import Lucid.Foundation.Futurice (pageCss, PageParams, defPageParams)
-import Prelude ()
-import Futurice.Prelude hiding ((&), (**))
 import Clay
+import Futurice.Lucid.Foundation (PageParams, defPageParams, pageCss)
+import Futurice.Prelude          hiding ((&), (**))
+import Prelude ()
 
 pageParams :: PageParams
-pageParams =
+pageParams = 
     (pageCss .~ [css]) defPageParams
 
 css :: Css

@@ -28,6 +28,7 @@ library:
     - generics-sop
     - lucid
     - mtl
+    - mmorph
     - servant
     - servant-cassava
     - swagger2

@@ -15,37 +15,20 @@
 module Futurice.App.Reports.Types where
 
 import Futurice.Prelude
+import Prelude ()
 
 import Data.Aeson                (ToJSON (..))
 import Data.Constraint           (Dict (..))
-import Data.Swagger              (ToSchema (..), NamedSchema (..))
+import Data.Swagger              (ToSchema (..))
 import Data.Time.Format.Human    (humanReadableTime')
 import Futurice.Generics         (sopDeclareNamedSchema, sopToJSON)
 import Futurice.Peano            (PThree, PTwo)
 import Futurice.Report
-import Lucid
-import Lucid.Foundation.Futurice
+import Futurice.Lucid.Foundation
 
 import qualified Data.Csv    as Csv
 import qualified Futurice.IC as IList
 import qualified GitHub      as GH
-
--------------------------------------------------------------------------------
--- Indexpage
--------------------------------------------------------------------------------
-
-data IndexPage = IndexPage
-
-instance ToHtml IndexPage where
-    toHtmlRaw = toHtml
-    toHtml _ = page_ "Reports" $ do
-        row_ $ large_ 12 $ h1_ "Reports"
-        row_ $ large_ 12 $ div_ [class_ "callout"] $ ul_ $ do
-            li_ $ a_ [href_ "/issues" ] $ "GitHub issues"
-            li_ $ a_ [href_ "/fum-github" ] $ "Users in FUM and GitHub"
-
-instance ToSchema IndexPage where
-    declareNamedSchema _ = pure $ NamedSchema (Just "Indexpage") mempty
 
 -------------------------------------------------------------------------------
 -- Issues
