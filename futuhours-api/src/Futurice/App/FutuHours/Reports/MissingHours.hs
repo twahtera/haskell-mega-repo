@@ -11,17 +11,20 @@ module Futurice.App.FutuHours.Reports.MissingHours (
     ) where
 
 import Futurice.Prelude
+import Futurice.Time
+import Prelude ()
 
-import Data.Maybe                       (mapMaybe)
+import Data.Fixed (Centi)
+import Data.Maybe (mapMaybe)
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Map            as Map
 import qualified Data.Vector         as V
 import qualified PlanMill            as PM
 
-import Futurice.Report
 import Futurice.App.FutuHours.PlanMillCache
 import Futurice.App.FutuHours.Types
+import Futurice.Report
 
 missingHoursForUser
     :: (PM.MonadPlanMill m, MonadPlanMillCached m)
@@ -48,22 +51,22 @@ missingHoursForUser interval uid = do
     return $ Per employee tr'
   where
     -- For now show only days without any hour markings
-    minus :: Double -> Double -> Maybe Double
+    minus :: NDT 'Hours Centi -> NDT 'Hours Centi -> Maybe (NDT 'Hours Centi)
     minus a b
         | b > 0      = Nothing
         | otherwise  = Just a
 
-    capacities :: PM.UserCapacities -> Map Day Double
+    capacities :: PM.UserCapacities -> Map Day (NDT 'Hours Centi)
     capacities
         = Map.fromList
         . filter (isPositive . snd)
-        . map (\x -> (PM.userCapacityDate x, fromIntegral (PM.userCapacityAmount x) / 60.0))
+        . map (\x -> (PM.userCapacityDate x, ndtConvert' $ PM.userCapacityAmount x))
         . toList
 
-    reportedDays :: PM.Timereports -> Map Day Double
+    reportedDays :: PM.Timereports -> Map Day (NDT 'Hours Centi)
     reportedDays
         = Map.fromListWith (+)
-        . map (\x -> (PM.trStart x, PM.trAmount x / 60.0))
+        . map (\x -> (PM.trStart x, ndtConvert' $ PM.trAmount x))
         . toList
 
 -- |

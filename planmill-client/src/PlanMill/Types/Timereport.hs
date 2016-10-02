@@ -30,7 +30,7 @@ type Timereports = Vector Timereport
 data Timereport = Timereport
     { _trId             :: !TimereportId
     , trTask            :: !TaskId
-    , trAmount          :: !Double
+    , trAmount          :: !(NDT 'Minutes Int)
     , trBillableStatus  :: !Int          -- TODO: make type
     , trBillingComment  :: !(Maybe Text)
     , trComment         :: !(Maybe Text)
