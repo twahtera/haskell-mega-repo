@@ -69,6 +69,7 @@ library
     , lucid
     , mtl
     , parallel-io
+    , periocron
     , rfc5051
     , semigroups
     , servant

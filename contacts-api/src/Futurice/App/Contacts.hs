@@ -11,7 +11,8 @@ module Futurice.App.Contacts (defaultMain) where
 import Futurice.Prelude
 import Prelude ()
 
-import Data.Unique      (newUnique)
+import Data.Unique        (newUnique)
+import Futurice.Periocron
 import Futurice.Servant
 import Servant
 
@@ -24,8 +25,6 @@ import Futurice.App.Contacts.Types
 
 server :: IO [Contact Text] -> Server ContactsAPI
 server action = liftIO action :<|> liftIO action
-
--- TODO: add periocron
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain
@@ -44,4 +43,12 @@ defaultMain = futuriceServerMain
                 cfgFdAuth
                 cfgGhAuth
         unique <- newUnique
-        return $ cachedIO cache 3600 unique getContacts
+
+        -- Action returning the contact list
+        let action = cachedIO cache 3600 unique getContacts
+
+        -- Periodically try to fetch new data
+        _ <- spawnPeriocron (Options runStderrLoggingT 300)
+            [ (Job "update contacts" action, every 300)
+            ]
+        pure action
