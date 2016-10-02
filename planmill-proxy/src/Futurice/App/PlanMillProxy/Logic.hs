@@ -15,11 +15,10 @@ import Control.Monad.Logger             (LoggingT, filterLogger)
 import Control.Monad.PlanMill           (planmillQuery)
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, taggedDecode, taggedEncode)
-import Data.ByteString.Lazy             (ByteString)
 import Data.Constraint
 import Data.Pool                        (withResource)
 import Futurice.App.PlanMillProxy.H
-import Futurice.App.PlanMillProxy.Types (Ctx (..))
+import Futurice.App.PlanMillProxy.Types (Ctx (..), SomeBinaryTagged (..), someBinaryTagged)
 import PlanMill.Types                   (Cfg)
 import PlanMill.Types.Query             (Query, SomeQuery (..), queryDict)
 
@@ -46,7 +45,7 @@ runLIO ctx f = withResource (ctxPostgresPool ctx) $ \conn -> runLoggingT' ctx $ 
 -------------------------------------------------------------------------------
 
 -- | The haxl endpoint. We take list of 'Query', and return list of results
-haxlEndpoint :: Ctx -> [SomeQuery] -> IO [Either Text ByteString]
+haxlEndpoint :: Ctx -> [SomeQuery] -> IO [Either Text SomeBinaryTagged]
 haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
     _ <- handleSqlError 0 $ Postgres.execute conn viewQuery postgresQs
     cacheResult <- liftIO $ lookupCache <$> Postgres.query conn selectQuery postgresQs
@@ -60,7 +59,7 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
     -- Fetch provides context for fetch', i.e. this is boilerplate :(
     fetch
         :: CacheLookup -> Postgres.Connection -> SomeQuery
-        -> LIO (Either Text ByteString)
+        -> LIO (Either Text SomeBinaryTagged)
     fetch cacheResult conn (SomeQuery q) =
         case (binaryDict, semVerDict, structDict, nfdataDict) of
             (Dict, Dict, Dict, Dict) -> fetch' cacheResult conn q
@@ -73,17 +72,17 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
     fetch'
         :: (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a)
         => CacheLookup  -> Postgres.Connection -> Query a
-        -> LIO (Either Text ByteString)
+        -> LIO (Either Text SomeBinaryTagged)
     fetch' cacheResult conn q = case HM.lookup (SomeQuery q) cacheResult of
         Just bs -> do
-            x <- liftIO $ tryDeep (return . taggedEncode . id' q . taggedDecode $ bs)
+            x <- liftIO $ tryDeep (return . someBinaryTagged . id' q . taggedDecode $ bs)
             case x of
                 Right y -> return (Right y)
                 Left exc -> do
                     _ <- handleSqlError 0 $
                         Postgres.execute conn deleteQuery (Postgres.Only q)
                     return $ Left $ show exc ^. packed
-        Nothing -> taggedEncode <$$> fetch'' conn q
+        Nothing -> someBinaryTagged <$$> fetch'' conn q
 
     -- We use proxy to force the type
     id' :: proxy a -> a -> a
