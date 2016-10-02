@@ -1,6 +1,5 @@
 module Futurice.App.Checklist.Config (
     Config(..),
-    getConfig,
     ) where
 
 import Futurice.Prelude
@@ -16,7 +15,10 @@ data Config = Config
     }
     deriving (Show)
 
-getConfig :: IO Config
-getConfig = Config
-    <$> parseDefaultPort "CHECKLIST"
-    <*> parseEnvVarWithDefault "CHECKLIST_MOCKAUTH" False
+instance HasPort Config where
+    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
+
+instance GetConfig Config where
+    getConfig = Config
+        <$> parseDefaultPort "CHECKLIST"
+        <*> parseEnvVarWithDefault "CHECKLIST_MOCKAUTH" False

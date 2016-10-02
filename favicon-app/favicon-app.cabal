@@ -31,11 +31,13 @@ executable favicon
   ghc-options: -Wall -threaded
   build-depends:
       base >=4.7 && <4.10
+    , JuicyPixels
     , base-compat
+    , env-config
     , futulogo
     , futurice-prelude
     , futurice-servant
-    , JuicyPixels
+    , lens
     , lucid
     , semigroups
     , servant

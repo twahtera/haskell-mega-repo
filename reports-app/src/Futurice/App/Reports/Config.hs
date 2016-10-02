@@ -1,6 +1,5 @@
 module Futurice.App.Reports.Config (
     Config(..),
-    getConfig,
     ) where
 
 import Futurice.Prelude
@@ -24,14 +23,17 @@ data Config = Config
     }
     deriving (Show)
 
-getConfig :: IO Config
-getConfig = Config
-    <$> parseEnvVar "GH_AUTH_TOKEN"
-    <*> parseEnvVar "GH_ORG"
-    <*> parseEnvVar "GH_TEAM"
-    <*> parseEnvVar "FUM_PUBLICURL"
-    <*> parseEnvVar "FUM_TOKEN"
-    <*> parseEnvVar "FUM_BASEURL"
-    <*> parseEnvVar "FUM_LISTNAME"
-    <*> parseEnvVar "REPORTS_GH_REPOSURL" -- TODO: change to REPORTSAPP_GH_REPOSURL
-    <*> parseDefaultPort "REPORTSAPP"
+instance HasPort Config where
+    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
+
+instance GetConfig Config where
+    getConfig = Config
+        <$> parseEnvVar "GH_AUTH_TOKEN"
+        <*> parseEnvVar "GH_ORG"
+        <*> parseEnvVar "GH_TEAM"
+        <*> parseEnvVar "FUM_PUBLICURL"
+        <*> parseEnvVar "FUM_TOKEN"
+        <*> parseEnvVar "FUM_BASEURL"
+        <*> parseEnvVar "FUM_LISTNAME"
+        <*> parseEnvVar "REPORTS_GH_REPOSURL" -- TODO: change to REPORTSAPP_GH_REPOSURL
+        <*> parseDefaultPort "REPORTSAPP"

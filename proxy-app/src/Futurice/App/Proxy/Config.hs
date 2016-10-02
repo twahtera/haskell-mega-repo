@@ -1,6 +1,5 @@
 module Futurice.App.Proxy.Config (
     Config(..),
-    getConfig,
     ) where
 
 import Futurice.Prelude
@@ -15,8 +14,11 @@ data Config = Config
     , cfgFutuhoursBaseurl :: !String
     }
 
-getConfig :: IO Config
-getConfig = Config
-    <$> parseDefaultPort "PROXYAPP"
-    <*> getConnectInfo
-    <*> parseEnvVar "FUTUHOURSAPI_BASEURL"
+instance HasPort Config where
+    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
+
+instance GetConfig Config where
+    getConfig = Config
+        <$> parseDefaultPort "PROXYAPP"
+        <*> getConnectInfo
+        <*> parseEnvVar "FUTUHOURSAPI_BASEURL"

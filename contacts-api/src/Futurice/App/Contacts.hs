@@ -18,22 +18,25 @@ import Servant
 
 -- Contacts modules
 import Futurice.App.Contacts.API
-import Futurice.App.Contacts.Config   (Config (..), getConfig)
+import Futurice.App.Contacts.Config   (Config (..))
 import Futurice.App.Contacts.Executor (execute)
 import Futurice.App.Contacts.Logic    (contacts)
 import Futurice.App.Contacts.Types
 
-server :: IO [Contact Text] -> Server ContactsAPI
+type Ctx = IO [Contact Text]
+
+server :: Ctx -> Server ContactsAPI
 server action = liftIO action :<|> liftIO action
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain
-    "Contacts API"
-    "All employees and externals"
-    (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
-    getConfig cfgPort
-    contactsApi server futuriceNoMiddleware
-    $ \Config {..} cache -> do
+defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+    & serverName            .~ "Contacts API"
+    & serverDescription     .~ "All employees and externals"
+    & serverApp contactsApi .~ server
+    & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
+  where
+    makeCtx :: Config -> DynMapCache -> IO Ctx
+    makeCtx Config {..} cache = do
         let getContacts = execute contacts
                 cfgGhOrg
                 cfgFdOrg

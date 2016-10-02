@@ -1,9 +1,10 @@
 module Main (main, contrSubject, repoDescription, repoLanguage, repoOwner, repoName, repoStarsCount, statsGithubRepos) where
 
 import Futurice.Prelude
-import Prelude          ()
+import Prelude ()
 
 import Control.Lens            (sumOf)
+import Futurice.EnvConfig      (getConfig)
 import Network.HTTP.Client     (newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 

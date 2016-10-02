@@ -1,6 +1,5 @@
 module Futurice.App.ProxyMgmt.Config (
     Config(..),
-    getConfig,
     ) where
 
 import Futurice.Prelude
@@ -15,7 +14,10 @@ data Config = Config
     }
     deriving (Show)
 
-getConfig :: IO Config
-getConfig = Config
-    <$> getConnectInfo
-    <*> parseDefaultPort "PROXYMGMT"
+instance HasPort Config where
+    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
+
+instance GetConfig Config where
+    getConfig = Config
+        <$> getConnectInfo
+        <*> parseDefaultPort "PROXYMGMT"

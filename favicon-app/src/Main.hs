@@ -3,14 +3,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections     #-}
 {-# LANGUAGE TypeOperators     #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Main (main) where
 
 import Futurice.Prelude
 import Prelude ()
 
 import Codec.Picture       (Image, PixelRGBA8)
+import Control.Lens        (iso)
 import Futurice.Colour
+import Futurice.EnvConfig  (GetConfig (..), HasPort (..))
 import Futurice.Logo
 import Futurice.Servant
 import Lucid               hiding (for_)
@@ -30,25 +31,29 @@ api = Proxy
 iconEndpoint :: Proxy IconAPI
 iconEndpoint = Proxy
 
-server :: DynMapCache -> Server API
+newtype Config = Config { getPort :: Int }
+type Ctx = DynMapCache
+
+server :: Ctx -> Server API
 server cache = pure IndexPage :<|> liftIO . makeLogo'
  where
    makeLogo' c = cachedIO cache 3600 c (evaluate $!! makeLogo c)
 
 main :: IO ()
-main = futuriceServerMain
-    "Favicon API"
-    "Futurice favicons"
-    (Proxy :: Proxy 'FutuBlack)
-    getConfig cfgPort
-    api server futuriceNoMiddleware
-    $ \_cfg -> return
+main = futuriceServerMain makeCtx $ emptyServerConfig
+    & serverName        .~ "Favicon API"
+    & serverDescription .~ "Futurice favicons"
+    & serverColour      .~ (Proxy :: Proxy 'FutuBlack)
+    & serverApp api     .~ server
+  where
+    makeCtx :: Config -> DynMapCache -> IO Ctx
+    makeCtx _cfg = return
 
-getConfig :: IO Int 
-getConfig = fromMaybe 8000 . (>>= readMaybe) <$> lookupEnv "PORT"
+instance GetConfig Config where
+   getConfig = Config . fromMaybe 8000 . (>>= readMaybe) <$> lookupEnv "PORT"
 
-cfgPort :: Int -> Int
-cfgPort = id
+instance HasPort Config where
+    port = iso getPort Config
 
 -------------------------------------------------------------------------------
 -- IndexPage
