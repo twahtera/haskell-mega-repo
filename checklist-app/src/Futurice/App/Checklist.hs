@@ -77,7 +77,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName             .~ "Checklist API"
     & serverDescription      .~ "Super TODO"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
-    & serverGetConfig        .~ getConfig
     & serverApp checklistApi .~ server
   where
     mockCredentials = (FUM.UserName "phadej", TaskRoleIT, LocHelsinki)

@@ -58,7 +58,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName           .~ "Report API"
     & serverDescription    .~ "Various reports"
     & serverColour         .~ (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
-    & serverGetConfig      .~ getConfig
     & serverApp reportsApi .~ server
   where
     makeCtx :: Config -> DynMapCache -> IO Ctx

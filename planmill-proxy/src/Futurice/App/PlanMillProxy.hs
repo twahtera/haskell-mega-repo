@@ -18,9 +18,9 @@ import Servant
 
 import qualified Database.PostgreSQL.Simple as Postgres
 
--- Contacts modules
+-- PlanmillProxy modules
 import Futurice.App.PlanMillProxy.API
-import Futurice.App.PlanMillProxy.Config (Config (..), getConfig)
+import Futurice.App.PlanMillProxy.Config (Config (..))
 import Futurice.App.PlanMillProxy.Logic  (haxlEndpoint, updateCache, cleanupCache)
 import Futurice.App.PlanMillProxy.Types  (Ctx (..))
 
@@ -33,7 +33,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName          .~ "Planmill Proxy"
     & serverDescription   .~ "Make faster queries to PlanMill"
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
-    & serverGetConfig     .~  getConfig
     & serverMiddleware    .~ liftFuturiceMiddleware logStdoutDev
     & serverApp planmillProxyApi .~ server
   where

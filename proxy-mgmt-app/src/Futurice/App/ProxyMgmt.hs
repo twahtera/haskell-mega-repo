@@ -17,9 +17,9 @@ import Servant
 
 import qualified Database.PostgreSQL.Simple as Postgres
 
--- Contacts modules
+-- ProxyMgmt modules
 import Futurice.App.ProxyMgmt.API
-import Futurice.App.ProxyMgmt.Config (Config (..), getConfig)
+import Futurice.App.ProxyMgmt.Config (Config (..))
 import Futurice.App.ProxyMgmt.Logic  (accessReport, usersReport)
 import Futurice.App.ProxyMgmt.Types
 
@@ -32,7 +32,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName             .~ "Proxy-app management"
     & serverDescription      .~ "Audit log"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC3))
-    & serverGetConfig        .~ getConfig
     & serverApp proxyMgmtApi .~ server
   where
     makeCtx :: Config -> DynMapCache -> IO Ctx

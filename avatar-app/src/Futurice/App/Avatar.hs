@@ -26,7 +26,7 @@ import Network.HTTP.Client.TLS (tlsManagerSettings)
 
 -- Avatar modules
 import Futurice.App.Avatar.API
-import Futurice.App.Avatar.Config (Config (..), getConfig)
+import Futurice.App.Avatar.Config (Config (..))
 import Futurice.App.Avatar.Logic  (avatar)
 
 type Ctx = (DynMapCache, Manager)
@@ -73,7 +73,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName          .~ "Avatar API"
     & serverDescription   .~ "Serve smaller versions of your favourite images"
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
-    & serverGetConfig     .~ getConfig
     & serverApp avatarApi .~ server
   where
     makeCtx :: Config -> DynMapCache -> IO Ctx

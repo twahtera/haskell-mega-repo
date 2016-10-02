@@ -18,7 +18,7 @@ import Servant
 
 -- Contacts modules
 import Futurice.App.Contacts.API
-import Futurice.App.Contacts.Config   (Config (..), getConfig)
+import Futurice.App.Contacts.Config   (Config (..))
 import Futurice.App.Contacts.Executor (execute)
 import Futurice.App.Contacts.Logic    (contacts)
 import Futurice.App.Contacts.Types
@@ -32,7 +32,6 @@ defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName            .~ "Contacts API"
     & serverDescription     .~ "All employees and externals"
-    & serverGetConfig       .~ getConfig
     & serverApp contactsApi .~ server
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
   where

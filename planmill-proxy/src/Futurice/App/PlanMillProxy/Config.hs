@@ -1,6 +1,5 @@
 module Futurice.App.PlanMillProxy.Config (
     Config(..),
-    getConfig,
     ) where
 
 import Futurice.Prelude
@@ -23,14 +22,14 @@ data Config = Config
 instance HasPort Config where
     port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
 
-getConfig :: IO Config
-getConfig = config
-    <$> parseEnvVar "PLANMILL_ADMIN"
-    <*> parseEnvVar "PLANMILL_SIGNATURE"
-    <*> parseEnvVar "PLANMILL_BASEURL"
-    <*> getConnectInfo
-    <*> parseEnvVarWithDefault "PLANMILLPROXY_LOGLEVEL" LevelInfo
-    <*> parseDefaultPort "PLANMILLPROXY"
-  where
-    config userid apikey baseurl =
-      Config (Cfg userid apikey baseurl)
+instance GetConfig Config where
+    getConfig = config
+        <$> parseEnvVar "PLANMILL_ADMIN"
+        <*> parseEnvVar "PLANMILL_SIGNATURE"
+        <*> parseEnvVar "PLANMILL_BASEURL"
+        <*> getConnectInfo
+        <*> parseEnvVarWithDefault "PLANMILLPROXY_LOGLEVEL" LevelInfo
+        <*> parseDefaultPort "PLANMILLPROXY"
+      where
+        config userid apikey baseurl =
+          Config (Cfg userid apikey baseurl)

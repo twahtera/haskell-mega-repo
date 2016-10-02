@@ -17,7 +17,7 @@ data Config = Config
 instance HasPort Config where
     port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
 
-getConfig :: IO Config
-getConfig = Config
-    <$> parseEnvVar "UNUSED"
-    <*> parseDefaultPort "AVATAR"
+instance GetConfig Config where
+    getConfig = Config
+        <$> parseEnvVar "UNUSED"
+        <*> parseDefaultPort "AVATAR"

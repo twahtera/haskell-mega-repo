@@ -20,6 +20,10 @@ import qualified PlanMill           as PM
 class HasPort cfg where
     port :: Lens' cfg Int
 
+-- TODO: write generics
+class GetConfig cfg where
+    getConfig :: IO cfg
+
 defaultPort :: Int
 defaultPort = 8000
 

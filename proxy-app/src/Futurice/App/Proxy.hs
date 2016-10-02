@@ -18,6 +18,7 @@ import Data.ByteString                 (ByteString)
 import Data.Pool                       (Pool, createPool, withResource)
 import Data.Text.Encoding              (decodeLatin1)
 import Database.PostgreSQL.Simple      (Connection)
+import Futurice.EnvConfig              (getConfig)
 import Futurice.Servant
 import Network.HTTP.Client             (Manager, newManager)
 import Network.HTTP.Client.TLS         (tlsManagerSettings)

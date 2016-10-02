@@ -11,7 +11,7 @@ import Prelude ()
 import Codec.Picture       (Image, PixelRGBA8)
 import Control.Lens        (iso)
 import Futurice.Colour
-import Futurice.EnvConfig  (HasPort (..))
+import Futurice.EnvConfig  (GetConfig (..), HasPort (..))
 import Futurice.Logo
 import Futurice.Servant
 import Lucid               hiding (for_)
@@ -44,14 +44,13 @@ main = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName        .~ "Favicon API"
     & serverDescription .~ "Futurice favicons"
     & serverColour      .~ (Proxy :: Proxy 'FutuBlack)
-    & serverGetConfig   .~ getConfig
     & serverApp api     .~ server
   where
     makeCtx :: Config -> DynMapCache -> IO Ctx
     makeCtx _cfg = return
 
-getConfig :: IO Config
-getConfig = Config . fromMaybe 8000 . (>>= readMaybe) <$> lookupEnv "PORT"
+instance GetConfig Config where
+   getConfig = Config . fromMaybe 8000 . (>>= readMaybe) <$> lookupEnv "PORT"
 
 instance HasPort Config where
     port = iso getPort Config

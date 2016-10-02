@@ -37,7 +37,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName              .~ "Spice stats API"
     & serverDescription       .~ "Open source contribution stats"
     & serverColour            .~ (Proxy :: Proxy ('FutuAccent 'AF3 'AC2))
-    & serverGetConfig         .~ getConfig
     & serverApp spiceStatsApi .~ server
   where
     makeCtx :: Config -> DynMapCache -> IO Ctx

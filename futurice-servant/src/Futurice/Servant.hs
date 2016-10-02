@@ -37,7 +37,6 @@ module Futurice.Servant (
     emptyServerConfig,
     serverName,
     serverDescription,
-    serverGetConfig,
     serverApp,
     serverMiddleware,
     serverColour,
@@ -64,7 +63,7 @@ import Data.Swagger                         hiding (HasPort (..))
 import Development.GitRev                   (gitCommitDate, gitHash)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
-import Futurice.EnvConfig                   (HasPort (..))
+import Futurice.EnvConfig                   (HasPort (..), GetConfig (..))
 import GHC.Prim                             (coerce)
 import Network.Wai                          (Middleware, requestHeaders)
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
@@ -134,22 +133,19 @@ futuriceServer t d cache papi server
 -------------------------------------------------------------------------------
 
 -- | Data type containing the server setup
-data ServerConfig (colour :: Colour) cfg ctx api = SC
+data ServerConfig (colour :: Colour) ctx api = SC
     { _serverName        :: !Text
     , _serverDescription :: !Text
-    , _serverGetConfig   :: IO cfg
     , _serverApplication :: ctx -> Server api
     , _serverMiddleware  :: ctx -> Middleware
     }
 
--- | Default server config, true lenses the type will be refined
+-- | Default server config, through the lenses the type of api will be refined
 --
---
-emptyServerConfig :: ServerConfig 'FutuGreen () ctx (Get '[JSON] ())
+emptyServerConfig :: ServerConfig 'FutuGreen ctx (Get '[JSON] ())
 emptyServerConfig = SC
     { _serverName         = "Futurice Service"
     , _serverDescription  = "Some futurice service"
-    , _serverGetConfig    = pure ()
     , _serverApplication  = \_ -> pure ()
     , _serverMiddleware   = futuriceNoMiddleware
     }
@@ -162,42 +158,37 @@ futuriceNoMiddleware = liftFuturiceMiddleware id
 liftFuturiceMiddleware :: Middleware -> ctx -> Middleware
 liftFuturiceMiddleware mw _ = mw
 
-serverName :: Lens' (ServerConfig colour cfg ctx api) Text
+serverName :: Lens' (ServerConfig colour ctx api) Text
 serverName = lens _serverName $ \sc x -> sc { _serverName = x }
 
-serverDescription :: Lens' (ServerConfig colour cfg ctx api) Text
+serverDescription :: Lens' (ServerConfig colour ctx api) Text
 serverDescription = lens _serverDescription $ \sc x -> sc { _serverDescription = x }
-
-serverGetConfig
-    :: Lens (ServerConfig colour cfg ctx api) (ServerConfig colour cfg' ctx api)
-       (IO cfg) (IO cfg')
-serverGetConfig = lens _serverGetConfig $ \sc x -> sc { _serverGetConfig = x }
 
 serverApp
     :: Functor f
     => Proxy api'
-    -> LensLike f (ServerConfig colour cfg ctx api) (ServerConfig colour cfg ctx api')
+    -> LensLike f (ServerConfig colour ctx api) (ServerConfig colour ctx api')
        (ctx -> Server api) (ctx -> Server api')
 serverApp _ = lens _serverApplication $ \sc x -> sc { _serverApplication = x }
 
-serverMiddleware :: Lens' (ServerConfig colour cfg ctx api) (ctx -> Middleware)
+serverMiddleware :: Lens' (ServerConfig colour ctx api) (ctx -> Middleware)
 serverMiddleware = lens _serverMiddleware $ \sc x -> sc { _serverMiddleware = x }
 
 serverColour
-    :: Lens (ServerConfig colour cfg ctx api) (ServerConfig colour' cfg ctx api)
+    :: Lens (ServerConfig colour ctx api) (ServerConfig colour' ctx api)
        (Proxy colour) (Proxy colour')
 serverColour = lens (const Proxy) $ \sc _ -> coerce sc
 
 -- TODO: make class for config, to get ekg port later
 futuriceServerMain
     :: forall cfg ctx api colour.
-       (HasPort cfg, HasSwagger api,  HasServer api '[], SColour colour)
+       (GetConfig cfg, HasPort cfg, HasSwagger api, HasServer api '[], SColour colour)
     => (cfg -> DynMapCache -> IO ctx)
        -- ^ Initialise the context for application
-    -> ServerConfig colour cfg ctx api
+    -> ServerConfig colour ctx api
        -- ^ Server configuration
     -> IO ()
-futuriceServerMain makeCtx (SC t d getConfig server middleware)  = do
+futuriceServerMain makeCtx (SC t d server middleware)  = do
     let cfgPort = view port
     T.hPutStrLn stderr $ "Hello, " <> t <> " is alive"
     cfg         <- getConfig

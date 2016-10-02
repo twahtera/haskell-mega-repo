@@ -1,6 +1,5 @@
 module Futurice.App.Contacts.Config (
     Config(..),
-    getConfig,
     ) where
 
 import Futurice.Prelude
@@ -31,13 +30,13 @@ data Config = Config
 instance HasPort Config where
     port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
 
-getConfig :: IO Config
-getConfig = Config
-    <$> parseEnvVar "FUM_AUTH_TOKEN"
-    <*> parseEnvVar "FUM_BASE_URL"
-    <*> parseEnvVar "FUM_USER_LIST"
-    <*> parseEnvVar "GH_AUTH_TOKEN"
-    <*> parseEnvVar "GH_ORGANISATION"
-    <*> parseEnvVar "FD_AUTH_TOKEN"
-    <*> parseEnvVar "FD_ORGANISATION"
-    <*> parseDefaultPort "CONTACTS"
+instance GetConfig Config where
+    getConfig = Config
+        <$> parseEnvVar "FUM_AUTH_TOKEN"
+        <*> parseEnvVar "FUM_BASE_URL"
+        <*> parseEnvVar "FUM_USER_LIST"
+        <*> parseEnvVar "GH_AUTH_TOKEN"
+        <*> parseEnvVar "GH_ORGANISATION"
+        <*> parseEnvVar "FD_AUTH_TOKEN"
+        <*> parseEnvVar "FD_ORGANISATION"
+        <*> parseDefaultPort "CONTACTS"
