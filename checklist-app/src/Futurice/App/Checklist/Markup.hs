@@ -20,14 +20,14 @@ import Servant.Utils.Links (URI (..), safeLink)
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Clay
 import Futurice.App.Checklist.Types
-import Lucid.Foundation.Futurice
+import Futurice.Lucid.Foundation
 
 import qualified Data.Text as T
 import qualified Data.UUID as UUID
 import qualified FUM
 
-nonAuthorizedPage :: Page sym
-nonAuthorizedPage = Page $ page_ "Non-authorized" pageParams $ do
+nonAuthorizedPage :: HtmlPage sym
+nonAuthorizedPage = page_ "Non-authorized" pageParams $ do
     row_ $ large_ 12 $ header_ $ h1_ $ "Non-authorized"
     row_ $ large_ 12 $ p_ $
         "Ask IT-team to create you an account."
@@ -39,7 +39,7 @@ indexPage
     -> Maybe Location
     -> Maybe Checklist
     -> Maybe Task
-    -> Page "indexpage"
+    -> HtmlPage "indexpage"
 indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mtask =
     let employees0 = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
         employees1 = maybe id (\l -> filter (has $ employeeLocation . only l)) mloc $ employees0
@@ -51,7 +51,7 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
         taskPredicate task employee = flip has world $
             worldTaskItems . ix (employee ^. identifier) . ix (task ^. identifier)
 
-    in Page $ page_ "Checklist" pageParams $ do
+    in page_ "Checklist" pageParams $ do
         navigation authUser
 
         -- Title
@@ -146,7 +146,7 @@ tasksPage
     -> (FUM.UserName, TaskRole, Location)    -- ^ logged in user
     -> Maybe TaskRole
     -> Maybe Checklist
-    -> Page "tasks"
+    -> HtmlPage "tasks"
 tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
     let tasks0 = world ^.. worldTasks . folded
         tasks1 = maybe id (filter . rolePredicate) mrole tasks0
@@ -160,7 +160,7 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
         checklistPredicate cl task = flip has world $
             worldLists . ix (cl ^. identifier) . checklistTasks . ix (task ^. identifier)
 
-    in Page $ page_ "Checklist - Tasks" pageParams $ do
+    in page_ "Checklist - Tasks" pageParams $ do
         navigation authUser
 
         -- Title

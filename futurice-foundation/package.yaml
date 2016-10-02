@@ -20,8 +20,10 @@ library:
     - clay
     - file-embed
     - futurice-prelude
+    - futurice-servant
     - language-javascript >= 0.6.0.8 && <0.7 # For embedJS
     - lens
     - lucid
+    - mmorph
     - template-haskell
     - text

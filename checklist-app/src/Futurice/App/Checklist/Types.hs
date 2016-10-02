@@ -56,8 +56,6 @@ module Futurice.App.Checklist.Types (
     checklistName, checklistTasks,
     -- ** TaskItemDone
     _TaskItemDone, _TaskItemTodo,
-    -- * HTML
-    Page (..),
     -- * World
     World,
     mkWorld,
@@ -77,7 +75,6 @@ module Futurice.App.Checklist.Types (
 import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.Ctx
 import Futurice.App.Checklist.Types.Identifier
-import Futurice.App.Checklist.Types.Page
 import Futurice.App.Checklist.Types.World
 
 import qualified FUM (UserName)

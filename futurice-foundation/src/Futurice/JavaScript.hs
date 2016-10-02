@@ -1,4 +1,4 @@
-module Lucid.Foundation.Futurice.JavaScript (
+module Futurice.JavaScript (
     JS,
     getJS,
     makeJS,

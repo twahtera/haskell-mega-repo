@@ -1,10 +1,13 @@
+{-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE KindSignatures         #-}
 {-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE UndecidableInstances   #-}
-module Lucid.Foundation.Futurice (
+module Futurice.Lucid.Foundation (
     -- * Embedded style
     embeddedFoundationStyle_,
     -- * Grid
@@ -15,6 +18,7 @@ module Lucid.Foundation.Futurice (
     optionSelected_,
     checkbox_,
     -- * Page
+    HtmlPage (..),
     page_,
     PageParams,
     pageCss,
@@ -34,14 +38,18 @@ module Lucid.Foundation.Futurice (
 import Futurice.Prelude
 import Prelude ()
 
-import Clay                                    (Css, render)
-import Data.FileEmbed                          (embedStringFile)
-import Lucid                                   hiding (for_)
-import Lucid.Foundation.Futurice.JavaScript
-import Lucid.Foundation.Futurice.JavaScript.TH
+import Clay                   (Css, render)
+import Control.Monad.Morph    (hoist)
+import Data.FileEmbed         (embedStringFile)
+import Data.Functor.Identity  (runIdentity)
+import Futurice.JavaScript
+import Futurice.JavaScript.TH
+import Futurice.Servant
+import GHC.TypeLits           (KnownSymbol, Symbol, symbolVal)
+import Lucid                  hiding (for_)
 
-import qualified Lucid as L
 import qualified Data.Text as T
+import qualified Lucid     as L
 
 embeddedFoundationStyle_ :: Monad m => HtmlT m ()
 embeddedFoundationStyle_ =
@@ -88,6 +96,23 @@ checkbox_ False attrs = input_ $ [ type_ "checkbox" ] <> attrs
 -- Page
 -------------------------------------------------------------------------------
 
+-- TODO: create submodule, move there
+
+newtype HtmlPage (k :: Symbol) = HtmlPage (Html ())
+
+instance KnownSymbol s => ToSchema (HtmlPage s) where
+    declareNamedSchema _ = pure $ NamedSchema (Just $ "Html page: " <> name) mempty
+      where
+        name = symbolVal (Proxy :: Proxy s) ^. packed
+
+instance ToHtml (HtmlPage a) where
+    toHtmlRaw = toHtml
+    toHtml (HtmlPage h) = hoist (return . runIdentity) h
+
+-------------------------------------------------------------------------------
+-- PageParams
+-------------------------------------------------------------------------------
+
 data PageParams = PageParams
     { _pageCss :: [Css]
     , _pageJs  :: [JS]
@@ -98,21 +123,20 @@ defPageParams = PageParams [] []
 
 makeLenses ''PageParams
 
--- TODO: create submodule, move there
 
 -- | Similar to 'Term' from @lucid@.
 class Page arg result | result -> arg where
     -- | Page template.
     page_ :: Text -> arg -> result
 
-instance Monad m => Page (HtmlT m ()) (HtmlT m ()) where
+instance Page (Html ()) (HtmlPage k) where
     page_ t = pageImpl t defPageParams
 
-instance (Monad m, a ~ HtmlT m (), b ~ HtmlT m ()) => Page PageParams (a -> b) where
+instance (a ~ Html (), b ~ HtmlPage k) => Page PageParams (a -> b) where
     page_ = pageImpl
 
-pageImpl :: Monad m => Text -> PageParams -> HtmlT m () -> HtmlT m ()
-pageImpl t p b = doctypehtml_ $ do
+pageImpl :: Text -> PageParams -> Html () -> HtmlPage k
+pageImpl t p b = HtmlPage $ doctypehtml_ $ do
     head_ $ do
         title_ $ toHtml t
         meta_ [charset_ "utf-8"]
@@ -135,3 +159,4 @@ pageImpl t p b = doctypehtml_ $ do
         -- additional js
         for_ (p ^. pageJs) $ toHtml
     body_ b
+

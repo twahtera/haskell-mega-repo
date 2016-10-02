@@ -14,6 +14,7 @@ import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
+import Futurice.Lucid.Foundation     (HtmlPage)
 
 import qualified FUM (UserName (..))
 
@@ -28,7 +29,7 @@ indexPageImpl
     -> Maybe Location
     -> Maybe UUID
     -> Maybe UUID
-    -> m (Page "indexpage")
+    -> m (HtmlPage "indexpage")
 indexPageImpl ctx fu loc cid tid = withAuthUser ctx fu impl
   where
     impl world userInfo = do
@@ -49,7 +50,7 @@ tasksPageImpl
     -> Maybe FUM.UserName
     -> Maybe TaskRole
     -> Maybe UUID
-    -> m (Page "tasks")
+    -> m (HtmlPage "tasks")
 tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
   where
     impl world userInfo =
@@ -63,8 +64,8 @@ tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
 withAuthUser
     :: MonadIO m
     => Ctx -> Maybe FUM.UserName
-    -> (World -> AuthUser -> m (Page a))
-    -> m (Page a)
+    -> (World -> AuthUser -> m (HtmlPage a))
+    -> m (HtmlPage a)
 withAuthUser ctx fu f = case userInfo of
     Nothing        -> pure nonAuthorizedPage
     Just userInfo' -> f ctx userInfo'
@@ -73,7 +74,7 @@ withAuthUser ctx fu f = case userInfo of
     userInfo = ctx ^? worldUsers . ix fu . _Just
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig 
+defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName             .~ "Checklist API"
     & serverDescription      .~ "Super TODO"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))

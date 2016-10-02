@@ -50,7 +50,7 @@ import Generics.SOP
 import GHC.TypeLits                 (KnownSymbol, Symbol, symbolVal)
 import Lucid                        hiding (for_)
 import Lucid.Base                   (HtmlT (..))
-import Lucid.Foundation.Futurice
+import Futurice.Lucid.Foundation
        (defPageParams, embedJS, large_, menrvaJS, pageJs, page_, row_)
 
 import Servant.API         (MimeRender (..))
@@ -400,12 +400,12 @@ instance (KnownSymbol name, ToHtml params, ToReportRow a, IsReport params a)
     => ToHtml (Report name params a) where
     toHtmlRaw _ = pure ()
     toHtml :: forall m. Monad m => Report name params a -> HtmlT m ()
-    toHtml (Report params d) = case reportExec params :: E a (HtmlT m ()) of
-        MkE f -> f (HtmlT . return <$> runHtmlT p)
+    toHtml (Report params d) = toHtml $ page_ (fromString title) pageParams $
+        case reportExec params :: E a (Html ()) of
+            MkE f -> f (HtmlT . return <$> runHtmlT p)
       where
         p :: forall n. (Monad n, ReportRowC a n) => HtmlT n ()
-        p =
-          page_ (fromString title) pageParams $ do
+        p =  do
           row_ $ large_ 12 $ h1_ $ fromString title
           row_ $ large_ 12 $ div_ [class_ "callout"] $ toHtml params
           row_ $ large_ 12 $ table_ [class_ "futu-report hover"] $ do

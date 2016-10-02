@@ -26,7 +26,8 @@ import qualified GitHub                   as GH
 
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.Logic
-import Futurice.App.Reports.Server.API
+import Futurice.App.Reports.API
+import Futurice.App.Reports.Markup
 import Futurice.App.Reports.Types
 
 -- | TODO: use reader monad
@@ -49,7 +50,7 @@ serveFumGitHubReport (cache, mgr, cfg) =
 
 -- | API server
 server :: Ctx -> Server ReportsAPI
-server ctx = pure IndexPage
+server ctx = pure indexPage 
     :<|> serveIssues ctx
     :<|> serveFumGitHubReport ctx
 

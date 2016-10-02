@@ -37,7 +37,6 @@ library
     , futurice-servant
     , lens
     , lucid
-    , mmorph
     , QuickCheck
     , servant
     , servant-lucid
@@ -56,7 +55,6 @@ library
       Futurice.App.Checklist.Types.Basic
       Futurice.App.Checklist.Types.Ctx
       Futurice.App.Checklist.Types.Identifier
-      Futurice.App.Checklist.Types.Page
       Futurice.App.Checklist.Types.World
       Futurice.Arbitrary
   default-language: Haskell2010
@@ -78,7 +76,6 @@ executable checklist-app-server
     , futurice-servant
     , lens
     , lucid
-    , mmorph
     , QuickCheck
     , servant
     , servant-lucid
