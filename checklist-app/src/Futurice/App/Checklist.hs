@@ -73,17 +73,19 @@ withAuthUser ctx fu f = case userInfo of
     userInfo = ctx ^? worldUsers . ix fu . _Just
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain
-    "Checklist API"
-    "Super TODO"
-    (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
-    getConfig cfgPort
-    checklistApi server futuriceNoMiddleware
-    $ \cfg _cache -> do
+defaultMain = futuriceServerMain makeCtx $ emptyServerConfig 
+    & serverName             .~ "Checklist API"
+    & serverDescription      .~ "Super TODO"
+    & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
+    & serverGetConfig        .~ getConfig
+    & serverApp checklistApi .~ server
+  where
+    mockCredentials = (FUM.UserName "phadej", TaskRoleIT, LocHelsinki)
+
+    makeCtx :: Config -> DynMapCache -> IO Ctx
+    makeCtx cfg _cache = do
         world0 <- generate (resize 200 arbitrary)
         let world1 = if cfgMockAuth cfg
             then world0 & worldUsers .~ const (Just mockCredentials)
             else world0
         pure world1
-  where
-    mockCredentials = (FUM.UserName "phadej", TaskRoleIT, LocHelsinki)

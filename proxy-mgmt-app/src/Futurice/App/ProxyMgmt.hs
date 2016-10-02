@@ -28,13 +28,15 @@ server ctx = liftIO (accessReport ctx)
     :<|> liftIO (usersReport ctx)
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain
-    "Proxy-app management"
-    "Audit log"
-    (Proxy :: Proxy ('FutuAccent 'AF6 'AC3))
-    getConfig cfgPort
-    proxyMgmtApi server futuriceNoMiddleware
-    $ \Config {..} _cache -> do
+defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+    & serverName             .~ "Proxy-app management"
+    & serverDescription      .~ "Audit log"
+    & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC3))
+    & serverGetConfig        .~ getConfig
+    & serverApp proxyMgmtApi .~ server
+  where
+    makeCtx :: Config -> DynMapCache -> IO Ctx
+    makeCtx Config {..} _cache = do
         postgresPool <- createPool
             (Postgres.connect cfgPostgresConnInfo)
             Postgres.close

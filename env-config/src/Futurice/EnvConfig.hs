@@ -17,6 +17,9 @@ import qualified FUM
 import qualified GitHub             as GH
 import qualified PlanMill           as PM
 
+class HasPort cfg where
+    port :: Lens' cfg Int
+
 defaultPort :: Int
 defaultPort = 8000
 

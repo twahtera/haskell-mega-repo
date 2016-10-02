@@ -29,14 +29,16 @@ server ctx = pure "Try /swagger-ui/"
     :<|> liftIO . haxlEndpoint ctx
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain
-    "Planmill Proxy"
-    "Make faster queries to PlanMill"
-    (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
-    getConfig cfgPort
-    planmillProxyApi server
-    (liftFuturiceMiddleware logStdoutDev)
-    $ \(Config cfg connectionInfo logLevel _) cache -> do
+defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+    & serverName          .~ "Planmill Proxy"
+    & serverDescription   .~ "Make faster queries to PlanMill"
+    & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
+    & serverGetConfig     .~  getConfig
+    & serverMiddleware    .~ liftFuturiceMiddleware logStdoutDev
+    & serverApp planmillProxyApi .~ server
+  where
+    makeCtx :: Config -> DynMapCache -> IO Ctx
+    makeCtx (Config cfg connectionInfo logLevel _) cache = do
         postgresPool <- createPool
             (Postgres.connect connectionInfo)
             Postgres.close
@@ -54,7 +56,6 @@ defaultMain = futuriceServerMain
                 ]
         _ <- spawnPeriocron (Options runStderrLoggingT' 60) jobs
         pure ctx
-  where
     runStderrLoggingT'
         :: forall a. (forall m. (Applicative m, MonadLogger m, MonadIO m) => m a)
         -> IO a

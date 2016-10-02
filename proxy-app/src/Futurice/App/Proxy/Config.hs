@@ -15,6 +15,9 @@ data Config = Config
     , cfgFutuhoursBaseurl :: !String
     }
 
+instance HasPort Config where
+    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
+
 getConfig :: IO Config
 getConfig = Config
     <$> parseDefaultPort "PROXYAPP"

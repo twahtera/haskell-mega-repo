@@ -16,6 +16,9 @@ data Config = Config
     }
     deriving (Show)
 
+instance HasPort Config where
+    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
+
 getConfig :: IO Config
 getConfig = Config
     <$> parseDefaultPort "CHECKLIST"

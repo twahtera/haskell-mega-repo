@@ -33,6 +33,14 @@ module Futurice.Servant (
     -- ** Server API
     FuturiceAPI,
     futuriceServer,
+    ServerConfig,
+    emptyServerConfig,
+    serverName,
+    serverDescription,
+    serverGetConfig,
+    serverApp,
+    serverMiddleware,
+    serverColour,
     -- ** WAI
     Application,
     Middleware,
@@ -50,11 +58,14 @@ import Futurice.Prelude
 import Prelude ()
 
 import Control.Concurrent.STM               (atomically)
+import Control.Lens                         (Lens, LensLike)
 import Data.Char                            (isAlpha)
-import Data.Swagger
+import Data.Swagger                         hiding (HasPort (..))
 import Development.GitRev                   (gitCommitDate, gitHash)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
+import Futurice.EnvConfig                   (HasPort (..))
+import GHC.Prim                             (coerce)
 import Network.Wai                          (Middleware, requestHeaders)
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import Servant
@@ -122,22 +133,72 @@ futuriceServer t d cache papi server
 -- main boilerplate
 -------------------------------------------------------------------------------
 
+-- | Data type containing the server setup
+data ServerConfig (colour :: Colour) cfg ctx api = SC
+    { _serverName        :: !Text
+    , _serverDescription :: !Text
+    , _serverGetConfig   :: IO cfg
+    , _serverApplication :: ctx -> Server api
+    , _serverMiddleware  :: ctx -> Middleware
+    }
+
+-- | Default server config, true lenses the type will be refined
+--
+--
+emptyServerConfig :: ServerConfig 'FutuGreen () ctx (Get '[JSON] ())
+emptyServerConfig = SC
+    { _serverName         = "Futurice Service"
+    , _serverDescription  = "Some futurice service"
+    , _serverGetConfig    = pure ()
+    , _serverApplication  = \_ -> pure ()
+    , _serverMiddleware   = futuriceNoMiddleware
+    }
+
+-- | Default middleware: i.e. nothing.
+futuriceNoMiddleware :: ctx -> Middleware
+futuriceNoMiddleware = liftFuturiceMiddleware id
+
+-- | Lift config-less middleware for use with 'futuriceServerMain'.
+liftFuturiceMiddleware :: Middleware -> ctx -> Middleware
+liftFuturiceMiddleware mw _ = mw
+
+serverName :: Lens' (ServerConfig colour cfg ctx api) Text
+serverName = lens _serverName $ \sc x -> sc { _serverName = x }
+
+serverDescription :: Lens' (ServerConfig colour cfg ctx api) Text
+serverDescription = lens _serverDescription $ \sc x -> sc { _serverDescription = x }
+
+serverGetConfig
+    :: Lens (ServerConfig colour cfg ctx api) (ServerConfig colour cfg' ctx api)
+       (IO cfg) (IO cfg')
+serverGetConfig = lens _serverGetConfig $ \sc x -> sc { _serverGetConfig = x }
+
+serverApp
+    :: Functor f
+    => Proxy api'
+    -> LensLike f (ServerConfig colour cfg ctx api) (ServerConfig colour cfg ctx api')
+       (ctx -> Server api) (ctx -> Server api')
+serverApp _ = lens _serverApplication $ \sc x -> sc { _serverApplication = x }
+
+serverMiddleware :: Lens' (ServerConfig colour cfg ctx api) (ctx -> Middleware)
+serverMiddleware = lens _serverMiddleware $ \sc x -> sc { _serverMiddleware = x }
+
+serverColour
+    :: Lens (ServerConfig colour cfg ctx api) (ServerConfig colour' cfg ctx api)
+       (Proxy colour) (Proxy colour')
+serverColour = lens (const Proxy) $ \sc _ -> coerce sc
+
 -- TODO: make class for config, to get ekg port later
 futuriceServerMain
-    :: forall cfg ctx api proxy proxy' colour.
-       (HasSwagger api,  HasServer api '[], SColour colour)
-    => Text                        -- ^ Service name
-    -> Text                        -- ^ Service description
-    -> proxy colour
-    -> IO cfg                      -- ^ Read config
-    -> (cfg -> Int)                -- ^ Get port from the config
-    -> proxy' api
-    -> (ctx -> Server api)         -- ^ Application
-    -> (cfg -> ctx -> Middleware)  -- ^ Middleware
-    -> (cfg -> DynMapCache -> IO ctx)
+    :: forall cfg ctx api colour.
+       (HasPort cfg, HasSwagger api,  HasServer api '[], SColour colour)
+    => (cfg -> DynMapCache -> IO ctx)
        -- ^ Initialise the context for application
+    -> ServerConfig colour cfg ctx api
+       -- ^ Server configuration
     -> IO ()
-futuriceServerMain t d _proxyColour getConfig cfgPort _proxyApi server middleware makeCtx = do
+futuriceServerMain makeCtx (SC t d getConfig server middleware)  = do
+    let cfgPort = view port
     T.hPutStrLn stderr $ "Hello, " <> t <> " is alive"
     cfg         <- getConfig
     let p       = cfgPort cfg
@@ -148,20 +209,13 @@ futuriceServerMain t d _proxyColour getConfig cfgPort _proxyApi server middlewar
     T.hPutStrLn stderr $ "Starting " <> t <> " at port " <> show p ^. packed
     T.hPutStrLn stderr $ "- http://localhost:" <> show p ^. packed <> "/"
     T.hPutStrLn stderr $ "- http://localhost:" <> show p ^. packed <> "/swagger-ui/"
-    Warp.run p $ middleware cfg ctx $ serve proxyApi' server'
+    Warp.run p $ middleware ctx $ serve proxyApi' server'
   where
     proxyApi :: Proxy api
     proxyApi = Proxy
 
     proxyApi' :: Proxy (FuturiceAPI api colour)
     proxyApi' = Proxy
-
-futuriceNoMiddleware :: cfg -> ctx -> Middleware
-futuriceNoMiddleware = liftFuturiceMiddleware id
-
--- | Lift config-less middleware for use with 'futuriceServerMain'.
-liftFuturiceMiddleware :: Middleware -> cfg -> ctx -> Middleware
-liftFuturiceMiddleware mw _ _ = mw
 
 -------------------------------------------------------------------------------
 -- Other stuff

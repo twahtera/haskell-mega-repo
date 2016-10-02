@@ -32,10 +32,13 @@ library
   build-depends:
       base                  >=4.7   && <4.10
     , base-compat
+    , env-config
     , fum-client
     , futulogo
     , futurice-prelude
+    , ghc-prim
     , gitrev >=1.2.0
+    , lens
     , servant ==0.9
     , servant-cache
     , servant-lucid

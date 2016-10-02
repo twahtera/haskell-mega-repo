@@ -54,13 +54,15 @@ server ctx = pure IndexPage
     :<|> serveFumGitHubReport ctx
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain
-    "Report API"
-    "Various reports"
-    (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
-    getConfig cfgPort
-    reportsApi server futuriceNoMiddleware
-    $ \cfg cache -> do
+defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+    & serverName           .~ "Report API"
+    & serverDescription    .~ "Various reports"
+    & serverColour         .~ (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
+    & serverGetConfig      .~ getConfig
+    & serverApp reportsApi .~ server
+  where
+    makeCtx :: Config -> DynMapCache -> IO Ctx
+    makeCtx cfg cache = do
         manager <- newManager tlsManagerSettings
         return (cache, manager, cfg)
 
