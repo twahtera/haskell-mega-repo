@@ -15,7 +15,7 @@ module PlanMill.Types.TimeBalance
 
 import PlanMill.Internal.Prelude
 
-newtype TimeBalance = TimeBalance { _tbMinutes :: Double }
+newtype TimeBalance = TimeBalance { _tbMinutes :: NDT 'Minutes Int }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
 
 instance Hashable TimeBalance

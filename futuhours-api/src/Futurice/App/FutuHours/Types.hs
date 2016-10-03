@@ -41,16 +41,19 @@ module Futurice.App.FutuHours.Types (
     ) where
 
 import Futurice.Prelude
+import Futurice.Time
+import Prelude ()
 
-import Data.Aeson.Extra   (FromJSON (..), ToJSON (..), Value (..), object,
-                           (.=))
-import Data.Csv           (DefaultOrdered (..), ToField (..),
-                           ToNamedRecord (..))
+import Data.Aeson.Extra   (FromJSON (..), ToJSON (..), Value (..), object, (.=))
+import Data.Csv
+       (DefaultOrdered (..), ToField (..), ToNamedRecord (..))
+import Data.Fixed         (Centi)
 import Data.GADT.Compare  ((:~:) (..), GCompare (..), GEq (..), GOrdering (..))
 import Data.Swagger       (ToParamSchema, ToSchema (..))
 import Futurice.EnvConfig (FromEnvVar (..))
-import Futurice.Generics  (sopDeclareNamedSchema, sopHeaderOrder, sopParseJSON,
-                           sopToJSON, sopToNamedRecord)
+import Futurice.Generics
+       (sopDeclareNamedSchema, sopHeaderOrder, sopParseJSON, sopToJSON,
+       sopToNamedRecord)
 import Lucid              hiding (for_)
 import Servant            (Capture, FromHttpApiData (..))
 import Servant.Docs       (DocCapture (..), ToCapture (..))
@@ -263,7 +266,7 @@ data User = User
     { userFirstName        :: !Text
     , userDefaultWorkHours :: !Double
     , userHolidaysDaysLeft :: !Int
-    , userBalance          :: !Int
+    , userBalance          :: !(NDT 'Hours Centi)
     , userEmployeeType     :: !Text
     }
     deriving (Eq, Ord, Read, Show, Typeable, Generic)
@@ -292,7 +295,7 @@ data Hour = Hour
     , hourDay             :: !Day
     , hourDescription     :: !Text
     , hourEditable        :: !Bool
-    , hourHours           :: !Double
+    , hourHours           :: !(NDT 'Hours Centi)
     , hourId              :: !PM.TimereportId
     , hourProjectId       :: !PM.ProjectId
     , hourProjectCategory :: !Int
@@ -365,8 +368,8 @@ instance FromJSON Employee where parseJSON = sopParseJSON
 -------------------------------------------------------------------------------
 
 data Balance = Balance
-    { balanceHours        :: !Double
-    , balanceMissingHours :: !Double
+    { balanceHours        :: !(NDT 'Hours Centi)
+    , balanceMissingHours :: !(NDT 'Hours Centi)
     }
     deriving (Eq, Ord, Show, Typeable, Generic)
 
@@ -387,8 +390,8 @@ instance ToReportRow Balance where
             | otherwise                   = "normal"
 
         r = ReportRow (Set.singleton cls)
-            $ IList.cons (toHtml $ show hours)
-            $ IList.cons (toHtml $ show missing)
+            $ IList.cons (toHtml hours)
+            $ IList.cons (toHtml missing)
             $ IList.cons (toHtml $ show diff)
             $ IList.nil
 
@@ -435,7 +438,7 @@ instance IsReport
 
 data MissingHour = MissingHour
    { missingHourDay      :: !Day
-   , missingHourCapacity :: !Double
+   , missingHourCapacity :: !(NDT 'Hours Centi)
    }
     deriving (Eq, Ord, Show, Typeable, Generic)
 
@@ -497,7 +500,7 @@ data PowerAbsence = PowerAbsence
     , powerAbsenceStart        :: !Day
     , powerAbsenceEnd          :: !Day
     , powerAbsencePlanmillId   :: !PM.AbsenceId
-    , powerAbsenceCapacities   :: !(Map Day Double)
+    , powerAbsenceCapacities   :: !(Map Day :$ NDT 'Hours Centi)
     , powerAbsenceBusinessDays :: !Int
     }
     deriving (Eq, Ord, Show, Typeable, Generic)

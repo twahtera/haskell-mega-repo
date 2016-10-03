@@ -32,10 +32,13 @@ module Futurice.App.FutuHours.Endpoints (
     ) where
 
 import Futurice.Prelude
+import Futurice.Time
+import Prelude ()
 
 import Control.Concurrent.STM           (readTVarIO)
 import Control.Monad.Trans.Except       (ExceptT)
 import Data.BinaryFromJSON              (BinaryFromJSON)
+import Data.Fixed                       (Centi)
 import Data.Maybe                       (fromJust)
 import Data.Ord                         (comparing)
 import Data.Pool                        (withResource)
@@ -149,7 +152,7 @@ balanceReportEndpoint = DefaultableEndpoint
             let pmId = pmUser ^. PM.identifier
 
             PM.TimeBalance balanceMinutes <- planmillAction $ PM.userTimeBalance pmId
-            let balanceMinutes' = balanceMinutes / 60
+            let balanceMinutes' = ndtConvert' balanceMinutes
 
             mh <- missingHoursForUser interval pmId
 
@@ -169,7 +172,7 @@ getLegacyUsers = withLegacyPlanmill p $ \uid -> do
             { userFirstName        = PM.uFirstName u
             , userDefaultWorkHours = 7.5      -- TODO
             , userHolidaysDaysLeft = 999      -- TODO
-            , userBalance          = round (balance / 60)
+            , userBalance          = ndtConvert' balance
             , userEmployeeType     = "foo"    -- TODO
             }
     pure $ Envelope $ V.singleton user
@@ -202,7 +205,7 @@ getLegacyHours gteDay lteDay =
         , hourDay             = PM.trStart t
         , hourDescription     = fromMaybe "-" $ PM.trComment t
         , hourEditable        = False -- TODO: use status?
-        , hourHours           = PM.trAmount t / 60
+        , hourHours           = ndtConvert' $ PM.trAmount t
         , hourId              = t ^. PM.identifier
         , hourProjectId       = fromMaybe (PM.Ident 0) $ PM.trProject t
         , hourProjectCategory = 0 -- TODO
@@ -367,11 +370,11 @@ powerAbsencesEndpoint = DefaultableEndpoint
           where
             uc' = capacities uc
 
-    capacities :: PM.UserCapacities -> Map Day Double
+    capacities :: PM.UserCapacities -> Map Day (NDT 'Hours Centi)
     capacities
         = Map.fromList
         . filter ((> 0) . snd)
-        . map (\x -> (PM.userCapacityDate x, fromIntegral (PM.userCapacityAmount x) / 60.0))
+        . map (\x -> (PM.userCapacityDate x, ndtConvert' $ PM.userCapacityAmount x))
         . toList
 
 getPowerAbsences

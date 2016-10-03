@@ -1,5 +1,6 @@
 module PlanMill.Internal.Prelude (
     module Futurice.Prelude,
+    module Futurice.Time,
     -- * aeson
     FromJSON(..), ToJSON(..),
     withObject, withText,
@@ -19,6 +20,7 @@ module PlanMill.Internal.Prelude (
     ) where
 
 import Futurice.Prelude
+import Futurice.Time
 import Prelude ()
 
 import Data.Aeson.Compat
