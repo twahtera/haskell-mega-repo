@@ -12,8 +12,6 @@ import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Lens (Iso', iso)
-
 import qualified Data.UUID as UUID
 
 newtype Identifier a = Identifier UUID
@@ -38,17 +36,3 @@ class HasIdentifier entity ident | entity -> ident where
 
 instance HasIdentifier (Identifier e) e where
     identifier = id
-
--------------------------------------------------------------------------------
--- Orphans: move to futurice-prelude
--------------------------------------------------------------------------------
-
-uuidWords :: Iso' UUID (Word32, Word32, Word32, Word32)
-uuidWords = iso UUID.toWords fromWords'
-  where
-    fromWords' :: (Word32, Word32, Word32, Word32) -> UUID
-    fromWords' (a, b, c, d) = UUID.fromWords a b c d
-
-instance Arbitrary UUID where
-    arbitrary = view (from uuidWords) <$> arbitrary
-    shrink = fmap (view $ from uuidWords) . shrink . view uuidWords
