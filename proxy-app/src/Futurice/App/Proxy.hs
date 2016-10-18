@@ -26,7 +26,7 @@ import Network.Wai ()
 import Network.Wai.Middleware.HttpAuth (basicAuth)
 import Servant
 import Servant.Client
-import Servant.CSV.Cassava             (CSV', DefaultOpts)
+import Servant.CSV.Cassava             (CSV)
 import Servant.Proxy
 import System.IO                       (hPutStrLn, stderr)
 
@@ -64,7 +64,7 @@ makeProxy _ ctx = proxy' p (ClientEnv manager baseurl) (client p')
 
 data API = Futuhours
 
-type FutuhoursAPI = "reports" :> "missinghours" :> Get '[(CSV', DefaultOpts), JSON] MissingHoursReport
+type FutuhoursAPI = "reports" :> "missinghours" :> Get '[CSV, JSON] MissingHoursReport
 
 instance Proxyable 'Futuhours where
     type ProxyNamespace 'Futuhours = "futuhours"
