@@ -1,79 +1,63 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE UndecidableInstances   #-}
 module Servant.Proxy (
-    Proxied,
-    Proxyable(..),
-    Proxyable'(..),
-    JSONAPI,
+    makeProxy,
+    ProxyPair,
+    ProxyServer,
+    -- * Internal
+    Convertible,
     ) where
 
-import Futurice.Prelude
-import Prelude          ()
-
 import Control.Monad.Trans.Except (ExceptT (..), withExceptT)
+import Futurice.Prelude
+import Prelude ()
 import Servant
-import Servant.Swagger
-import Servant.API.ContentTypes
 import Servant.Client
-import GHC.TypeLits               (KnownSymbol, Symbol)
 
-data Proxied (api :: k)
-
-class
-    ( Proxyable' (ProxiedAPI api)
-    , KnownSymbol (ProxyNamespace api)
-    )
-  => Proxyable (api :: k) where
-    type ProxyNamespace api :: Symbol
-    type ProxiedAPI api :: *
-
--- | Helper class for @api = 'ProxiedAPI' api'@.
+-- | Definition of a proxy.
 --
--- We have to define helper type families @C@ and @S@, because @HasServer@ has
--- overlapping instances.
+-- * @public@: public endpoint
 --
--- We have to add more instances when we want to proxy more sophisticated APIs.
-class Proxyable' api where
-    type C api :: *
-    type C api = Client api
-    type S api :: *
-    type S api = Server api
+-- * @service@: service to connect to
+--
+-- * @private@: service endpoint
+--
+data ProxyPair public service private
 
-    proxy' :: Proxy api -> ClientEnv -> C api -> S api
+-- | Extract servant api for public part of the proxy.
+type family ProxyServer def where
+    ProxyServer '[p]      = ProxyServer' p
+    ProxyServer (p ': ps) = ProxyServer' p :<|> ProxyServer ps
 
-type family JSONAPI api where
-    JSONAPI (Get cts a) = Get '[JSON] a
-    JSONAPI (x :> api)  = x :> JSONAPI api
+type family ProxyServer' def where
+    ProxyServer' (ProxyPair public _s _p) = public
 
-instance (KnownSymbol sym, Proxyable' api) => Proxyable' (sym :> api) where
-    type C (sym :> api) = C api
-    type S (sym :> api) = S api
-    proxy' _ = proxy' (Proxy :: Proxy api)
+-- | Class to convert client functions to server functions
+class Convertible client server | client -> server, server -> client where
+    convert :: ClientEnv -> client -> server
 
-instance (MimeUnrender JSON a, AllCTRender cts a) => Proxyable' (Get cts a) where
-    type C (Get cts a) = ClientM a
-    type S (Get cts a) = ExceptT ServantErr IO a
-    proxy' _ cenv cli = withExceptT f $ ExceptT $ runClientM cli cenv
+instance Convertible (ClientM a) (Handler a) where
+    convert env cli = withExceptT transformError $ ExceptT $ runClientM cli env
       where
-        f err = err504 { errBody = fromString $ show err }
+        transformError err = err504 { errBody = fromString $ show err }
 
--- | Not sure if there is the way to wrap @'Server' api@ into @'Delayed' ('Server' api)@.
--- Then we could make @ServerT (Proxied api) m = ()@ which would be much nicer.
-instance (Proxyable api, HasServer (ProxiedAPI api) context)
-  => HasServer (Proxied api) context where
-    type ServerT (Proxied api) m = ServerT (ProxyNamespace api :> ProxiedAPI api) m
-
-    route _p = route p
-      where
-        p = Proxy :: Proxy (ProxyNamespace api :> ProxiedAPI api)
-
-instance (Proxyable api, HasSwagger (ProxiedAPI api))
-  => HasSwagger (Proxied api) where
-    toSwagger _ = toSwagger (Proxy :: Proxy (ProxyNamespace api :> ProxiedAPI api))
+-- | Class describing proxable endpoints
+--
+-- 'ClientEnv' paramater is taken tagged, so we don't mix them.
+makeProxy
+    :: forall public service private.
+       ( HasClient private
+       , Convertible (Client private) (ServerT public Handler)
+       )
+    => Proxy (ProxyPair public service private) -> Tagged service ClientEnv -> Server public
+makeProxy _ (Tagged env) = convert env (client proxyPrivate)
+  where
+    proxyPrivate = Proxy :: Proxy private

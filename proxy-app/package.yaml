@@ -44,6 +44,7 @@ library:
     - servant-swagger
     - stm
     - swagger2
+    - tagged
     - text
     - time
     - transformers

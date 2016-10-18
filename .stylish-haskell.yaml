@@ -5,6 +5,10 @@ steps:
       long_list_align: new_line
       empty_list_align: right_after
       list_padding: module_name
+      pinned_modules:
+        - Prelude
+        - Prelude.Compat
+        - Futurice.Prelude
   - language_pragmas:
       style: vertical
       remove_redundant: true

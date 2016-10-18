@@ -9,13 +9,16 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-module Futurice.App.Proxy (defaultMain) where
+module Futurice.App.Proxy (
+    defaultMain,
+    ) where
 
-import Futurice.Prelude
 import Prelude ()
+import Futurice.Prelude
 
 import Data.ByteString                 (ByteString)
 import Data.Pool                       (Pool, createPool, withResource)
+import Data.Tagged                     (tagWith)
 import Data.Text.Encoding              (decodeLatin1)
 import Database.PostgreSQL.Simple      (Connection)
 import Futurice.EnvConfig              (getConfig)
@@ -34,45 +37,28 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import qualified Network.Wai.Handler.Warp   as Warp
 
 import Futurice.App.FutuHours.Types (MissingHoursReport)
-
-
 import Futurice.App.Proxy.Config
 
+-- | Context type, holds http manager and baseurl configurations
 data Ctx = Ctx
     { ctxManager          :: !Manager
     , ctxFutuhoursBaseurl :: !BaseUrl
     }
 
-makeProxy
-    :: forall api.
-      ( Proxyable api
-      , S (ProxyNamespace api :> ProxiedAPI api) ~ Server (ProxyNamespace api :> ProxiedAPI api)
-      , C (ProxiedAPI api) ~ Client (JSONAPI (ProxiedAPI api))
-      , HasClient (JSONAPI (ProxiedAPI api))
-      )
-    => Proxy api -> Ctx -> Server (ProxyNamespace api :> ProxiedAPI api)
-makeProxy _ ctx = proxy' p (ClientEnv manager baseurl) (client p')
-  where
-    baseurl = ctxFutuhoursBaseurl ctx  -- TODO: make a class with Ctx -> BaseUrl
-    manager = ctxManager ctx
+-- | Services we proxy to
+data FutuhoursApiService
 
-    p' :: Proxy (JSONAPI (ProxiedAPI api))
-    p' = Proxy
+type MissingReportsEndpoint = ProxyPair
+    ("futuhours" :> "reports" :> "missinghours" :> Get '[CSV, JSON] MissingHoursReport)
+    FutuhoursApiService
+    ("reports" :> "missinghours" :> Get '[JSON] MissingHoursReport)
 
-    p :: Proxy (ProxiedAPI api)
-    p = Proxy
+-- | Whole proxy definition
+type ProxyDefinition =
+    '[ MissingReportsEndpoint
+    ]
 
-data API = Futuhours
-
-type FutuhoursAPI = "reports" :> "missinghours" :> Get '[CSV, JSON] MissingHoursReport
-
-instance Proxyable 'Futuhours where
-    type ProxyNamespace 'Futuhours = "futuhours"
-    type ProxiedAPI 'Futuhours = FutuhoursAPI
-
-type ProxyAPI = Get '[JSON] Text
-    :<|> Proxied 'Futuhours
-
+type ProxyAPI  = Get '[JSON] Text :<|> ProxyServer ProxyDefinition
 type ProxyAPI' = FuturiceAPI ProxyAPI ('FutuAccent 'AF3 'AC3)
 
 proxyAPI :: Proxy ProxyAPI
@@ -86,7 +72,12 @@ proxyAPI' = Proxy
 -------------------------------------------------------------------------------
 
 server :: Ctx -> Server ProxyAPI
-server ctx = pure "P-R-O-X-Y" :<|> makeProxy (Proxy :: Proxy 'Futuhours) ctx
+server Ctx {..} = pure "P-R-O-X-Y"
+    :<|> makeProxy (Proxy :: Proxy MissingReportsEndpoint) futuhoursEnv
+  where
+    futuhoursEnv = tagWith
+        (Proxy :: Proxy FutuhoursApiService)
+        (ClientEnv ctxManager ctxFutuhoursBaseurl)
 
 -- | Server with docs and cache and status
 server' :: DynMapCache -> Ctx -> Server ProxyAPI'
