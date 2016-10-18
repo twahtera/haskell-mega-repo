@@ -129,8 +129,9 @@
             .value();
 
         var domSelectWidth = (12 / domSelects.length) | 0;
+        var domSelectWidthM = domSelects.length === 1 ? 12 : 6;
         controls.push(dom("div", { className: "row"}, domSelects.map(function (ds) {
-            return dom("div", { className: "columns large-" + domSelectWidth }, ds)
+            return dom("div", { className: "columns medium-" + domSelectWidthM + " large-" + domSelectWidth }, ds)
         })));
 
         var controlWrapper = row12([dom("div", { className: "callout" }, controls)]);
@@ -160,8 +161,13 @@
                     console.log("sort based on column", column);
 
                     // sort rows
-                    var sortedTrs = _.sortBy(trs, function (tr) {
-                        return tr.children[column].innerText;
+                    var sortedTrs = superSort(trs, function (tr) {
+                        var td = tr.children[column];
+                        if (td.children.length === 1 && td.children[0].dataset.futuValue) {
+                            return JSON.parse(td.children[0].dataset.futuValue);
+                        } else {
+                            return td.innerText;
+                        }
                     });
 
                     // remove unsorted rows
@@ -242,5 +248,29 @@
         return dom("div", { className: "row" }, [
             dom("div", { className: "columns large-12" }, children)
         ]);
+    }
+
+    // stable super sort
+    // :: Array a -> (a -> b) -> (b -> b -> Ordering) -> Array a
+    function superSort(inputArray, measure, comparator) {
+        comparator = comparator || function (a, b) {
+            if (a < b) return -1;
+            if (a > b) return 1;
+            return 0;
+        }
+
+        measure = measure || _.identity;
+
+        var arr = _.map(inputArray, function (val, idx) {
+            return { val: val, idx: idx, meas: measure(val) };
+        });
+
+        arr.sort(function (a, b) {
+            var c = comparator(a.meas, b.meas);
+            if (c === 0) return b.idx - a.idx;
+            else return c;
+        });
+
+        return arr.map(function (x) { return x.val; });
     }
 }());
