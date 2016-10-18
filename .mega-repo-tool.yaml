@@ -1,4 +1,4 @@
-docker-base-image: futurice/base-images:haskell-lts-6.19-2
+docker-base-image: futurice/base-images:haskell-lts-6-1
 apps:
   avatar:
     executable: avatar-server

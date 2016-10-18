@@ -15,6 +15,7 @@ fi
 
 # Don't trust stack.yaml
 export STACK_YAML=stack-lts-6.yaml
+export STACK_ROOT=/app/stack-root
 
 # We DON't start with clean working dir, it takes ages otherwise.
 # However we use non-default working dir, so we don't need to wipe local changes
@@ -23,6 +24,7 @@ WORK_DIR=.stack-work-docker
 # rm -rf $WORK_DIR
 
 # --allow-different-user is needed as we build as root inside docker
+stack --no-terminal --work-dir $WORK_DIR update
 stack --no-terminal --work-dir $WORK_DIR build -j2 --pedantic --allow-different-user
 cp $(stack --work-dir $WORK_DIR path --local-install-root)/bin/* /app/bin
 
