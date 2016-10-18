@@ -44,6 +44,7 @@ import Futurice.Prelude
 import Futurice.Time
 import Prelude ()
 
+import Control.Lens       (to, hasn't)
 import Data.Aeson.Extra   (FromJSON (..), ToJSON (..), Value (..), object, (.=))
 import Data.Csv
        (DefaultOrdered (..), ToField (..), ToNamedRecord (..))
@@ -367,6 +368,28 @@ instance FromJSON Employee where parseJSON = sopParseJSON
 -- Balance
 -------------------------------------------------------------------------------
 
+data BalanceKind = BalanceUnder | BalanceNormal | BalanceOver
+
+makePrisms ''BalanceKind
+
+instance ToHtml BalanceKind where
+    toHtmlRaw = toHtml
+    toHtml BalanceUnder  = b_ "under"
+    toHtml BalanceNormal = "ok"
+    toHtml BalanceOver   = b_ "over"
+
+instance Csv.ToField BalanceKind where
+    toField BalanceUnder  = "under"
+    toField BalanceNormal = "ok"
+    toField BalanceOver   = "over"
+
+balanceKind :: (Num a, Ord a) => NDT 'Hours a -> BalanceKind
+balanceKind h
+    | h < (-20) = BalanceUnder
+    | h > 40    = BalanceOver
+    | otherwise = BalanceNormal
+{-# INLINE balanceKind #-}
+
 data Balance = Balance
     { balanceHours        :: !(NDT 'Hours Centi)
     , balanceMissingHours :: !(NDT 'Hours Centi)
@@ -374,25 +397,27 @@ data Balance = Balance
     deriving (Eq, Ord, Show, Typeable, Generic)
 
 instance ToReportRow Balance where
-    type ReportRowLen Balance = PThree
+    type ReportRowLen Balance = PFour
 
     reportHeader _ = ReportHeader
         $ IList.cons "hours"
         $ IList.cons "missing"
         $ IList.cons "difference"
+        $ IList.cons "kind"
         $ IList.nil
 
     reportRow (Balance hours missing) = [r]
       where
         diff = hours + missing
-        cls | diff <= -20 || diff >= 40   = "emphasize"
-            | hours <= -20 || hours >= 40 = "emphasize2"
-            | otherwise                   = "normal"
+        cls | hasn't (to balanceKind . _BalanceNormal) diff  = "emphasize"
+            | hasn't (to balanceKind . _BalanceNormal) hours = "emphasize2"
+            | otherwise                                     = "normal"
 
         r = ReportRow (Set.singleton cls)
             $ IList.cons (toHtml hours)
             $ IList.cons (toHtml missing)
-            $ IList.cons (toHtml $ show diff)
+            $ IList.cons (toHtml diff)
+            $ IList.cons (toHtml $ balanceKind diff )
             $ IList.nil
 
     reportCsvRow (Balance hours missing) = [r]
@@ -402,6 +427,7 @@ instance ToReportRow Balance where
             $ IList.cons (pure $ Csv.toField hours)
             $ IList.cons (pure $ Csv.toField missing)
             $ IList.cons (pure $ Csv.toField diff)
+            $ IList.cons (pure $ Csv.toField $ balanceKind diff)
             $ IList.nil
 
 deriveGeneric ''Balance
@@ -454,14 +480,14 @@ instance ToReportRow MissingHour where
       where
         r = ReportRow Set.empty
             $ IList.cons (toHtml $ show d)
-            $ IList.cons (toHtml $ show c)
+            $ IList.cons (toHtml c)
             $ IList.nil
 
     reportCsvRow (MissingHour d c) = [r]
       where
         r = ReportCsvRow
-            $ IList.cons (pure $ Csv.toField  d)
-            $ IList.cons (pure $ Csv.toField $ show c)
+            $ IList.cons (pure $ Csv.toField d)
+            $ IList.cons (pure $ Csv.toField c)
             $ IList.nil
 
 deriveGeneric ''MissingHour

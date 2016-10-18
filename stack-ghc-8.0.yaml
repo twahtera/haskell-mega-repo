@@ -39,8 +39,8 @@ packages:
     commit: dd149a469cad0fb4ecbb75a76efc633d92870a0c
   extra-dep: true
 - location:
-    git: https://github.com/phadej/uuid-aeson.git
-    commit: 2f26dabbc8ff257d3bf49a0fafa23fc20a4f7bed
+    git: https://github.com/necrobious/uuid-aeson.git
+    commit: f5fd573c7cb098515d0093acb2879520e190cc08
   extra-dep: true
 extra-deps:
 - haxl-0.4.0.0
