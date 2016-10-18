@@ -416,7 +416,7 @@ instance ToReportRow Balance where
         r = ReportRow (Set.singleton cls)
             $ IList.cons (toHtml hours)
             $ IList.cons (toHtml missing)
-            $ IList.cons (toHtml $ show diff)
+            $ IList.cons (toHtml diff)
             $ IList.cons (toHtml $ balanceKind diff )
             $ IList.nil
 
@@ -480,14 +480,14 @@ instance ToReportRow MissingHour where
       where
         r = ReportRow Set.empty
             $ IList.cons (toHtml $ show d)
-            $ IList.cons (toHtml $ show c)
+            $ IList.cons (toHtml c)
             $ IList.nil
 
     reportCsvRow (MissingHour d c) = [r]
       where
         r = ReportCsvRow
-            $ IList.cons (pure $ Csv.toField  d)
-            $ IList.cons (pure $ Csv.toField $ show c)
+            $ IList.cons (pure $ Csv.toField d)
+            $ IList.cons (pure $ Csv.toField c)
             $ IList.nil
 
 deriveGeneric ''MissingHour
