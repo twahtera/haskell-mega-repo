@@ -45,7 +45,7 @@ import Data.Pool                        (withResource)
 import Data.Time                        (addDays)
 import Data.Time.Fxtra                  (beginningOfPrevMonth)
 import Database.PostgreSQL.Simple.Fxtra (execute)
-import Generics.SOP                     (All, I (..), NP (..))
+import Generics.SOP                     (All)
 import Servant                          (ServantErr)
 
 import Futurice.Report

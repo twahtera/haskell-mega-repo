@@ -18,7 +18,6 @@ import Data.Time                    (getCurrentTime)
 import Futurice.App.ProxyMgmt.Types
 import Futurice.Prelude
 import Futurice.Report
-import Generics.SOP                 (I (..), NP (..))
 import Prelude ()
 
 import qualified Data.Vector                as V

@@ -29,7 +29,6 @@ import Data.Binary.Tagged               (taggedDecodeOrFail, taggedEncode)
 import Data.BinaryFromJSON              (BinaryFromJSON)
 import Data.Constraint                  (Dict (..), type (:-)(..))
 import Futurice.Has
-import Generics.SOP                     (I (..))
 import Haxl.Core
 import Haxl.Typed
 

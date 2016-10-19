@@ -59,8 +59,8 @@ instance MonadPlanMillQuery H where
     planmillQuery q = case (showDict, typeableDict) of
         (Dict, Dict) -> H (H.dataFetch q)
       where
-        typeableDict = Q.queryDict (Proxy :: Proxy Typeable) (Sub Dict) q
-        showDict     = Q.queryDict (Proxy :: Proxy Show)     (Sub Dict) q
+        typeableDict = Q.queryDict (Proxy :: Proxy Typeable) q
+        showDict     = Q.queryDict (Proxy :: Proxy Show)     q
 
 runH :: Manager -> Request -> H a -> IO a
 runH mgr req (H haxl) = do

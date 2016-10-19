@@ -35,9 +35,8 @@ module Futurice.Report (
     ReportGenerated(..),
     ) where
 
-import Futurice.Peano
+import Prelude ()
 import Futurice.Prelude
-
 import Control.Monad.Trans.Identity (IdentityT (..))
 import Data.Aeson.Compat
        (FromJSON (..), ToJSON (..), object, withObject, (.:), (.=))
@@ -45,13 +44,13 @@ import Data.Constraint              (Constraint)
 import Data.Functor.Identity        (Identity (..))
 import Data.Swagger                 (ToSchema (..))
 import Data.Type.Equality
-import Generics.SOP
-       (All, I (..), NP (..), SList (..), SListI (..))
+import Futurice.Lucid.Foundation
+       (defPageParams, embedJS, large_, menrvaJS, pageJs, page_, row_)
+import Futurice.Peano
+import Generics.SOP                 (All, SList (..), SListI (..))
 import GHC.TypeLits                 (KnownSymbol, Symbol, symbolVal)
 import Lucid                        hiding (for_)
 import Lucid.Base                   (HtmlT (..))
-import Futurice.Lucid.Foundation
-       (defPageParams, embedJS, large_, menrvaJS, pageJs, page_, row_)
 
 import Servant.API         (MimeRender (..))
 import Servant.CSV.Cassava (CSV', EncodeOpts (..))

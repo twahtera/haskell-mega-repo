@@ -18,9 +18,9 @@ import Data.Binary.Tagged
 import Data.Constraint
 import Data.Pool                        (withResource)
 import Futurice.App.PlanMillProxy.H
-import Futurice.App.PlanMillProxy.Types (Ctx (..), SomeBinaryTagged (..), someBinaryTagged)
+import Futurice.App.PlanMillProxy.Types (Ctx (..))
 import PlanMill.Types                   (Cfg)
-import PlanMill.Types.Query             (Query, SomeQuery (..), queryDict)
+import PlanMill.Types.Query             (Query, SomeQuery (..), SomeResponse (..), queryDict)
 
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.HashMap.Strict        as HM
@@ -30,6 +30,7 @@ import qualified Database.PostgreSQL.Simple as Postgres
 -- Type synonyms
 -------------------------------------------------------------------------------
 
+-- | /TODO/ Store 'SomeResponse' in the database?
 type CacheLookup = HashMap SomeQuery BSL.ByteString
 
 lookupCache :: [(SomeQuery, Postgres.Binary BSL.ByteString)] -> CacheLookup
@@ -45,7 +46,7 @@ runLIO ctx f = withResource (ctxPostgresPool ctx) $ \conn -> runLoggingT' ctx $ 
 -------------------------------------------------------------------------------
 
 -- | The haxl endpoint. We take list of 'Query', and return list of results
-haxlEndpoint :: Ctx -> [SomeQuery] -> IO [Either Text SomeBinaryTagged]
+haxlEndpoint :: Ctx -> [SomeQuery] -> IO [Either Text SomeResponse]
 haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
     _ <- handleSqlError 0 $ Postgres.execute conn viewQuery postgresQs
     cacheResult <- liftIO $ lookupCache <$> Postgres.query conn selectQuery postgresQs
@@ -59,30 +60,30 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
     -- Fetch provides context for fetch', i.e. this is boilerplate :(
     fetch
         :: CacheLookup -> Postgres.Connection -> SomeQuery
-        -> LIO (Either Text SomeBinaryTagged)
+        -> LIO (Either Text SomeResponse)
     fetch cacheResult conn (SomeQuery q) =
         case (binaryDict, semVerDict, structDict, nfdataDict) of
             (Dict, Dict, Dict, Dict) -> fetch' cacheResult conn q
       where
-        binaryDict = queryDict (Proxy :: Proxy Binary) (Sub Dict) q
-        semVerDict = queryDict (Proxy :: Proxy HasSemanticVersion) (Sub Dict) q
-        structDict = queryDict (Proxy :: Proxy HasStructuralInfo) (Sub Dict) q
-        nfdataDict = queryDict (Proxy :: Proxy NFData) (Sub Dict) q
+        binaryDict = queryDict (Proxy :: Proxy Binary) q
+        semVerDict = queryDict (Proxy :: Proxy HasSemanticVersion) q
+        structDict = queryDict (Proxy :: Proxy HasStructuralInfo) q
+        nfdataDict = queryDict (Proxy :: Proxy NFData) q
 
     fetch'
         :: (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a)
         => CacheLookup  -> Postgres.Connection -> Query a
-        -> LIO (Either Text SomeBinaryTagged)
+        -> LIO (Either Text SomeResponse)
     fetch' cacheResult conn q = case HM.lookup (SomeQuery q) cacheResult of
         Just bs -> do
-            x <- liftIO $ tryDeep (return . someBinaryTagged . id' q . taggedDecode $ bs)
+            x <- liftIO $ tryDeep (return . MkSomeResponse q . id' q . taggedDecode $ bs)
             case x of
                 Right y -> return (Right y)
                 Left exc -> do
                     _ <- handleSqlError 0 $
                         Postgres.execute conn deleteQuery (Postgres.Only q)
                     return $ Left $ show exc ^. packed
-        Nothing -> someBinaryTagged <$$> fetch'' conn q
+        Nothing -> MkSomeResponse q <$$> fetch'' conn q
 
     -- We use proxy to force the type
     id' :: proxy a -> a -> a
@@ -131,10 +132,10 @@ updateCache ctx = runLIO ctx $ \conn -> do
         case (binaryDict, semVerDict, structDict, nfdataDict) of
             (Dict, Dict, Dict, Dict) -> fetch' conn q
       where
-        binaryDict = queryDict (Proxy :: Proxy Binary) (Sub Dict) q
-        semVerDict = queryDict (Proxy :: Proxy HasSemanticVersion) (Sub Dict) q
-        structDict = queryDict (Proxy :: Proxy HasStructuralInfo) (Sub Dict) q
-        nfdataDict = queryDict (Proxy :: Proxy NFData) (Sub Dict) q
+        binaryDict = queryDict (Proxy :: Proxy Binary) q
+        semVerDict = queryDict (Proxy :: Proxy HasSemanticVersion) q
+        structDict = queryDict (Proxy :: Proxy HasStructuralInfo) q
+        nfdataDict = queryDict (Proxy :: Proxy NFData) q
 
     fetch' conn q = liftIO $ tryDeep $ runLoggingT' ctx $ do
         x <- fetchFromPlanMill planmillCfg q
