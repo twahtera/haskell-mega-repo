@@ -16,7 +16,6 @@ import Futurice.Prelude
 import Data.Pool                  (Pool)
 import Database.PostgreSQL.Simple (Connection)
 import Futurice.Report            (Report, ReportGenerated)
-import Generics.SOP               (I, NP)
 
 -------------------------------------------------------------------------------
 -- AccessReport

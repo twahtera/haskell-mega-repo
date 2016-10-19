@@ -38,6 +38,7 @@ envs:
       secret: github-team
 
     FUTUHOURSAPI_BASEURL: http://localhost:8803
+    PLANMILLPROXY_BASEURL: http://localhost:8808
 
     REPORTS_GH_REPOSURL:
       secret: reports-gh-repos
@@ -62,3 +63,8 @@ envs:
 
     # Legacy
     PORT: "8080"
+
+    # For local development
+    PLANMILLPROXY_CLI_ENDPOINT: "http://localhost:8804/planmill-proxy"
+    PLANMILLPROXY_CLI_HTTPUSER: "test"
+    PLANMILLPROXY_CLI_HTTPPASS: "password"

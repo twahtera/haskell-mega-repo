@@ -40,6 +40,7 @@ library
     , futurice-servant
     , generics-sop
     , lucid
+    , planmill-client
     , postgresql-simple
     , resource-pool
     , servant

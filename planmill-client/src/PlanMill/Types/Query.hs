@@ -1,4 +1,6 @@
 {-# LANGUAGE ConstraintKinds    #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE GADTs              #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE RankNTypes         #-}
@@ -6,20 +8,25 @@
 {-# LANGUAGE TypeOperators      #-}
 module PlanMill.Types.Query (
     Query (..),
+    QueryTypes,
+    queryType,
     QueryTag (..),
     SomeQuery(..),
+    SomeResponse(..),
     queryToRequest,
     queryDict,
     queryTagDict,
     ) where
 
+import Prelude ()
 import PlanMill.Internal.Prelude
-
+import Data.Binary               (Binary (..), Put)
+import Data.Binary.Tagged (StructuralInfo (..))
 import Data.Constraint
-import Data.GADT.Compare  (GEq (..), defaultEq)
-import Data.Type.Equality
-
+import Data.GADT.Compare         (GEq (..), defaultEq)
 import Data.Swagger              (NamedSchema (..), ToSchema (..))
+import Data.Type.Equality
+import Generics.SOP              (All, hcmap, hcollapse, hcpure)
 import Numeric.Interval.NonEmpty (Interval)
 
 import qualified Data.Aeson.Compat                    as Aeson
@@ -36,7 +43,7 @@ import PlanMill.Types.ResultInterval
        intervalToQueryString)
 import PlanMill.Types.Timereport     (Timereports)
 import PlanMill.Types.UrlPart        (UrlParts)
-import PlanMill.Types.User           (User, UserId)
+import PlanMill.Types.User           (User, UserId, Users)
 import PlanMill.Types.UserCapacity   (UserCapacities)
 
 -------------------------------------------------------------------------------
@@ -47,6 +54,7 @@ import PlanMill.Types.UserCapacity   (UserCapacities)
 data QueryTag a where
     QueryTagMe   :: QueryTag Me
     QueryTagUser :: QueryTag User
+    -- Remember to update HasStruturalInfo instance
 
 -- | Planmill query (i.e. read-only operation).
 --
@@ -120,6 +128,15 @@ instance Hashable (QueryTag a) where
 instance NFData (QueryTag a) where
     rnf x = x `seq` ()
 
+instance Binary SomeQueryTag where
+    put (SomeQueryTag QueryTagMe)   = put (0 :: Word8)
+    put (SomeQueryTag QueryTagUser) = put (1 :: Word8)
+
+    get = get >>= \n -> case (n :: Word8) of
+        0 -> pure $ SomeQueryTag QueryTagMe
+        1 -> pure $ SomeQueryTag QueryTagUser
+        _ -> fail $ "Invalid tag " ++ show n
+
 instance ToJSON (QueryTag a) where
     toJSON QueryTagMe   = String "me"
     toJSON QueryTagUser = String "user"
@@ -129,6 +146,12 @@ instance FromJSON SomeQueryTag where
     parseJSON (String "user") = pure $ SomeQueryTag QueryTagUser
     parseJSON (String t)      = fail $ "Invalid tag: " ++ show t
     parseJSON v               = typeMismatch "QueryTag" v
+
+instance HasStructuralInfo (QueryTag a) where
+    structuralInfo _ = StructuralInfo "QueryTag"
+        [[ NominalType "QueryTagMe"
+        ,  NominalType "QueryTagUser"
+        ]]
 
 -------------------------------------------------------------------------------
 -- Query instances
@@ -223,6 +246,50 @@ instance ToJSON (Query a) where
 instance Postgres.ToField (Query a) where
     toField = Postgres.toField . Aeson.encode
 
+-- Unfortunately we cannot autoderive this
+instance HasStructuralInfo (Query a) where
+    structuralInfo _ = StructuralInfo "SomeQuery"
+        [ [ structuralInfo (Proxy :: Proxy (QueryTag ()))
+          , structuralInfo (Proxy :: Proxy QueryString)
+          , structuralInfo (Proxy :: Proxy UrlParts)
+          ]
+        , [ structuralInfo (Proxy :: Proxy (QueryTag ()))
+          , structuralInfo (Proxy :: Proxy QueryString)
+          , structuralInfo (Proxy :: Proxy UrlParts)
+          ]
+        , [ structuralInfo (Proxy :: Proxy (Interval Day))
+          , structuralInfo (Proxy :: Proxy UserId)
+          ]
+        , [ structuralInfo (Proxy :: Proxy (Interval Day))
+          , structuralInfo (Proxy :: Proxy UserId)
+          ]
+        ]
+
+-------------------------------------------------------------------------------
+-- QueryTypes
+-------------------------------------------------------------------------------
+
+-- | Possible 'Query' types
+type QueryTypes = '[ Timereports, UserCapacities
+    , Me, Vector Me
+    , User, Users
+    ]
+
+queryTagType :: QueryTag a -> NS ((:~:) a) QueryTypes
+queryTagType QueryTagMe   = S (S (Z Refl))
+queryTagType QueryTagUser = S (S (S (S (Z Refl))))
+
+queryTagVectorType :: QueryTag a -> NS ((:~:) (Vector a)) QueryTypes
+queryTagVectorType QueryTagMe   = S (S (S (Z Refl)))
+queryTagVectorType QueryTagUser = S (S (S (S (S (Z Refl)))))
+
+-- | Reflect the type of 'Query'.
+queryType :: Query a -> NS ((:~:) a) QueryTypes
+queryType (QueryGet t _ _)       = queryTagType t
+queryType (QueryPagedGet t _ _)  = queryTagVectorType t
+queryType (QueryTimereports _ _) = Z Refl
+queryType (QueryCapacities _ _)  = S (Z Refl)
+
 -------------------------------------------------------------------------------
 -- SomeQuery instances
 -------------------------------------------------------------------------------
@@ -259,12 +326,48 @@ instance FromJSON SomeQuery where
                 <*> obj .: "uid"
             _ -> fail $ "Invalid tag: " ++ show tag
       where
-        mkSomeQueryGet t q p = case t of
-            SomeQueryTag t' -> SomeQuery (QueryGet t' q p)
-        mkSomeQueryPagedGet t q p = case t of
-            SomeQueryTag t' -> SomeQuery (QueryPagedGet t' q p)
-        mkSomeQueryTimereports i u = SomeQuery (QueryTimereports i u)
-        mkSomeQueryCapacities i u = SomeQuery (QueryCapacities i u)
+
+
+instance Binary SomeQuery where
+    put (SomeQuery (QueryGet t q p)) = do
+        put (0 :: Word8)
+        put (SomeQueryTag t)
+        put q
+        put p
+    put (SomeQuery (QueryPagedGet t q p)) = do
+        put (1 :: Word8)
+        put (SomeQueryTag t)
+        put q
+        put p
+    put (SomeQuery (QueryTimereports i u)) = do
+        put (2 :: Word8)
+        put i
+        put u
+    put (SomeQuery (QueryCapacities i u)) = do
+        put (3 :: Word8)
+        put i
+        put u
+
+    get = get >>= \n -> case (n :: Word8) of
+        0 -> mkSomeQueryGet <$> get <*> get <*> get
+        1 -> mkSomeQueryPagedGet <$> get <*> get <*> get
+        2 -> mkSomeQueryTimereports <$> get <*> get
+        3 -> mkSomeQueryCapacities <$> get <*> get
+        _ -> fail $ "Invalid tag: " ++ show n
+
+mkSomeQueryGet :: SomeQueryTag -> QueryString -> UrlParts -> SomeQuery
+mkSomeQueryGet t q p = case t of
+    SomeQueryTag t' -> SomeQuery (QueryGet t' q p)
+
+mkSomeQueryPagedGet :: SomeQueryTag -> QueryString -> UrlParts -> SomeQuery
+mkSomeQueryPagedGet t q p = case t of
+    SomeQueryTag t' -> SomeQuery (QueryPagedGet t' q p)
+
+mkSomeQueryTimereports :: Interval Day -> UserId -> SomeQuery
+mkSomeQueryTimereports i u = SomeQuery (QueryTimereports i u)
+
+mkSomeQueryCapacities :: Interval Day -> UserId -> SomeQuery
+mkSomeQueryCapacities i u = SomeQuery (QueryCapacities i u)
 
 -- | Encoded as JSON
 instance Postgres.ToField SomeQuery where
@@ -283,15 +386,61 @@ instance Postgres.FromField SomeQuery where
 
 -- | We can recover all type parameters 'Query' can has.
 queryDict
-    :: (c Me, c User, c Timereports, c UserCapacities)
-    => Proxy c -> (forall b. c b :- c (Vector b)) -> Query a -> Dict (c a)
-queryDict p _ (QueryGet t _ _)       = queryTagDict p t
-queryDict p e (QueryPagedGet t _ _)  = mapDict e (queryTagDict p t)
-queryDict _ _ (QueryTimereports _ _) = Dict
-queryDict _ _ (QueryCapacities _ _)  = Dict
+    :: forall c a. All c QueryTypes
+    => Proxy c -> Query a -> Dict (c a)
+queryDict pc q = f (queryType q)
+  where
+    f :: NS ((:~:) a) QueryTypes -> Dict (c a)
+    f xs = hcollapse (hcmap pc (\Refl -> K Dict) xs)
 
 queryTagDict
     :: (c Me, c User)
     => Proxy c -> QueryTag a -> Dict (c a)
 queryTagDict _ QueryTagMe   = Dict
 queryTagDict _ QueryTagUser = Dict
+
+-------------------------------------------------------------------------------
+-- SomeResponse
+-------------------------------------------------------------------------------
+
+-- | An existential type bundling the 'Query' and it's response.
+--
+-- This can be serialised and deserialised, which is great!
+data SomeResponse where
+    MkSomeResponse :: Query a -> a -> SomeResponse
+
+instance Binary SomeResponse where
+    put (MkSomeResponse q r) = put' q r
+      where
+        put' :: forall a. Query a -> a -> Put
+        put' q' r' = case queryDict (Proxy :: Proxy Binary) q' of
+            Dict -> put (SomeQuery q') >> put r'
+
+    get = do
+        SomeQuery q <- get
+        case queryDict (Proxy :: Proxy Binary) q of
+            Dict -> do
+                r <- get
+                pure (MkSomeResponse q r)
+
+instance NFData SomeResponse where
+    rnf (MkSomeResponse q a) = case queryDict (Proxy :: Proxy NFData) q of
+        Dict -> rnf q `seq` rnf a
+
+instance HasSemanticVersion SomeResponse
+
+instance HasStructuralInfo SomeResponse where
+    structuralInfo _ =
+        StructuralInfo "SomeResponse" [ queryInfo : responseInfo ]
+      where
+        queryInfo = structuralInfo (Proxy :: Proxy (Query ()))
+        responseInfo = hcollapse infos
+
+        infos :: NP (K StructuralInfo) QueryTypes
+        infos = hcpure (Proxy :: Proxy HasStructuralInfo) f
+
+        f :: forall a. HasStructuralInfo a => K StructuralInfo a
+        f = K $ structuralInfo (Proxy :: Proxy a)
+
+instance ToSchema SomeResponse where
+    declareNamedSchema _ = pure $ NamedSchema (Just "Some planmill query response") mempty

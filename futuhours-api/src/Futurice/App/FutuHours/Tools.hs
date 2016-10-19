@@ -3,10 +3,8 @@ module Futurice.App.FutuHours.Tools where
 
 import Prelude ()
 import Futurice.Prelude
-
 import Control.Exception    (bracket)
 import Control.Monad.Random (evalRandIO)
-import Generics.SOP         (I (..), NP (..))
 
 import qualified Data.HashMap.Strict        as HM
 import qualified Database.PostgreSQL.Simple as Postgres

@@ -16,7 +16,6 @@ import Control.Concurrent.STM      (atomically, newTVarIO, writeTVar)
 import Data.Pool                   (createPool, withResource)
 import Futurice.AVar
 import Futurice.Periocron
-import Generics.SOP                (I (..), NP (..))
 import Network.Wai
 import Network.Wai.Metrics         (metrics, registerWaiMetrics)
 import Network.Wai.Middleware.Cors (simpleCors)

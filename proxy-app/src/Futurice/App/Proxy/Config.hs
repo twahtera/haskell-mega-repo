@@ -9,9 +9,10 @@ import Database.PostgreSQL.Simple (ConnectInfo)
 import Futurice.EnvConfig
 
 data Config = Config
-    { cfgPort             :: !Int
-    , cfgPostgresConnInfo :: !ConnectInfo
-    , cfgFutuhoursBaseurl :: !String
+    { cfgPort                 :: !Int
+    , cfgPostgresConnInfo     :: !ConnectInfo
+    , cfgFutuhoursBaseurl     :: !String
+    , cfgPlanmillProxyBaseurl :: !String
     }
 
 instance HasPort Config where
@@ -22,3 +23,4 @@ instance GetConfig Config where
         <$> parseDefaultPort "PROXYAPP"
         <*> getConnectInfo
         <*> parseEnvVar "FUTUHOURSAPI_BASEURL"
+        <*> parseEnvVar "PLANMILLPROXY_BASEURL"

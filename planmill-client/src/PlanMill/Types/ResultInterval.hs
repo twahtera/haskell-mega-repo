@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE OverloadedStrings #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
 -- License   : BSD3
@@ -12,7 +12,6 @@ module PlanMill.Types.ResultInterval (
     Interval,
     mkInterval,
     mkIntervalSafe,
-    mkIntervalUnsafe,
     singletonInterval,
     elimInterval,
     intervalMin,
@@ -22,12 +21,9 @@ module PlanMill.Types.ResultInterval (
     ) where
 
 import PlanMill.Internal.Prelude
-
 import Numeric.Interval.NonEmpty
-import Numeric.Interval.NonEmpty.Internal (Interval (..))
-
-import PlanMill.Types.Request (QueryString)
-import PlanMill.Types.UOffset (showPlanmillUTCTime)
+import PlanMill.Types.Request    (QueryString)
+import PlanMill.Types.UOffset    (showPlanmillUTCTime)
 
 import qualified Data.Map as Map
 
@@ -84,14 +80,6 @@ mkIntervalSafe
     -> Interval a
 mkIntervalSafe = (...)
 {-# DEPRECATED mkIntervalSafe "use (...)" #-}
-
--- | 'I'
-mkIntervalUnsafe
-    :: a  -- ^ Lower bound
-    -> a  -- ^ Upper bound
-    -> Interval a
-mkIntervalUnsafe = I
-{-# DEPRECATED mkIntervalUnsafe "use Numeric.Interval.NonEmpty.Unsafe.I" #-}
 
 -- | 'singleton'
 singletonInterval :: a -> Interval a

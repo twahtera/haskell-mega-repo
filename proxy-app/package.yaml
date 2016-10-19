@@ -32,6 +32,7 @@ library:
     - http-client-tls
     - lens
     - markdown
+    - planmill-client
     - postgresql-simple
     - resource-pool
     - semigroups
@@ -42,8 +43,10 @@ library:
     - servant-lucid
     - servant-server
     - servant-swagger
+    - servant-binary-tagged
     - stm
     - swagger2
+    - tagged
     - text
     - time
     - transformers
