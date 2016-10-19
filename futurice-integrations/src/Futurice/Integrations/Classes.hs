@@ -8,13 +8,16 @@ module Futurice.Integrations.Classes (
     MonadFUM(..),
     MonadGitHub(..),
     MonadFlowdock(..),
+    MonadPlanMillQuery(..),
+    MonadTime(..),
     ) where
 
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Monad.FUM (MonadFUM (..))
-import Data.Constraint   (Constraint)
+import Control.Monad.FUM      (MonadFUM (..))
+import Control.Monad.PlanMill (MonadPlanMillQuery (..))
+import Data.Constraint        (Constraint)
 
 import qualified Chat.Flowdock.REST as FD
 import qualified GitHub             as GH

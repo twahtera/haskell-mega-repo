@@ -32,16 +32,33 @@ library
   build-depends:
       base                  >=4.7   && <4.10
     , bytestring
+    , cassava
     , constraints
+    , containers
     , flowdock-rest
     , fum-client
     , futurice-prelude
+    , futurice-reports
     , github
+    , haxl
+    , haxl-fxtra
+    , http-client
+    , lens
+    , lucid
     , monad-logger
+    , monad-time
     , planmill-client
+    , regex-applicative-text
     , text
+    , time
+    , transformers
+    , tz
+    , unordered-containers
+    , vector
   exposed-modules:
       Futurice.Integrations
       Futurice.Integrations.Classes
       Futurice.Integrations.Common
+      Futurice.Integrations.Monad
+      Futurice.Integrations.Types
   default-language: Haskell2010

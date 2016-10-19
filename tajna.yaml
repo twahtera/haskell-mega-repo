@@ -37,16 +37,19 @@ envs:
     GH_TEAM:
       secret: github-team
 
-    FUTUHOURSAPI_BASEURL: http://localhost:8803
-    PLANMILLPROXY_BASEURL: http://localhost:8808
-
+    # reports-app
     REPORTS_GH_REPOSURL:
       secret: reports-gh-repos
+    PLANMILLPROXY_HAXLURL: http://localhost:8808/haxl
+
+    # proxy-app
+    FUTUHOURSAPI_BASEURL: http://localhost:8803
+    PLANMILLPROXY_BASEURL: http://localhost:8808
 
     # spice stats
     FD_FLOW: "open-source"
 
-    # PORTS
+    # Ports
     AVATARAPP_PORT:     "8801"
     CONTACTSAPI_PORT:   "8802"
     FUTUHOURSAPI_PORT:  "8803"

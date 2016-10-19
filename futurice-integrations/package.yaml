@@ -18,14 +18,29 @@ library:
   dependencies:
     - base                  >=4.7   && <4.10
     - bytestring
+    - cassava
     - constraints
+    - containers
     - flowdock-rest
     - fum-client
     - futurice-prelude
+    - futurice-reports
     - github
+    - haxl
+    - haxl-fxtra
+    - http-client
+    - lens
+    - lucid
     - monad-logger
+    - monad-time
     - planmill-client
+    - regex-applicative-text
     - text
+    - time
+    - transformers
+    - tz
+    - unordered-containers
+    - vector
   default-extensions:
     - DeriveDataTypeable
     - DeriveFoldable

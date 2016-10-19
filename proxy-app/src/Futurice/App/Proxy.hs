@@ -29,7 +29,6 @@ import PlanMill.Types.Query            (SomeQuery, SomeResponse)
 import Servant
 import Servant.Binary.Tagged           (BINARYTAGGED)
 import Servant.Client
-import Servant.CSV.Cassava             (CSV)
 import Servant.Proxy
 import System.IO                       (hPutStrLn, stderr)
 

@@ -102,9 +102,3 @@ fumGithubReport mgr cfg = do
             fs' = HM.fromList . map (fumGhLogin &&& id) . V.toList $ fs
             hm  = align gs' fs'
         in V.fromList . sort . HM.elems $ hm
-
-{-
--- | TODO: Move to futurice-prelude
-traverse2 :: (Applicative f, Traversable t, Traversable t') => (a -> f b) -> t (t' a) -> f (t (t' b))
-traverse2 = traverse . traverse
--}

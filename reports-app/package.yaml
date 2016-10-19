@@ -34,7 +34,7 @@ dependencies:
   - fum-client
   - futulogo
   - futurice-foundation
-  - futurice-foundation
+  - futurice-integrations
   - futurice-prelude
   - futurice-reports
   - futurice-servant
@@ -48,6 +48,8 @@ dependencies:
   - markdown
   - mtl
   - optparse-applicative
+  - planmill-client
+  - intervals
   - postgresql-simple
   - postgresql-simple-url
   - regex-applicative

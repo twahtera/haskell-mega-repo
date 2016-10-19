@@ -21,6 +21,7 @@ import PlanMill.Types.Cfg   (Cfg)
 import PlanMill.Types.Query
 
 -- For initDataSourceSimpleIO
+import Control.Monad.Logger             (LogLevel, filterLogger)
 import Control.Monad.CryptoRandom.Extra
        (MonadInitHashDRBG (..), evalCRandTThrow)
 import Control.Monad.Http               (evalHttpT)
@@ -50,8 +51,8 @@ instance DataSource u Query where
 -- | This is a simple query function.
 --
 -- It's smart enough to reuse http/random-gen for blocked fetches
-initDataSourceSimpleIO :: Cfg -> State Query
-initDataSourceSimpleIO cfg = QueryFunction $ \blockedFetches -> SyncFetch $ do
+initDataSourceSimpleIO :: LogLevel -> Cfg -> State Query
+initDataSourceSimpleIO loglevel cfg = QueryFunction $ \blockedFetches -> SyncFetch $ do
     g <- mkHashDRBG
     perform g $ for_ blockedFetches $ \(BlockedFetch q v) ->
         case queryDict (Proxy :: Proxy FromJSON) q of
@@ -59,7 +60,13 @@ initDataSourceSimpleIO cfg = QueryFunction $ \blockedFetches -> SyncFetch $ do
                 res <- evalPlanMill $ queryToRequest q
                 liftIO $ putSuccess v res
   where
-    perform g = evalHttpT . runStderrLoggingT . flip runReaderT cfg . flip evalCRandTThrow g
+    perform g
+        = evalHttpT
+        . runStderrLoggingT
+        . filterLogger logPred
+        . flip runReaderT cfg
+        . flip evalCRandTThrow g
+    logPred _ = (>= loglevel)
 
 -- | This is batched query function.
 --
@@ -83,14 +90,22 @@ initDataSourceBatch mgr req = QueryFunction queryFunction
         , HTTP.method
             = "POST"
         }
+
+    queryFunction :: [BlockedFetch Query] -> PerformFetch
     queryFunction blockedFetches = AsyncFetch $ \inner -> do
         a <- async $ do
-            x <- Binary.taggedDecode . HTTP.responseBody <$> HTTP.httpLbs req'' mgr
+            res  <- HTTP.httpLbs req'' mgr
+            -- Use for debugging:
+            -- print (() <$ res)
+            -- print (BSL.take 1000 $ HTTP.responseBody res)
+            -- print (last $ BSL.toChunks $ HTTP.responseBody res)
+            -- print (BSL.length $ HTTP.responseBody res)
+            let x = Binary.taggedDecode (HTTP.responseBody res) :: [Either Text SomeResponse]
             evaluate $!! x
         inner
         res <- waitCatch a
         case res of
-            Left exc -> for_ blockedFetches $ \(BlockedFetch _ v) ->
+            Left exc -> for_ blockedFetches $ \(BlockedFetch _ v) -> do
                 putFailure' v exc
             Right res' ->
                 putResults blockedFetches res'
