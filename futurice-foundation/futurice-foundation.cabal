@@ -3,7 +3,7 @@
 -- see: https://github.com/sol/hpack
 
 name:           futurice-foundation
-version:        0.1.0.6
+version:        0
 synopsis:       Futurice ZURB Foundation helpers
 description:    ...
 category:       Web

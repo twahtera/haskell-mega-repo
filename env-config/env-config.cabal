@@ -3,7 +3,7 @@
 -- see: https://github.com/sol/hpack
 
 name:           env-config
-version:        0.1.0.6
+version:        0
 synopsis:       Parse environment variables
 description:    ...
 category:       Web
