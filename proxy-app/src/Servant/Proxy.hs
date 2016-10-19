@@ -12,15 +12,24 @@ module Servant.Proxy (
     makeProxy,
     ProxyPair,
     ProxyServer,
+    -- * Classes
+    HasHttpManager (..),
+    HasClientBaseurl (..),
     -- * Internal
     Convertible,
     ) where
 
-import Control.Monad.Trans.Except (ExceptT (..), withExceptT)
-import Futurice.Prelude
 import Prelude ()
+import Futurice.Prelude
+import Control.Lens               (LensLike')
+import Control.Monad.Trans.Except (ExceptT (..), withExceptT)
+import Network.HTTP.Client        (Manager)
 import Servant
 import Servant.Client
+
+-------------------------------------------------------------------------------
+-- Proxy definitions
+-------------------------------------------------------------------------------
 
 -- | Definition of a proxy.
 --
@@ -40,24 +49,52 @@ type family ProxyServer def where
 type family ProxyServer' def where
     ProxyServer' (ProxyPair public _s _p) = public
 
+-------------------------------------------------------------------------------
+-- convert ClientM to Handler
+-------------------------------------------------------------------------------
+
 -- | Class to convert client functions to server functions
 class Convertible client server | client -> server, server -> client where
     convert :: ClientEnv -> client -> server
+
+instance Convertible pub priv => Convertible (a -> pub) (a -> priv) where
+    convert env cli x = convert env (cli x)
 
 instance Convertible (ClientM a) (Handler a) where
     convert env cli = withExceptT transformError $ ExceptT $ runClientM cli env
       where
         transformError err = err504 { errBody = fromString $ show err }
 
+-------------------------------------------------------------------------------
+-- Few helper optic classes
+-------------------------------------------------------------------------------
+
+class HasHttpManager a where
+    httpManager :: Lens' a Manager
+
+class HasClientBaseurl a service where
+    clientBaseurl :: forall f. Functor f => Proxy service -> LensLike' f a BaseUrl
+
+-------------------------------------------------------------------------------
+-- Putting everything together
+-------------------------------------------------------------------------------
+
 -- | Class describing proxable endpoints
 --
 -- 'ClientEnv' paramater is taken tagged, so we don't mix them.
 makeProxy
-    :: forall public service private.
+    :: forall env public service private.
        ( HasClient private
        , Convertible (Client private) (ServerT public Handler)
+       , HasHttpManager env, HasClientBaseurl env service
        )
-    => Proxy (ProxyPair public service private) -> Tagged service ClientEnv -> Server public
-makeProxy _ (Tagged env) = convert env (client proxyPrivate)
+    => Proxy (ProxyPair public service private)
+    -> env -> Server public
+makeProxy _ env = convert env' (client proxyPrivate)
   where
+    env' = ClientEnv
+        (env ^. httpManager)
+        (env ^. clientBaseurl proxyService)
+
     proxyPrivate = Proxy :: Proxy private
+    proxyService = Proxy :: Proxy service

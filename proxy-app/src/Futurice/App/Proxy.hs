@@ -15,19 +15,19 @@ module Futurice.App.Proxy (
 
 import Prelude ()
 import Futurice.Prelude
-
 import Data.ByteString                 (ByteString)
 import Data.Pool                       (Pool, createPool, withResource)
-import Data.Tagged                     (tagWith)
 import Data.Text.Encoding              (decodeLatin1)
 import Database.PostgreSQL.Simple      (Connection)
 import Futurice.EnvConfig              (getConfig)
 import Futurice.Servant
-import Network.HTTP.Client             (Manager, newManager)
+import Network.HTTP.Client             (newManager)
 import Network.HTTP.Client.TLS         (tlsManagerSettings)
 import Network.Wai ()
 import Network.Wai.Middleware.HttpAuth (basicAuth)
+import PlanMill.Types.Query            (SomeQuery, SomeResponse)
 import Servant
+import Servant.Binary.Tagged           (BINARYTAGGED)
 import Servant.Client
 import Servant.CSV.Cassava             (CSV)
 import Servant.Proxy
@@ -38,24 +38,45 @@ import qualified Network.Wai.Handler.Warp   as Warp
 
 import Futurice.App.FutuHours.Types (MissingHoursReport)
 import Futurice.App.Proxy.Config
+import Futurice.App.Proxy.Ctx
 
--- | Context type, holds http manager and baseurl configurations
-data Ctx = Ctx
-    { ctxManager          :: !Manager
-    , ctxFutuhoursBaseurl :: !BaseUrl
-    }
+-------------------------------------------------------------------------------
+-- Services
+-------------------------------------------------------------------------------
 
--- | Services we proxy to
 data FutuhoursApiService
+data PlanmillProxyService
+
+instance HasClientBaseurl Ctx FutuhoursApiService where
+    clientBaseurl _ = lens ctxFutuhoursBaseurl $ \ctx x ->
+        ctx { ctxFutuhoursBaseurl = x }
+
+instance HasClientBaseurl Ctx PlanmillProxyService where
+    clientBaseurl _ = lens ctxPlanmillProxyBaseurl $ \ctx x ->
+        ctx { ctxPlanmillProxyBaseurl = x }
+
+-------------------------------------------------------------------------------
+-- Endpoints
+-------------------------------------------------------------------------------
 
 type MissingReportsEndpoint = ProxyPair
     ("futuhours" :> "reports" :> "missinghours" :> Get '[CSV, JSON] MissingHoursReport)
     FutuhoursApiService
     ("reports" :> "missinghours" :> Get '[JSON] MissingHoursReport)
 
+-- TODO: we actually decode/encode when proxying.
+-- Is this bad?
+type PlanmillProxyEndpoint' =
+    ReqBody '[JSON] [SomeQuery] :> Post '[BINARYTAGGED] [Either Text SomeResponse]
+type PlanmillProxyEndpoint = ProxyPair
+    ("planmill-proxy" :> PlanmillProxyEndpoint')
+    PlanmillProxyService
+    ("haxl" :> PlanmillProxyEndpoint')
+
 -- | Whole proxy definition
 type ProxyDefinition =
     '[ MissingReportsEndpoint
+    , PlanmillProxyEndpoint
     ]
 
 type ProxyAPI  = Get '[JSON] Text :<|> ProxyServer ProxyDefinition
@@ -72,12 +93,9 @@ proxyAPI' = Proxy
 ------------------------------------------------------------------------------
 
 server :: Ctx -> Server ProxyAPI
-server Ctx {..} = pure "P-R-O-X-Y"
-    :<|> makeProxy (Proxy :: Proxy MissingReportsEndpoint) futuhoursEnv
-  where
-    futuhoursEnv = tagWith
-        (Proxy :: Proxy FutuhoursApiService)
-        (ClientEnv ctxManager ctxFutuhoursBaseurl)
+server ctx = pure "P-R-O-X-Y"
+    :<|> makeProxy (Proxy :: Proxy MissingReportsEndpoint) ctx
+    :<|> makeProxy (Proxy :: Proxy PlanmillProxyEndpoint) ctx
 
 -- | Server with docs and cache and status
 server' :: DynMapCache -> Ctx -> Server ProxyAPI'
@@ -93,15 +111,16 @@ app cache ctx = serve proxyAPI' (server' cache ctx)
 defaultMain :: IO ()
 defaultMain = do
     hPutStrLn stderr "Hello, proxy-app is alive"
-    Config{..} <- getConfig
-    mgr <- newManager tlsManagerSettings
-    cache <- newDynMapCache
-    futuhoursBaseurl <- parseBaseUrl cfgFutuhoursBaseurl
-    postgresPool <- createPool
+    Config{..}           <- getConfig
+    mgr                  <- newManager tlsManagerSettings
+    cache                <- newDynMapCache
+    futuhoursBaseurl     <- parseBaseUrl cfgFutuhoursBaseurl
+    planmillProxyBaseUrl <- parseBaseUrl cfgPlanmillProxyBaseurl
+    postgresPool         <- createPool
         (Postgres.connect cfgPostgresConnInfo)
         Postgres.close
         1 10 5
-    let ctx = Ctx mgr futuhoursBaseurl
+    let ctx = Ctx mgr futuhoursBaseurl planmillProxyBaseUrl
     let app' = basicAuth (checkCreds postgresPool) "P-R-O-X-Y" $ app cache ctx
     hPutStrLn stderr "Starting web server"
     Warp.run cfgPort app'

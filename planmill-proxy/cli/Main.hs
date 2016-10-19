@@ -8,10 +8,10 @@ import           Control.Monad.PlanMill
                  (MonadPlanMillConstraint (..), MonadPlanMillQuery (..))
 import           Data.Constraint
 import           Futurice.Constraint.Unit1               (Unit1)
-import           Futurice.EnvConfig                      (parseDefaultPort)
+import           Futurice.EnvConfig                      (parseEnvVar)
 import qualified Haxl.Core                               as H
 import           Network.HTTP.Client
-                 (Manager, Request, newManager, parseUrlThrow)
+                 (Manager, Request, newManager, parseUrlThrow, applyBasicAuth)
 import           Network.HTTP.Client.TLS                 (tlsManagerSettings)
 import qualified PlanMill                                as PM
 import qualified PlanMill.Queries                        as Q
@@ -22,11 +22,18 @@ import           Text.PrettyPrint.ANSI.Leijen.AnsiPretty
 
 main :: IO ()
 main = do
-    port <- parseDefaultPort "PLANMILLPROXY"
-    let baseUrl = "http://localhost:" ++ show port ++ "/haxl"
+    -- config
+    baseUrl <- parseEnvVar "PLANMILLPROXY_CLI_ENDPOINT"
+    authUser <- parseEnvVar "PLANMILLPROXY_CLI_HTTPUSER"
+    authPass <- parseEnvVar "PLANMILLPROXY_CLI_HTTPPASS"
+    -- assemble
     baseReq <- parseUrlThrow baseUrl
+    let baseReq' = applyBasicAuth authUser authPass baseReq
+    -- http manager
     manager <- newManager tlsManagerSettings
-    result <- runH manager baseReq script0
+    -- execute
+    result <- runH manager baseReq' script0
+    -- print
     putDoc . (<> linebreak) . ansiPretty $ result
 
 script0 :: MonadPlanMillQuery m => m PM.Me
