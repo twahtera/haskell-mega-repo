@@ -1,5 +1,5 @@
 name: servant-cache
-version: 0.2.0.0
+version: "0"
 synopsis: Servant cache
 description: Cache servant API endpoints
 author: Oleg Grenrus <oleg.grenrus@iki.fi>
