@@ -43,6 +43,7 @@ instance KnownSymbol k => FromJSON (EnumDesc k) where
         k' :: Text
         k' = T.pack $ "Enumeration values." <> symbolVal (Proxy :: Proxy k)
 
+instance ForallFSymbol Eq         EnumDesc where instFSymbol = Dict
 instance ForallFSymbol NFData     EnumDesc where instFSymbol = Dict
 instance ForallFSymbol AnsiPretty EnumDesc where instFSymbol = Dict
 instance ForallFSymbol Binary     EnumDesc where instFSymbol = Dict

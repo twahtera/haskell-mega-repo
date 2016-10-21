@@ -41,6 +41,7 @@ library
     , lens
     , servant ==0.9
     , servant-cache
+    , servant-cassava
     , servant-lucid
     , servant-server
     , servant-status

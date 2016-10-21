@@ -15,6 +15,7 @@ module PlanMill.Types.TimeBalance
 
 import PlanMill.Internal.Prelude
 
+-- | /TODO/: rename to @Timebalance@
 newtype TimeBalance = TimeBalance { _tbMinutes :: NDT 'Minutes Int }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
 

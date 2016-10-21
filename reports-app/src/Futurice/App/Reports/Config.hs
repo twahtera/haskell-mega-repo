@@ -3,23 +3,24 @@ module Futurice.App.Reports.Config (
     ) where
 
 import Futurice.Prelude
-import Prelude          ()
+import Prelude ()
 
-import Futurice.EnvConfig
-
-import qualified GitHub             as GH
 import qualified FUM
+import           Futurice.EnvConfig
+import qualified GitHub              as GH
+import           Network.HTTP.Client (Request)
 
 data Config = Config
-    { cfgGhAuth      :: !GH.Auth
-    , cfgGhOrg       :: !(GH.Name GH.Organization)
-    , cfgGhTeam      :: !Text
-    , cfgFumPubUrl   :: !Text
-    , cfgFumAuth     :: !FUM.AuthToken     -- ^ FUM auth token
-    , cfgFumBaseUrl  :: !FUM.BaseUrl       -- ^ FUM base url
-    , cfgFumUserList :: !FUM.ListName      -- ^ FUM user list
-    , cfgReposUrl    :: !Text
-    , cfgPort        :: !Int
+    { cfgGhAuth                   :: !GH.Auth
+    , cfgGhOrg                    :: !(GH.Name GH.Organization)
+    , cfgGhTeam                   :: !Text
+    , cfgFumPubUrl                :: !Text
+    , cfgFumAuth                  :: !FUM.AuthToken     -- ^ FUM auth token
+    , cfgFumBaseUrl               :: !FUM.BaseUrl       -- ^ FUM base url
+    , cfgFumUserList              :: !FUM.ListName      -- ^ FUM user list
+    , cfgReposUrl                 :: !Text
+    , cfgPlanmillProxyBaseRequest :: !Request
+    , cfgPort                     :: !Int
     }
     deriving (Show)
 
@@ -36,4 +37,5 @@ instance GetConfig Config where
         <*> parseEnvVar "FUM_BASEURL"
         <*> parseEnvVar "FUM_LISTNAME"
         <*> parseEnvVar "REPORTS_GH_REPOSURL" -- TODO: change to REPORTSAPP_GH_REPOSURL
+        <*> parseEnvVar "PLANMILLPROXY_HAXLURL"
         <*> parseDefaultPort "REPORTSAPP"
