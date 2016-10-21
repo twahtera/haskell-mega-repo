@@ -8,6 +8,8 @@ apps:
     executable: favicon
   futuhours-api:
     executable: futuhours-api-server
+  planmill-proxy:
+    executable: planmill-proxy-server
   proxy-app:
     executable: proxy-app-server
   reports-app:
