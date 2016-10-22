@@ -40,7 +40,7 @@ dependencies:
   - futurice-servant
   - github >=0.15.0
   - hashable >= 1.2
-  - http-client
+  - http-client >= 0.5 # responseTimeoutMicro
   - http-client-tls
   - http-types
   - lens
