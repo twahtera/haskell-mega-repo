@@ -36,6 +36,7 @@ library
     , futurice-prelude
     , monad-logger
     , stm
+    , transformers
     , time
   exposed-modules:
       Futurice.Periocron

@@ -17,15 +17,18 @@ module Futurice.Periocron (
 
 import Futurice.Prelude
 
-import Control.Concurrent       (ThreadId, forkIO, threadDelay)
-import Data.Time                (addUTCTime, getCurrentTime)
+import Control.Concurrent               (ThreadId, forkIO, threadDelay)
+import Control.Monad.Logger             (LoggingT)
+import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, modify')
+import Data.Time
+       (addUTCTime, diffUTCTime, getCurrentTime)
 
 -------------------------------------------------------------------------------
 -- Worker
 -------------------------------------------------------------------------------
 
 data Options = Options
-    { optionsLogger   :: forall a. (forall m. (Applicative m, MonadLogger m, MonadIO m) => m a) -> IO a
+    { optionsLogger   :: forall m a. MonadIO m => LoggingT m a -> m a
     , optionsInterval :: !NominalDiffTime
     }
 
@@ -38,35 +41,49 @@ spawnPeriocron options defs = do
     forkIO $ workerLoop options jobs
 
 workerLoop :: Options -> [(UTCTime, Job)] -> IO ()
-workerLoop options = iterateM $ \jobs -> optionsLogger options $ go jobs
+workerLoop options
+    = optionsLogger options
+    . flip evalStateT 0
+    . iterateM go
   where
-    go :: (Applicative m, MonadLogger m, MonadIO m) => [(UTCTime, Job)] -> m [(UTCTime, Job)]
+    go :: (Applicative m, MonadLogger m, MonadTime m, MonadIO m)
+        => [(UTCTime, Job)] -> StateT Int m [(UTCTime, Job)]
     go jobs = do
         now <- liftIO $ getCurrentTime
         let (todo, rest) = span ((< now) . fst) jobs
 
         $(logInfo) $
-            "Periocron worker loop at " <> textShow now <>
+            "[periocron] [worker loop] heart beat at " <> textShow now <>
             "; jobs to do: " <> textShow (length todo)
 
         -- Execute jobs
-        traverse_ (executeJob . snd) todo 
-        
+        traverse_ (executeJob . snd) todo
+
         -- Sleep
         liftIO $ threadDelay $ round $ (* 1000000) $ optionsInterval options
 
         -- Loop
         pure rest
 
-    executeJob :: (Applicative m, MonadLogger m, MonadIO m) => Job -> m ()
+    executeJob
+        :: (Applicative m, MonadLogger m, MonadTime m, MonadIO m)
+        => Job -> StateT Int m ()
     executeJob (Job label action) = do
-        $(logDebug) $ "Executing periocron job " <> label
+        -- jobid
+        jobId <- textShow <$> get
+        modify' (+1)
+        -- execute job
+        $(logInfo) $ "[periocron] [job " <> jobId <> "] Executing '" <> label <> "'"
+        startTime <- currentTime
         x <- liftIO $ tryDeep action
+        endTime <- currentTime
         case x of
             Right _  -> pure ()
             Left exc ->
-                $(logError) $ "Exception while executing periocron job "
-                    <> label <> " -- " <> textShow exc
+                $(logError) $ "[periocron] [job " <> jobId <> "] Exception -- "
+                    <> textShow exc
+        let d = diffUTCTime endTime startTime
+        $(logDebug) $ "[periocron] [job " <> jobId <> "] Execution took " <> textShow d
 
 -------------------------------------------------------------------------------
 -- Job
@@ -74,7 +91,7 @@ workerLoop options = iterateM $ \jobs -> optionsLogger options $ go jobs
 
 -- | Job is an @IO@ action with some label
 data Job where
-  Job :: NFData a => Text -> IO a -> Job
+    Job :: NFData a => Text -> IO a -> Job
 
 -------------------------------------------------------------------------------
 -- Intervals
