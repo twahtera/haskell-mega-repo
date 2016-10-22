@@ -73,6 +73,7 @@ data Balance = Balance
     }
     deriving (Eq, Ord, Show, Typeable, Generic)
 
+
 instance ToReportRow Balance where
     type ReportRowLen Balance = PFour
 
@@ -109,6 +110,7 @@ instance ToReportRow Balance where
 
 deriveGeneric ''Balance
 
+instance NFData Balance
 instance ToJSON Balance where toJSON = sopToJSON
 instance FromJSON Balance where parseJSON = sopParseJSON
 instance ToSchema Balance where declareNamedSchema = sopDeclareNamedSchema

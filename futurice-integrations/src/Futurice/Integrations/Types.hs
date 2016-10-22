@@ -21,6 +21,9 @@ data Employee = Employee
     , employeeTeam     :: !Text
     , employeeContract :: !Text
     }
+ deriving (Eq, Show, Typeable, Generic)
+
+instance NFData Employee
 
 deriveGeneric ''Employee
 

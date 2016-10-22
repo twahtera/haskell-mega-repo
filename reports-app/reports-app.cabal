@@ -26,7 +26,7 @@ library
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base >= 4.7 && <4.10
+      base >= 4.8 && <4.10
     , aeson
     , aeson-pretty
     , ansi-pretty
@@ -53,18 +53,20 @@ library
     , futurice-prelude
     , futurice-reports
     , futurice-servant
+    , generics-sop
     , github >=0.15.0
     , hashable >= 1.2
     , http-client >= 0.5
     , http-client-tls
     , http-types
+    , intervals
     , lens
     , lucid
     , markdown
     , mtl
     , optparse-applicative
+    , periocron
     , planmill-client
-    , intervals
     , postgresql-simple
     , postgresql-simple-url
     , regex-applicative
@@ -104,7 +106,7 @@ executable reports-app-server
       srv
   ghc-options: -Wall -Wall -threaded
   build-depends:
-      base >= 4.7 && <4.10
+      base >= 4.8 && <4.10
     , aeson
     , aeson-pretty
     , ansi-pretty
@@ -131,18 +133,20 @@ executable reports-app-server
     , futurice-prelude
     , futurice-reports
     , futurice-servant
+    , generics-sop
     , github >=0.15.0
     , hashable >= 1.2
     , http-client >= 0.5
     , http-client-tls
     , http-types
+    , intervals
     , lens
     , lucid
     , markdown
     , mtl
     , optparse-applicative
+    , periocron
     , planmill-client
-    , intervals
     , postgresql-simple
     , postgresql-simple-url
     , regex-applicative

@@ -52,6 +52,8 @@ data MissingHour = MissingHour
 makeLenses ''MissingHour
 deriveGeneric ''MissingHour
 
+instance NFData MissingHour
+
 instance ToJSON MissingHour where toJSON = sopToJSON
 instance FromJSON MissingHour where parseJSON = sopParseJSON
 instance ToSchema MissingHour where declareNamedSchema = sopDeclareNamedSchema

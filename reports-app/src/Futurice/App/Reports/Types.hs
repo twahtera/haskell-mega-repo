@@ -38,7 +38,9 @@ data GitHubRepo = GitHubRepo
     { ghRepoOwner :: !(GH.Name GH.Owner)
     , ghRepoName  :: !(GH.Name GH.Repo)
     }
-    deriving (Typeable)
+    deriving (Typeable, Generic)
+
+instance NFData GitHubRepo
 
 instance ToReportRow GitHubRepo where
     type ReportRowLen GitHubRepo = PTwo
@@ -79,6 +81,8 @@ data IssueInfo = IssueInfo
     , _issueUrl     :: !Text
     }
     deriving (Show, Generic, Typeable)
+
+instance NFData IssueInfo
 
 instance ToReportRow IssueInfo where
     type ReportRowLen IssueInfo = PThree
@@ -131,17 +135,20 @@ data GitHubUser = GitHubUser
     { ghUserName  :: !(Maybe Text)
     , ghUserLogin :: !Text
     }
-    deriving (Eq, Ord, Show, Typeable)
+    deriving (Eq, Ord, Show, Typeable, Generic)
 
 data FUMUser = FUMUser
     { fumUserName  :: !Text
     , fumUserLogin :: !Text
     , fumGhLogin   :: !Text
     }
-    deriving (Eq, Ord, Show, Typeable)
+    deriving (Eq, Ord, Show, Typeable, Generic)
 
 deriveGeneric ''GitHubUser
 deriveGeneric ''FUMUser
+
+instance NFData GitHubUser
+instance NFData FUMUser
 
 instance ToJSON GitHubUser where toJSON = sopToJSON
 instance ToJSON FUMUser where toJSON = sopToJSON
@@ -198,8 +205,10 @@ instance ToReportRow FUMUser where
             $ IList.nil
 
 
-data FumGithubReportParams = FumGithubReportParams !UTCTime Text
-    deriving (Typeable)
+data FumGithubReportParams = FumGithubReportParams !UTCTime !Text
+    deriving (Typeable, Generic)
+
+instance NFData FumGithubReportParams
 
 instance ToHtml FumGithubReportParams where
     toHtml (FumGithubReportParams r _) = toHtml $ show r
