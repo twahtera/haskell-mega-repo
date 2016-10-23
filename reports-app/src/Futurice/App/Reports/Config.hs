@@ -2,13 +2,14 @@ module Futurice.App.Reports.Config (
     Config(..),
     ) where
 
-import Futurice.Prelude
 import Prelude ()
+import Futurice.Prelude
 
 import qualified FUM
 import           Futurice.EnvConfig
 import qualified GitHub              as GH
-import           Network.HTTP.Client (Request)
+import           Network.HTTP.Client
+                 (Request, responseTimeout, responseTimeoutMicro)
 
 data Config = Config
     { cfgGhAuth                   :: !GH.Auth
@@ -37,5 +38,7 @@ instance GetConfig Config where
         <*> parseEnvVar "FUM_BASEURL"
         <*> parseEnvVar "FUM_LISTNAME"
         <*> parseEnvVar "REPORTS_GH_REPOSURL" -- TODO: change to REPORTSAPP_GH_REPOSURL
-        <*> parseEnvVar "PLANMILLPROXY_HAXLURL"
+        <*> (f <$> parseEnvVar "PLANMILLPROXY_HAXLURL")
         <*> parseDefaultPort "REPORTSAPP"
+      where
+        f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }

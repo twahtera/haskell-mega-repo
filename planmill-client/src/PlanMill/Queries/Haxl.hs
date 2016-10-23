@@ -93,6 +93,8 @@ initDataSourceBatch mgr req = QueryFunction queryFunction
 
     queryFunction :: [BlockedFetch Query] -> PerformFetch
     queryFunction blockedFetches = AsyncFetch $ \inner -> do
+        -- TODO: write own logging lib, we don't like monad-logger that much
+        -- startTime <- currentTime
         a <- async $ do
             res  <- HTTP.httpLbs req'' mgr
             -- Use for debugging:
@@ -104,6 +106,8 @@ initDataSourceBatch mgr req = QueryFunction queryFunction
             evaluate $!! x
         inner
         res <- waitCatch a
+        -- endTime <- currentTime
+        -- print (startTime, endTime)
         case res of
             Left exc -> for_ blockedFetches $ \(BlockedFetch _ v) -> do
                 putFailure' v exc

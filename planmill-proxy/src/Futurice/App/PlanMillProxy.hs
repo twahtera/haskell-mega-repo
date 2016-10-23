@@ -80,10 +80,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                 ]
 
         -- Spawn periocron, polling each minute
-        _ <- spawnPeriocron (Options runStderrLoggingT' 60) jobs
+        _ <- spawnPeriocron (Options runStderrLoggingT 60) jobs
 
         pure ctx
-    runStderrLoggingT'
-        :: forall a. (forall m. (Applicative m, MonadLogger m, MonadIO m) => m a)
-        -> IO a
-    runStderrLoggingT' x = runStderrLoggingT x

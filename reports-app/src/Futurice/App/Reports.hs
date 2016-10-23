@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -9,15 +10,16 @@ module Futurice.App.Reports (defaultMain) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Monad.Trans.Except   (ExceptT (..))
-import Data.Maybe                   (mapMaybe)
+import Data.Maybe                 (mapMaybe)
 import Futurice.Integrations
        (IntegrationsConfig (..), beginningOfPrevMonth, runIntegrations)
+import Futurice.Periocron
 import Futurice.Servant
+import Generics.SOP               (hcmap, hcollapse)
 import Network.HTTP.Client
        (Manager, httpLbs, newManager, parseUrlThrow, responseBody)
-import Network.HTTP.Client.TLS      (tlsManagerSettings)
-import Numeric.Interval.NonEmpty    ((...))
+import Network.HTTP.Client.TLS    (tlsManagerSettings)
+import Numeric.Interval.NonEmpty  ((...))
 import Servant
 
 import qualified Data.ByteString.Lazy as LBS
@@ -37,17 +39,23 @@ import Futurice.App.Reports.Types
 -- /TODO/ Make proper type
 type Ctx = (DynMapCache, Manager, Config)
 
-serveIssues :: Ctx -> ExceptT ServantErr IO IssueReport
-serveIssues (cache, mgr, cfg) = liftIO $ cachedIO cache 600 () $ do
+newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
+
+-------------------------------------------------------------------------------
+-- Endpoints
+-------------------------------------------------------------------------------
+
+serveIssues :: Ctx -> IO IssueReport
+serveIssues (cache, mgr, cfg) = cachedIO cache 600 () $ do
     repos' <- repos mgr (cfgReposUrl cfg)
     issueReport mgr (cfgGhAuth cfg) repos'
 
-serveFumGitHubReport :: Ctx -> ExceptT ServantErr IO FumGitHubReport
-serveFumGitHubReport (cache, mgr, cfg) = liftIO $ cachedIO cache 600 () $
+serveFumGitHubReport :: Ctx -> IO FumGitHubReport
+serveFumGitHubReport (cache, mgr, cfg) = cachedIO cache 600 () $
     fumGithubReport mgr cfg
 
-serveMissingHoursReport :: Ctx -> ExceptT ServantErr IO MissingHoursReport
-serveMissingHoursReport ctx@(cache, _, _) = liftIO $ cachedIO cache 600 () $ do
+serveMissingHoursReport :: Ctx -> IO MissingHoursReport
+serveMissingHoursReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
     now <- currentTime
     day <- currentDay
     -- TODO: end date to the last friday
@@ -56,8 +64,8 @@ serveMissingHoursReport ctx@(cache, _, _) = liftIO $ cachedIO cache 600 () $ do
         (ctxToIntegrationsConfig now ctx)
         (missingHoursReport interval)
 
-serveBalancesReport :: Ctx -> ExceptT ServantErr IO BalanceReport
-serveBalancesReport ctx@(cache, _, _) = liftIO $ cachedIO cache 600 () $ do
+serveBalancesReport :: Ctx -> IO BalanceReport
+serveBalancesReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
     now <- currentTime
     day <- currentDay
     let interval = beginningOfPrevMonth day ... day
@@ -65,13 +73,25 @@ serveBalancesReport ctx@(cache, _, _) = liftIO $ cachedIO cache 600 () $ do
         (ctxToIntegrationsConfig now ctx)
         (balanceReport interval)
 
+-- All report endpoints
+-- this is used for api 'server' and pericron
+reports :: NP ReportEndpoint Reports
+reports =
+    ReportEndpoint serveIssues :*
+    ReportEndpoint serveFumGitHubReport :*
+    ReportEndpoint serveMissingHoursReport :*
+    ReportEndpoint serveBalancesReport :*
+    Nil
+
+makeServer :: Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)
+makeServer _   Nil = pure indexPage
+makeServer ctx (ReportEndpoint r :* rs) =
+    let s = liftIO (r ctx)
+    in s :<|> s :<|> s :<|> makeServer ctx rs
+
 -- | API server
 server :: Ctx -> Server ReportsAPI
-server ctx = pure indexPage
-    :<|> serveIssues ctx
-    :<|> serveFumGitHubReport ctx
-    :<|> serveMissingHoursReport ctx
-    :<|> serveBalancesReport ctx
+server ctx = makeServer ctx reports
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
@@ -83,7 +103,16 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     makeCtx :: Config -> DynMapCache -> IO Ctx
     makeCtx cfg cache = do
         manager <- newManager tlsManagerSettings
-        return (cache, manager, cfg)
+        let ctx = (cache, manager, cfg)
+
+        _ <- spawnPeriocron (Options runStderrLoggingT 300) $ hcollapse $
+            hcmap (Proxy :: Proxy RClass) (K . mkReportPeriocron ctx) reports
+
+        return ctx
+
+    mkReportPeriocron :: RClass r => Ctx -> ReportEndpoint r -> (Job, Intervals)
+    mkReportPeriocron ctx (ReportEndpoint r) =
+          (Job "Updating report " $ r ctx, tail $ every $ 60 * 60)
 
 ctxToIntegrationsConfig :: UTCTime -> Ctx -> IntegrationsConfig
 ctxToIntegrationsConfig now (_cache, mgr, cfg) = MkIntegrationsConfig

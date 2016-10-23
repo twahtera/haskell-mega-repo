@@ -68,6 +68,9 @@ import qualified Futurice.IC as IList
 newtype ReportGenerated = ReportGenerated { getReportGenerated :: UTCTime }
     deriving (Typeable)
 
+instance NFData ReportGenerated where
+    rnf = rnf . getReportGenerated
+
 instance ToJSON ReportGenerated where
     toJSON = toJSON . getReportGenerated
 
@@ -98,6 +101,9 @@ data Per a b = Per
     , perSnd :: !b
     }
     deriving (Eq, Show, Functor, Foldable, Traversable, Typeable)
+
+instance (NFData a, NFData b) => NFData (Per a b) where
+    rnf (Per a b) = rnf a `seq` rnf b
 
 instance (ToJSON a, ToJSON b) => ToJSON (Per a b) where
     toJSON (Per a b) = toJSON (a, b)
@@ -295,6 +301,9 @@ data Report (name :: Symbol) params a = Report
     deriving (Typeable, Functor, Foldable, Traversable)
 
 -- TODO: Eq, Show, Ord instances
+
+instance (NFData params, NFData a) => NFData (Report name params a) where
+    rnf (Report p a) = rnf p `seq` rnf a
 
 data E a c where
     MkE :: ((forall m. (Monad m, ReportRowC a m) => m c) -> c) -> E a c

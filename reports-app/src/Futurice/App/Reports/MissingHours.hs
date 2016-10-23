@@ -52,6 +52,8 @@ data MissingHour = MissingHour
 makeLenses ''MissingHour
 deriveGeneric ''MissingHour
 
+instance NFData MissingHour
+
 instance ToJSON MissingHour where toJSON = sopToJSON
 instance FromJSON MissingHour where parseJSON = sopParseJSON
 instance ToSchema MissingHour where declareNamedSchema = sopDeclareNamedSchema
@@ -83,7 +85,7 @@ instance ToReportRow MissingHour where
 -------------------------------------------------------------------------------
 
 type MissingHoursReport = Report
-    "Missing hours"
+    "Missing hour markings"
     ReportGenerated
     (HashMap FUM.UserName :$ Per Employee :$ Vector :$ MissingHour)
 
