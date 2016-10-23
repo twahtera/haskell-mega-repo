@@ -11,14 +11,15 @@ module Futurice.App.Reports.API where
 import Prelude ()
 import Futurice.Prelude
 import Futurice.Lucid.Foundation
-import Futurice.Report           (Report)
+import Futurice.Report.Columns   (Report)
 import Futurice.Servant
 import GHC.TypeLits              (KnownSymbol, Symbol)
 import Servant
 
 import Futurice.App.Reports.Balances     (BalanceReport)
+import Futurice.App.Reports.FumGithub    (FumGitHubReport)
+import Futurice.App.Reports.GithubIssues (IssueReport)
 import Futurice.App.Reports.MissingHours (MissingHoursReport)
-import Futurice.App.Reports.Types
 
 type ReportTypes = '[HTML, CSV, JSON]
 

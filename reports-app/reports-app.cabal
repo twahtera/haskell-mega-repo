@@ -80,6 +80,7 @@ library
     , servant-server
     , SHA
     , stm
+    , strict-base-types
     , swagger2
     , tagged
     , text
@@ -94,10 +95,10 @@ library
       Futurice.App.Reports.API
       Futurice.App.Reports.Balances
       Futurice.App.Reports.Config
-      Futurice.App.Reports.Logic
+      Futurice.App.Reports.FumGithub
+      Futurice.App.Reports.GithubIssues
       Futurice.App.Reports.Markup
       Futurice.App.Reports.MissingHours
-      Futurice.App.Reports.Types
   default-language: Haskell2010
 
 executable reports-app-server
@@ -160,6 +161,7 @@ executable reports-app-server
     , servant-server
     , SHA
     , stm
+    , strict-base-types
     , swagger2
     , tagged
     , text

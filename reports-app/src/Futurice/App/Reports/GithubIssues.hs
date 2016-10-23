@@ -1,0 +1,144 @@
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
+-- | Missing hours report
+module Futurice.App.Reports.GithubIssues (
+    -- * Report
+    IssueReport,
+    issueReport,
+    -- * Types
+    GitHubRepo (..),
+    IssueInfo (..),
+    -- * Lenses
+    ghRepoOwner, ghRepoName,
+    issueNumber, issueTitle, issueUrl, issueCreated,
+    ) where
+
+import Prelude ()
+import Futurice.Prelude
+import Futurice.Generics
+import Futurice.Lucid.Foundation
+import Futurice.Report.Columns
+
+import qualified Data.Csv          as Csv
+import qualified Data.Tuple.Strict as S
+import qualified Data.Vector       as V
+import qualified GitHub            as GH
+
+import Network.HTTP.Client (Manager)
+
+-- TODO: use me
+--import Futurice.Integrations
+
+-------------------------------------------------------------------------------
+-- Data
+-------------------------------------------------------------------------------
+
+-- /TODO/ move to own module or even to futurice-integrations
+data GitHubRepo = GitHubRepo
+    { _ghRepoOwner :: !(GH.Name GH.Owner)
+    , _ghRepoName  :: !(GH.Name GH.Repo)
+    }
+    deriving (Typeable, Generic)
+
+makeLenses ''GitHubRepo
+deriveGeneric ''GitHubRepo
+
+instance ToColumns GitHubRepo where
+    type Columns GitHubRepo = '[GH.Name GH.Owner, GH.Name GH.Repo]
+    toColumns (GitHubRepo o r) = [I o :* I r :* Nil]
+
+instance ReportValue GitHubRepo where
+    reportValueHtml (GitHubRepo o r) = do
+        a_ [ href_ ownerLink ] $ toHtml o'
+        " / "
+        a_ [ href_ repoLink ] $ toHtml r'
+      where
+         o' = GH.untagName o
+         r' = GH.untagName r
+         ownerLink = "https://github.com/" <> o'
+         repoLink = ownerLink <> "/" <> r'
+
+instance NFData GitHubRepo
+instance ToJSON GitHubRepo where toJSON = sopToJSON
+instance ToSchema GitHubRepo where declareNamedSchema = sopDeclareNamedSchema
+
+
+data IssueInfo = IssueInfo
+    { _issueNumber  :: !Int
+    , _issueTitle   :: !Text
+    , _issueCreated :: !UTCTime
+    , _issueUrl     :: !Text
+    }
+    deriving (Show, Generic, Typeable)
+
+makeLenses ''IssueInfo
+deriveGeneric ''IssueInfo
+
+-- | 'IssueInfo' is just wrapped into column. The creation date is extracted
+-- into additional column though.
+--
+-- This is purely for convenience
+instance ToColumns IssueInfo where
+    type Columns IssueInfo = '[IssueInfo, UTCTime]
+    toColumns i = [I i :* I (_issueCreated i) :* Nil]
+
+instance NFData IssueInfo
+instance ToJSON IssueInfo where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
+instance ToSchema IssueInfo where declareNamedSchema = sopDeclareNamedSchema
+
+instance Csv.ToField IssueInfo where
+    toField i = Csv.toField $
+        "#" <> textShow (_issueNumber i) <>
+        ": " <> _issueTitle i
+
+instance ReportValue IssueInfo where
+    reportValueHtml i = a_ [href_ (_issueUrl i) ] $ toHtml $
+        "#" <> textShow (_issueNumber i) <>
+        ": " <> _issueTitle i
+
+-------------------------------------------------------------------------------
+-- Report
+-------------------------------------------------------------------------------
+
+type IssueReport = Report
+    "GitHub issues"
+    ReportGenerated
+    (Vector :$ StrictPair GitHubRepo :$ Vector :$ IssueInfo)
+
+-------------------------------------------------------------------------------
+-- Logic
+-------------------------------------------------------------------------------
+
+-- TODO: use futurice-integrations
+issueReport
+    :: Manager
+    -> GH.Auth
+    -> [GitHubRepo]
+    -> IO IssueReport
+issueReport mgr auth repos = do
+    now <- currentTime
+    Report (ReportGenerated now) . V.fromList <$> traverse fetch repos
+  where
+    fetch :: GitHubRepo -> IO (StrictPair GitHubRepo (Vector IssueInfo))
+    fetch ghr@(GitHubRepo owner repo) = (S.:!:) ghr . fmap t . e <$>
+       GH.executeRequestWithMgr mgr auth (GH.issuesForRepoR owner repo opts GH.FetchAll)
+
+    opts = GH.stateOpen
+
+    t pr = IssueInfo
+        { _issueNumber  = GH.issueNumber pr
+        , _issueTitle   = GH.issueTitle pr
+        , _issueCreated = GH.issueCreatedAt pr
+        , _issueUrl     = maybe "" GH.getUrl $ GH.issueHtmlUrl pr
+        }
+
+    e (Right x) = x
+    e (Left _)  = mempty

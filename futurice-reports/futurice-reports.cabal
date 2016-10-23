@@ -37,14 +37,17 @@ library
     , constraints
     , containers
     , file-embed
+    , fum-client
     , futurice-foundation
     , futurice-prelude
     , generics-sop
+    , github
     , lucid
-    , mtl
     , mmorph
+    , mtl
     , servant
     , servant-cassava
+    , strict-base-types
     , swagger2
     , text
     , these

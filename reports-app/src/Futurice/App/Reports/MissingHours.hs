@@ -25,19 +25,15 @@ import Futurice.Prelude
 import Data.Fixed                (Centi)
 import Futurice.Generics
 import Futurice.Integrations
-import Futurice.Lucid.Foundation
-import Futurice.Peano
-import Futurice.Report
+import Futurice.Report.Columns
 import Futurice.Time
 
-import qualified Data.Csv         as Csv
-import qualified Data.Map         as Map
-import qualified Data.Set         as Set
-import qualified Data.Vector      as V
+import qualified Data.Map          as Map
+import qualified Data.Tuple.Strict as S
+import qualified Data.Vector       as V
 import qualified FUM
-import qualified Futurice.IC      as IList
-import qualified PlanMill         as PM
-import qualified PlanMill.Queries as PMQ
+import qualified PlanMill          as PM
+import qualified PlanMill.Queries  as PMQ
 
 -------------------------------------------------------------------------------
 -- Data
@@ -58,27 +54,9 @@ instance ToJSON MissingHour where toJSON = sopToJSON
 instance FromJSON MissingHour where parseJSON = sopParseJSON
 instance ToSchema MissingHour where declareNamedSchema = sopDeclareNamedSchema
 
-instance ToReportRow MissingHour where
-    type ReportRowLen MissingHour = PTwo
-
-    reportHeader _ = ReportHeader
-        $ IList.cons "day"
-        $ IList.cons "capacity"
-        $ IList.nil
-
-    reportRow (MissingHour d c) = [r]
-      where
-        r = ReportRow Set.empty
-            $ IList.cons (toHtml $ show d)
-            $ IList.cons (toHtml c)
-            $ IList.nil
-
-    reportCsvRow (MissingHour d c) = [r]
-      where
-        r = ReportCsvRow
-            $ IList.cons (pure $ Csv.toField d)
-            $ IList.cons (pure $ Csv.toField c)
-            $ IList.nil
+instance ToColumns MissingHour where
+    type Columns MissingHour = '[Day, NDT 'Hours Centi]
+    toColumns (MissingHour d c) = [I d :* I c :* Nil]
 
 -------------------------------------------------------------------------------
 -- Report
@@ -87,13 +65,7 @@ instance ToReportRow MissingHour where
 type MissingHoursReport = Report
     "Missing hour markings"
     ReportGenerated
-    (HashMap FUM.UserName :$ Per Employee :$ Vector :$ MissingHour)
-
-instance IsReport
-    ReportGenerated
-    (HashMap FUM.UserName :$ Per Employee :$ Vector :$ MissingHour)
-  where
-    reportExec = defaultReportExec
+    (HashMap FUM.UserName :$ StrictPair Employee :$ Vector :$ MissingHour)
 
 -------------------------------------------------------------------------------
 -- Logic
@@ -154,7 +126,7 @@ missingHoursReport interval = do
     fpm' <- traverse (perUser . view PM.identifier) fpm
     pure $ Report (ReportGenerated now) fpm'
   where
-    perUser :: PM.UserId -> m (Per Employee :$ Vector :$ MissingHour)
-    perUser pmUid = Per
+    perUser :: PM.UserId -> m (StrictPair Employee :$ Vector :$ MissingHour)
+    perUser pmUid = (S.:!:)
         <$> planmillEmployee pmUid
         <*> missingHoursForUser interval pmUid
