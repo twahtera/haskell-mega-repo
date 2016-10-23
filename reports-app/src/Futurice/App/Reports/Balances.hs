@@ -120,7 +120,7 @@ instance ToSchema Balance where declareNamedSchema = sopDeclareNamedSchema
 -------------------------------------------------------------------------------
 
 type BalanceReport = Report
-    "Balance"
+    "Hour marking flex saldos"
     ReportGenerated
     (Vector :$ Per Employee :$ Balance)
 

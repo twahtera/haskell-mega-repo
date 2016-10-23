@@ -16,7 +16,6 @@ import Futurice.Integrations
 import Futurice.Periocron
 import Futurice.Servant
 import Generics.SOP               (hcmap, hcollapse)
-import GHC.TypeLits               (KnownSymbol)
 import Network.HTTP.Client
        (Manager, httpLbs, newManager, parseUrlThrow, responseBody)
 import Network.HTTP.Client.TLS    (tlsManagerSettings)
@@ -41,9 +40,6 @@ import Futurice.App.Reports.Types
 type Ctx = (DynMapCache, Manager, Config)
 
 newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
-
-class (KnownSymbol (RPath r), NFData (RReport r)) => RClass r
-instance (KnownSymbol path, NFData report) => RClass (R path report)
 
 -------------------------------------------------------------------------------
 -- Endpoints
@@ -89,7 +85,9 @@ reports =
 
 makeServer :: Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)
 makeServer _   Nil = pure indexPage
-makeServer ctx (ReportEndpoint r :* rs) = liftIO (r ctx) :<|> makeServer ctx rs
+makeServer ctx (ReportEndpoint r :* rs) =
+    let s = liftIO (r ctx)
+    in s :<|> s :<|> s :<|> makeServer ctx rs
 
 -- | API server
 server :: Ctx -> Server ReportsAPI

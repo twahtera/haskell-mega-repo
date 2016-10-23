@@ -218,7 +218,7 @@ instance ToJSON FumGithubReportParams where
     toJSON (FumGithubReportParams t _) = toJSON t
 
 type FumGitHubReport = Report
-    "Users in FUM <-> GitHub"
+    "Users in FUM ↔ GitHub"
     FumGithubReportParams
     (Vector (These GitHubUser FUMUser))
 

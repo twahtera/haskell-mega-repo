@@ -85,7 +85,7 @@ instance ToReportRow MissingHour where
 -------------------------------------------------------------------------------
 
 type MissingHoursReport = Report
-    "Missing hours"
+    "Missing hour markings"
     ReportGenerated
     (HashMap FUM.UserName :$ Per Employee :$ Vector :$ MissingHour)
 
