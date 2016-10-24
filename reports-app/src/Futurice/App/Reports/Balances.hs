@@ -74,42 +74,6 @@ data Balance = Balance
 
 instance ToColumns Balance where
 
-{-
-instance ToReportRow Balance where
-    type ReportRowLen Balance = PFour
-
-    reportHeader _ = ReportHeader
-        $ IList.cons "hours"
-        $ IList.cons "missing"
-        $ IList.cons "difference"
-        $ IList.cons "kind"
-        $ IList.nil
-
-    reportRow (Balance hours missing) = [r]
-      where
-        diff = hours + missing
-        cls | hasn't (to balanceKind . _BalanceNormal) diff  = "emphasize"
-            | hasn't (to balanceKind . _BalanceNormal) hours = "emphasize2"
-            | otherwise                                     = "normal"
-
-        r = ReportRow (Set.singleton cls)
-            $ IList.cons (toHtml hours)
-            $ IList.cons (toHtml missing)
-            $ IList.cons (toHtml diff)
-            $ IList.cons (toHtml $ balanceKind diff )
-            $ IList.nil
-
-    reportCsvRow (Balance hours missing) = [r]
-      where
-        diff = hours + missing
-        r = ReportCsvRow
-            $ IList.cons (pure $ Csv.toField hours)
-            $ IList.cons (pure $ Csv.toField missing)
-            $ IList.cons (pure $ Csv.toField diff)
-            $ IList.cons (pure $ Csv.toField $ balanceKind diff)
-            $ IList.nil
--}
-
 deriveGeneric ''Balance
 
 instance NFData Balance

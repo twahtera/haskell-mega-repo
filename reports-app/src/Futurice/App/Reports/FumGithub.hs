@@ -83,59 +83,6 @@ instance ToSchema FUMUser where
 instance ToColumns GitHubUser
 instance ToColumns FUMUser
 
-{-
-instance ToReportRow GitHubUser where
-    type ReportRowLen GitHubUser = PTwo
-
-    reportHeader _ = ReportHeader
-        $ IList.cons "GH name"
-        $ IList.cons "GH login"
-        $ IList.nil
-
-    reportRow (GitHubUser n l) = [ReportRow mempty row]
-      where
-        row = IList.cons (maybe (em_ "???") toHtml n)
-            $ IList.cons (a_ [href_ $ "https://github.com/" <> l] $ toHtml l)
-            $ IList.nil
-
-    reportCsvRow (GitHubUser n l) = [ReportCsvRow row]
-      where
-        row = IList.cons (pure $ Csv.toField n)
-            $ IList.cons (pure $ Csv.toField l)
-            $ IList.nil
-
-instance ToReportRow FUMUser where
-    type ReportRowLen FUMUser = PThree
-    type ReportRowC FUMUser m = MonadReader' HasFUMPublicURL m
-
-    reportHeader _ = ReportHeader
-        $ IList.cons "FUM name"
-        $ IList.cons "FUM login"
-        $ IList.cons "FUM GH login"
-        $ IList.nil
-
-    reportRow
-        :: forall m. (Monad m, ReportRowC FUMUser m)
-        => FUMUser -> [ReportRow m (ReportRowLen FUMUser)]
-    reportRow (FUMUser n l g) = case monadReaderUnwrap :: E HasFUMPublicURL m of
-        MkE Dict -> let
-            l' = do
-                u <- lift (view fumPublicUrl)
-                a_ [href_ $ u <> "/fum/users/" <> l <> "/"] $ toHtml l
-            row = IList.cons (toHtml n)
-                $ IList.cons l'
-                $ IList.cons (a_ [href_ $ "https://github.com/" <> g] $ toHtml g)
-                $ IList.nil
-            in [ReportRow mempty row]
-
-    reportCsvRow (FUMUser n l g) = [ReportCsvRow row]
-      where
-        row = IList.cons (pure $ Csv.toField n)
-            $ IList.cons (pure $ Csv.toField l)
-            $ IList.cons (pure $ Csv.toField g)
-            $ IList.nil
--}
-
 data FumGithubReportParams = FumGithubReportParams
     { _fumGithubReportGenerated  :: !UTCTime
     , _fumGithubReportFUMBaseUrl :: !Text
@@ -178,22 +125,6 @@ instance HasFUMPublicURL FumGithubReportParams where
       where
         t (FumGithubReportParams _ x) = x
         f (FumGithubReportParams y _) = FumGithubReportParams y
-
--------------------------------------------------------------------------------
--- This might be a bad idea?
--------------------------------------------------------------------------------
-
-{-
--- | See <http://stackoverflow.com/questions/5890094/is-there-a-way-to-define-an-existentially-quantified-newtype-in-ghc-haskell>
-data E envC m where
-    MkE :: Dict (MonadReader env m, envC env) -> E envC m
-
-class MonadReader' envC m where
-    monadReaderUnwrap :: E envC m
-
-instance (MonadReader env m, c env) => MonadReader' c m where
-    monadReaderUnwrap = MkE Dict
--}
 
 -------------------------------------------------------------------------------
 -- Logic
