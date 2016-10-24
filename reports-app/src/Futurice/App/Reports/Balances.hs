@@ -17,6 +17,8 @@ module Futurice.App.Reports.Balances (
     -- * Logic
     balanceKind,
     balanceForUser,
+    -- * Lenses
+    balanceHours, balanceMissingHours,
     ) where
 
 import Prelude ()
@@ -67,13 +69,14 @@ balanceKind h
 {-# INLINE balanceKind #-}
 
 data Balance = Balance
-    { balanceHours        :: !(NDT 'Hours Centi)
-    , balanceMissingHours :: !(NDT 'Hours Centi)
+    { _balanceHours        :: !(NDT 'Hours Centi)
+    , _balanceMissingHours :: !(NDT 'Hours Centi)
     }
     deriving (Eq, Ord, Show, Typeable, Generic)
 
 instance ToColumns Balance where
 
+makeLenses ''Balance
 deriveGeneric ''Balance
 
 instance NFData Balance
@@ -104,8 +107,8 @@ balanceForUser interval uid = do
     let balanceMinutes' = ndtConvert' balanceMinutes
     mh <- missingHoursForUser interval uid
     pure $ Balance
-        { balanceHours        = balanceMinutes'
-        , balanceMissingHours = sumOf (folded . missingHourCapacity) mh
+        { _balanceHours        = balanceMinutes'
+        , _balanceMissingHours = sumOf (folded . missingHourCapacity) mh
         }
 
 balanceReport
