@@ -83,9 +83,10 @@ deriveGeneric ''IssueInfo
 -- | 'IssueInfo' is just wrapped into column. The creation date is extracted
 -- into additional column though.
 --
--- This is purely for convenience
+-- This is purely for convenience, we could have a another type as well.
 instance ToColumns IssueInfo where
     type Columns IssueInfo = '[IssueInfo, UTCTime]
+    columnNames _ = K "issue" :* K "created" :* Nil
     toColumns i = [I i :* I (_issueCreated i) :* Nil]
 
 instance NFData IssueInfo

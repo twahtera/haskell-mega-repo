@@ -58,7 +58,8 @@ instance ToReportRow Employee where
 
 instance ToColumns Employee
 
-instance ToJSON Employee where toJSON = sopToJSON
+instance ToSchema Employee where declareNamedSchema = sopDeclareNamedSchema
 instance FromJSON Employee where parseJSON = sopParseJSON
-instance ToSchema Employee where
-    declareNamedSchema = sopDeclareNamedSchema
+instance ToJSON Employee where
+    toJSON     = sopToJSON
+    toEncoding = sopToEncoding

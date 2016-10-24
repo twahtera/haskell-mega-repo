@@ -5,6 +5,7 @@
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -27,8 +28,8 @@ import Futurice.Prelude
 import Data.Swagger              (NamedSchema (..))
 import Futurice.Generics
 import Futurice.List
-import Futurice.Time (NDT (..), IsTimeUnit (..), AsScientific)
 import Futurice.Lucid.Foundation
+import Futurice.Time             (AsScientific, IsTimeUnit (..), NDT (..))
 import Generics.SOP              ((:.:) (..), All, SListI (..), hmap, hpure)
 import GHC.TypeLits              (KnownSymbol, Symbol, symbolVal)
 import Servant.API               (MimeRender (..))
@@ -51,8 +52,11 @@ import qualified GitHub as GH
 -- Report is parameterised over
 --
 -- * @name@ - the name
+--
 -- * @params@ - the report parameteters, e.g. 'ReportGenerated'
+--
 -- * @fs@ and @a@ - report actual data
+--
 data Report (name :: Symbol) params a = Report
     { _reportParams :: !params
     , _reportData   :: !a
@@ -118,12 +122,12 @@ instance
         row_ $ large_ 12 $ div_ [class_ "callout"] $ toHtml params
         div_ [class_ "futu-report-wrapper" ] $ do
             row_ $ large_ 12 $ table_ [class_ "futu-report hover"] $ do
-                thead_ $ tr_ $ 
-                    th_ "Some header"
-                tbody_ $ for_ (toColumns d) $ \r -> tr_ {- todo: class -} $ 
+                thead_ $ tr_ $ for_ (SOP.hcollapse $ columnNames (Proxy :: Proxy a)) $ \colName ->
+                    th_ $ toHtml colName
+                tbody_ $ for_ (toColumns d) $ \r -> tr_ {- todo: class -} $
                     sequenceA $ SOP.hcollapse $
                         SOP.hcmap (Proxy :: Proxy ReportValue) renderCell r
-                    
+
       where
         title = symbolVal (Proxy :: Proxy name)
         pageParams = defPageParams
@@ -148,13 +152,27 @@ instance
 -- @
 -- instance ToColumns FUM.UserName where
 --     type Columns FUM.UserName = '[FUM.UserName]
---         toColumns u = [I u :* Nil]
+--     columnNames _ = K "FUM" :* Nil
+--     toColumns u   = [I u :* Nil]
 -- @
 --
--- However, most of these instance should be defined in this module.
+-- However, most of these instance should be already defined in this module:
+-- "Futurice.Report.Columns".
+--
 class ToColumns a where
     type Columns a :: [*]
     type Columns a =  DefaultColumns a
+
+    columnNames :: Proxy a -> NP (K Text) (Columns a)
+    default columnNames
+        :: ( xs ~ Columns a
+           , '[xs] ~ SOP.Code a
+           , SOP.HasDatatypeInfo a
+           , SListI xs
+           )
+        => Proxy a
+        -> NP (K Text) xs
+    columnNames = sopRecordFieldNames
 
     toColumns :: a -> [NP I (Columns a)]
     default toColumns
@@ -174,11 +192,13 @@ type DefaultColumns a = UnSingleton (SOP.Code a)
 instance ToColumns () where
     type Columns () = '[]
 
-    toColumns _ = []
+    columnNames _ = Nil
+    toColumns _   = [Nil]
 
 instance ToColumns FUM.UserName where
     type Columns FUM.UserName = '[FUM.UserName]
-    toColumns u = [I u :* Nil]
+    columnNames _ = K "FUM" :* Nil
+    toColumns u   = [I u :* Nil]
 
 -------------------------------------------------------------------------------
 -- Containers
@@ -187,9 +207,21 @@ instance ToColumns FUM.UserName where
 instance (ToColumns a, SListI (Columns a)) => ToColumns (Maybe a) where
     type Columns (Maybe a) = TMap Maybe (Columns a)
 
+    columnNames _
+        = recode (Proxy :: Proxy (Columns a))
+        $ columnNames (Proxy :: Proxy a)
+      where
+        -- TODO: move to Futurice.List, implement using unsafeCoerce
+        recode :: forall v xs. Proxy xs -> NP (K v) xs -> NP (K v) (TMap Maybe xs)
+        recode _ Nil       = Nil
+        recode _ (K x :* xs) = K x :* recode (p' xs) xs
+          where
+            p' :: forall ys. NP (K v) ys -> Proxy ys
+            p' _ = Proxy
+
     toColumns :: Maybe a -> [NP I (TMap Maybe (Columns a))]
     toColumns Nothing =
-        [npCompToTMap (hpure inothing :: NP (I :.: Maybe) (Columns a)) ]
+        [ npCompToTMap (hpure inothing :: NP (I :.: Maybe) (Columns a)) ]
       where
         inothing :: forall b. (I :.: Maybe) b
         inothing = Comp (I Nothing)
@@ -200,17 +232,21 @@ instance (ToColumns a, SListI (Columns a)) => ToColumns (Maybe a) where
 
 instance ToColumns a => ToColumns [a] where
     type Columns [a] = Columns a
-
+    columnNames _ = columnNames (Proxy :: Proxy a)
     toColumns = concatMap toColumns
 
 instance (ToColumns a, ToColumns b) => ToColumns (a, b) where
     type Columns (a, b) = Append (Columns a) (Columns b)
-
+    columnNames _ = append
+        (columnNames (Proxy :: Proxy a))
+        (columnNames (Proxy :: Proxy b))
     toColumns (a, b) = append <$> toColumns a <*> toColumns b
 
 instance (ToColumns a, ToColumns b) => ToColumns (S.Pair a b) where
     type Columns (S.Pair a b) = Append (Columns a) (Columns b)
-
+    columnNames _ = append
+        (columnNames (Proxy :: Proxy a))
+        (columnNames (Proxy :: Proxy b))
     toColumns (a S.:!: b) = append <$> toColumns a <*> toColumns b
 
 instance
@@ -220,26 +256,32 @@ instance
     ) => ToColumns (These a b)
   where
     type Columns (These a b) = Columns (Maybe a, Maybe b)
-
+    columnNames _ = append
+        (columnNames (Proxy :: Proxy (Maybe a)))
+        (columnNames (Proxy :: Proxy (Maybe b)))
     toColumns (These a b) = toColumns (Just a, Just b)
     toColumns (This a)    = toColumns (Just a, Nothing :: Maybe b)
     toColumns (That b)    = toColumns (Nothing :: Maybe a, Just b)
 
 instance ToColumns a => ToColumns (Vector a) where
     type Columns (Vector a) = Columns a
-
+    columnNames _ = columnNames (Proxy :: Proxy a)
     toColumns = foldMap toColumns
 
 instance (ToColumns k, ToColumns v) => ToColumns (Map k v) where
     type Columns (Map k v) = Append (Columns k) (Columns v)
-
+    columnNames _ = append
+        (columnNames (Proxy :: Proxy k))
+        (columnNames (Proxy :: Proxy v))
     toColumns = ifoldMap f
       where
         f k v = append <$> toColumns k <*> toColumns v
 
 instance (ToColumns k, ToColumns v) => ToColumns (HashMap k v) where
     type Columns (HashMap k v) = Append (Columns k) (Columns v)
-
+    columnNames _ = append
+        (columnNames (Proxy :: Proxy k))
+        (columnNames (Proxy :: Proxy v))
     toColumns = ifoldMap f
       where
         f k v = append <$> toColumns k <*> toColumns v
@@ -267,7 +309,11 @@ instance ToHtml ReportGenerated where
 -- Cell value, i.e. primitive types shown in the report
 -------------------------------------------------------------------------------
 
--- | /TODO/ add "js type" field
+-- |
+--
+-- * /TODO/ add "js type" field
+--
+-- * /TODO/ add ReaderT and env
 class ToJSON a => ReportValue a where
     reportValueHtml :: a -> Html ()
 
