@@ -33,11 +33,11 @@ module Futurice.Lucid.Foundation (
     -- * Lucid
     module Lucid,
     attrfor_,
+    forWith_,
     ) where
 
-import Futurice.Prelude
 import Prelude ()
-
+import Futurice.Prelude
 import Clay                   (Css, render)
 import Control.Monad.Morph    (hoist)
 import Data.FileEmbed         (embedStringFile)
@@ -63,8 +63,18 @@ embeddedLodash_ = toHtml $(embedJS "lodash.js")
 menrvaJS :: JS
 menrvaJS = $(embedJS "menrva.standalone.js")
 
+-------------------------------------------------------------------------------
+-- Lucid
+-------------------------------------------------------------------------------
+
 attrfor_ :: Text -> Attribute
 attrfor_ = L.for_
+
+-- | 'intersperse'd 'for_'.
+forWith_ :: (Foldable t, Applicative f) => f () -> t a ->  (a -> f b) -> f ()
+forWith_ sep xs f = foldr g (pure ()) xs
+  where
+    g = \a b -> f a *> sep *> b
 
 -------------------------------------------------------------------------------
 -- Grid

@@ -16,6 +16,7 @@ module Futurice.Report.Columns (
     ReportGenerated (..),
     reportParams,
     reportData,
+    reportToTabularEncoding,
     -- * Cell
     ReportValue (..),
     -- * Class
@@ -25,19 +26,23 @@ module Futurice.Report.Columns (
 
 import Prelude ()
 import Futurice.Prelude
+import Data.Aeson                (encode, pairs, (.=))
+import Data.Aeson.Encoding       (encodingToLazyByteString, list, pair)
 import Data.Swagger              (NamedSchema (..))
 import Futurice.Generics
 import Futurice.List
 import Futurice.Lucid.Foundation
 import Futurice.Time             (AsScientific, IsTimeUnit (..), NDT (..))
-import Generics.SOP              ((:.:) (..), All, SListI (..), hmap, hpure)
+import Generics.SOP              ((:.:) (..), All, SListI (..))
 import GHC.TypeLits              (KnownSymbol, Symbol, symbolVal)
 import Servant.API               (MimeRender (..))
 import Servant.CSV.Cassava       (CSV', EncodeOpts (..))
 
-import qualified Data.Csv          as Csv
-import qualified Data.Tuple.Strict as S
-import qualified Generics.SOP      as SOP
+import qualified Data.Csv           as Csv
+import qualified Data.Set           as Set
+import qualified Data.Text.Encoding as TE
+import qualified Data.Tuple.Strict  as S
+import qualified Generics.SOP       as SOP
 
 -- instances
 import qualified FUM
@@ -108,36 +113,141 @@ instance (ToColumns a, All Csv.ToField (Columns a), EncodeOpts opt)
 -- Report + lucid
 -------------------------------------------------------------------------------
 
+columnControl
+    :: forall a. ReportValue a
+    => ColumnData a
+    -> Html ()
+columnControl (ColumnData colname xs) = largemed_ 6 $ div_ [ class_ "futu-report-control" ] $ do
+    h3_ $ toHtml colname
+    -- sort
+    {- -- TODO: think how to present sorting controls
+    div_ $ do
+        button_ [ class_ "button futu-report-sort-asc" ] $ "Sort ascending"
+        " "
+        button_ [ class_ "button futu-report-sort-desc" ] $ "Sort descending"
+    -}
+    -- aggregate
+    label_ $ do
+        "Aggregate"
+        select_ [ class_ "futu-report-aggregate" ] $ for_ (columnTypeAggregate colType) $ \agg -> do
+            let (s, i, t) = aggregateMeta agg
+            option_ [ value_ i ] $ toHtml $ s <> " : " <> t
+    -- group
+    div_ $ label_ $ do
+        input_ [ type_ "checkbox", class_ "futu-report-group-by" ]
+        " Group by"
+    -- values
+    when showValues $ label_ $ do
+        "Filter values"
+        select_ [ class_ "futu-report-filter", multiple_ "multiple" ] $
+            for_ xs' $ \x->
+                option_ [ value_ $ TE.decodeUtf8 $ encode x ^. strict ] $
+                    reportValueHtml x
+  where
+    colType    = reportValueType (Proxy :: Proxy a)
+    xs'        = Set.fromList $ xs
+    showValues = length xs' < 20
+
 instance
     ( ToColumns a
     , SOP.All ReportValue (Columns a)
-    , KnownSymbol name, ToHtml params
+    , SOP.All ToJSON (Columns a) -- Redundant, but GHC isn't smart enough.
+    , KnownSymbol name, ToHtml params, ToJSON params
     ) => ToHtml (Report name params a)
   where
     toHtmlRaw = toHtml
 
     toHtml :: forall m. Monad m => Report name params a -> HtmlT m ()
-    toHtml (Report params d) = toHtml $ page_ (fromString title) pageParams $ do
+    toHtml report@(Report params d) = toHtml $ page_ (fromString title) pageParams $ do
         row_ $ large_ 12 $ h1_ $ fromString title
         row_ $ large_ 12 $ div_ [class_ "callout"] $ toHtml params
         div_ [class_ "futu-report-wrapper" ] $ do
+            -- Data: hidden div with report data in tabular json format
+            div_ [class_ "futu-report-data", style_ "display: none" ] $ toHtml $
+                reportToTabularEncoding report
+            -- Control: we generate them, initially invisible, if js fails for reason or another.
+            row_ $ large_ 12 $ div_ [class_ "futu-report-controls callout" ] $ do
+                button_ [ class_ "button futu-report-toggle" ] $ "Show controls"
+
+                -- per column controls
+                div_ [ class_ "futu-report-toggleable-controls" ] $ do
+                    hr_ []
+                    sequenceA_ $ SOP.hcollapse $
+                        SOP.hcmap proxyReportValue (K . columnControl) colData
+
+                -- Query string
+                hr_ []
+                pre_ [ class_ "futu-report-query-str" ] $ "SELECT *\nFROM report;"
+
+                -- apply & reset
+                div_  [ class_ "futu-report-toggleable-controls-2" ] $ do
+                    hr_ []
+                    div_ $ do
+                        button_ [ class_ "button success futu-report-apply", disabled_ "disabled" ] $ "Apply settings"
+                        " "
+                        button_ [ class_ "button warning futu-report-reset"] $ "Reset controls"
+
+            -- Pregenerated data, so we see something, even the data fails
             row_ $ large_ 12 $ table_ [class_ "futu-report hover"] $ do
-                thead_ $ tr_ $ for_ (SOP.hcollapse $ columnNames (Proxy :: Proxy a)) $ \colName ->
-                    th_ $ toHtml colName
-                tbody_ $ for_ (toColumns d) $ \r -> tr_ {- todo: class -} $
+                thead_ $ do
+                    tr_ $ for_ colNames $ \(colName, _) -> th_ $ toHtml colName
+                    -- Quick controls
+                    tr_ [ class_ "futu-report-quick-controls" ] $ for_ colNames $ \(_colName, colType) -> td_ $ do
+                        a_ [ href_ "#", data_ "futu-report-link-control" "sort-asc", title_ "sort ascending" ] "⇈"
+                        " "
+                        a_ [ href_ "#", data_ "futu-report-link-control" "sort-desc",title_ "sort descending" ] "⇊"
+                        " | "
+                        forWith_ " " (columnTypeAggregate colType) $ \agg -> do
+                            let (s, i, t) = aggregateMeta agg
+                            a_ [ href_ "#", title_ t, data_ "futu-report-link-control" i ] $
+                                toHtml s
+                        " | "
+                        a_ [ href_ "#", data_ "futu-report-link-control" "group-by", title_ "group by this column" ] $ toHtmlRaw ("G" :: Text)
+                tbody_ $ for_ columns $ \r -> tr_ {- todo: class -} $
                     sequenceA $ SOP.hcollapse $
-                        SOP.hcmap (Proxy :: Proxy ReportValue) renderCell r
+                        SOP.hcmap proxyReportValue (K . renderCell . unI) r
 
       where
-        title = symbolVal (Proxy :: Proxy name)
+        -- Data
+        title  :: String
+        title   = symbolVal (Proxy :: Proxy name)
+
+        names  :: NP (K Text) (Columns a)
+        names   = columnNames (Proxy :: Proxy a)
+
+        columns :: [NP I (Columns a)]
+        columns = toColumns d
+
+        -- Page parameters
         pageParams = defPageParams
             & pageJs .~
                 [ menrvaJS
-                -- , $(embedJS "reports.js")
+                , $(embedJS "report-columns.js")
                 ]
 
-        renderCell :: forall v. ReportValue v => I v -> K (Html ()) v
-        renderCell (I v) = K $ td_ $ reportValueHtml v
+        -- Proxies
+        proxyReportValue = Proxy :: Proxy ReportValue
+
+        -- Rener value
+        renderCell :: forall v. ReportValue v => v -> Html ()
+        renderCell v = td_ $ reportValueHtml v
+
+        -- Column data to render controls
+        colData :: NP ColumnData (Columns a)
+        colData = SOP.hzipWith (ColumnData . unK) names columns'
+          where
+            columns' :: NP [] (Columns a)
+            columns' = distributeNPList columns
+
+        -- column names with types
+        colNames :: [(Text, ColumnType)]
+        colNames
+            = SOP.hcollapse
+            $ SOP.hcmap (Proxy :: Proxy ReportValue) f
+            $ names
+          where
+            f :: forall x. ReportValue x => K Text x -> K (Text, ColumnType) x
+            f (K name) = K (name, reportValueType (Proxy :: Proxy x))
 
 -------------------------------------------------------------------------------
 -- Class
@@ -221,14 +331,14 @@ instance (ToColumns a, SListI (Columns a)) => ToColumns (Maybe a) where
 
     toColumns :: Maybe a -> [NP I (TMap Maybe (Columns a))]
     toColumns Nothing =
-        [ npCompToTMap (hpure inothing :: NP (I :.: Maybe) (Columns a)) ]
+        [ npCompToTMap (SOP.hpure inothing :: NP (I :.: Maybe) (Columns a)) ]
       where
         inothing :: forall b. (I :.: Maybe) b
         inothing = Comp (I Nothing)
     toColumns (Just a) = f <$> toColumns a
       where
         f :: NP I (Columns a) -> NP I (TMap Maybe (Columns a))
-        f = npCompToTMap . hmap (Comp . fmap Just)
+        f = npCompToTMap . SOP.hmap (Comp . fmap Just)
 
 instance ToColumns a => ToColumns [a] where
     type Columns [a] = Columns a
@@ -309,15 +419,98 @@ instance ToHtml ReportGenerated where
 -- Cell value, i.e. primitive types shown in the report
 -------------------------------------------------------------------------------
 
+-- | Produce a tabular encoding of the report.
+reportToTabularEncoding
+    :: forall name params a.
+       ( ToColumns a, All ToJSON (Columns a), All ReportValue (Columns a)
+       , KnownSymbol name
+       , ToJSON params
+       )
+    => Report name params a
+    -> LazyByteString
+reportToTabularEncoding (Report p d) = encodingToLazyByteString $ pairs $
+    "name"   .= symbolVal (Proxy :: Proxy name) <>
+    "params" .= p <>
+    pair "columns" (list toEncoding $ SOP.hcollapse $ columnNames (Proxy :: Proxy a)) <>
+    pair "types" (list toEncoding $ SOP.hcollapse $ generateColumnTypes proxyColumns) <>
+    pair "data" (list toEncoding $ toColumns d)
+  where
+    proxyColumns = Proxy :: Proxy (Columns a)
+
+-- | Generate types, so JS side knows how to render cells.
+generateColumnTypes
+    :: forall xs. (All ReportValue xs)
+    => Proxy xs
+    -> NP (K ColumnType) xs
+generateColumnTypes _ = SOP.hcpure (Proxy :: Proxy ReportValue) f
+  where
+    f :: forall a. ReportValue a => K ColumnType a
+    f = K $ reportValueType (Proxy :: Proxy a)
+
+-- | Column type, for the JS frontend.
+data ColumnType
+    = CTText     -- ^ text
+    | CTDay      -- ^ day: @2016-10-25@
+    | CTHourDiff -- ^ hour difference: @5 hours"
+  deriving (Eq, Ord, Enum, Bounded, Generic, Typeable)
+
+instance ToJSON ColumnType where
+    toJSON CTText     = "text"
+    toJSON CTDay      = "day"
+    toJSON CTHourDiff = "hourDiff"
+
+-- | Various aggregates
+data Aggregate
+    = AggFirst
+    | AggCount
+    | AggCountDistinct
+    | AggSum
+    | AggAvg
+    | AggCollect
+  deriving (Eq, Ord, Enum, Bounded, Generic, Typeable)
+
+columnTypeAggregate :: ColumnType -> [Aggregate]
+columnTypeAggregate CTText =
+    [ AggFirst, AggCount, AggCountDistinct, AggCollect ]
+columnTypeAggregate CTDay =
+    [ AggFirst, AggCount, AggCountDistinct, AggCollect ]
+columnTypeAggregate CTHourDiff =
+    [ minBound .. maxBound ]
+
+-- | Aggregaes' meta information
+aggregateMeta :: Aggregate -> (Text, Text, Text)
+aggregateMeta AggFirst         = ("∃", "first", "Pick first (random)")
+aggregateMeta AggCount         = ("m", "count", "Count elements")
+aggregateMeta AggCountDistinct = ("n!", "countDistinct", "Count distinct elements")
+aggregateMeta AggSum           = ("∑", "sum", "Sum elements")
+aggregateMeta AggAvg           = ("μ", "avg", "Average of elements")
+aggregateMeta AggCollect       = ("∀", "collect", "Collect all values")
+
 -- |
 --
--- * /TODO/ add "js type" field
---
 -- * /TODO/ add ReaderT and env
-class ToJSON a => ReportValue a where
+class (ToJSON a, Ord a) => ReportValue a where
+    -- | Render value to HTML
+    --
+    -- The value is shown only in static view, i.e. usually not for long.
+    --
     reportValueHtml :: a -> Html ()
 
+    -- | How JS frontend should handle / pretty-print the value
+    --
+    -- By default we treat everything as 'CTText'.
+    --
+    reportValueType :: Proxy a -> ColumnType
+    reportValueType _ = CTText
+
+-------------------------------------------------------------------------------
+-- ReportValue instances
+-------------------------------------------------------------------------------
+
+data ColumnData a = ColumnData !Text ![a]
+
 instance ReportValue Day where
+    reportValueType _ = CTDay
     reportValueHtml = fromString . show
 
 instance ReportValue UTCTime where
@@ -336,9 +529,10 @@ instance ReportValue Bool where
     reportValueHtml = bool "yes" "no"
 
 instance
-    (Show a, IsTimeUnit tu, AsScientific a)
+    (Ord a, Show a, IsTimeUnit tu, AsScientific a)
     => ReportValue (NDT tu a)
   where
+    reportValueType _ = CTHourDiff -- /TODO/ this *might be* incorrect!
     reportValueHtml (NDT x) =
         toHtmlRaw $ show x <> nbsp <> sfx
       where
@@ -347,3 +541,15 @@ instance
 
 instance ReportValue (GH.Name a) where
     reportValueHtml = reportValueHtml . GH.untagName
+
+-------------------------------------------------------------------------------
+-- Helpers
+-------------------------------------------------------------------------------
+
+-- | Move to "Futurice.SOP"
+distributeNPList :: SListI xs => [NP I xs] -> NP [] xs
+distributeNPList [] = SOP.hpure []
+distributeNPList (x : xs) = SOP.hzipWith cons x (distributeNPList xs)
+  where
+    cons :: I a -> [a] -> [a]
+    cons = (:) . unI

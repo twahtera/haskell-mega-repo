@@ -44,7 +44,7 @@ data GitHubRepo = GitHubRepo
     { _ghRepoOwner :: !(GH.Name GH.Owner)
     , _ghRepoName  :: !(GH.Name GH.Repo)
     }
-    deriving (Typeable, Generic)
+    deriving (Eq, Ord, Typeable, Generic)
 
 makeLenses ''GitHubRepo
 deriveGeneric ''GitHubRepo
@@ -75,7 +75,7 @@ data IssueInfo = IssueInfo
     , _issueCreated :: !UTCTime
     , _issueUrl     :: !Text
     }
-    deriving (Show, Generic, Typeable)
+    deriving (Eq, Ord, Show, Generic, Typeable)
 
 makeLenses ''IssueInfo
 deriveGeneric ''IssueInfo
