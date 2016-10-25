@@ -501,6 +501,8 @@ class (ToJSON a, Ord a) => ReportValue a where
     -- The value is shown only in static view, i.e. usually not for long.
     --
     reportValueHtml :: a -> Html ()
+    default reportValueHtml :: ToHtml a => a -> Html ()
+    reportValueHtml = toHtml
 
     -- | How JS frontend should handle / pretty-print the value
     --
@@ -525,8 +527,7 @@ instance ReportValue UTCTime where
 instance ReportValue FUM.UserName where
     reportValueHtml = toHtml . FUM._getUserName
 
-instance ReportValue Text where
-    reportValueHtml = toHtml
+instance ReportValue Text
 
 instance ReportValue a => ReportValue (Maybe a) where
     reportValueHtml = maybe (pure ()) reportValueHtml

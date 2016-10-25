@@ -47,8 +47,14 @@ import Futurice.App.Reports.MissingHours
 -------------------------------------------------------------------------------
 
 data BalanceKind = BalanceUnder | BalanceNormal | BalanceOver
+  deriving (Eq, Ord)
 
 makePrisms ''BalanceKind
+
+instance ToJSON BalanceKind where
+    toJSON BalanceUnder  = "under"
+    toJSON BalanceNormal = "ok"
+    toJSON BalanceOver   = "over"
 
 instance ToHtml BalanceKind where
     toHtmlRaw = toHtml
@@ -60,6 +66,8 @@ instance Csv.ToField BalanceKind where
     toField BalanceUnder  = "under"
     toField BalanceNormal = "ok"
     toField BalanceOver   = "over"
+
+instance ReportValue BalanceKind
 
 balanceKind :: (Num a, Ord a) => NDT 'Hours a -> BalanceKind
 balanceKind h
@@ -75,6 +83,14 @@ data Balance = Balance
     deriving (Eq, Ord, Show, Typeable, Generic)
 
 instance ToColumns Balance where
+    type Columns Balance =
+        '[ NDT 'Hours Centi , NDT 'Hours Centi, NDT 'Hours Centi, BalanceKind ]
+
+    columnNames _ = K "flex" :* K "missing" :* K "balance" :* K "kind" :* Nil
+    toColumns (Balance f m) =
+        [ I f :* I m :* I diff :* I (balanceKind diff) :* Nil ]
+      where
+        diff = f + m -- if you mark missing, your flex will increase!
 
 makeLenses ''Balance
 deriveGeneric ''Balance
