@@ -115,8 +115,28 @@ window.addEventListener("load", function () {
             }
         });
 
+        var START_ORDERBY = _.chain((queryObject["order-by"] || "").split(/,/))
+            .map(function (sortSpec) {
+                var m = sortSpec.match(/^(.*)-(asc|desc)$/);
+                if (!m) return null;
+                var column = m[1];
+                var order = m[2];
+
+                var colIdx = data.columns.indexOf(column);
+                if (colIdx === -1) {
+                    return null;
+                } else {
+                    return { colIdx: colIdx, order: order };
+                }
+            })
+            .filter(function (x) { return x !== null; })
+            .sort()
+            .uniqBy(function (x) { return x.colIdx; })
+            .value();
+
+
         var START_SETTINGS = {
-            orderBy:    [],
+            orderBy:    START_ORDERBY,
             aggregates: START_AGGREGATES,
             groupBy:    START_GROUPBY,
             filterBy:   START_FILTERBY,
@@ -462,7 +482,7 @@ window.addEventListener("load", function () {
                         case "group-by":      toggleGroupBy(colIdx, true); break;
                         default:
                             if (VALID_AGGREGATES.indexOf(action) !== -1) {
-                                setAggregate(colIdx, action, true); break;
+                                setAggregate(colIdx, action, true);
                                 break;
                             }
                             assert(false, "Unknown quick control: " + action);
