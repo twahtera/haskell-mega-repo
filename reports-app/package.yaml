@@ -65,6 +65,7 @@ dependencies:
   - servant-server
   - SHA
   - stm
+  - strict-base-types
   - swagger2
   - tagged
   - text

@@ -17,7 +17,6 @@ import PlanMill.Internal.Prelude
 
 -- Almost standard imports
 import Control.Monad   (replicateM)
-import Data.ByteString (ByteString)
 
 import qualified Data.Vector as V
 

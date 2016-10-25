@@ -15,7 +15,6 @@ module Futurice.App.Proxy (
 
 import Prelude ()
 import Futurice.Prelude
-import Data.ByteString                 (ByteString)
 import Data.Pool                       (Pool, createPool, withResource)
 import Data.Text.Encoding              (decodeLatin1)
 import Database.PostgreSQL.Simple      (Connection)

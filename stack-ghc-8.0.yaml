@@ -1,4 +1,4 @@
-resolver: nightly-2016-10-01
+resolver: nightly-2016-10-24
 packages:
 - ansi-pretty/
 - avar/
@@ -35,18 +35,17 @@ packages:
 - servant-status/
 - spice-stats/
 - location:
-    git: https://github.com/phadej/github.git
-    commit: dd149a469cad0fb4ecbb75a76efc633d92870a0c
-  extra-dep: true
-- location:
     git: https://github.com/necrobious/uuid-aeson.git
     commit: f5fd573c7cb098515d0093acb2879520e190cc08
   extra-dep: true
+- location:
+    git: https://github.com/phadej/github.git
+    commit: dd149a469cad0fb4ecbb75a76efc633d92870a0c
+  extra-dep: true
 extra-deps:
 - haxl-0.4.0.0
-- hsc2hs-0.68
+- lens-4.15.1
 - monad-http-0.2.0.0
 - rfc5051-0.1.0.3
-- singleton-bool-0.1.2.0
-- swagger2-2.1.3
+- servant-0.9
 flags: {}

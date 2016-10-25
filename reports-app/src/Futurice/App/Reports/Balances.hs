@@ -15,26 +15,27 @@ module Futurice.App.Reports.Balances (
     Balance (..),
     BalanceKind (..),
     -- * Logic
+    balanceKind,
     balanceForUser,
+    -- * Lenses
+    balanceHours, balanceMissingHours,
     ) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (hasn't, sumOf, to)
+import Control.Lens              (sumOf)
 import Data.Fixed                (Centi)
 import Data.Ord                  (comparing)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Lucid.Foundation
-import Futurice.Peano
-import Futurice.Report
+import Futurice.Report.Columns
 import Futurice.Time
 
 import qualified Data.Csv            as Csv
 import qualified Data.HashMap.Strict as HM
-import qualified Data.Set            as Set
+import qualified Data.Tuple.Strict   as S
 import qualified Data.Vector         as V
-import qualified Futurice.IC         as IList
 import qualified PlanMill            as PM
 import qualified PlanMill.Queries    as PMQ
 
@@ -68,46 +69,14 @@ balanceKind h
 {-# INLINE balanceKind #-}
 
 data Balance = Balance
-    { balanceHours        :: !(NDT 'Hours Centi)
-    , balanceMissingHours :: !(NDT 'Hours Centi)
+    { _balanceHours        :: !(NDT 'Hours Centi)
+    , _balanceMissingHours :: !(NDT 'Hours Centi)
     }
     deriving (Eq, Ord, Show, Typeable, Generic)
 
+instance ToColumns Balance where
 
-instance ToReportRow Balance where
-    type ReportRowLen Balance = PFour
-
-    reportHeader _ = ReportHeader
-        $ IList.cons "hours"
-        $ IList.cons "missing"
-        $ IList.cons "difference"
-        $ IList.cons "kind"
-        $ IList.nil
-
-    reportRow (Balance hours missing) = [r]
-      where
-        diff = hours + missing
-        cls | hasn't (to balanceKind . _BalanceNormal) diff  = "emphasize"
-            | hasn't (to balanceKind . _BalanceNormal) hours = "emphasize2"
-            | otherwise                                     = "normal"
-
-        r = ReportRow (Set.singleton cls)
-            $ IList.cons (toHtml hours)
-            $ IList.cons (toHtml missing)
-            $ IList.cons (toHtml diff)
-            $ IList.cons (toHtml $ balanceKind diff )
-            $ IList.nil
-
-    reportCsvRow (Balance hours missing) = [r]
-      where
-        diff = hours + missing
-        r = ReportCsvRow
-            $ IList.cons (pure $ Csv.toField hours)
-            $ IList.cons (pure $ Csv.toField missing)
-            $ IList.cons (pure $ Csv.toField diff)
-            $ IList.cons (pure $ Csv.toField $ balanceKind diff)
-            $ IList.nil
-
+makeLenses ''Balance
 deriveGeneric ''Balance
 
 instance NFData Balance
@@ -122,13 +91,7 @@ instance ToSchema Balance where declareNamedSchema = sopDeclareNamedSchema
 type BalanceReport = Report
     "Hour marking flex saldos"
     ReportGenerated
-    (Vector :$ Per Employee :$ Balance)
-
-instance IsReport
-    ReportGenerated
-    (Vector :$ Per Employee :$ Balance)
-  where
-    reportExec = defaultReportExec
+    (Vector :$ StrictPair Employee :$ Balance)
 
 -------------------------------------------------------------------------------
 -- Logic
@@ -144,8 +107,8 @@ balanceForUser interval uid = do
     let balanceMinutes' = ndtConvert' balanceMinutes
     mh <- missingHoursForUser interval uid
     pure $ Balance
-        { balanceHours        = balanceMinutes'
-        , balanceMissingHours = sumOf (folded . missingHourCapacity) mh
+        { _balanceHours        = balanceMinutes'
+        , _balanceMissingHours = sumOf (folded . missingHourCapacity) mh
         }
 
 balanceReport
@@ -162,12 +125,12 @@ balanceReport interval = do
     let fpm'' = V.fromList . sortBy cmpPE . HM.elems $ fpm'
     pure $ Report (ReportGenerated now) fpm''
   where
-    cmpPE :: Per Employee a -> Per Employee a -> Ordering
-    cmpPE = (comparing employeeTeam <> comparing employeeName) `on` perFst
+    cmpPE :: StrictPair Employee a -> StrictPair Employee a -> Ordering
+    cmpPE = (comparing employeeTeam <> comparing employeeName) `on` S.fst
 
     -- TODO: put planmillEmployee into fumPlanmillMap!
     -- Also MissingHours report
-    perUser :: PM.UserId -> m (Per Employee Balance)
-    perUser pmUid = Per
+    perUser :: PM.UserId -> m (StrictPair Employee Balance)
+    perUser pmUid = (S.:!:)
         <$> planmillEmployee pmUid
         <*> balanceForUser interval pmUid

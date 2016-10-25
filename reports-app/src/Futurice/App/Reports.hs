@@ -10,16 +10,16 @@ module Futurice.App.Reports (defaultMain) where
 
 import Prelude ()
 import Futurice.Prelude
-import Data.Maybe                 (mapMaybe)
+import Data.Maybe                (mapMaybe)
 import Futurice.Integrations
        (IntegrationsConfig (..), beginningOfPrevMonth, runIntegrations)
 import Futurice.Periocron
 import Futurice.Servant
-import Generics.SOP               (hcmap, hcollapse)
+import Generics.SOP              (hcmap, hcollapse)
 import Network.HTTP.Client
        (Manager, httpLbs, newManager, parseUrlThrow, responseBody)
-import Network.HTTP.Client.TLS    (tlsManagerSettings)
-import Numeric.Interval.NonEmpty  ((...))
+import Network.HTTP.Client.TLS   (tlsManagerSettings)
+import Numeric.Interval.NonEmpty ((...))
 import Servant
 
 import qualified Data.ByteString.Lazy as LBS
@@ -30,11 +30,12 @@ import qualified GitHub               as GH
 import Futurice.App.Reports.API
 import Futurice.App.Reports.Balances     (BalanceReport, balanceReport)
 import Futurice.App.Reports.Config
-import Futurice.App.Reports.Logic
+import Futurice.App.Reports.FumGithub    (FumGitHubReport, fumGithubReport)
+import Futurice.App.Reports.GithubIssues
+       (GitHubRepo (..), IssueReport, issueReport)
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, missingHoursReport)
-import Futurice.App.Reports.Types
 
 -- /TODO/ Make proper type
 type Ctx = (DynMapCache, Manager, Config)

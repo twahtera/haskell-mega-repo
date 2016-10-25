@@ -40,7 +40,9 @@ envs:
     # reports-app
     REPORTS_GH_REPOSURL:
       secret: reports-gh-repos
-    PLANMILLPROXY_HAXLURL: http://localhost:8808/haxl
+    PLANMILLPROXY_HAXLURL:
+      secret: prod-planmill-proxy-haxl
+      # http://localhost:8808/haxl
 
     # proxy-app
     FUTUHOURSAPI_BASEURL: http://localhost:8803

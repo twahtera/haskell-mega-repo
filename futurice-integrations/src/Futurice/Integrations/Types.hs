@@ -13,9 +13,12 @@ import           Futurice.Generics
 import qualified Futurice.IC       as IList
 import           Futurice.Peano
 import           Futurice.Report
+import           Futurice.Report.Columns (ToColumns)
 import           Lucid             hiding (for_)
 
 -- | Employee information often used in reports
+--
+-- /TODO/ lensify
 data Employee = Employee
     { employeeName     :: !Text
     , employeeTeam     :: !Text
@@ -27,6 +30,7 @@ instance NFData Employee
 
 deriveGeneric ''Employee
 
+-- | /TODO/ remove
 instance ToReportRow Employee where
     type ReportRowLen Employee = PThree
 
@@ -52,5 +56,10 @@ instance ToReportRow Employee where
             $ IList.cons (pure $ Csv.toField c)
             $ IList.nil
 
-instance ToJSON Employee where toJSON = sopToJSON
+instance ToColumns Employee
+
+instance ToSchema Employee where declareNamedSchema = sopDeclareNamedSchema
 instance FromJSON Employee where parseJSON = sopParseJSON
+instance ToJSON Employee where
+    toJSON     = sopToJSON
+    toEncoding = sopToEncoding

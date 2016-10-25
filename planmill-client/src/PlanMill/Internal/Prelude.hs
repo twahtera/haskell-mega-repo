@@ -28,7 +28,6 @@ import Data.Aeson.Compat
 import Data.Aeson.Types      (typeMismatch)
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo (..), sopStructuralInfo)
-import Data.ByteString       (ByteString)
 import Data.Time             (ZonedTime, zonedTimeToLocalTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 
