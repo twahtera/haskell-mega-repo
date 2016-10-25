@@ -15,6 +15,11 @@ import Servant
 
 type FutuhoursAPI = Get '[JSON] Text
     :<|> "projects" :> Get '[JSON] (Vector Project)
+    :<|> "user" :> Get '[JSON] (User) -- TODO: should return logged-in User information
+    :<|> "hours" :> Get '[JSON] (HoursResponse)
+    :<|> "entry" :> Post '[JSON] ([Int])
+    :<|> "entry" :> Capture "id" Int :> Put '[JSON] ([Int])
+    :<|> "entry" :> Capture "id" Int :> Delete '[JSON] ([Int])
 
 futuhoursApi :: Proxy FutuhoursAPI
 futuhoursApi = Proxy

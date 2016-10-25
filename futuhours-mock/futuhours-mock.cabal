@@ -33,6 +33,7 @@ library
     , aeson
     , aeson-compat
     , base-compat
+    , containers
     , env-config
     , futurice-foundation
     , futurice-prelude
@@ -45,11 +46,13 @@ library
     , postgresql-simple
     , QuickCheck
     , resource-pool
+    , random
     , servant
     , servant-lucid
     , servant-server
     , swagger2
     , time
+    , transformers
     , vector
   exposed-modules:
       Futurice.App.FutuhoursMock
