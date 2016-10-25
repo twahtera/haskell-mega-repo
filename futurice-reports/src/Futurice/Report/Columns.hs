@@ -307,7 +307,7 @@ instance ToColumns () where
 
 instance ToColumns FUM.UserName where
     type Columns FUM.UserName = '[FUM.UserName]
-    columnNames _ = K "FUM" :* Nil
+    columnNames _ = K "fum" :* Nil
     toColumns u   = [I u :* Nil]
 
 -------------------------------------------------------------------------------
@@ -465,26 +465,32 @@ data Aggregate
     | AggCount
     | AggCountDistinct
     | AggSum
+    -- | AggMin
+    -- | AggMax
     | AggAvg
     | AggCollect
+    | AggCollectDistinct
   deriving (Eq, Ord, Enum, Bounded, Generic, Typeable)
 
 columnTypeAggregate :: ColumnType -> [Aggregate]
 columnTypeAggregate CTText =
-    [ AggFirst, AggCount, AggCountDistinct, AggCollect ]
+    [ AggFirst, AggCount, AggCountDistinct, AggCollect, AggCollectDistinct ]
 columnTypeAggregate CTDay =
-    [ AggFirst, AggCount, AggCountDistinct, AggCollect ]
+    [ AggFirst, AggCount, AggCountDistinct, AggCollect, AggCollectDistinct ]
 columnTypeAggregate CTHourDiff =
     [ minBound .. maxBound ]
 
 -- | Aggregaes' meta information
 aggregateMeta :: Aggregate -> (Text, Text, Text)
-aggregateMeta AggFirst         = ("∃", "first", "Pick first (random)")
-aggregateMeta AggCount         = ("m", "count", "Count elements")
-aggregateMeta AggCountDistinct = ("n!", "countDistinct", "Count distinct elements")
-aggregateMeta AggSum           = ("∑", "sum", "Sum elements")
-aggregateMeta AggAvg           = ("μ", "avg", "Average of elements")
-aggregateMeta AggCollect       = ("∀", "collect", "Collect all values")
+aggregateMeta AggFirst           = ("∃", "first", "Pick first (random)")
+aggregateMeta AggCount           = ("m", "count", "Count elements")
+aggregateMeta AggCountDistinct   = ("n!", "countDistinct", "Count distinct elements")
+aggregateMeta AggSum             = ("∑", "sum", "Sum elements")
+aggregateMeta AggAvg             = ("μ", "avg", "Average of elements")
+--aggregateMeta AggMax             = ("⊔", "max", "Maximum value")
+--aggregateMeta AggMin             = ("⊓", "min", "Minimum value")
+aggregateMeta AggCollect         = ("∀", "collect", "Collect all values")
+aggregateMeta AggCollectDistinct = ("∀!", "collectDistinct", "Collect all distinct values")
 
 -- |
 --

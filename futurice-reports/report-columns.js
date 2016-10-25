@@ -66,7 +66,13 @@ window.addEventListener("load", function () {
 
         /* CONTROLS */
 
-        var VALID_AGGREGATES = ["first", "sum", "avg", "count", "countDistinct", "collect"];
+        var VALID_AGGREGATES = [
+            "first",
+            "sum", "avg",
+            "min", "max",
+            "count", "countDistinct",
+            "collect", "collectDistinct",
+        ];
 
         // todo parse query string
         var queryObject = parseQueryString(window.location.search);
@@ -453,14 +459,12 @@ window.addEventListener("load", function () {
                     switch (action) {
                         case "sort-asc":      sortAscending(colIdx, true);  break;
                         case "sort-desc":     sortDescending(colIdx, true); break;
-                        case "first":         setAggregate(colIdx, "first", true); break;
-                        case "sum":           setAggregate(colIdx, "sum", true); break;
-                        case "avg":           setAggregate(colIdx, "avg", true); break;
-                        case "count":         setAggregate(colIdx, "count", true); break;
-                        case "countDistinct": setAggregate(colIdx, "countDistinct", true); break;
-                        case "collect":       setAggregate(colIdx, "collect", true); break;
                         case "group-by":      toggleGroupBy(colIdx, true); break;
                         default:
+                            if (VALID_AGGREGATES.indexOf(action) !== -1) {
+                                setAggregate(colIdx, action, true); break;
+                                break;
+                            }
                             assert(false, "Unknown quick control: " + action);
                     }
 
@@ -549,10 +553,13 @@ window.addEventListener("load", function () {
     var aggregateFunctions = {
         first: function (x) { return x[0]; },
         sum: function (x) { return _.sum(x); },
-        avg: function (x) { return NaN; },
+        avg: function (x) { return _.sum(x) / x.length; },
+        min: function (x) { return _.min(x); },
+        max: function (x) { return _.max(x); },
         count: function (x) { return x.length; },
         countDistinct: function (x) { return _.uniq(x).length; },
         collect: function (x) { return x; },
+        collectDistinct: function (x) { return _.uniq(x); },
     };
 
     // jQuery 4evah
