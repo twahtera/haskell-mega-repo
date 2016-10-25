@@ -66,7 +66,13 @@ window.addEventListener("load", function () {
 
         /* CONTROLS */
 
-        var VALID_AGGREGATES = ["first", "sum", "avg", "count", "countDistinct", "collect"];
+        var VALID_AGGREGATES = [
+            "first",
+            "sum", "avg",
+            "min", "max",
+            "count", "countDistinct",
+            "collect", "collectDistinct",
+        ];
 
         // todo parse query string
         var queryObject = parseQueryString(window.location.search);
@@ -109,8 +115,28 @@ window.addEventListener("load", function () {
             }
         });
 
+        var START_ORDERBY = _.chain((queryObject["order-by"] || "").split(/,/))
+            .map(function (sortSpec) {
+                var m = sortSpec.match(/^(.*)-(asc|desc)$/);
+                if (!m) return null;
+                var column = m[1];
+                var order = m[2];
+
+                var colIdx = data.columns.indexOf(column);
+                if (colIdx === -1) {
+                    return null;
+                } else {
+                    return { colIdx: colIdx, order: order };
+                }
+            })
+            .filter(function (x) { return x !== null; })
+            .sort()
+            .uniqBy(function (x) { return x.colIdx; })
+            .value();
+
+
         var START_SETTINGS = {
-            orderBy:    [],
+            orderBy:    START_ORDERBY,
             aggregates: START_AGGREGATES,
             groupBy:    START_GROUPBY,
             filterBy:   START_FILTERBY,
@@ -453,14 +479,12 @@ window.addEventListener("load", function () {
                     switch (action) {
                         case "sort-asc":      sortAscending(colIdx, true);  break;
                         case "sort-desc":     sortDescending(colIdx, true); break;
-                        case "first":         setAggregate(colIdx, "first", true); break;
-                        case "sum":           setAggregate(colIdx, "sum", true); break;
-                        case "avg":           setAggregate(colIdx, "avg", true); break;
-                        case "count":         setAggregate(colIdx, "count", true); break;
-                        case "countDistinct": setAggregate(colIdx, "countDistinct", true); break;
-                        case "collect":       setAggregate(colIdx, "collect", true); break;
                         case "group-by":      toggleGroupBy(colIdx, true); break;
                         default:
+                            if (VALID_AGGREGATES.indexOf(action) !== -1) {
+                                setAggregate(colIdx, action, true);
+                                break;
+                            }
                             assert(false, "Unknown quick control: " + action);
                     }
 
@@ -549,10 +573,13 @@ window.addEventListener("load", function () {
     var aggregateFunctions = {
         first: function (x) { return x[0]; },
         sum: function (x) { return _.sum(x); },
-        avg: function (x) { return NaN; },
+        avg: function (x) { return _.sum(x) / x.length; },
+        min: function (x) { return _.min(x); },
+        max: function (x) { return _.max(x); },
         count: function (x) { return x.length; },
         countDistinct: function (x) { return _.uniq(x).length; },
         collect: function (x) { return x; },
+        collectDistinct: function (x) { return _.uniq(x); },
     };
 
     // jQuery 4evah
