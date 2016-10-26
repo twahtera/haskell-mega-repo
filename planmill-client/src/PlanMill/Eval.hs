@@ -34,7 +34,6 @@ evalPlanMill
         ( MonadHttp m, MonadThrow m, MonadTime m, MonadLogger m
         , MonadReader env m, HasPlanMillBaseUrl env, HasCredentials env
         , MonadCRandom' m
-        , Applicative m
         , FromJSON a
         )
     => PlanMill a -> m a

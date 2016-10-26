@@ -121,7 +121,6 @@ instance Monad m
 
 instance
     ( MonadIO m, MonadHttp m, MonadThrow m, MonadTime m, MonadLogger m
-    , Applicative m
     , HasPlanMillBaseUrl env, HasCredentials env
     )
   => MonadPlanMill (ReaderT env m) where
