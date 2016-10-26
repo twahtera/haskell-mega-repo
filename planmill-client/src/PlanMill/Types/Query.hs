@@ -42,7 +42,6 @@ import Data.Type.Equality
 import Futurice.Constraint.ForallSymbol (ForallFSymbol (..))
 import Generics.SOP                     (All, hcmap, hcollapse, hcpure)
 import GHC.TypeLits                     (KnownSymbol, sameSymbol, symbolVal)
-import Numeric.Interval.NonEmpty        (Interval, inf, sup)
 
 import qualified Data.Aeson.Compat                    as Aeson
 import qualified Data.Map                             as Map

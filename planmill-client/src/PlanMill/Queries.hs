@@ -31,7 +31,6 @@ import GHC.TypeLits    (KnownSymbol, symbolVal)
 
 import Control.Monad.PlanMill
 
-import Numeric.Interval.NonEmpty   (Interval)
 import PlanMill.Types
        (Absences, Me, Project, ProjectId, Task, TaskId, Team, TeamId,
        TimeBalance, User, Timereports, UserCapacities, UserId, Users)
