@@ -45,6 +45,7 @@ library
     , lucid
     , mmorph
     , mtl
+    , planmill-client
     , servant
     , servant-cassava
     , strict-base-types

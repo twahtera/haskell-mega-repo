@@ -32,7 +32,8 @@ import Data.Swagger              (NamedSchema (..))
 import Futurice.Generics
 import Futurice.List
 import Futurice.Lucid.Foundation
-import Futurice.Time             (AsScientific, IsTimeUnit (..), NDT (..))
+import Futurice.Time
+       (AsScientific, IsTimeUnit (..), NDT (..), TimeUnit (..))
 import Generics.SOP              ((:.:) (..), All, SListI (..))
 import GHC.TypeLits              (KnownSymbol, Symbol, symbolVal)
 import Servant.API               (MimeRender (..))
@@ -43,6 +44,7 @@ import qualified Data.Set           as Set
 import qualified Data.Text.Encoding as TE
 import qualified Data.Tuple.Strict  as S
 import qualified Generics.SOP       as SOP
+import qualified PlanMill           as PM
 
 -- instances
 import qualified FUM
@@ -448,15 +450,23 @@ generateColumnTypes _ = SOP.hcpure (Proxy :: Proxy ReportValue) f
     f = K $ reportValueType (Proxy :: Proxy a)
 
 -- | Column type, for the JS frontend.
+--
+-- /TODO/ indicate if column can be nullable
 data ColumnType
     = CTText     -- ^ text
+    | CTNumber   -- ^ number
+    | CTBool     -- ^ boolean
     | CTDay      -- ^ day: @2016-10-25@
+    | CTDayDiff  -- ^ day difference: @5 days"
     | CTHourDiff -- ^ hour difference: @5 hours"
   deriving (Eq, Ord, Enum, Bounded, Generic, Typeable)
 
 instance ToJSON ColumnType where
     toJSON CTText     = "text"
+    toJSON CTNumber   = "number"
+    toJSON CTBool     = "bool"
     toJSON CTDay      = "day"
+    toJSON CTDayDiff  = "dayDiff"
     toJSON CTHourDiff = "hourDiff"
 
 -- | Various aggregates
@@ -475,8 +485,15 @@ data Aggregate
 columnTypeAggregate :: ColumnType -> [Aggregate]
 columnTypeAggregate CTText =
     [ AggFirst, AggCount, AggCountDistinct, AggCollect, AggCollectDistinct ]
+columnTypeAggregate CTNumber =
+    [ minBound .. maxBound ]
+-- TODO: what aggregates makes sense for booleans? all, any?
+columnTypeAggregate CTBool =
+    [ AggFirst, AggCount, AggCollectDistinct ]
 columnTypeAggregate CTDay =
     [ AggFirst, AggCount, AggCountDistinct, AggCollect, AggCollectDistinct ]
+columnTypeAggregate CTDayDiff =
+    [ minBound .. maxBound ]
 columnTypeAggregate CTHourDiff =
     [ minBound .. maxBound ]
 
@@ -517,6 +534,12 @@ class (ToJSON a, Ord a) => ReportValue a where
 
 data ColumnData a = ColumnData !Text ![a]
 
+instance ReportValue Text
+
+instance ReportValue Int where
+    reportValueType _ = CTNumber
+    reportValueHtml   = toHtml . show
+
 instance ReportValue Day where
     reportValueType _ = CTDay
     reportValueHtml = fromString . show
@@ -524,30 +547,39 @@ instance ReportValue Day where
 instance ReportValue UTCTime where
     reportValueHtml = fromString . show
 
+instance ReportValue a => ReportValue (Maybe a) where
+    reportValueType _ = reportValueType (Proxy :: Proxy a)
+    reportValueHtml   = maybe (pure ()) reportValueHtml
+
+instance ReportValue Bool where
+    reportValueType _ = CTBool
+    reportValueHtml   = bool "yes" "no"
+
 instance ReportValue FUM.UserName where
     reportValueHtml = toHtml . FUM._getUserName
 
-instance ReportValue Text
+instance ReportValue (PM.Identifier a) where
+    reportValueType _            = CTNumber
+    reportValueHtml (PM.Ident i) = toHtml (show i)
 
-instance ReportValue a => ReportValue (Maybe a) where
-    reportValueHtml = maybe (pure ()) reportValueHtml
-
-instance ReportValue Bool where
-    reportValueHtml = bool "yes" "no"
+instance ReportValue (GH.Name a) where
+    reportValueHtml = reportValueHtml . GH.untagName
 
 instance
-    (Ord a, Show a, IsTimeUnit tu, AsScientific a)
+    (Ord a, Show a, NDTReportValue tu, AsScientific a)
     => ReportValue (NDT tu a)
   where
-    reportValueType _ = CTHourDiff -- /TODO/ this *might be* incorrect!
+    reportValueType _ = ndtReportValueType (Proxy :: Proxy tu)
     reportValueHtml (NDT x) =
         toHtmlRaw $ show x <> nbsp <> sfx
       where
         sfx  = symbolVal (Proxy :: Proxy (TimeUnitSfx tu))
         nbsp = "&nbsp;" :: String
 
-instance ReportValue (GH.Name a) where
-    reportValueHtml = reportValueHtml . GH.untagName
+class IsTimeUnit tu => NDTReportValue tu where
+    ndtReportValueType :: Proxy tu -> ColumnType
+instance NDTReportValue 'Hours where ndtReportValueType _ = CTHourDiff
+instance NDTReportValue 'Days  where ndtReportValueType _ = CTDayDiff
 
 -------------------------------------------------------------------------------
 -- Helpers
