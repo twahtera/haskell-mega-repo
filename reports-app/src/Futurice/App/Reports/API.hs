@@ -20,6 +20,7 @@ import Futurice.App.Reports.Balances     (BalanceReport)
 import Futurice.App.Reports.FumGithub    (FumGitHubReport)
 import Futurice.App.Reports.GithubIssues (IssueReport)
 import Futurice.App.Reports.MissingHours (MissingHoursReport)
+import Futurice.App.Reports.PowerUser    (PowerUserReport)
 
 type ReportTypes = '[HTML, CSV, JSON]
 
@@ -30,6 +31,7 @@ type Reports =
     , R "fum-github"    FumGitHubReport
     , R "missing-hours" MissingHoursReport
     , R "balances"      BalanceReport
+    , R "power-users"   PowerUserReport
     ]
 
 -- | This, 'RReport' and 'RName', type families are needed to make 'FoldReportsAPI' reduce

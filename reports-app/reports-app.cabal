@@ -99,6 +99,7 @@ library
       Futurice.App.Reports.GithubIssues
       Futurice.App.Reports.Markup
       Futurice.App.Reports.MissingHours
+      Futurice.App.Reports.PowerUser
   default-language: Haskell2010
 
 executable reports-app-server

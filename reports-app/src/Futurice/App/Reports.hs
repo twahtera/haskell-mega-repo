@@ -36,6 +36,7 @@ import Futurice.App.Reports.GithubIssues
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, missingHoursReport)
+import Futurice.App.Reports.PowerUser    (PowerUserReport, powerUserReport)
 
 -- /TODO/ Make proper type
 type Ctx = (DynMapCache, Manager, Config)
@@ -74,6 +75,13 @@ serveBalancesReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
         (ctxToIntegrationsConfig now ctx)
         (balanceReport interval)
 
+servePowerUsersReport :: Ctx -> IO PowerUserReport
+servePowerUsersReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
+    now <- currentTime
+    runIntegrations
+        (ctxToIntegrationsConfig now ctx)
+        powerUserReport
+
 -- All report endpoints
 -- this is used for api 'server' and pericron
 reports :: NP ReportEndpoint Reports
@@ -82,6 +90,7 @@ reports =
     ReportEndpoint serveFumGitHubReport :*
     ReportEndpoint serveMissingHoursReport :*
     ReportEndpoint serveBalancesReport :*
+    ReportEndpoint servePowerUsersReport :*
     Nil
 
 makeServer :: Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)
