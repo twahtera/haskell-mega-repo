@@ -21,10 +21,10 @@ import PlanMill.Types.Cfg   (Cfg)
 import PlanMill.Types.Query
 
 -- For initDataSourceSimpleIO
-import Control.Monad.Logger             (LogLevel, filterLogger)
 import Control.Monad.CryptoRandom.Extra
        (MonadInitHashDRBG (..), evalCRandTThrow)
-import Control.Monad.Http               (evalHttpT)
+import Control.Monad.Http               (runHttpT)
+import Control.Monad.Logger             (LogLevel, filterLogger)
 import Control.Monad.Reader             (runReaderT)
 import Data.Constraint                  (Dict (..))
 import PlanMill.Eval                    (evalPlanMill)
@@ -36,6 +36,7 @@ import qualified Data.Binary.Tagged       as Binary
 import           Data.GADT.Compare        (GEq (..))
 import           Data.Type.Equality       ((:~:) (..))
 import qualified Network.HTTP.Client      as HTTP
+import qualified Network.HTTP.Client.TLS  as HTTP
 
 instance Show1 Query where show1 = show
 
@@ -51,21 +52,28 @@ instance DataSource u Query where
 -- | This is a simple query function.
 --
 -- It's smart enough to reuse http/random-gen for blocked fetches
+--
+-- /TODO/ take 'HTTP.Manager' as a param
 initDataSourceSimpleIO :: LogLevel -> Cfg -> State Query
 initDataSourceSimpleIO loglevel cfg = QueryFunction $ \blockedFetches -> SyncFetch $ do
-    g <- mkHashDRBG
-    perform g $ for_ blockedFetches $ \(BlockedFetch q v) ->
+    prng <- mkHashDRBG
+    manager <- HTTP.newManager HTTP.tlsManagerSettings
+        -- 5 min timeout
+        { HTTP.managerResponseTimeout = HTTP.responseTimeoutMicro $ 300 * 1000000
+        }
+
+    perform manager prng $ for_ blockedFetches $ \(BlockedFetch q v) ->
         case queryDict (Proxy :: Proxy FromJSON) q of
             Dict -> do
                 res <- evalPlanMill $ queryToRequest q
                 liftIO $ putSuccess v res
   where
-    perform g
-        = evalHttpT
+    perform manager prng
+        = flip runHttpT manager
         . runStderrLoggingT
         . filterLogger logPred
         . flip runReaderT cfg
-        . flip evalCRandTThrow g
+        . flip evalCRandTThrow prng
     logPred _ = (>= loglevel)
 
 -- | This is batched query function.
