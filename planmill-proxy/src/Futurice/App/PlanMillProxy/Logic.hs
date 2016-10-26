@@ -1,7 +1,11 @@
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# OPTIONS_GHC -freduction-depth=0 #-}
+#endif
 module Futurice.App.PlanMillProxy.Logic (
     -- * Endpoint
     haxlEndpoint,
@@ -24,6 +28,7 @@ import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, taggedDecode, taggedEncode)
 import Data.Constraint
 import Data.Pool                        (withResource)
+import Data.Time                        (addDays)
 import Futurice.App.PlanMillProxy.H
 import Futurice.App.PlanMillProxy.Types (Ctx (..))
 import Futurice.Servant
@@ -40,6 +45,7 @@ import qualified Data.Set                   as Set
 import qualified Data.Text                  as T
 import qualified Data.Vector                as V
 import qualified Database.PostgreSQL.Simple as Postgres
+import qualified Numeric.Interval.NonEmpty  as Interval
 import qualified PlanMill                   as PM
 
 -------------------------------------------------------------------------------
@@ -85,13 +91,14 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
 
     -- Info about cache success
     $(logInfo) $ "Found "
-        <> textShow (HM.size cacheResult) <> "/"
-        <> textShow (length primitiveQs) <> " in postgres"
+        <> textShow (HM.size cacheResult) <> " / "
+        <> textShow (length primitiveQs) <> " / "
+        <> textShow (length qs) <> " (found/primitive/all) query results in postgres"
 
     -- go thru each request
     -- primitive requests are handled one by one, that could be optimised.
     res <- traverse (fetch cacheResult conn) qs
-    
+
     -- Log the first errorneous response
     case (res ^? folded . _Left) of
         Nothing  -> pure ()
@@ -250,11 +257,11 @@ selectTimereports _ctx conn uid minterval = do
         Nothing       -> Postgres.query conn selectQueryWithoutInterval (Postgres.Only uid)
         Just interval -> Postgres.query conn selectQueryWithInterval (uid, inf interval, sup interval)
     res' <- liftIO $ tryDeep $ return $ V.fromList $ map selectTransform res
-    case res' of 
+    case res' of
         Right x -> return x
         Left exc -> do
             $(logWarn) $ "selectTimereports: " <> textShow exc
-            _ <- handleSqlError 0 $ case minterval of 
+            _ <- handleSqlError 0 $ case minterval of
                 Nothing       -> Postgres.execute conn deleteQueryWithoutInterval (Postgres.Only uid)
                 Just interval -> Postgres.execute conn deleteQueryWithInterval (uid, inf interval, sup interval)
             return mempty
@@ -438,7 +445,7 @@ insertTimereports conn trs =
 -- Capacities
 -------------------------------------------------------------------------------
 
--- | /TODO/ make fallback do async. Return zero capacities insted 
+-- | /TODO/ make fallback do async. Return zero capacities instead
 selectCapacities
     :: Ctx -> Postgres.Connection
     -> PM.UserId -> PM.Interval Day -> LIO PM.UserCapacities
@@ -450,7 +457,7 @@ selectCapacities ctx conn uid interval = do
                 "Less entries for " <> textShow interval <>
                 " capacity interval for " <> textShow uid <>
                 ": " <> textShow (length res) <> "/" <> textShow intervalLength
-            fallback 
+            fallback
         else do
             res' <- liftIO $ tryDeep $ return $! V.fromList $ map selectTransform res
             case res' of
@@ -460,11 +467,14 @@ selectCapacities ctx conn uid interval = do
                     fallback
   where
     fallback = do
+        -- We get an extended interval
         x <- fetchFromPlanMill (ctxCache ctx) (ctxPlanmillCfg ctx) q
         i <- handleSqlError 0 $ Postgres.executeMany conn insertQuery (transformForInsert x)
         when (fromIntegral i /= length x) $
             $(logWarn) $ "Inserted less capacities than we got from planmill"
-        return $! x
+        -- ... so we trim the result
+        let x' = V.filter (\c -> PM.userCapacityDate c `Interval.elem` interval) x
+        return $! x'
 
     -- Interval is inclusive on both ends
     intervalLength = fromEnum (sup interval) - fromEnum (inf interval) + 1
@@ -485,9 +495,11 @@ selectCapacities ctx conn uid interval = do
         , "WHERE c.uid = EXCLUDED.uid AND c.day = EXCLUDED.day"
         ]
 
-    -- If we gonna planmill we ask some time into a future in advance
+    -- If we gonna planmill we ask some time into a future and the past
     q :: Query PM.UserCapacities
-    q = QueryCapacities interval uid
+    q = QueryCapacities interval' uid
+      where
+        interval' = addDays (-7) (inf interval) ... addDays 7 (sup interval)
 
     selectTransform
         :: Postgres.Only (Postgres.Binary BSL.ByteString)

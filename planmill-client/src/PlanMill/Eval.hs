@@ -34,7 +34,6 @@ evalPlanMill
         ( MonadHttp m, MonadThrow m, MonadTime m, MonadLogger m
         , MonadReader env m, HasPlanMillBaseUrl env, HasCredentials env
         , MonadCRandom' m
-        , Applicative m
         , FromJSON a
         )
     => PlanMill a -> m a
@@ -122,8 +121,10 @@ evalPlanMill pm = do
                 then pure (acc <> res)
                 else go (acc <> V.take rowCount res)
 
+        -- The PlanMill documentation doesn't specify the maximum rows we
+        -- can ask for, so we empirically found this limit works
         rowCount :: Int
-        rowCount = 100
+        rowCount = 1000
 
 authHeader :: Auth -> Header
 authHeader (Auth (Ident uid) (Nonce nonce) ts sig) = ("x-PlanMill-Auth",

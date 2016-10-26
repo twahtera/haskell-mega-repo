@@ -1,4 +1,8 @@
+{-# LANGUAGE CPP          #-}
 {-# LANGUAGE TypeFamilies #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# OPTIONS_GHC -freduction-depth=0 #-}
+#endif
 module Main (main) where
 
 import Futurice.Prelude

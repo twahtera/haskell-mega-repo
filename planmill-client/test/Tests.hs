@@ -9,7 +9,6 @@ import PlanMill.Internal.Prelude
 import Data.Constraint
 import Data.FileEmbed            (embedFile)
 import Futurice.Constraint.Unit1 (Unit1)
-import Numeric.Interval.NonEmpty ((...))
 import Test.Tasty
 import Test.Tasty.QuickCheck
 
@@ -132,6 +131,9 @@ queryTagIdentityGen = elements
     , SomeQueryTag QueryTagUser
     , SomeQueryTag QueryTagTimebalance
     , SomeQueryTag QueryTagTimereport
+    , SomeQueryTag QueryTagTask
+    , SomeQueryTag QueryTagProject
+    , SomeQueryTag QueryTagAbsence
     , SomeQueryTag $ QueryTagEnumDesc (Proxy :: Proxy "foo")
     , SomeQueryTag $ QueryTagEnumDesc (Proxy :: Proxy "bar")
     ]
@@ -140,6 +142,8 @@ queryTagVectorGen :: Gen (SomeQueryTag Vector)
 queryTagVectorGen = elements
     [ SomeQueryTag QueryTagTeam
     , SomeQueryTag QueryTagUser
+    , SomeQueryTag QueryTagTask
+    , SomeQueryTag QueryTagAbsence
     ]
 
 queryGen :: Gen SomeQuery

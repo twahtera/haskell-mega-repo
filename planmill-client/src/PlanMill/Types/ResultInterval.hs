@@ -54,7 +54,7 @@ data ResultInterval = ResultInterval IntervalType (Interval UTCTime)
 
 -- | Throws 'InvalidResultInterval' if @from@ and @to@ aren't ordered.
 mkResultInterval
-    :: (Functor m, MonadThrow m)
+    :: MonadThrow m
     => IntervalType
     -> UTCTime       -- ^ from
     -> UTCTime       -- ^ to

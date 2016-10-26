@@ -42,7 +42,6 @@ import Data.Type.Equality
 import Futurice.Constraint.ForallSymbol (ForallFSymbol (..))
 import Generics.SOP                     (All, hcmap, hcollapse, hcpure)
 import GHC.TypeLits                     (KnownSymbol, sameSymbol, symbolVal)
-import Numeric.Interval.NonEmpty        (Interval, inf, sup)
 
 import qualified Data.Aeson.Compat                    as Aeson
 import qualified Data.Map                             as Map
@@ -50,15 +49,18 @@ import qualified Data.Text                            as T
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 
+import PlanMill.Types.Absence        (Absence, Absences)
 import PlanMill.Types.Enumeration    (EnumDesc)
 import PlanMill.Types.Identifier     (Identifier (..))
 import PlanMill.Types.Me             (Me)
 import PlanMill.Types.Meta           (Meta)
+import PlanMill.Types.Project        (Project, Projects)
 import PlanMill.Types.Request
        (PlanMill (..), QueryString, planMillGetQs, planMillPagedGetQs)
 import PlanMill.Types.ResultInterval
        (IntervalType (..), ResultInterval (..), intervalDayToIntervalUTC,
        intervalToQueryString)
+import PlanMill.Types.Task           (Task, Tasks)
 import PlanMill.Types.TimeBalance    (TimeBalance)
 import PlanMill.Types.Timereport     (Timereport, Timereports)
 import PlanMill.Types.UOffset        (showPlanmillUTCTime)
@@ -78,12 +80,15 @@ data QueryTag f a where
     QueryTagUser        :: QueryTag f User -- can be I or Vector
     QueryTagTimebalance :: QueryTag I TimeBalance
     QueryTagTimereport  :: QueryTag I Timereport
+    QueryTagTask        :: QueryTag f Task    -- can be I or Vector
+    QueryTagProject     :: QueryTag f Project -- can be I or Vector
+    QueryTagAbsence     :: QueryTag f Absence -- can be I or Vector
     QueryTagEnumDesc    :: KnownSymbol enum => !(Proxy enum) -> QueryTag I (EnumDesc enum)
 
 -- | Planmill query (i.e. read-only operation).
 --
 -- More sophisticated then 'PlanMill' -request,
--- as it can be serialised.
+-- as it can be de/serialised.
 data Query a where
     QueryGet         :: QueryTag I a -> QueryString -> UrlParts -> Query a
     QueryPagedGet    :: QueryTag Vector a -> QueryString -> UrlParts -> Query (Vector a)
@@ -149,6 +154,9 @@ instance GEq (QueryTag f) where
     geq QueryTagUser QueryTagUser                  = Just Refl
     geq QueryTagTimebalance QueryTagTimebalance    = Just Refl
     geq QueryTagTimereport QueryTagTimereport      = Just Refl
+    geq QueryTagTask QueryTagTask                  = Just Refl
+    geq QueryTagProject QueryTagProject            = Just Refl
+    geq QueryTagAbsence QueryTagAbsence            = Just Refl
     geq (QueryTagEnumDesc p) (QueryTagEnumDesc p') = do
         Refl <- sameSymbol p p'
         pure Refl
@@ -165,6 +173,9 @@ instance Show (QueryTag f a) where
         QueryTagUser        -> showString "QueryTagUser"
         QueryTagTimebalance -> showString "QueryTagTimebalance"
         QueryTagTimereport  -> showString "QueryTagTimereport"
+        QueryTagTask        -> showString "QueryTagTask"
+        QueryTagProject     -> showString "QueryTagProject"
+        QueryTagAbsence     -> showString "QueryTagAbsence"
         QueryTagEnumDesc p  -> showParen (d > 10)
             $ showString "QueryTagEnumDesc "
             . showsPrec 11 (symbolVal p)
@@ -176,37 +187,51 @@ instance Hashable (QueryTag f a) where
     hashWithSalt salt QueryTagUser         = salt `hashWithSalt` (3 :: Int)
     hashWithSalt salt QueryTagTimebalance  = salt `hashWithSalt` (4 :: Int)
     hashWithSalt salt QueryTagTimereport   = salt `hashWithSalt` (5 :: Int)
+    hashWithSalt salt QueryTagTask         = salt `hashWithSalt` (6 :: Int)
+    hashWithSalt salt QueryTagProject      = salt `hashWithSalt` (7 :: Int)
+    hashWithSalt salt QueryTagAbsence      = salt `hashWithSalt` (8 :: Int)
     hashWithSalt salt (QueryTagEnumDesc p) = salt
-        `hashWithSalt` (6 :: Int)
+        -- We don't add a int prehash, as it's unnecessary
         `hashWithSalt` (symbolVal p)
 
 instance NFData (QueryTag f a) where
     rnf x = x `seq` ()
 
 -- We use SBoolI, though we could have defined two instances:
--- * Binary (SomeQueryTag I)
--- * Binary (SomeQueryTag Vector)
+  --
+-- * @'Binary' ('SomeQueryTag' 'I')@
+  --
+-- * @'Binary' ('SomeQueryTag' 'Vector')@
+  --
 instance SBoolI (f == I) => Binary (SomeQueryTag f) where
-    put (SomeQueryTag QueryTagMe)           = put (0 :: Word8)
-    put (SomeQueryTag QueryTagMeta)         = put (1 :: Word8)
-    put (SomeQueryTag QueryTagTeam)         = put (2 :: Word8)
-    put (SomeQueryTag QueryTagUser)         = put (3 :: Word8)
-    put (SomeQueryTag QueryTagTimebalance)  = put (4 :: Word8)
-    put (SomeQueryTag QueryTagTimereport)   = put (5 :: Word8)
     put (SomeQueryTag (QueryTagEnumDesc p)) = do
-        put (6 :: Word8)
+        put (0 :: Word8)
         put (symbolVal p)
+    put (SomeQueryTag QueryTagMe)           = put (1 :: Word8)
+    put (SomeQueryTag QueryTagMeta)         = put (2 :: Word8)
+    put (SomeQueryTag QueryTagTeam)         = put (3 :: Word8)
+    put (SomeQueryTag QueryTagUser)         = put (4 :: Word8)
+    put (SomeQueryTag QueryTagTimebalance)  = put (5 :: Word8)
+    put (SomeQueryTag QueryTagTimereport)   = put (6 :: Word8)
+    put (SomeQueryTag QueryTagTask)         = put (7 :: Word8)
+    put (SomeQueryTag QueryTagProject)      = put (8 :: Word8)
+    put (SomeQueryTag QueryTagAbsence)      = put (9 :: Word8)
 
     get = get >>= \n -> case (n :: Word8, sboolEqRefl :: Maybe (f :~: I)) of
-        (0, Just Refl) -> pure $ SomeQueryTag QueryTagMe
-        (1, Just Refl) -> pure $ SomeQueryTag QueryTagMeta
-        (2, _)         -> pure $ SomeQueryTag QueryTagTeam
-        (3, _)         -> pure $ SomeQueryTag QueryTagUser
-        (4, Just Refl) -> pure $ SomeQueryTag QueryTagTimebalance
-        (5, Just Refl) -> pure $ SomeQueryTag QueryTagTimereport
-        (6, Just Refl) -> do
+        (0, Just Refl) -> do
             val <- get
             pure $ reifySymbol val $ \p -> SomeQueryTag (QueryTagEnumDesc p)
+
+        (1, Just Refl) -> pure $ SomeQueryTag QueryTagMe
+        (2, Just Refl) -> pure $ SomeQueryTag QueryTagMeta
+        (3, _)         -> pure $ SomeQueryTag QueryTagTeam
+        (4, _)         -> pure $ SomeQueryTag QueryTagUser
+        (5, Just Refl) -> pure $ SomeQueryTag QueryTagTimebalance
+        (6, Just Refl) -> pure $ SomeQueryTag QueryTagTimereport
+        (7, _)         -> pure $ SomeQueryTag QueryTagTask
+        (8, _)         -> pure $ SomeQueryTag QueryTagProject
+        (9, _)         -> pure $ SomeQueryTag QueryTagAbsence
+
         _ -> fail $ "Invalid tag " ++ show n
 
 instance ToJSON (QueryTag f a) where
@@ -216,6 +241,9 @@ instance ToJSON (QueryTag f a) where
     toJSON QueryTagUser         = String "user"
     toJSON QueryTagTimebalance  = String "timebalance"
     toJSON QueryTagTimereport   = String "timereport"
+    toJSON QueryTagTask         = String "task"
+    toJSON QueryTagProject      = String "project"
+    toJSON QueryTagAbsence      = String "absence"
     toJSON (QueryTagEnumDesc p) = String $ "enumdesc-" <> symbolVal p ^. packed
 
 instance ToJSON (SomeQueryTag f) where
@@ -229,6 +257,9 @@ instance SBoolI (f == I) => FromJSON (SomeQueryTag f) where
         ("user", _)                -> pure $ SomeQueryTag QueryTagUser
         ("timebalance", Just Refl) -> pure $ SomeQueryTag QueryTagTimebalance
         ("timereport", Just Refl)  -> pure $ SomeQueryTag QueryTagTimereport
+        ("task", _)                -> pure $ SomeQueryTag QueryTagTask
+        ("project", _)             -> pure $ SomeQueryTag QueryTagProject
+        ("absence", _)             -> pure $ SomeQueryTag QueryTagAbsence
         (_, Just Refl) | T.isPrefixOf pfx t
             -> pure $ reifySymbol (T.drop (T.length pfx) t ^. unpacked) mk
           where
@@ -238,13 +269,16 @@ instance SBoolI (f == I) => FromJSON (SomeQueryTag f) where
 
 instance HasStructuralInfo (QueryTag f a) where
     structuralInfo _ = StructuralInfo "QueryTag"
-        [[ NominalType "QueryTagMe"
+        [[ NominalType "QueryTagEnumDesc"
+        ,  NominalType "QueryTagMe"
         ,  NominalType "QueryTagMeta"
         ,  NominalType "QueryTagTeam"
         ,  NominalType "QueryTagUser"
         ,  NominalType "QueryTagTimebalance"
         ,  NominalType "QueryTagTimereport"
-        ,  NominalType "QueryTagEnumDesc"
+        ,  NominalType "QueryTagTask"
+        ,  NominalType "QueryTagProject"
+        ,  NominalType "QueryTagAbsence"
         ]]
 
 -------------------------------------------------------------------------------
@@ -371,6 +405,9 @@ type QueryTypes = '[ Timereports, UserCapacities
     , Team, Teams
     , TimeBalance
     , Timereport
+    , Project, Projects
+    , Task, Tasks
+    , Absence, Absences
     ]
 
 -- | A bit fancier than ':~:'
@@ -386,13 +423,19 @@ queryTagType QueryTagMeta         = Right $ insertNS Refl
 queryTagType QueryTagTeam         = Right $ insertNS Refl
 queryTagType QueryTagTimebalance  = Right $ insertNS Refl
 queryTagType QueryTagTimereport   = Right $ insertNS Refl
+queryTagType QueryTagTask         = Right $ insertNS Refl
+queryTagType QueryTagProject      = Right $ insertNS Refl
+queryTagType QueryTagAbsence      = Right $ insertNS Refl
 queryTagType (QueryTagEnumDesc p) = Left $ IsSomeEnumDesc p
 
 queryTagVectorType
     :: QueryTag Vector a
     -> NS ((:~:) (Vector a)) QueryTypes
-queryTagVectorType QueryTagUser         = insertNS Refl
-queryTagVectorType QueryTagTeam         = insertNS Refl
+queryTagVectorType QueryTagUser    = insertNS Refl
+queryTagVectorType QueryTagTeam    = insertNS Refl
+queryTagVectorType QueryTagTask    = insertNS Refl
+queryTagVectorType QueryTagProject = insertNS Refl
+queryTagVectorType QueryTagAbsence = insertNS Refl
 #if __GLASGOW_HASKELL__ < 800
 queryTagVectorType _ = error "queryTagVectorType: panic!"
 #endif
@@ -412,6 +455,8 @@ queryType (QueryCapacities _ _)  = Right $ S (Z Refl)
 class InsertNS x ys where
     insertNS :: f x -> NS f ys
 
+-- | We don't care about which proof we get.
+-- i.e. the above proofs are irrelevant.
 instance {-# INCOHERENT #-} InsertNS x (x ': ys) where
     insertNS = Z
 

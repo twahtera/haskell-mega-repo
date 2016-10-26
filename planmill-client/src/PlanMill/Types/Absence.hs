@@ -7,10 +7,16 @@
 -- Copyright : (c) 2015 Futurice Oy
 -- License   : BSD3
 -- Maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
-module PlanMill.Types.Absence (Absence(..), Absences, AbsenceId) where
+module PlanMill.Types.Absence (
+    -- * Types
+    Absence(..),
+    Absences,
+    AbsenceId,
+    -- * Functions
+    absenceInterval,
+    ) where
 
 import PlanMill.Internal.Prelude
-
 import PlanMill.Types.Identifier (HasIdentifier (..), Identifier)
 import PlanMill.Types.Project    (ProjectId)
 import PlanMill.Types.User       (UserId)
@@ -22,18 +28,26 @@ data Absence = Absence
     { _absenceId              :: !AbsenceId
     , absencePerson           :: !UserId
     , absenceProject          :: !ProjectId
-    , absenceAccepterPerson   :: !UserId
+    , absenceStart            :: !Day
+    , absenceFinish           :: !Day
+    {-
+      2016-10-26, phadej:
+      We don't actually use those fields, so let's not parse or
+      store them
+
+      Also, it might be good to never parse `description` field.
+
+    , absenceAccepterPerson   :: !(Maybe UserId)
     , absenceInterruptionDate :: !(Maybe UTCTime)
     , absenceCreated          :: !(Maybe UTCTime)
-    , absenceStart            :: !Day
     , absenceDescription      :: !(Maybe Text)
     , absenceVacationYear     :: !(Maybe Int)
     , absenceVacationLength   :: !Int
     , absenceAbsenceType      :: !Int  -- TODO
     , absenceModified         :: !(Maybe UTCTime)
-    , absenceFinish           :: !Day
     , absenceSubstitutePerson :: !(Maybe UserId)
     , absenceStatus           :: !Int  -- TODO
+    -}
     }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
 
@@ -51,20 +65,29 @@ instance HasIdentifier Absence Absence where
     identifier = absenceId
 
 instance FromJSON Absence where
-    parseJSON = withObject "Absence" $ \obj ->
-        Absence <$> obj .: "id"
-                <*> obj .: "person"
-                <*> obj .: "project"
-                <*> obj .: "accepterPerson"
-                -- TODO: I'd add a combinator to aeson-extra to make this prettier
-                <*> (getU <$$> obj .:? "interruptionDate")
-                <*> (getU <$$> obj .:? "created")
-                <*> (dayFromZ <$> obj .: "start")
-                <*> obj .: "description"
-                <*> obj .: "vacationYear"
-                <*> obj .: "vacationLength"
-                <*> obj .: "absenceType"
-                <*> (getU <$$> obj .:? "modified")
-                <*> (dayFromZ <$> obj .: "finish")
-                <*> obj .: "substitutePerson"
-                <*> obj .: "status"
+    parseJSON = withObject "Absence" $ \obj -> Absence
+        <$> obj .: "id"
+        <*> obj .: "person"
+        <*> obj .: "project"
+        <*> (dayFromZ <$> obj .: "start")
+        <*> (dayFromZ <$> obj .: "finish")
+        {-
+        <*> obj .: "accepterPerson"
+        -- TODO: I'd add a combinator to aeson-extra to make this prettier
+        <*> (getU <$$> obj .:? "interruptionDate")
+        <*> (getU <$$> obj .:? "created")
+        <*> obj .: "description"
+        <*> obj .: "vacationYear"
+        <*> obj .: "vacationLength"
+        <*> obj .: "absenceType"
+        <*> (getU <$$> obj .:? "modified")
+        <*> obj .: "substitutePerson"
+        <*> obj .: "status"
+        -}
+
+-------------------------------------------------------------------------------
+-- Functions
+-------------------------------------------------------------------------------
+
+absenceInterval :: Absence -> Interval Day
+absenceInterval ab = absenceStart ab ... absenceFinish ab

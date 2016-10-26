@@ -15,6 +15,9 @@ module PlanMill.Queries (
     users,
     team,
     userTimebalance,
+    absences,
+    project,
+    task,
     -- * Queries
     usersQuery,
     -- timereportsModifiedQuery,
@@ -28,16 +31,13 @@ import GHC.TypeLits    (KnownSymbol, symbolVal)
 
 import Control.Monad.PlanMill
 
-import Numeric.Interval.NonEmpty   (Interval)
+import PlanMill.Types
+       (Absences, Me, Project, ProjectId, Task, TaskId, Team, TeamId,
+       TimeBalance, User, Timereports, UserCapacities, UserId, Users)
 import PlanMill.Types.Enumeration
-import PlanMill.Types.Me           (Me)
 import PlanMill.Types.Meta         (Meta, lookupFieldEnum)
 import PlanMill.Types.Query        (Query (..), QueryTag (..))
-import PlanMill.Types.Timereport   (Timereports)
 import PlanMill.Types.UrlPart      (UrlParts, toUrlParts, (//))
-import PlanMill.Types.User         (Team, TeamId, User, UserId, Users)
-import PlanMill.Types.TimeBalance  (TimeBalance)
-import PlanMill.Types.UserCapacity (UserCapacities)
 
 import qualified Data.IntMap.Strict as IM
 import qualified Data.Map           as Map
@@ -168,6 +168,32 @@ userTimebalance :: MonadPlanMillQuery m => UserId -> m TimeBalance
 userTimebalance uid = planmillQuery
     $ QueryGet QueryTagTimebalance mempty
     $ toUrlParts $ ("users" :: Text) // uid // ("timebalance" :: Text)
+
+-- | Get a list of absences.
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#absences_get>
+absences :: MonadPlanMillQuery m => m Absences
+absences = planmillVectorQuery
+    $ QueryPagedGet QueryTagAbsence mempty
+    $ toUrlParts $ ("absences" :: Text)
+
+-- | A single project in PlanMill
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#projects__id__get>
+project :: MonadPlanMillQuery m => ProjectId -> m Project
+project pid = planmillQuery
+    $ QueryGet QueryTagProject mempty
+    $ toUrlParts $ ("project" :: Text) // pid
+
+-- | View details of single task.
+--
+-- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#tasks__id__get>
+--
+-- TODO: seems to return 500 for most tasks
+task :: MonadPlanMillQuery m => TaskId -> m Task
+task pid = planmillQuery
+    $ QueryGet QueryTagTask mempty
+    $ toUrlParts $ ("task" :: Text) // pid
 
 -------------------------------------------------------------------------------
 -- Duplication from PlanMill.Enumerations
