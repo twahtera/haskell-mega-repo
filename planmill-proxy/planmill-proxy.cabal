@@ -58,6 +58,7 @@ library
     , servant-server
     , swagger2
     , text
+    , time
     , unordered-containers
     , vector
     , lens
