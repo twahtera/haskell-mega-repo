@@ -26,7 +26,7 @@ import Network.HTTP.Client.TLS (tlsManagerSettings)
 
 -- Avatar modules
 import Futurice.App.Avatar.API
-import Futurice.App.Avatar.Config (Config (..), getConfig)
+import Futurice.App.Avatar.Config (Config (..))
 import Futurice.App.Avatar.Logic  (avatar)
 
 type Ctx = (DynMapCache, Manager)
@@ -69,12 +69,13 @@ server ctx = pure "Hello from avatar app"
     :<|> mkAvatar ctx
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain
-    "Avatar API"
-    "Serve smaller versions of your favourite images"
-    (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
-    getConfig cfgPort
-    avatarApi server futuriceNoMiddleware
-    $ \_cfg cache -> do
+defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+    & serverName          .~ "Avatar API"
+    & serverDescription   .~ "Serve smaller versions of your favourite images"
+    & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
+    & serverApp avatarApi .~ server
+  where
+    makeCtx :: Config -> DynMapCache -> IO Ctx
+    makeCtx _cfg cache = do
         mgr <- newManager tlsManagerSettings
         return (cache, mgr)

@@ -7,6 +7,7 @@
 {-# LANGUAGE TypeOperators       #-}
 module Futurice.App.FutuHours.PlanMill (runHaxl) where
 
+import Prelude ()
 import Futurice.Prelude
 
 import Haxl.Core                  (State)

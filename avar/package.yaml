@@ -1,7 +1,7 @@
 name: avar
-version: 0.0.0.0
+version: "0"
 synopsis: TVar that can be asynchronously set
-description: ...
+description: See the <http://docs.futurice.com/haskell-mega-repo/avar-0/Futurice-AVar.html haddocks>.
 author: Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
 license: BSD3
@@ -20,7 +20,6 @@ library:
     - DeriveFunctor
     - DeriveGeneric
     - DeriveTraversable
-    - NoImplicitPrelude
     - ScopedTypeVariables
   source-dirs: src
   dependencies:

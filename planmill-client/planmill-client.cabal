@@ -3,7 +3,7 @@
 -- see: https://github.com/sol/hpack
 
 name:           planmill-client
-version:        0.1.0.0
+version:        0
 synopsis:       PlanMill API
 description:    Bindings to <https://online.planmill.com/pmtrial/schemas/v1_5/index.html PlanMill API 1.5>.
 category:       Web
@@ -27,20 +27,20 @@ source-repository head
 library
   hs-source-dirs:
       src
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable NoImplicitPrelude ScopedTypeVariables
+  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      aeson                 >=1     && <1.1
-    , aeson-compat          >=0.3.6 && <0.4
-    , aeson-extra           >=0.3.0.0 && <0.4
-    , ansi-pretty           >=0.1.2 && <0.2
+      base >=4.8 && <4.10
+    , aeson
+    , aeson-compat
+    , aeson-extra
+    , ansi-pretty
     , ansi-wl-pprint
     , async
-    , base                  >=4.7     && <4.10
-    , base-compat           >=0.6     && <0.10
+    , base-compat
     , base64-bytestring
     , binary
-    , binary-orphans        >=0.1.3.0 && <0.2
+    , binary-orphans
     , binary-tagged
     , byteable
     , bytestring
@@ -54,13 +54,13 @@ library
     , DRBG
     , entropy
     , exceptions
-    , futurice-prelude      >=0.1.8.0
+    , futurice-prelude
     , generics-sop
     , hashable
     , hashable-time
     , haxl
-    , http-client           >=0.4.31.1 && <0.6
-    , http-client-tls       >=0.2.2 && <0.4
+    , http-client
+    , http-client-tls
     , http-types
     , intervals
     , lens
@@ -75,14 +75,15 @@ library
     , reflection >= 2 && <2.3
     , regex-applicative-text
     , semigroups
+    , singleton-bool >= 0.1.2.0
     , swagger2
-    , text                  >=1.2   && <1.3
+    , text
     , time
     , time-locale-compat
     , time-parsers
     , transformers
     , unordered-containers
-    , vector                >=0.10  && <0.12
+    , vector
   if impl(ghc >= 8.0)
     ghc-options: -freduction-depth=100
   if impl(ghc < 8.0)
@@ -138,17 +139,17 @@ executable planmill-client
       cli
   ghc-options: -Wall
   build-depends:
-      aeson                 >=1     && <1.1
-    , aeson-compat          >=0.3.6 && <0.4
-    , aeson-extra           >=0.3.0.0 && <0.4
-    , ansi-pretty           >=0.1.2 && <0.2
+      base >=4.8 && <4.10
+    , aeson
+    , aeson-compat
+    , aeson-extra
+    , ansi-pretty
     , ansi-wl-pprint
     , async
-    , base                  >=4.7     && <4.10
-    , base-compat           >=0.6     && <0.10
+    , base-compat
     , base64-bytestring
     , binary
-    , binary-orphans        >=0.1.3.0 && <0.2
+    , binary-orphans
     , binary-tagged
     , byteable
     , bytestring
@@ -162,13 +163,13 @@ executable planmill-client
     , DRBG
     , entropy
     , exceptions
-    , futurice-prelude      >=0.1.8.0
+    , futurice-prelude
     , generics-sop
     , hashable
     , hashable-time
     , haxl
-    , http-client           >=0.4.31.1 && <0.6
-    , http-client-tls       >=0.2.2 && <0.4
+    , http-client
+    , http-client-tls
     , http-types
     , intervals
     , lens
@@ -183,14 +184,15 @@ executable planmill-client
     , reflection >= 2 && <2.3
     , regex-applicative-text
     , semigroups
+    , singleton-bool >= 0.1.2.0
     , swagger2
-    , text                  >=1.2   && <1.3
+    , text
     , time
     , time-locale-compat
     , time-parsers
     , transformers
     , unordered-containers
-    , vector                >=0.10  && <0.12
+    , vector
     , planmill-client
     , optparse-applicative
     , SHA
@@ -212,17 +214,17 @@ test-suite integration
       integration
   ghc-options: -Wall
   build-depends:
-      aeson                 >=1     && <1.1
-    , aeson-compat          >=0.3.6 && <0.4
-    , aeson-extra           >=0.3.0.0 && <0.4
-    , ansi-pretty           >=0.1.2 && <0.2
+      base >=4.8 && <4.10
+    , aeson
+    , aeson-compat
+    , aeson-extra
+    , ansi-pretty
     , ansi-wl-pprint
     , async
-    , base                  >=4.7     && <4.10
-    , base-compat           >=0.6     && <0.10
+    , base-compat
     , base64-bytestring
     , binary
-    , binary-orphans        >=0.1.3.0 && <0.2
+    , binary-orphans
     , binary-tagged
     , byteable
     , bytestring
@@ -236,13 +238,13 @@ test-suite integration
     , DRBG
     , entropy
     , exceptions
-    , futurice-prelude      >=0.1.8.0
+    , futurice-prelude
     , generics-sop
     , hashable
     , hashable-time
     , haxl
-    , http-client           >=0.4.31.1 && <0.6
-    , http-client-tls       >=0.2.2 && <0.4
+    , http-client
+    , http-client-tls
     , http-types
     , intervals
     , lens
@@ -257,14 +259,15 @@ test-suite integration
     , reflection >= 2 && <2.3
     , regex-applicative-text
     , semigroups
+    , singleton-bool >= 0.1.2.0
     , swagger2
-    , text                  >=1.2   && <1.3
+    , text
     , time
     , time-locale-compat
     , time-parsers
     , transformers
     , unordered-containers
-    , vector                >=0.10  && <0.12
+    , vector
     , planmill-client
   if impl(ghc >= 8.0)
     ghc-options: -freduction-depth=100
@@ -279,17 +282,17 @@ test-suite test
       test
   ghc-options: -Wall
   build-depends:
-      aeson                 >=1     && <1.1
-    , aeson-compat          >=0.3.6 && <0.4
-    , aeson-extra           >=0.3.0.0 && <0.4
-    , ansi-pretty           >=0.1.2 && <0.2
+      base >=4.8 && <4.10
+    , aeson
+    , aeson-compat
+    , aeson-extra
+    , ansi-pretty
     , ansi-wl-pprint
     , async
-    , base                  >=4.7     && <4.10
-    , base-compat           >=0.6     && <0.10
+    , base-compat
     , base64-bytestring
     , binary
-    , binary-orphans        >=0.1.3.0 && <0.2
+    , binary-orphans
     , binary-tagged
     , byteable
     , bytestring
@@ -303,13 +306,13 @@ test-suite test
     , DRBG
     , entropy
     , exceptions
-    , futurice-prelude      >=0.1.8.0
+    , futurice-prelude
     , generics-sop
     , hashable
     , hashable-time
     , haxl
-    , http-client           >=0.4.31.1 && <0.6
-    , http-client-tls       >=0.2.2 && <0.4
+    , http-client
+    , http-client-tls
     , http-types
     , intervals
     , lens
@@ -324,14 +327,15 @@ test-suite test
     , reflection >= 2 && <2.3
     , regex-applicative-text
     , semigroups
+    , singleton-bool >= 0.1.2.0
     , swagger2
-    , text                  >=1.2   && <1.3
+    , text
     , time
     , time-locale-compat
     , time-parsers
     , transformers
     , unordered-containers
-    , vector                >=0.10  && <0.12
+    , vector
     , planmill-client
     , tasty
     , tasty-quickcheck

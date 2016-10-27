@@ -1,5 +1,5 @@
 name: proxy-app
-version: 0.1.0.0
+version: "0"
 synopsis: Proxy app
 description: Make a proxy of everything
 author: Oleg Grenrus <oleg.grenrus@iki.fi>
@@ -32,18 +32,21 @@ library:
     - http-client-tls
     - lens
     - markdown
+    - planmill-client
     - postgresql-simple
     - resource-pool
     - semigroups
     - servant
     - servant-blaze
     - servant-cassava
-    - servant-client
+    - servant-client >= 0.9
     - servant-lucid
     - servant-server
     - servant-swagger
+    - servant-binary-tagged
     - stm
     - swagger2
+    - tagged
     - text
     - time
     - transformers

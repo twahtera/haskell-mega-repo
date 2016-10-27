@@ -1,9 +1,9 @@
--- This file has been generated from package.yaml by hpack version 0.14.0.
+-- This file has been generated from package.yaml by hpack version 0.14.1.
 --
 -- see: https://github.com/sol/hpack
 
 name:           env-config
-version:        0.1.0.6
+version:        0
 synopsis:       Parse environment variables
 description:    ...
 category:       Web
@@ -27,7 +27,7 @@ source-repository head
 library
   hs-source-dirs:
       src
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable NoImplicitPrelude ScopedTypeVariables
+  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
       base                  >=4.7   && <4.10

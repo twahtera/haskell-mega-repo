@@ -3,6 +3,7 @@ module Futurice.App.FutuHours.Config (
     getConfig,
     ) where
 
+import Prelude ()
 import Futurice.Prelude
 
 import Control.Monad.Logger       (LogLevel (..))
@@ -35,16 +36,19 @@ data Config = Config
     }
     deriving (Show)
 
-getConfig :: IO Config
-getConfig = Config
-    <$> parseEnvVar "PLANMILL_BASEURL"
-    <*> parseEnvVar "PLANMILL_ADMIN"
-    <*> parseEnvVar "PLANMILL_SIGNATURE"
-    <*> getConnectInfo
-    <*> parseEnvVar "FUM_TOKEN"
-    <*> parseEnvVar "FUM_BASEURL"
-    <*> parseEnvVar "FUM_LISTNAME"
-    <*> parseDefaultPort "FUTUHOURSAPI"
-    <*> parseEnvVarWithDefault "DEVELOPMENT" Production
-    <*> parseEnvVarWithDefault "LOGLEVEL" LevelInfo
-    <*> parseEnvVarWithDefault "EKG_PORT" 8081
+instance HasPort Config where
+    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
+
+instance GetConfig Config where
+    getConfig = Config
+        <$> parseEnvVar "PLANMILL_BASEURL"
+        <*> parseEnvVar "PLANMILL_ADMIN"
+        <*> parseEnvVar "PLANMILL_SIGNATURE"
+        <*> getConnectInfo
+        <*> parseEnvVar "FUM_TOKEN"
+        <*> parseEnvVar "FUM_BASEURL"
+        <*> parseEnvVar "FUM_LISTNAME"
+        <*> parseDefaultPort "FUTUHOURSAPI"
+        <*> parseEnvVarWithDefault "DEVELOPMENT" Production
+        <*> parseEnvVarWithDefault "LOGLEVEL" LevelInfo
+        <*> parseEnvVarWithDefault "EKG_PORT" 8081

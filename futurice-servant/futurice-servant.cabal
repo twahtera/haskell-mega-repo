@@ -27,16 +27,21 @@ source-repository head
 library
   hs-source-dirs:
       src
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable NoImplicitPrelude ScopedTypeVariables
+  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
       base                  >=4.7   && <4.10
     , base-compat
+    , env-config
+    , fum-client
     , futulogo
     , futurice-prelude
+    , ghc-prim
     , gitrev >=1.2.0
-    , servant ==0.8.1
+    , lens
+    , servant ==0.9
     , servant-cache
+    , servant-cassava
     , servant-lucid
     , servant-server
     , servant-status

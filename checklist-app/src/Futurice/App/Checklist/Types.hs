@@ -4,17 +4,17 @@
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
--- | Types user in checklist logic.
+-- | Types employee in checklist logic.
 --
 -- Currently missing:
 --
 -- * How to model construction and modification of 'CheckList'. We want to pick
---   only needed 'Task's based on initial 'User' data, and that information
+--   only needed 'Task's based on initial 'Employee' data, and that information
 --   should be configurable dynamically.
 module Futurice.App.Checklist.Types (
     -- * Core types
-    -- ** User / employee
-    User(..),
+    -- ** Employee / employee
+    Employee(..),
     ContractType(..),
     Location(..),
     FUMLogin(..),
@@ -23,42 +23,60 @@ module Futurice.App.Checklist.Types (
     TaskRole(..),
     CheckResult(..),
     Checklist(..),
-    TaskItem(..),
+    TaskItemDone (..),
     TaskAppliance(..),
     -- ** Wrappers
     Identifier(..),
+    identifierToText,
     HasIdentifier (..),
     Name (..),
-    HasTaskName (..),
+    HasName (..),
     -- * Lenses
-    -- ** User
-    userFirstName, userLastName, userContractType, userLocation, userConfirmed,
-    userPhone, userContactEmail, userStartingDay, userSupervisor, userTribe,
-    userInfo, userFUMLogin, userHRNumber,
+    -- ** Employee
+    employeeFirstName, employeeLastName, employeeContractType, employeeLocation, employeeConfirmed,
+    employeePhone, employeeContactEmail, employeeStartingDay, employeeSupervisor, employeeTribe,
+    employeeInfo, employeeFUMLogin, employeeHRNumber, employeeChecklist,
     -- ** ContractType
     _ContractTypePermanent, _ContractTypeExternal, _ContractTypeFixedTerm,
     _ContractTypePartTimer, _ContractTypeSummerWorker,
     -- ** Location
+    _Location,
     _LocHelsinki, _LocTampere, _LocBerlin, _LocLondon,
     _LocStockholm, _LocMunich, _LocOther,
+    locationToText, locationFromText,
     -- ** Task
-    taskCanBeDone, taskDependencies, taskCheck, taskRole,
+    taskName, taskCanBeDone, taskDependencies, taskCheck, taskRole,
     -- ** CheckResult
     _CheckResultSuccess, _CheckResultMaybe, _CheckResultFailure,
     -- ** TaskRole
-    _TaskRoleIT, _TaskRoleHR, _TaskRoleSupervisor, _TaskRoleOther,
+    _TaskRole,
+    _TaskRoleIT, _TaskRoleHR, _TaskRoleSupervisor,
+    roleToText, roleFromText,
     -- ** Checklist
     checklistName, checklistTasks,
-    -- ** TaskItem
-    taskItemUser, taskItemTask, taskItemDone,
-    -- * HTML
-    Page (..),
+    -- ** TaskItemDone
+    _TaskItemDone, _TaskItemTodo,
     -- * World
     World,
     mkWorld,
-    worldValid,
+    -- ** Lenses
+    worldEmployees,
+    worldTasks,
+    worldLists,
+    worldTaskItems,
+    worldUsers,
+    worldTaskItems',
+    -- ** Context
+    Ctx,
+    -- * Access
+    AuthUser,
     ) where
 
 import Futurice.App.Checklist.Types.Basic
-import Futurice.App.Checklist.Types.Page
+import Futurice.App.Checklist.Types.Ctx
+import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.World
+
+import qualified FUM (UserName)
+
+type AuthUser = (FUM.UserName, TaskRole, Location)

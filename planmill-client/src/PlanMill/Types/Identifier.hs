@@ -19,6 +19,7 @@ import           Data.Swagger    (ToSchema)
 import           Test.QuickCheck (Arbitrary (..))
 
 import qualified Database.PostgreSQL.Simple.ToField as Postgres
+import qualified Database.PostgreSQL.Simple.FromField as Postgres
 
 -- | Tagged identifier
 newtype Identifier a = Ident Word64
@@ -56,3 +57,6 @@ instance Postgres.ToField (Identifier a) where
 instance Arbitrary (Identifier a) where
     arbitrary        = Ident <$> arbitrary
     shrink (Ident i) = Ident <$> shrink i
+
+instance Postgres.FromField (Identifier a) where
+    fromField f mbs = Ident . fromInteger <$> Postgres.fromField f mbs

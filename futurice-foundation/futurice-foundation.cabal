@@ -1,9 +1,9 @@
--- This file has been generated from package.yaml by hpack version 0.14.0.
+-- This file has been generated from package.yaml by hpack version 0.14.1.
 --
 -- see: https://github.com/sol/hpack
 
 name:           futurice-foundation
-version:        0.1.0.6
+version:        0
 synopsis:       Futurice ZURB Foundation helpers
 description:    ...
 category:       Web
@@ -33,9 +33,15 @@ library
     , clay
     , file-embed
     , futurice-prelude
+    , futurice-servant
+    , language-javascript >= 0.6.0.8 && <0.7
     , lens
     , lucid
+    , mmorph
+    , template-haskell
     , text
   exposed-modules:
-      Lucid.Foundation.Futurice
+      Futurice.JavaScript
+      Futurice.JavaScript.TH
+      Futurice.Lucid.Foundation
   default-language: Haskell2010

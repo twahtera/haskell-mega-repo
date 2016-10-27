@@ -1,5 +1,5 @@
 name: favicon-app
-version: 0.1.0.0
+version: "0"
 synopsis: Generate Futurice favicons
 description: Fancy icons!
 author: Oleg Grenrus <oleg.grenrus@iki.fi>
@@ -15,11 +15,13 @@ ghc-options: -Wall
 
 dependencies:
 - base >=4.7 && <4.10
+- JuicyPixels
 - base-compat
+- env-config
 - futulogo
 - futurice-prelude
 - futurice-servant
-- JuicyPixels
+- lens
 - lucid
 - semigroups
 - servant

@@ -12,16 +12,23 @@ ghc-options: -Wall
 
 dependencies:
   - base >= 4.7 && <4.10
-  - QuickCheck
+  - aeson-compat
+  - clay
+  - containers
+  - env-config
+  - fum-client
   - futurice-foundation
   - futurice-prelude
   - futurice-servant
   - lens
   - lucid
-  - mmorph
+  - QuickCheck
   - servant
   - servant-lucid
   - servant-server
+  - swagger2
+  - text
+  - time
   - uuid
 
 library:

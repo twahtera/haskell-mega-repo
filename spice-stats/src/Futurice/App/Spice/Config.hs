@@ -1,6 +1,5 @@
 module Futurice.App.Spice.Config (
     Config(..),
-    getConfig,
     ) where
 
 import Futurice.Prelude
@@ -24,10 +23,13 @@ data Config = Config
     }
     deriving (Show)
 
-getConfig :: IO Config
-getConfig = Config
-    <$> parseEnvVar "GH_AUTH_TOKEN"
-    <*> parseEnvVar "FD_AUTH_TOKEN"
-    <*> parseEnvVar "FD_ORGANISATION"
-    <*> parseEnvVar "FD_FLOW"
-    <*> parseDefaultPort "SPICESTATSAPP"
+instance HasPort Config where
+    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
+
+instance GetConfig Config where
+    getConfig = Config
+        <$> parseEnvVar "GH_AUTH_TOKEN"
+        <*> parseEnvVar "FD_AUTH_TOKEN"
+        <*> parseEnvVar "FD_ORGANISATION"
+        <*> parseEnvVar "FD_FLOW"
+        <*> parseDefaultPort "SPICESTATSAPP"

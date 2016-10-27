@@ -4,18 +4,18 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
---
-{-# LANGUAGE FlexibleInstances #-}
 module FUM.Types where
 
-import Futurice.Prelude
 import Prelude ()
+import Futurice.Prelude
 
 import Data.Aeson.Compat
+import Data.Aeson.Types
+       (FromJSONKey (..), ToJSONKey (..), fromJSONKeyCoerce, toJSONKeyText)
+import Data.Swagger      (ToSchema)
 
+import qualified Data.Csv          as Csv
 import qualified Data.Maybe.Strict as S
-
-import Unsafe.Coerce
 
 -------------------------------------------------------------------------------
 -- Authentication token
@@ -88,11 +88,24 @@ makeLenses ''UserName
 instance Hashable UserName
 instance NFData UserName
 
+-- | TODO: implement using "Futurice.Generics"
 instance FromJSON UserName where
-    parseJSON = withText "FUM UserName" $ pure . UserName
+    parseJSON = fmap UserName . parseJSON
+instance ToJSON UserName where
+    toJSON = toJSON . _getUserName
+    toEncoding = toEncoding ._getUserName
 
-instance ToJSON a => ToJSON (HashMap UserName a) where
-    toJSON m = toJSON (unsafeCoerce m :: HashMap Text a)
+-- | TODO: incorrect
+instance ToSchema UserName where
+
+instance ToJSONKey UserName where
+    toJSONKey = toJSONKeyText _getUserName
+
+instance FromJSONKey UserName where
+    fromJSONKey = fromJSONKeyCoerce
+
+instance Csv.ToField UserName where
+    toField = Csv.toField . _getUserName
 
 -------------------------------------------------------------------------------
 -- List name

@@ -1,9 +1,9 @@
--- This file has been generated from package.yaml by hpack version 0.14.0.
+-- This file has been generated from package.yaml by hpack version 0.14.1.
 --
 -- see: https://github.com/sol/hpack
 
 name:           flowdock-cli
-version:        0.0.0.0
+version:        0
 synopsis:       Example cli tool for flowdock-rest
 description:    Example cli tool for flowdock-rest
 category:       Web

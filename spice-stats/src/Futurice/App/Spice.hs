@@ -33,12 +33,13 @@ server ctx = pure "Hello from spice stats app"
     :<|> serveSpiceStats ctx
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain
-    "Spice stats API"
-    "Open source contribution stats"
-    (Proxy :: Proxy ('FutuAccent 'AF3 'AC2))
-    getConfig cfgPort
-    spiceStatsApi server futuriceNoMiddleware
-    $ \cfg cache -> do
+defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+    & serverName              .~ "Spice stats API"
+    & serverDescription       .~ "Open source contribution stats"
+    & serverColour            .~ (Proxy :: Proxy ('FutuAccent 'AF3 'AC2))
+    & serverApp spiceStatsApi .~ server
+  where
+    makeCtx :: Config -> DynMapCache -> IO Ctx
+    makeCtx cfg cache = do
         mgr <- newManager tlsManagerSettings
         return (cache, mgr, cfg)

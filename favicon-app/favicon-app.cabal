@@ -1,9 +1,9 @@
--- This file has been generated from package.yaml by hpack version 0.15.0.
+-- This file has been generated from package.yaml by hpack version 0.14.1.
 --
 -- see: https://github.com/sol/hpack
 
 name:           favicon-app
-version:        0.1.0.0
+version:        0
 synopsis:       Generate Futurice favicons
 description:    Fancy icons!
 category:       Web
@@ -31,11 +31,13 @@ executable favicon
   ghc-options: -Wall -threaded
   build-depends:
       base >=4.7 && <4.10
+    , JuicyPixels
     , base-compat
+    , env-config
     , futulogo
     , futurice-prelude
     , futurice-servant
-    , JuicyPixels
+    , lens
     , lucid
     , semigroups
     , servant

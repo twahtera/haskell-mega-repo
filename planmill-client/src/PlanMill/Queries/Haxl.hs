@@ -21,18 +21,20 @@ import PlanMill.Types.Cfg   (Cfg)
 import PlanMill.Types.Query
 
 -- For initDataSourceSimpleIO
+import Control.Monad.Logger             (LogLevel, filterLogger)
 import Control.Monad.CryptoRandom.Extra
        (MonadInitHashDRBG (..), evalCRandTThrow)
 import Control.Monad.Http               (evalHttpT)
 import Control.Monad.Reader             (runReaderT)
-import Data.Constraint                  (Dict (..), type (:-) (..))
+import Data.Constraint                  (Dict (..))
 import PlanMill.Eval                    (evalPlanMill)
 
 -- For initDataSourceBatch
 import           Control.Concurrent.Async (async, waitCatch)
 import qualified Data.Aeson               as Aeson
 import qualified Data.Binary.Tagged       as Binary
-import qualified Data.ByteString.Lazy     as LBS
+import           Data.GADT.Compare        (GEq (..))
+import           Data.Type.Equality       ((:~:) (..))
 import qualified Network.HTTP.Client      as HTTP
 
 instance Show1 Query where show1 = show
@@ -49,16 +51,22 @@ instance DataSource u Query where
 -- | This is a simple query function.
 --
 -- It's smart enough to reuse http/random-gen for blocked fetches
-initDataSourceSimpleIO :: Cfg -> State Query
-initDataSourceSimpleIO cfg = QueryFunction $ \blockedFetches -> SyncFetch $ do
+initDataSourceSimpleIO :: LogLevel -> Cfg -> State Query
+initDataSourceSimpleIO loglevel cfg = QueryFunction $ \blockedFetches -> SyncFetch $ do
     g <- mkHashDRBG
     perform g $ for_ blockedFetches $ \(BlockedFetch q v) ->
-        case queryDict (Proxy :: Proxy FromJSON) (Sub Dict) q of
+        case queryDict (Proxy :: Proxy FromJSON) q of
             Dict -> do
                 res <- evalPlanMill $ queryToRequest q
                 liftIO $ putSuccess v res
   where
-    perform g = evalHttpT . runStderrLoggingT . flip runReaderT cfg . flip evalCRandTThrow g
+    perform g
+        = evalHttpT
+        . runStderrLoggingT
+        . filterLogger logPred
+        . flip runReaderT cfg
+        . flip evalCRandTThrow g
+    logPred _ = (>= loglevel)
 
 -- | This is batched query function.
 --
@@ -82,14 +90,26 @@ initDataSourceBatch mgr req = QueryFunction queryFunction
         , HTTP.method
             = "POST"
         }
+
+    queryFunction :: [BlockedFetch Query] -> PerformFetch
     queryFunction blockedFetches = AsyncFetch $ \inner -> do
+        -- TODO: write own logging lib, we don't like monad-logger that much
+        -- startTime <- currentTime
         a <- async $ do
-            x <- Binary.taggedDecode . HTTP.responseBody <$> HTTP.httpLbs req'' mgr
+            res  <- HTTP.httpLbs req'' mgr
+            -- Use for debugging:
+            -- print (() <$ res)
+            -- print (BSL.take 1000 $ HTTP.responseBody res)
+            -- print (last $ BSL.toChunks $ HTTP.responseBody res)
+            -- print (BSL.length $ HTTP.responseBody res)
+            let x = Binary.taggedDecode (HTTP.responseBody res) :: [Either Text SomeResponse]
             evaluate $!! x
         inner
         res <- waitCatch a
+        -- endTime <- currentTime
+        -- print (startTime, endTime)
         case res of
-            Left exc -> for_ blockedFetches $ \(BlockedFetch _ v) ->
+            Left exc -> for_ blockedFetches $ \(BlockedFetch _ v) -> do
                 putFailure' v exc
             Right res' ->
                 putResults blockedFetches res'
@@ -101,7 +121,7 @@ initDataSourceBatch mgr req = QueryFunction queryFunction
     extractQuery :: BlockedFetch Query -> SomeQuery
     extractQuery (BlockedFetch q _) = SomeQuery q
 
-    putResults :: [BlockedFetch Query] -> [Either Text LBS.ByteString] -> IO ()
+    putResults :: [BlockedFetch Query] -> [Either Text SomeResponse] -> IO ()
     -- if no more blocked fetches, we are done
     putResults [] _ =
         return ()
@@ -114,17 +134,14 @@ initDataSourceBatch mgr req = QueryFunction queryFunction
         putFailure' v (PlanmillBatchError err)
         putResults rest bss
     -- on success, try decode
-    putResults (BlockedFetch  q v : rest) (Right bs : bss) =
-        case (nfdataDict, binaryDict, semVerDict, structDict) of
-            (Dict, Dict, Dict, Dict) -> do
-                res <- tryDeep $ return $ Binary.taggedDecode bs
-                putResult v res
-                putResults rest bss
-      where
-        nfdataDict = queryDict (Proxy :: Proxy NFData) (Sub Dict) q
-        binaryDict = queryDict (Proxy :: Proxy Binary) (Sub Dict) q
-        semVerDict = queryDict (Proxy :: Proxy HasSemanticVersion) (Sub Dict) q
-        structDict = queryDict (Proxy :: Proxy HasStructuralInfo) (Sub Dict) q
+    putResults (BlockedFetch  q v : rest) (Right res : bss) = do
+        putResult v (coerceResponse q res)
+        putResults rest bss
+
+    coerceResponse :: Query a -> SomeResponse -> Either SomeException a
+    coerceResponse q (MkSomeResponse q' r) = case geq q q' of
+        Just Refl -> pure r
+        Nothing   -> throwM (PlanmillBatchError "Unmatching response")
 
 putFailure' :: Exception e => ResultVar a -> e -> IO ()
 putFailure' v = putFailure v . SomeException

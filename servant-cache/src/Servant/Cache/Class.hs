@@ -17,19 +17,12 @@ module Servant.Cache.Class (
     ) where
 
 import Prelude ()
-import Prelude.Compat hiding (lookup)
-
-import Control.Concurrent.Async    (Async, async, wait)
+import Futurice.Prelude            hiding (lookup)
+import Control.Concurrent.Async    (Async, async, wait, waitCatchSTM)
 import Control.Concurrent.STM      (STM, atomically)
-import Control.Monad               (void, when)
 import Control.Monad.Base          (liftBase)
 import Control.Monad.Trans.Control (MonadBaseControl, liftBaseWith)
-import Data.Hashable               (Hashable)
-import Data.Proxy                  (Proxy (..))
-import Data.Time
-       (NominalDiffTime, UTCTime, addUTCTime, getCurrentTime)
-import Data.Typeable               (Typeable)
-import GHC.Generics                (Generic)
+import Data.Time                   (addUTCTime, getCurrentTime)
 
 import qualified Servant.Cache.Internal.DynMap as DynMap
 
@@ -41,13 +34,6 @@ instance (Hashable a, Hashable b) => Hashable (SP a b)
 
 data Leaf v = Leaf !UTCTime !(Async v)
     deriving (Functor, Typeable, Generic)
-
-
--- | Our own 'Identity' to avoid orphan 'Hashable' instance.
-newtype I a = I a
-    deriving (Eq, Ord, Show, Read, Functor, Typeable, Generic)
-
-instance Hashable a => Hashable (I a)
 
 class Cache c where
     -- TODO: change order of parameters
@@ -165,6 +151,10 @@ genCachedIO
 genCachedIO policy cache ttl key action = do
     now <- getCurrentTime
     let expirationMoment = ttl `addUTCTime` now
+    -- Errors are cached for 60 seconds
+    let errorExpirationMoment = 60 `addUTCTime` now
+
+    -- Lookup
     ro <- atomically $ lookup' key cache $ \r ->
         case r of
             Nothing -> SP Nothing Nothing
@@ -184,15 +174,28 @@ genCachedIO policy cache ttl key action = do
     let cachedAction :: IO v
         cachedAction = do
             r'' <- async action :: IO (Async v)
-            r' <- wait r'' :: IO v
-            atomically $ insert key (Leaf expirationMoment r'') cache
-            pure r'
+            r' <- atomically $ do
+                r' <- waitCatchSTM r'' :: STM (Either SomeException v)
+                let em = either (const errorExpirationMoment) (const expirationMoment) r'
+                insert key (Leaf em r'') cache
+                pure r'
+            either throwM pure r'
 
+    -- Initial action, we insert it immediately with short time
+    -- if it succeeds we reinsert it with longer moment
     let cachedAction' ::IO v
         cachedAction' = do
             r' <- async action
-            atomically $ insert key (Leaf expirationMoment r') cache
-            wait r'
+            -- insert immediately
+            atomically $ insert key (Leaf errorExpirationMoment r') cache
+            -- wait, if succeeds extend the ttl
+            atomically $ do
+                e <- waitCatchSTM r'
+                case e of
+                    Left exc  -> throwM exc
+                    Right x -> do
+                        insert key (Leaf expirationMoment r') cache
+                        pure x
 
     -- If we got response from cache use it.
     -- If it's old, renew it asynchronously

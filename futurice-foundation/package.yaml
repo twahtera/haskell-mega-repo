@@ -1,5 +1,5 @@
 name: futurice-foundation
-version: 0.1.0.6
+version: "0"
 synopsis: Futurice ZURB Foundation helpers
 description: ...
 author: Oleg Grenrus <oleg.grenrus@iki.fi>
@@ -20,6 +20,10 @@ library:
     - clay
     - file-embed
     - futurice-prelude
+    - futurice-servant
+    - language-javascript >= 0.6.0.8 && <0.7 # For embedJS
     - lens
     - lucid
+    - mmorph
+    - template-haskell
     - text

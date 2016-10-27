@@ -26,6 +26,7 @@ newtype UrlParts = UrlParts (NE.NonEmpty String)
 instance Hashable UrlParts
 instance NFData UrlParts
 instance Binary UrlParts
+instance HasStructuralInfo UrlParts
 
 instance Semigroup UrlParts where
     UrlParts a <> UrlParts b = UrlParts (a <> b)
@@ -63,3 +64,4 @@ instance ToUrlParts UrlParts where
 
 instance ToJSON UrlParts
 instance FromJSON UrlParts
+

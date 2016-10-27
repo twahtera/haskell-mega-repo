@@ -17,6 +17,13 @@ import qualified FUM
 import qualified GitHub             as GH
 import qualified PlanMill           as PM
 
+class HasPort cfg where
+    port :: Lens' cfg Int
+
+-- TODO: write generics
+class GetConfig cfg where
+    getConfig :: IO cfg
+
 defaultPort :: Int
 defaultPort = 8000
 
@@ -106,9 +113,11 @@ instance FromEnvVar LogLevel where
     fromEnvVar _       = Nothing
 
 instance FromEnvVar Bool where
-    fromEnvVar "1" = Just True
-    fromEnvVar "0" = Just False
-    fromEnvVar _   = Nothing
+    fromEnvVar "1"   = Just True
+    fromEnvVar "YES" = Just True
+    fromEnvVar "0"   = Just False
+    fromEnvVar "NO"  = Just False
+    fromEnvVar _     = Nothing
 
 instance FromEnvVar Request where
     -- TODO: change to parseRequest

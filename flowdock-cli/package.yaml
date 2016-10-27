@@ -1,5 +1,5 @@
 name: flowdock-cli
-version: 0.0.0.0
+version: "0"
 synopsis: Example cli tool for flowdock-rest
 description: Example cli tool for flowdock-rest
 author: Oleg Grenrus <oleg.grenrus@iki.fi>

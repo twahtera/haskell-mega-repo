@@ -25,7 +25,6 @@ dependencies:
   - servant-swagger-ui
   - text
   - wai-app-static
-  - warp
 
 library:
   source-dirs: src
@@ -35,7 +34,6 @@ library:
     - DeriveFunctor
     - DeriveGeneric
     - DeriveTraversable
-    - NoImplicitPrelude
     - ScopedTypeVariables
 
 executables:

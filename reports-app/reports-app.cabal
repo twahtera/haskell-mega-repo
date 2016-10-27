@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.15.0.
+-- This file has been generated from package.yaml by hpack version 0.14.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -23,10 +23,10 @@ source-repository head
 library
   hs-source-dirs:
       src
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable NoImplicitPrelude ScopedTypeVariables
+  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base >= 4.7 && <4.10
+      base >= 4.8 && <4.10
     , aeson
     , aeson-pretty
     , ansi-pretty
@@ -49,20 +49,24 @@ library
     , fum-client
     , futulogo
     , futurice-foundation
-    , futurice-foundation
+    , futurice-integrations
     , futurice-prelude
     , futurice-reports
     , futurice-servant
+    , generics-sop
     , github >=0.15.0
     , hashable >= 1.2
-    , http-client
+    , http-client >= 0.5
     , http-client-tls
     , http-types
+    , intervals
     , lens
     , lucid
     , markdown
     , mtl
     , optparse-applicative
+    , periocron
+    , planmill-client
     , postgresql-simple
     , postgresql-simple-url
     , regex-applicative
@@ -76,6 +80,7 @@ library
     , servant-server
     , SHA
     , stm
+    , strict-base-types
     , swagger2
     , tagged
     , text
@@ -87,10 +92,13 @@ library
     , vector
   exposed-modules:
       Futurice.App.Reports
+      Futurice.App.Reports.API
+      Futurice.App.Reports.Balances
       Futurice.App.Reports.Config
-      Futurice.App.Reports.Logic
-      Futurice.App.Reports.Server.API
-      Futurice.App.Reports.Types
+      Futurice.App.Reports.FumGithub
+      Futurice.App.Reports.GithubIssues
+      Futurice.App.Reports.Markup
+      Futurice.App.Reports.MissingHours
   default-language: Haskell2010
 
 executable reports-app-server
@@ -99,7 +107,7 @@ executable reports-app-server
       srv
   ghc-options: -Wall -Wall -threaded
   build-depends:
-      base >= 4.7 && <4.10
+      base >= 4.8 && <4.10
     , aeson
     , aeson-pretty
     , ansi-pretty
@@ -122,20 +130,24 @@ executable reports-app-server
     , fum-client
     , futulogo
     , futurice-foundation
-    , futurice-foundation
+    , futurice-integrations
     , futurice-prelude
     , futurice-reports
     , futurice-servant
+    , generics-sop
     , github >=0.15.0
     , hashable >= 1.2
-    , http-client
+    , http-client >= 0.5
     , http-client-tls
     , http-types
+    , intervals
     , lens
     , lucid
     , markdown
     , mtl
     , optparse-applicative
+    , periocron
+    , planmill-client
     , postgresql-simple
     , postgresql-simple-url
     , regex-applicative
@@ -149,6 +161,7 @@ executable reports-app-server
     , servant-server
     , SHA
     , stm
+    , strict-base-types
     , swagger2
     , tagged
     , text

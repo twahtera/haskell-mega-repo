@@ -1,17 +1,16 @@
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Futurice.App.Theme.Types where
+module Futurice.App.Theme.Markup (indexPage) where
 
 import Futurice.Prelude
 
 import Codec.Picture.Types (PixelCMYK8 (..), PixelRGB8 (..))
-import Futurice.Servant    (NamedSchema (..), ToSchema (..))
 import Futurice.Colour
        (Colour (..), colourCMYK8, colourClay, colourName, colourPantoneName,
        colourRGB8)
 import Numeric             (showHex)
 
-import Lucid                     hiding (for_)
-import Lucid.Foundation.Futurice
+import Futurice.Lucid.Foundation
 
 import qualified Clay
 import qualified Data.Text as T
@@ -20,14 +19,8 @@ import qualified Data.Text as T
 -- Indexpage
 -------------------------------------------------------------------------------
 
-data IndexPage = IndexPage
-
-instance ToSchema IndexPage where
-    declareNamedSchema _ = pure $ NamedSchema (Just "Indexpage") mempty
-
-instance ToHtml IndexPage where
-    toHtmlRaw = toHtml
-    toHtml _ = page_ "Futurice colors and logos" $ do
+indexPage :: HtmlPage "index"
+indexPage = page_ "Futurice colors and logos" $ do
         row_ $ large_ 12 $ h1_ "Futurice colors and logos"
         row_ $ do
             large_ 9 $ do
@@ -43,14 +36,14 @@ instance ToHtml IndexPage where
 colors :: Monad m => HtmlT m ()
 colors = do
     row' $ do
-        largemedium_ 6 $ colorBox Large FutuGreen
-        largemedium_ 6 $ colorBox Large FutuBlack
+        largemed_ 6 $ colorBox Large FutuGreen
+        largemed_ 6 $ colorBox Large FutuBlack
     row' $ do
-        largemedium_ 6 $ colorBox Medium FutuLightGreen
-        largemedium_ 6 $ colorBox Medium FutuDarkGreen
+        largemed_ 6 $ colorBox Medium FutuLightGreen
+        largemed_ 6 $ colorBox Medium FutuDarkGreen
     for_ [minBound .. maxBound ] $ \fam ->
         row' $ for_ [minBound .. maxBound ] $ \col ->
-            largemedium_ 4 $ colorBox Small $ FutuAccent fam col
+            largemed_ 4 $ colorBox Small $ FutuAccent fam col
 
 flipMaybe :: a -> Maybe b -> (b -> a) -> a
 flipMaybe d m f = maybe d f m
@@ -130,6 +123,3 @@ logos =
 
 row' :: Monad m => HtmlT m () -> HtmlT m ()
 row' = div_ [class_ "row large-collapse medium-collapse"]
-
-largemedium_ :: Monad m => Int -> HtmlT m () -> HtmlT m ()
-largemedium_ n = div_ [class_ $ fromString $ "columns large-" ++ show n ++ " medium-" ++ show n ]

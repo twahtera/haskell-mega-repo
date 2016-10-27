@@ -29,7 +29,6 @@ import Control.Monad.Trans.Maybe        (MaybeT (..))
 import Data.Binary.Tagged               (taggedDecodeOrFail, taggedEncode)
 import Data.BinaryFromJSON              (BinaryFromJSON)
 import Futurice.Has
-import Generics.SOP                     (I (..))
 import Haxl.Core
 import Haxl.Typed
 

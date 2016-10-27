@@ -1,5 +1,5 @@
 name: env-config
-version: 0.1.0.6
+version: "0"
 synopsis: Parse environment variables
 description: ...
 author: Oleg Grenrus <oleg.grenrus@iki.fi>
@@ -34,5 +34,4 @@ library:
     - DeriveFunctor
     - DeriveGeneric
     - DeriveTraversable
-    - NoImplicitPrelude
     - ScopedTypeVariables

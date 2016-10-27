@@ -1,5 +1,5 @@
 name: mega-repo-tool
-version: 0.1.0.0
+version: "0"
 synopsis: Various commands to manage futurice/haskell-mega-repo
 description: Build the package and run @stack exec mega-repo-tool -- -h@
 author: Oleg Grenrus <oleg.grenrus@iki.fi>

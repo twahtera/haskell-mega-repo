@@ -1,9 +1,9 @@
--- This file has been generated from package.yaml by hpack version 0.14.0.
+-- This file has been generated from package.yaml by hpack version 0.14.1.
 --
 -- see: https://github.com/sol/hpack
 
 name:           avatar-app
-version:        0.1.0.0
+version:        0
 synopsis:       Avatar app
 description:    Make an avatar of everything
 category:       Web

@@ -11,7 +11,7 @@ category: Web
 ghc-options: -Wall
 
 dependencies:
-  - base >= 4.7 && <4.10
+  - base >= 4.8 && <4.10
   - aeson
   - aeson-pretty
   - ansi-pretty
@@ -34,20 +34,24 @@ dependencies:
   - fum-client
   - futulogo
   - futurice-foundation
-  - futurice-foundation
+  - futurice-integrations
   - futurice-prelude
   - futurice-reports
   - futurice-servant
+  - generics-sop
   - github >=0.15.0
   - hashable >= 1.2
-  - http-client
+  - http-client >= 0.5 # responseTimeoutMicro
   - http-client-tls
   - http-types
+  - intervals
   - lens
   - lucid
   - markdown
   - mtl
   - optparse-applicative
+  - periocron
+  - planmill-client
   - postgresql-simple
   - postgresql-simple-url
   - regex-applicative
@@ -61,6 +65,7 @@ dependencies:
   - servant-server
   - SHA
   - stm
+  - strict-base-types
   - swagger2
   - tagged
   - text
@@ -79,7 +84,6 @@ library:
     - DeriveFunctor
     - DeriveGeneric
     - DeriveTraversable
-    - NoImplicitPrelude
     - ScopedTypeVariables
 
 executables:

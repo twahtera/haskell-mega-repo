@@ -16,7 +16,6 @@ import Control.Concurrent.STM      (atomically, newTVarIO, writeTVar)
 import Data.Pool                   (createPool, withResource)
 import Futurice.AVar
 import Futurice.Periocron
-import Generics.SOP                (I (..), NP (..))
 import Network.Wai
 import Network.Wai.Metrics         (metrics, registerWaiMetrics)
 import Network.Wai.Middleware.Cors (simpleCors)
@@ -142,7 +141,7 @@ defaultMain = do
            [ (pmUsersJob, tail $ every $ 7 * 60)
            ]
 
-    _ <- spawnPeriocron (Options runStderrLoggingT' 60) jobs
+    _ <- spawnPeriocron (Options runStderrLoggingT 60) jobs
 
     -- EKG
     metricsMiddleware <- ekg cfgEkgPort
@@ -152,9 +151,3 @@ defaultMain = do
     let app' = metricsMiddleware $ app cache ctx
     hPutStrLn stderr $ "Now I'll start the webservice at port " ++ show cfgPort
     Warp.run cfgPort app'
-  where
-    -- Cannot eta-unexpand, breaks on GHC 7.8
-    runStderrLoggingT'
-        :: forall a. (forall m. (Applicative m, MonadLogger m, MonadIO m) => m a)
-        -> IO a
-    runStderrLoggingT' x = runStderrLoggingT x

@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE NoImplicitPrelude  #-}
 module Futurice.App.MegaRepoTool (defaultMain) where
 
 import Futurice.Prelude
+import Prelude ()
 
 import qualified Turtle
 import qualified Options.Applicative as O

@@ -18,7 +18,7 @@ type UserCapacities = Vector UserCapacity
 
 data UserCapacity = UserCapacity
     { userCapacityDate        :: !Day
-    , userCapacityAmount      :: !Int -- TODO: Change to time units
+    , userCapacityAmount      :: !(NDT 'Minutes Int)
     , userCapacityDescription :: !(Maybe Text)
     }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)

@@ -1,4 +1,4 @@
-resolver: lts-6.18
+resolver: lts-6.23
 packages:
 - ansi-pretty/
 - avar/
@@ -38,44 +38,45 @@ packages:
 - spice-stats/
 - theme-app/
 - location:
-    git: https://github.com/phadej/aeson-extra.git
-    commit: 83cdf5932cd333067a50209ed63b8604749a33d2
+    git: https://github.com/necrobious/uuid-aeson.git
+    commit: f5fd573c7cb098515d0093acb2879520e190cc08
   extra-dep: true
 - location:
     git: https://github.com/phadej/github.git
     commit: dd149a469cad0fb4ecbb75a76efc633d92870a0c
   extra-dep: true
-# Not ours
-- location:
-    git: https://github.com/snapframework/snap.git
-    commit: ed168734edd0b19083924d922822e9ad1314bb8a
-  extra-dep: true
-- location:
-    git: https://github.com/facebook/Haxl.git
-    commit: 528bba55657c5bd379397da5da2efc42c610d3c8
-  extra-dep: true
 extra-deps:
-- aeson-1.0.0.0
+- aeson-1.0.1.0
+- aeson-extra-0.4.0.0
 - bifunctors-5.4.1
 - clay-0.11
+- comonad-5
 - friendly-time-0.4
-- generics-sop-lens-0.1.1.0
-- heist-1.0.0.0
-- http-streams-0.8.4.0
+- generics-sop-lens-0.1.2.0
+- haxl-0.4.0.0
+- http-api-data-0.3.1
+- http-client-0.5.3.2
+- http-client-tls-0.3.3
 - insert-ordered-containers-0.2.0.0
 - io-streams-haproxy-1.0.0.1
+- kan-extensions-5.0.1
+- lens-4.15.1
 - monad-http-0.2.0.0
+- pointed-5
+- QuickCheck-2.9.2
+- recursion-schemes-5
 - semigroupoids-5.1
-- servant-0.8.1
+- servant-0.9
 - servant-cassava-0.8
-- servant-client-0.8.1
-- servant-docs-0.8.1
-- servant-server-0.8.1
+- servant-client-0.9
+- servant-docs-0.9
+- servant-server-0.9
 - servant-swagger-1.1.2
 - servant-swagger-ui-0.2.0.2.1.5
+- singleton-bool-0.1.2.0
 - snap-core-1.0.0.0
 - snap-server-1.0.1.0
-- swagger2-2.1.2.1
+- swagger2-2.1.3
 - these-0.7.2
 - transformers-compat-0.5.1.4
-        
+flags: {}

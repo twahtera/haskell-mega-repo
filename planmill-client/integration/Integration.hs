@@ -149,12 +149,12 @@ instance MonadPlanMillQuery H where
     planmillQuery q = case (showDict, typeableDict) of
         (Dict, Dict) -> H (H.dataFetch q)
       where
-        typeableDict = Q.queryDict (Proxy :: Proxy Typeable) (Sub Dict) q
-        showDict     = Q.queryDict (Proxy :: Proxy Show)     (Sub Dict) q
+        typeableDict = Q.queryDict (Proxy :: Proxy Typeable) q
+        showDict     = Q.queryDict (Proxy :: Proxy Show)     q
 
 runH :: Cfg -> H a -> IO a
 runH cfg (H haxl) = do
-    let stateStore = H.stateSet (initDataSourceSimpleIO cfg) H.stateEmpty
+    let stateStore = H.stateSet (initDataSourceSimpleIO LevelDebug cfg) H.stateEmpty
     env <- H.initEnv stateStore ()
     H.runHaxl env haxl
 

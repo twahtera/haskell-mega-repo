@@ -35,23 +35,22 @@ module Futurice.Report (
     ReportGenerated(..),
     ) where
 
-import Futurice.Peano
+import Prelude ()
 import Futurice.Prelude
-
 import Control.Monad.Trans.Identity (IdentityT (..))
 import Data.Aeson.Compat
        (FromJSON (..), ToJSON (..), object, withObject, (.:), (.=))
 import Data.Constraint              (Constraint)
-import Data.FileEmbed               (embedStringFile)
 import Data.Functor.Identity        (Identity (..))
 import Data.Swagger                 (ToSchema (..))
 import Data.Type.Equality
-import Generics.SOP
-       (All, I (..), NP (..), SList (..), SListI (..))
+import Futurice.Lucid.Foundation
+       (defPageParams, embedJS, large_, menrvaJS, pageJs, page_, row_)
+import Futurice.Peano
+import Generics.SOP                 (All, SList (..), SListI (..))
 import GHC.TypeLits                 (KnownSymbol, Symbol, symbolVal)
 import Lucid                        hiding (for_)
 import Lucid.Base                   (HtmlT (..))
-import Lucid.Foundation.Futurice    (defPageParams, large_, pageJs, page_, row_)
 
 import Servant.API         (MimeRender (..))
 import Servant.CSV.Cassava (CSV', EncodeOpts (..))
@@ -68,6 +67,9 @@ import qualified Futurice.IC as IList
 -- | Report generation time.
 newtype ReportGenerated = ReportGenerated { getReportGenerated :: UTCTime }
     deriving (Typeable)
+
+instance NFData ReportGenerated where
+    rnf = rnf . getReportGenerated
 
 instance ToJSON ReportGenerated where
     toJSON = toJSON . getReportGenerated
@@ -99,6 +101,9 @@ data Per a b = Per
     , perSnd :: !b
     }
     deriving (Eq, Show, Functor, Foldable, Traversable, Typeable)
+
+instance (NFData a, NFData b) => NFData (Per a b) where
+    rnf (Per a b) = rnf a `seq` rnf b
 
 instance (ToJSON a, ToJSON b) => ToJSON (Per a b) where
     toJSON (Per a b) = toJSON (a, b)
@@ -297,6 +302,9 @@ data Report (name :: Symbol) params a = Report
 
 -- TODO: Eq, Show, Ord instances
 
+instance (NFData params, NFData a) => NFData (Report name params a) where
+    rnf (Report p a) = rnf p `seq` rnf a
+
 data E a c where
     MkE :: ((forall m. (Monad m, ReportRowC a m) => m c) -> c) -> E a c
 
@@ -400,12 +408,12 @@ instance (KnownSymbol name, ToHtml params, ToReportRow a, IsReport params a)
     => ToHtml (Report name params a) where
     toHtmlRaw _ = pure ()
     toHtml :: forall m. Monad m => Report name params a -> HtmlT m ()
-    toHtml (Report params d) = case reportExec params :: E a (HtmlT m ()) of
-        MkE f -> f (HtmlT . return <$> runHtmlT p)
+    toHtml (Report params d) = toHtml $ page_ (fromString title) pageParams $
+        case reportExec params :: E a (Html ()) of
+            MkE f -> f (HtmlT . return <$> runHtmlT p)
       where
         p :: forall n. (Monad n, ReportRowC a n) => HtmlT n ()
-        p =
-          page_ (fromString title) pageParams $ do
+        p =  do
           row_ $ large_ 12 $ h1_ $ fromString title
           row_ $ large_ 12 $ div_ [class_ "callout"] $ toHtml params
           row_ $ large_ 12 $ table_ [class_ "futu-report hover"] $ do
@@ -419,8 +427,8 @@ instance (KnownSymbol name, ToHtml params, ToReportRow a, IsReport params a)
         title = symbolVal (Proxy :: Proxy name)
         pageParams = defPageParams
             & pageJs .~
-                [ $(embedStringFile "menrva.standalone.js")
-                , $(embedStringFile "reports.js")
+                [ menrvaJS
+                , $(embedJS "reports.js")
                 ]
 
         cls' :: Set Text -> [Attribute]

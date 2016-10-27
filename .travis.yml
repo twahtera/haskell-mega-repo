@@ -5,6 +5,7 @@ language: c
 before_install:
 - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
 - git submodule update --init
+- export PATH=/opt/alex/3.1.7/bin:$PATH
 - export PATH=/opt/ghc/$GHCVER/bin:$PATH
 - if [ -n "$CABALVER" ]; then export PATH=/opt/cabal/$CABALVER/bin:$PATH; fi
 - export PATH=~/.local/bin:$PATH
@@ -41,6 +42,7 @@ matrix:
         - hvr-ghc
         packages:
         - libfftw3-dev
+        - alex-3.1.7
         - ghc-7.10.3
         - libgmp-dev
     compiler: ! ': # ghc-7.10.3 stack-lts-6.yaml'
@@ -51,6 +53,7 @@ matrix:
         - hvr-ghc
         packages:
         - libfftw3-dev
+        - alex-3.1.7
         - ghc-8.0.1
         - libgmp-dev
     compiler: ! ': # ghc-8.0.1 stack-ghc-8.0.yaml'

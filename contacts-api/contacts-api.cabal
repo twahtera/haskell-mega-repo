@@ -1,9 +1,9 @@
--- This file has been generated from package.yaml by hpack version 0.15.0.
+-- This file has been generated from package.yaml by hpack version 0.14.1.
 --
 -- see: https://github.com/sol/hpack
 
 name:           contacts-api
-version:        0.1.0.0
+version:        0
 synopsis:       Contacts api
 description:    New and fancy
 category:       Web
@@ -57,7 +57,7 @@ library
     , futurice-servant
     , github >= 0.14
     , hashable
-    , haxl                  >=0.3   && <0.4
+    , haxl
     , haxl-fxtra
     , haxl-typed
     , http-client           >=0.4.30 && <0.6
@@ -69,6 +69,7 @@ library
     , lucid
     , mtl
     , parallel-io
+    , periocron
     , rfc5051
     , semigroups
     , servant

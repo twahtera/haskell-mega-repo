@@ -1,4 +1,4 @@
-docker-base-image: futurice/base-images:haskell-lts-6.18-1
+docker-base-image: futurice/base-images:haskell-lts-6-1
 apps:
   avatar:
     executable: avatar-server
@@ -8,6 +8,8 @@ apps:
     executable: favicon
   futuhours-api:
     executable: futuhours-api-server
+  planmill-proxy:
+    executable: planmill-proxy-server
   proxy-app:
     executable: proxy-app-server
   reports-app:

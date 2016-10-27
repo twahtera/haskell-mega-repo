@@ -1,10 +1,10 @@
--- This file has been generated from package.yaml by hpack version 0.14.0.
+-- This file has been generated from package.yaml by hpack version 0.14.1.
 --
 -- see: https://github.com/sol/hpack
 
 name:           periocron
-version:        0.0.0.0
-synopsis:       TVar that can be asynchronously set
+version:        0
+synopsis:       Periodical cron
 description:    ...
 category:       Web
 homepage:       https://github.com/futurice/haskell-mega-repo#readme
@@ -27,7 +27,7 @@ source-repository head
 library
   hs-source-dirs:
       src
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable NoImplicitPrelude ScopedTypeVariables
+  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
       base                  >=4.7   && <4.10
@@ -36,6 +36,7 @@ library
     , futurice-prelude
     , monad-logger
     , stm
+    , transformers
     , time
   exposed-modules:
       Futurice.Periocron

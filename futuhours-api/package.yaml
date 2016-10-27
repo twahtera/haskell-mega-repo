@@ -1,5 +1,5 @@
 name: futuhours-api
-version: 0.1.0.0
+version: "0"
 synopsis: Futuhours API
 description: New and fancy
 author: Oleg Grenrus <oleg.grenrus@iki.fi>
@@ -18,10 +18,10 @@ library:
   dependencies:
     - base                  >=4.7   && <4.10
     - ad
-    - aeson                 >=0.8   && <1.1
-    - aeson-compat          >=0.3.1 && <0.4
-    - aeson-extra           >=0.3.1 && <0.4
-    - async >=2.0.2 && <2.2
+    - aeson
+    - aeson-compat
+    - aeson-extra
+    - async
     - avar
     - base-compat
     - binary
@@ -30,7 +30,7 @@ library:
     - bytestring
     - cassava
     - containers
-    - dependent-map >=0.2.1.0 && <0.3
+    - dependent-map
     - dependent-sum
     - either
     - ekg
@@ -41,20 +41,21 @@ library:
     - fum-client
     - futulogo
     - futurice-foundation
-    - futurice-prelude >=0.1.9.0
+    - futurice-integrations
+    - futurice-prelude
     - futurice-reports
-    - generics-sop >=0.2.1.0 && <0.3
-    - generics-sop-lens >=0.1.0.0 && <0.2
+    - generics-sop
+    - generics-sop-lens
     - hashable
-    - haxl                  >=0.3   && <0.4
+    - haxl
     - haxl-fxtra
     - haxl-typed
     - http-client
     - http-client-tls
     - intervals
-    - lattices >=1.4.1
+    - lattices
     - lens
-    - linear >=1.20.4
+    - linear
     - lucid
     - markdown
     - monad-http
@@ -102,7 +103,6 @@ library:
     - DeriveFunctor
     - DeriveGeneric
     - DeriveTraversable
-    - NoImplicitPrelude
     - ScopedTypeVariables
 
 executables:
