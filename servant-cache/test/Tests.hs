@@ -1,10 +1,11 @@
 module Main (main) where
 
+import Prelude ()
+import Futurice.Prelude
 import Control.Concurrent       (threadDelay)
 import Control.Concurrent.Async (async, wait)
 import Control.Concurrent.STM   (TVar, atomically, modifyTVar, newTVarIO,
                                  readTVarIO)
-import Data.Time                (NominalDiffTime)
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -19,6 +20,7 @@ tests :: TestTree
 tests = testGroup "cached"
     [ testCase "cold start: broken" coldStartBroken
     , testCase "cold start: fixed" coldStartFixed
+    , testCase "DynMap: same key, different value types" dynmapExample
     ]
 
 coldStart :: (Cache.DynMapCache -> NominalDiffTime -> Char -> IO () -> IO ())
@@ -49,3 +51,18 @@ coldStartFixed :: IO ()
 coldStartFixed = do
     value <- coldStart Cache.cachedIO
     assertBool ("Less then three: " ++ show value) (value < 3)
+
+dynmapExample :: IO ()
+dynmapExample = do
+    dm <- DynMap.newIO
+    -- Insert
+    atomically $ DynMap.insert u (I 1 :: I Int) dm
+    atomically $ DynMap.insert u (I 2 :: I Double) dm
+    -- Lookup
+    mi <- atomically $ DynMap.lookup u Proxy dm
+    md <- atomically $ DynMap.lookup u Proxy dm
+    -- Test
+    mi @?= Just (I 1 :: I Int)
+    md @?= Just (I 2 :: I Double)
+  where
+    u = I ()

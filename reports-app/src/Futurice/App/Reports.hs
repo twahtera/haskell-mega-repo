@@ -49,6 +49,9 @@ newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
 -- Endpoints
 -------------------------------------------------------------------------------
 
+-- Note: we cachedIO with () :: () as a key. It's ok as 'DynMapCache'
+-- uses both @key@ and @value@ TypeRep's as key to non-typed map.
+
 serveIssues :: Ctx -> IO IssueReport
 serveIssues (cache, mgr, cfg) = cachedIO cache 600 () $ do
     repos' <- repos mgr (cfgReposUrl cfg)
