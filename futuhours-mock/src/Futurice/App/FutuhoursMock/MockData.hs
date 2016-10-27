@@ -1,83 +1,59 @@
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 module Futurice.App.FutuhoursMock.MockData (
   projects,
-  days
+  days,
   ) where
 import Futurice.App.FutuhoursMock.Types
+import Futurice.Prelude
+import Prelude ()
+import qualified PlanMill as PM
 
 internalProject = Project
-      { _projectId=1
+      { _projectId=PM.Ident 1
       , _projectName="Internal Work" 
       , _projectTasks=[
-          Task { _taskId=1
-               , _taskName="Things"
-               , _taskLatestEntry=Entry { _entryDescription="Doing things"}
-               , _taskClosed=False
-               }
-         ,Task { _taskId=2
-               , _taskName="Stuff"
-               , _taskLatestEntry=Entry { _entryDescription="Doing stuff"}
-               , _taskClosed=False
-               }
-          ]
+           (mkTask 1 "Things") {_taskLatestEntry=mkLatestEntry "Doing things"}
+         , (mkTask 2 "Stuff")  {_taskLatestEntry=mkLatestEntry "Doing stuff"}
+         ]
       , _projectClosed=False
       }
 
 absenceProject = Project
-      { _projectId=4
+      { _projectId=PM.Ident 4
       , _projectName="Absences" 
       , _projectTasks=[
-          Task { _taskId=6
-               , _taskName="Balance leave"
-               , _taskLatestEntry=Entry { _entryDescription="Balance leave"}
-               , _taskClosed=False
-               }
-         ,Task { _taskId=7
-               , _taskName="Unpaid holiday"
-               , _taskLatestEntry=Entry { _entryDescription="Unpaid holiday"}
-               , _taskClosed=False
-               }
-         ,Task { _taskId=8
-               , _taskName="Sick leave"
-               , _taskLatestEntry=Entry { _entryDescription="Sick leave"}
-               , _taskClosed=False
-               }
+            (mkTask 6 "Balance leave") {_taskLatestEntry=mkLatestEntry "Balance leave"}
+          , (mkTask 7 "Unpaid holiday") {_taskLatestEntry=mkLatestEntry "Unpaid holiday"}
+          , (mkTask 8 "Sick leave") {_taskLatestEntry=mkLatestEntry "Sick leave"}
           ]
       , _projectClosed=False
       }
 
 customerProject = Project
-    { _projectId=2
+    { _projectId=PM.Ident 2
     , _projectName="Actual customer work" 
     , _projectTasks=[
-        Task { _taskId=3
-             , _taskName="Development"
-             , _taskLatestEntry=Entry { _entryDescription="Developing"}
-             , _taskClosed=True
-             }
-       ,Task { _taskId=4
-             , _taskName="On-Call"
-             , _taskLatestEntry=Entry { _entryDescription="Long weekend :()"}
-             , _taskClosed=True
-             }
+          (mkTask 3 "Development") {_taskLatestEntry=mkLatestEntry "Development"}
+        , (mkTask 4 "Long weekend :()") {_taskLatestEntry=mkLatestEntry "On-Call"}
         ]
     , _projectClosed=False
     }
 
 inactiveProject = Project
-    { _projectId=3
+    { _projectId=PM.Ident 3
     , _projectName="Not active project" 
     , _projectTasks=[
-        Task { _taskId=5
-             , _taskName="Work"
-             , _taskLatestEntry=Entry { _entryDescription="Doing work"}
-             , _taskClosed=False
-             }
-       ,Task { _taskId=6
-             , _taskName="Design"
-             , _taskLatestEntry=Entry { _entryDescription="Designing"}
-             , _taskClosed=False
-             }
+          (mkTask 5 "Doing work") { _taskLatestEntry=mkLatestEntry "Work" }
+        , (mkTask 6 "Designing") { _taskLatestEntry=mkLatestEntry "Design" }
         ]
     , _projectClosed=True
     }
@@ -89,84 +65,102 @@ projects = [
     , inactiveProject]
 
 days = [
-     HoursDay {_dayHours=5
-         , _dayEntries=[
-              Entry { _entryId=1
-                    , _entryProjectId=projectId internalProject
-                    , _entryTaskId=0 -- TODO lens getter
+     mkHoursDay 
+       { _dayHours=5
+       , _dayEntries=[
+              Entry { _entryId=PM.Ident 1
+                    , _entryProjectId=internalProject ^. projectId
+                    , _entryTaskId=fromMaybe (PM.Ident 1) (internalProject ^?  projectTasks . traverse . taskId)
                     , _entryDescription="Internal work"
                     , _entryHours=5
+                    , _entryClosed=False
                     }
-         }
-    ,HoursDay { _dayHours=0.0
-         , _dayHolidayname="Public holiday"
-         }
-    ,HoursDay { _dayHours=0.0 }
-    ,HoursDay { _dayHours=0.0 }
-    ,HoursDay { _dayHours=0.0
+        ]
+       }
+    ,mkHoursDay
+      { _dayHours=0.0
+      , _dayHolidayName=Just "Public holiday"
+      }
+    ,mkHoursDay
+         { _dayHours=0.0 }
+    ,mkHoursDay 
+         { _dayHours=0.0 }
+    ,mkHoursDay 
+         { _dayHours=0.0
          , _dayClosed=True
          }
-    ,HoursDay {_dayHours=7.5
+    ,mkHoursDay
+        { _dayHours=7.5
         , _dayEntries=[
-            Entry { _entryId=2
-                  , _entryProjectId=projectId absenceProject
-                  , _entryTaskId=0 -- TODO lens getter
-                  , _entryDescription="TODO work" -- TODO lens getter
+            Entry { _entryId=PM.Ident 2
+                  , _entryProjectId=absenceProject ^. projectId
+                  , _entryTaskId=fromMaybe (PM.Ident 2) $ absenceProject ^?  projectTasks . traverse . taskId
+                  , _entryDescription=fromMaybe "" $ absenceProject ^?  projectTasks . traverse . taskLatestEntry . _Just . latestEntryDescription
                   , _entryHours=7.5
+                  , _entryClosed=False
                   }]
         }
-    ,HoursDay {_dayHours=7.5
+    ,mkHoursDay
+        { _dayHours=7.5
         , _dayClosed=True
         , _dayEntries=[
-          Entry { _entryId=3
-                , _entryProjectId=projectId absenceProject
-                , _entryTaskId=0 -- TODO lens getter
-                , _entryDescription="TODO work" -- TODO lens getter
+          Entry { _entryId=PM.Ident 3
+                , _entryProjectId=absenceProject ^. projectId
+                , _entryTaskId=fromMaybe (PM.Ident 3) $ absenceProject ^?  projectTasks . traverse . taskId
+                , _entryDescription=fromMaybe "" $ absenceProject ^?  projectTasks . traverse . taskLatestEntry . _Just . latestEntryDescription
                 , _entryHours=7.5
+                , _entryClosed=False
                 }]
         }
-    ,HoursDay {_dayHours=10
+    ,mkHoursDay
+        { _dayHours=10
         , _dayEntries=[
-          Entry { _entryId=13
-                , _entryProjectId=projectId customerProject
-                , _entryTaskId=0 -- TODO lens getter
-                , _entryDescription="TODO work" -- TODO lens getter
+          Entry { _entryId=PM.Ident 13
+                , _entryProjectId=customerProject ^. projectId
+                , _entryTaskId=fromMaybe (PM.Ident 13) $ customerProject ^?  projectTasks . traverse . taskId
+                , _entryDescription=fromMaybe "" $ customerProject ^?  projectTasks . traverse . taskLatestEntry . _Just . latestEntryDescription
                 , _entryHours=10
+                , _entryClosed=False
                 }]
         }
-    ,HoursDay {_dayHours=7.5
+    ,mkHoursDay
+        { _dayHours=7.5
         , _dayEntries=[
-            Entry { _entryId=4
-                  , _entryProjectId=projectId absenceProject
-                  , _entryTaskId=0 -- TODO lens getter
-                  , _entryDescription="TODO work" -- TODO lens getter
+            Entry { _entryId=PM.Ident 4
+                  , _entryProjectId=absenceProject ^. projectId
+                  , _entryTaskId=fromMaybe (PM.Ident 4) $ absenceProject ^?  projectTasks . traverse . taskId
+                  , _entryDescription=fromMaybe "" $ absenceProject ^?  projectTasks . traverse . taskLatestEntry . _Just . latestEntryDescription
                   , _entryHours=2.5
+                  , _entryClosed=False
                   }
-          , Entry { _entryId=5
-                  , _entryProjectId=projectId customerProject
-                  , _entryTaskId=0 -- TODO lens getter
+          , Entry { _entryId=PM.Ident 5
+                  , _entryProjectId=customerProject ^. projectId
+                  , _entryTaskId=fromMaybe (PM.Ident 5) $ customerProject ^?  projectTasks . traverse . taskId
                   , _entryDescription="Customer work"
                   , _entryHours=5.0
+                  , _entryClosed=False
                   }]
         }
-    ,HoursDay {_dayHours=9.0
+    ,mkHoursDay
+        { _dayHours=9.0
         , _dayEntries=[
-          Entry { _entryId=6
-                , _entryProjectId=projectId inactiveProject
-                , _entryTaskId=0 -- TODO lens getter
-                , _entryDescription="TODO work" -- TODO lens getter
+          Entry { _entryId=PM.Ident 6
+                , _entryProjectId=inactiveProject ^. projectId
+                , _entryTaskId=fromMaybe (PM.Ident 6) $ inactiveProject ^?  projectTasks . traverse . taskId
+                , _entryDescription=fromMaybe "" $ inactiveProject ^?  projectTasks . traverse . taskLatestEntry . _Just . latestEntryDescription
                 , _entryHours=9.0
                 , _entryClosed=True
                 }]
         }
-    ,HoursDay {_dayHours=7.5
+    ,mkHoursDay
+        { _dayHours=7.5
         , _dayEntries=[
-          Entry { _entryId=7
-                , _entryProjectId=projectId inactiveProject
-                , _entryTaskId=0 -- TODO lens getter
-                , _entryDescription="TODO work" -- TODO lens getter
+          Entry { _entryId=PM.Ident 7
+                , _entryProjectId=inactiveProject ^. projectId
+                , _entryTaskId=fromMaybe (PM.Ident 7) $ inactiveProject ^?  projectTasks . traverse . taskId
+                , _entryDescription=fromMaybe "" $ inactiveProject ^?  projectTasks . traverse . taskLatestEntry . _Just . latestEntryDescription
                 , _entryHours=7.5
                 , _entryClosed=True
                 }]
         }
-  , ]
+  ]

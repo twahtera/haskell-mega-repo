@@ -60,6 +60,7 @@ library
       Futurice.App.FutuhoursMock.Config
       Futurice.App.FutuhoursMock.Logic
       Futurice.App.FutuhoursMock.Types
+      Futurice.App.FutuhoursMock.MockData
   default-language: Haskell2010
 
 executable futuhours-mock-server

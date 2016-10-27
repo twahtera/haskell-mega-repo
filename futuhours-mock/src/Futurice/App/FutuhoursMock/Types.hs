@@ -11,14 +11,27 @@ module Futurice.App.FutuhoursMock.Types (
     projectId,
     projectName,
     projectClosed,
-    -- * Ctx
-    Ctx (..),
+    projectTasks,
+    -- * Task
+    Task (..),
+    taskLatestEntry,
+    taskId,
+    mkTask,
+    -- * Entry
+    Entry (..),
+    LatestEntry (..),
+    latestEntryDescription,
+    mkLatestEntry,
     -- * User
     User (..),
+    -- * Ctx
+    Ctx (..),
     -- * Hours
     HoursDay (..),
+    mkHoursDay,
     HoursMonth (..),
-    HoursResponse (..)
+    HoursResponse (..),
+    HoursDayUpdate (..),
     ) where
 
 import Prelude ()
@@ -36,30 +49,49 @@ import qualified PlanMill as PM
 data Project = Project
     { _projectId     :: PM.ProjectId
     , _projectName   :: !Text
-    , _projectTasks     :: [Task]
+    , _projectTasks  :: [Task]
     , _projectClosed :: !Bool
     }
   deriving (Eq, Show, Typeable, Generic)
+
+-- perhaps a lens getter for an Entry?
+data LatestEntry = LatestEntry
+  { _latestEntryDescription :: !Text
+  , _latestEntryDate :: Maybe UTCTime
+  , _latestEntryHours :: Maybe Float
+  } deriving (Eq, Show, Typeable, Generic)
+
+mkLatestEntry desc = Just LatestEntry
+                        { _latestEntryDescription=desc
+                        , _latestEntryDate=Nothing
+                        , _latestEntryHours=Nothing
+                        }
 
 data Task = Task
   { _taskId :: PM.TaskId
   , _taskName :: !Text
   , _taskAbsence :: !Bool
   , _taskClosed :: !Bool
-  , _taskLatestEntry :: Maybe Entry
-  , _taskHoursRemaining :: Maybe Float -- TODO: better type
+  , _taskLatestEntry :: Maybe LatestEntry
+  , _taskHoursRemaining :: !(Maybe Float) -- TODO: better type
   } deriving (Eq, Show, Typeable, Generic)
 -- LatestEntry: Hours UI feature. Previous Entry used as default values when marking new hours.
 -- HoursRemaining: Task.taskTargetEffort - (totalHoursUsedByAssignedPersonnel)
 -- NOTE: Golang backend LatestEntry is Entry with a Date
 
--- mkTask = Task { _taskId=1 :: PM.TaskId, _taskName="", _taskAbsence=False, _taskClosed=False}
+mkTask id name = Task {
+                    _taskId=PM.Ident id
+                  , _taskName=name
+                  , _taskAbsence=False
+                  , _taskClosed=False
+                  , _taskLatestEntry=Nothing
+                  , _taskHoursRemaining=Nothing}
 
+-- Entries for a specific Day
 data Entry = Entry
   { _entryId :: PM.TimereportId
   , _entryProjectId :: PM.ProjectId
-  , _entrytaskId :: PM.TaskId
-  , _entryDate :: !UTCTime
+  , _entryTaskId :: PM.TaskId
   , _entryDescription :: !Text
   , _entryClosed :: !Bool
   , _entryHours :: !Float
@@ -70,17 +102,25 @@ data User = User
   { _userFirstName :: !Text
   , _userLastName :: !Text
   , _userBalance :: !Float
-  , _userHolidaysLeft :: !Integer
+  , _userHolidaysLeft :: !Int
   , _userUtilizationRate :: !Float
   , _userProfilePicture :: !Text
   }
 
+-- filling HolidayName marks Day as a Holiday
 data HoursDay = HoursDay
-  { _dayHolidayName :: !Text
+  { _dayHolidayName :: !(Maybe Text)
   , _dayHours :: !Float
   , _dayEntries :: ![Entry]
   , _dayClosed :: !Bool
   }
+
+mkHoursDay = HoursDay
+              { _dayHolidayName=Nothing
+              , _dayHours=0.0
+              , _dayEntries=[]
+              , _dayClosed=False
+              }
 
 -- HoursDayUpdate is HoursDay with dayClosed::Maybe Bool AND *singular* dayEntries :: !Entry
 -- Keep different types now; perhaps refactor UI to lessen Backend types in Future *shrug*
@@ -120,6 +160,9 @@ deriveGeneric ''Project
 makeLenses ''Task
 deriveGeneric ''Task
 
+makeLenses ''LatestEntry
+deriveGeneric ''LatestEntry
+
 makeLenses ''Entry
 deriveGeneric ''Entry
 
@@ -150,6 +193,14 @@ instance Arbitrary Task where
 instance ToJSON Task where toJSON = sopToJSON
 instance FromJSON Task where parseJSON = sopParseJSON
 instance ToSchema Task where declareNamedSchema = sopDeclareNamedSchema
+
+instance Arbitrary LatestEntry where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
+
+instance ToJSON LatestEntry where toJSON = sopToJSON
+instance FromJSON LatestEntry where parseJSON = sopParseJSON
+instance ToSchema LatestEntry where declareNamedSchema = sopDeclareNamedSchema
 
 instance Arbitrary Entry where
     arbitrary = sopArbitrary

@@ -14,7 +14,7 @@ module Futurice.App.FutuhoursMock.Logic (
     hoursEndpoint,
     entryEndpoint,
     entryIdEndpoint,
-    entryDeleteEndpoint
+    entryDeleteEndpoint,
     ) where
 
 import Futurice.App.FutuhoursMock.Types
@@ -35,18 +35,23 @@ projectEndpoint _ctx = do
 userEndpoint :: Ctx -> IO (User)
 userEndpoint _ctx = do
     -- TODO: how to generate unique values per request?
-    pure $ User {_userFirstName="Test",
-                 _userLastName="User",
-                 _userBalance=unsafePerformIO $ (getStdRandom (randomR (-10,40)) :: IO Float),
-                 _userHolidaysLeft=unsafePerformIO $ randomRIO (0, 24),
-                 _userUtilizationRate=unsafePerformIO $ (getStdRandom (randomR (0,100)) :: IO Float),
-                 _userProfilePicture="https://raw.githubusercontent.com/futurice/spiceprogram/gh-pages/assets/img/logo/chilicorn_no_text-128.png"}
+    let _userBalance = unsafePerformIO $ (getStdRandom (randomR (-10,40)) :: IO Float)
+    let _userHolidaysLeft = unsafePerformIO $ randomRIO (0, 24)
+    let _userUtilizationRate = unsafePerformIO $ (getStdRandom (randomR (0,100)) :: IO Float)
+    pure $ User
+        { _userFirstName="Test"
+        , _userLastName="User"
+        , _userBalance=_userBalance
+        , _userHolidaysLeft=_userHolidaysLeft
+        , _userUtilizationRate=_userUtilizationRate
+        , _userProfilePicture="https://raw.githubusercontent.com/futurice/spiceprogram/gh-pages/assets/img/logo/chilicorn_no_text-128.png"
+        }
 
 hoursEndpoint :: Ctx -> IO (HoursResponse)
 hoursEndpoint _ctx = do
   -- :> QueryParam "start-date" String
   -- :> QueryParam "end-date" String
-  let hd = HoursDay { _dayHolidayName="mock",
+  let hd = HoursDay { _dayHolidayName=Just "mock",
                       _dayHours=8,
                       _dayEntries=[],
                       _dayClosed=False}
