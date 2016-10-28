@@ -32,11 +32,12 @@ server ctx = pure "This is futuhours mock api"
     :<|> liftIO . entryDeleteEndpoint ctx
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain
-    "Futuhours MOCK api"
-    "Is it real?"
-    (Proxy :: Proxy ('FutuAccent 'AF2 'AC2))
-    getConfig cfgPort
-    futuhoursApi server futuriceNoMiddleware
-    $ \Config {..} _cache -> do
+defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+    & serverName            .~ "Futuhours MOCK api"
+    & serverDescription     .~ "Is it real?"
+    & serverApp futuhoursApi .~ server
+    & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC2))
+  where
+    makeCtx :: Config -> DynMapCache -> IO Ctx
+    makeCtx Config {..} cache = do
         pure Ctx

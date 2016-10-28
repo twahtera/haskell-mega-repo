@@ -62,6 +62,8 @@ hoursEndpoint _ctx = do
                         _hoursResponseMonths=Map.fromList [("month-format", [hm])],
                         _hoursResponseDefaultWorkHours=7.5}
 
+fillProjects = undefined
+
 entryEndpoint :: Ctx -> IO ([Int])
 entryEndpoint _ctx = do
   pure $ [1]
