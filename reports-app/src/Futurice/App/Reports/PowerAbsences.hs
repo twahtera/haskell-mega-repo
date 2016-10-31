@@ -25,7 +25,7 @@ module Futurice.App.Reports.PowerAbsences (
 import Prelude ()
 import Futurice.Prelude
 import Data.Fixed                (Centi)
-import Data.Time                 (addDays)
+import Data.Time                 (addDays, diffDays)
 import Data.Tuple                (swap)
 import Futurice.Generics
 import Futurice.Integrations
@@ -65,13 +65,22 @@ instance ToJSON PowerAbsence where
 
 instance ToColumns PowerAbsence where
     type Columns PowerAbsence =
-        '[ Maybe FUM.UserName, Day, Day, NDT 'Days Int ]
+        '[ Maybe FUM.UserName, Day, Day, NDT 'Days Int, NDT 'Days Int ]
 
-    columnNames _ = K "fum" :* K "start" :* K "end" :* K "business-days" :* Nil
+    columnNames _ =
+        K "fum" :*
+        K "start" :*
+        K "end" :*
+        K "calendar-days" :*
+        K "business-days" :*
+        Nil
+
     toColumns ab  = pure $
         I (ab ^. powerAbsenceUsername) :*
         I (ab ^. powerAbsenceStart) :*
         I (ab ^. powerAbsenceEnd) :*
+        I (NDT $ fromInteger $ 1 +
+            diffDays (ab ^. powerAbsenceEnd) (ab ^. powerAbsenceStart)) :*
         I (ab ^. powerAbsenceBusinessDays) :*
         Nil
 

@@ -45,7 +45,7 @@ data Task = Task
     , taskTargetEffort    :: !(Maybe Int)
     , taskTempFinish      :: !(Maybe UTCTime)
     , taskType            :: !(Maybe Int) -- TODO: Task or Milestone
-    , taskUnitPrice       :: !(Maybe Int)
+    , taskUnitPrice       :: !(Maybe Double) -- e.g. 104.4
     , taskWbs             :: !(Maybe String)
     }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
