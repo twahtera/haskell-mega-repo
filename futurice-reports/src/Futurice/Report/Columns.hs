@@ -47,8 +47,9 @@ import qualified Generics.SOP       as SOP
 import qualified PlanMill           as PM
 
 -- instances
+import qualified Chat.Flowdock.REST as FD
 import qualified FUM
-import qualified GitHub as GH
+import qualified GitHub             as GH
 
 -------------------------------------------------------------------------------
 -- Report
@@ -540,6 +541,10 @@ instance ReportValue Int where
     reportValueType _ = CTNumber
     reportValueHtml   = toHtml . show
 
+instance ReportValue Integer where
+    reportValueType _ = CTNumber
+    reportValueHtml   = toHtml . show
+
 instance ReportValue Day where
     reportValueType _ = CTDay
     reportValueHtml = fromString . show
@@ -557,6 +562,10 @@ instance ReportValue Bool where
 
 instance ReportValue FUM.UserName where
     reportValueHtml = toHtml . FUM._getUserName
+
+instance ReportValue a => ReportValue (FD.Identifier a res) where
+    reportValueHtml   = reportValueHtml . FD.getIdentifier
+    reportValueType _ = reportValueType (Proxy :: Proxy a)
 
 instance ReportValue (PM.Identifier a) where
     reportValueType _            = CTNumber

@@ -1,5 +1,6 @@
-{-# LANGUAGE TypeFamilies    #-}
-{-# LANGUAGE TemplateHaskell, MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
 module Futurice.Integrations.Monad (
     Integrations,
     Env,
@@ -7,20 +8,21 @@ module Futurice.Integrations.Monad (
     IntegrationsConfig (..),
     ) where
 
-import Futurice.Prelude
 import Prelude ()
-
-import Control.Monad.PlanMill    (MonadPlanMillConstraint (..))
+import Futurice.Prelude
+import Control.Monad.PlanMill     (MonadPlanMillConstraint (..))
+import Control.Monad.Trans.Reader (ReaderT, runReaderT)
 import Data.Constraint
-import Futurice.Constraint.Unit1 (Unit1)
+import Futurice.Constraint.Unit1  (Unit1)
+import Network.HTTP.Client        (Manager, Request)
+import PlanMill.Queries.Haxl      (initDataSourceBatch)
 
-import           Control.Monad.Trans.Reader (ReaderT, runReaderT)
+import qualified Chat.Flowdock.REST   as FD
 import qualified FUM
 import qualified FUM.Haxl
-import qualified Haxl.Core                  as H
-import           Network.HTTP.Client        (Manager, Request)
-import           PlanMill.Queries.Haxl      (initDataSourceBatch)
-import qualified PlanMill.Types.Query       as Q
+import qualified Flowdock.Haxl as FD.Haxl
+import qualified Haxl.Core            as H
+import qualified PlanMill.Types.Query as Q
 
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Common
@@ -28,6 +30,7 @@ import Futurice.Integrations.Common
 -- | Opaque environment, exported for haddock
 data Env = Env
     { _envFumEmployeeListName :: !FUM.ListName
+    , _envFlowdockOrgName     :: !(FD.ParamName FD.Organisation)
     , _envNow                 :: !UTCTime
     }
 
@@ -44,6 +47,9 @@ data IntegrationsConfig = MkIntegrationsConfig
     , integrCfgFumAuthToken             :: !FUM.AuthToken
     , integrCfgFumBaseUrl               :: !FUM.BaseUrl
     , integrCfgFumEmployeeListName      :: !FUM.ListName
+    -- Flowdock
+    , integrCfgFlowdockToken            :: !FD.AuthToken
+    , integrCfgFlowdockOrgName          :: !(FD.ParamName FD.Organisation)
     }
 
 runIntegrations :: IntegrationsConfig -> Integrations a -> IO a
@@ -51,11 +57,13 @@ runIntegrations cfg (Integr m) = do
     let env = Env
             { _envFumEmployeeListName = integrCfgFumEmployeeListName cfg
             , _envNow                 = integrCfgNow cfg
+            , _envFlowdockOrgName     = integrCfgFlowdockOrgName cfg
             }
     let haxl = runReaderT m env
     let stateStore
             = H.stateSet (initDataSourceBatch mgr planmillReq)
             $ H.stateSet (FUM.Haxl.initDataSource' mgr fumToken fumBaseUrl)
+            $ H.stateSet (FD.Haxl.initDataSource' mgr fdToken)
             $ H.stateEmpty
     haxlEnv <- H.initEnv stateStore ()
     H.runHaxl haxlEnv haxl
@@ -64,6 +72,7 @@ runIntegrations cfg (Integr m) = do
     planmillReq = integrCfgPlanmillProxyBaseRequest cfg
     fumToken    = integrCfgFumAuthToken cfg
     fumBaseUrl  = integrCfgFumBaseUrl cfg
+    fdToken     = integrCfgFlowdockToken cfg
 
 -------------------------------------------------------------------------------
 -- Instances
@@ -103,6 +112,9 @@ instance MonadPlanMillQuery Integrations where
 instance MonadFUM Integrations where
     fumAction = Integr . lift . FUM.Haxl.request
 
+instance MonadFlowdock Integrations where
+    flowdockOrganisationReq = Integr . lift . FD.Haxl.organisation
+
 -------------------------------------------------------------------------------
 -- Has* instances
 -------------------------------------------------------------------------------
@@ -113,3 +125,6 @@ instance MonadReader Env Integrations where
 
 instance HasFUMEmployeeListName Env where
     fumEmployeeListName = envFumEmployeeListName
+
+instance HasFlowdockOrgName Env where
+    flowdockOrganisationName = envFlowdockOrgName

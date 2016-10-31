@@ -27,7 +27,6 @@ import qualified Data.Vector         as V
 
 -- Data definition
 import qualified Chat.Flowdock.REST          as FD
-import qualified Chat.Flowdock.REST.Internal as FD
 import qualified FUM
 import qualified GitHub                      as GH
 

@@ -11,7 +11,6 @@ import Control.Lens            (to)
 import Data.Aeson.Extra.Stream (streamDecode)
 
 import qualified Chat.Flowdock.REST          as FD
-import qualified Chat.Flowdock.REST.Internal as FD
 import qualified Data.ByteString.Lazy        as LBS
 import qualified Data.Text.IO                as T
 

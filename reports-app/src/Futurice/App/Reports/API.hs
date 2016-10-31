@@ -17,6 +17,7 @@ import GHC.TypeLits              (KnownSymbol, Symbol)
 import Servant
 
 import Futurice.App.Reports.Balances          (BalanceReport)
+import Futurice.App.Reports.FumFlowdock       (FumFlowdockReport)
 import Futurice.App.Reports.FumGithub         (FumGitHubReport)
 import Futurice.App.Reports.GithubIssues      (IssueReport)
 import Futurice.App.Reports.MissingHours      (MissingHoursReport)
@@ -31,6 +32,7 @@ data R (path :: Symbol) (report :: *)
 type Reports =
     '[ R "issues"        IssueReport
     , R "fum-github"     FumGitHubReport
+    , R "fum-flowdock"   FumFlowdockReport
     , R "missing-hours"  MissingHoursReport
     , R "balances"       BalanceReport
     , R "power-users"    PowerUserReport

@@ -10,6 +10,7 @@
 module Flowdock.Haxl (
     organisation,
     initDataSource,
+    initDataSource',
     FlowdockRequest(..),
     ) where
 
@@ -42,11 +43,18 @@ organisation = dataFetch . FetchOrganisation
 instance StateKey FlowdockRequest where
     data State FlowdockRequest = FlowdockDataState Manager FD.AuthToken
 
-initDataSource :: FD.AuthToken           -- ^ Authentication token
-               -> IO (State FlowdockRequest)
+initDataSource
+    :: FD.AuthToken           -- ^ Authentication token
+    -> IO (State FlowdockRequest)
 initDataSource auth = do
     mgr <- newManager tlsManagerSettings
     pure (FlowdockDataState mgr auth)
+
+initDataSource'
+    :: Manager
+    -> FD.AuthToken           -- ^ Authentication token
+    -> State FlowdockRequest
+initDataSource' = FlowdockDataState
 
 instance DataSourceName FlowdockRequest where
   dataSourceName _ = "FlowdockDataSource"
