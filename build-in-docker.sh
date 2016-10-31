@@ -25,7 +25,7 @@ WORK_DIR=.stack-work-docker
 
 # --allow-different-user is needed as we build as root inside docker
 stack --no-terminal --work-dir $WORK_DIR update
-stack --no-terminal --work-dir $WORK_DIR build -j2 --pedantic --allow-different-user
+stack --no-terminal --work-dir $WORK_DIR build -j1 --pedantic --allow-different-user
 cp $(stack --work-dir $WORK_DIR path --local-install-root)/bin/* /app/bin
 
 # write current git hash, so we know where we are
