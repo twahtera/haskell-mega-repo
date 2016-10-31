@@ -3,8 +3,8 @@
 {-# LANGUAGE TemplateHaskell   #-}
 -- | Common integrations requests.
 module Futurice.Integrations.Common (
-    -- * Time
-    currentDay,
+    -- * Date
+    beginningOfCurrMonth,
     beginningOfPrevMonth,
     -- * FUM
     fumEmployeeList,
@@ -45,6 +45,14 @@ class HasFlowdockOrgName a where
 
 class HasGithubOrgName a where
     githubOrganisationName :: Lens' a (GH.Name GH.Organization)
+
+beginningOfCurrMonth :: Day -> Day
+beginningOfCurrMonth = fromGregorian' . f. toGregorian
+  where
+    f (y, m, _) = (y, m, 1)
+
+    fromGregorian' :: (Integer, Int, Int) -> Day
+    fromGregorian' (y, m, d) = fromGregorian y m d
 
 beginningOfPrevMonth :: Day -> Day
 beginningOfPrevMonth = fromGregorian' . f. toGregorian

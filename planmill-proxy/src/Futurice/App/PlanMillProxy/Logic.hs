@@ -157,7 +157,7 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
             x <- fetchFromPlanMill (ctxCache ctx) (ctxPlanmillCfg ctx) q
             storeInPostgres conn q x
             pure $! x
-        -- TODO
+        -- liftIO $ print (res ^? _Left, q)
         return $ first (\x -> ("non-primitive query failure " <> show q <> " " <> show x) ^. packed) res
 
     -- Used to update viewed counters
@@ -228,10 +228,11 @@ storeInPostgres
     :: (Binary a, HasSemanticVersion a, HasStructuralInfo a)
     => Postgres.Connection -> Query a -> a -> LIO ()
 storeInPostgres conn q x = do
+    -- $(logInfo) $ "Storing in postgres" <> textShow q
     i <- handleSqlError 0 $
         Postgres.execute conn postgresQuery (q, Postgres.Binary $ taggedEncode x)
     when (i == 0) $
-        $(logWarn) $ "Storing in postgres failed: " <> show q ^. packed
+        $(logWarn) $ "Storing in postgres failed: " <> textShow q
   where
     postgresQuery = fromString $ unwords $
         [ "INSERT INTO planmillproxy.cache as c (query, data)"

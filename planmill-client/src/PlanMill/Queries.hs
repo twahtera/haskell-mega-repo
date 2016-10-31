@@ -183,7 +183,7 @@ absences = planmillVectorQuery
 project :: MonadPlanMillQuery m => ProjectId -> m Project
 project pid = planmillQuery
     $ QueryGet QueryTagProject mempty
-    $ toUrlParts $ ("project" :: Text) // pid
+    $ toUrlParts $ ("projects" :: Text) // pid
 
 -- | View details of single task.
 --
@@ -193,7 +193,7 @@ project pid = planmillQuery
 task :: MonadPlanMillQuery m => TaskId -> m Task
 task pid = planmillQuery
     $ QueryGet QueryTagTask mempty
-    $ toUrlParts $ ("task" :: Text) // pid
+    $ toUrlParts $ ("tasks" :: Text) // pid
 
 -------------------------------------------------------------------------------
 -- Duplication from PlanMill.Enumerations

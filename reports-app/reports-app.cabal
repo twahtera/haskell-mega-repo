@@ -101,6 +101,7 @@ library
       Futurice.App.Reports.MissingHours
       Futurice.App.Reports.PowerAbsences
       Futurice.App.Reports.PowerUser
+      Futurice.App.Reports.TimereportsByTask
   default-language: Haskell2010
 
 executable reports-app-server

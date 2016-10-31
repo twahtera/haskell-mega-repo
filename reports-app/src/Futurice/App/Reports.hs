@@ -28,9 +28,9 @@ import qualified Data.Text.Encoding   as TE
 import qualified GitHub               as GH
 
 import Futurice.App.Reports.API
-import Futurice.App.Reports.Balances     (BalanceReport, balanceReport)
+import Futurice.App.Reports.Balances          (BalanceReport, balanceReport)
 import Futurice.App.Reports.Config
-import Futurice.App.Reports.FumGithub    (FumGitHubReport, fumGithubReport)
+import Futurice.App.Reports.FumGithub         (FumGitHubReport, fumGithubReport)
 import Futurice.App.Reports.GithubIssues
        (GitHubRepo (..), IssueReport, issueReport)
 import Futurice.App.Reports.Markup
@@ -38,7 +38,9 @@ import Futurice.App.Reports.MissingHours
        (MissingHoursReport, missingHoursReport)
 import Futurice.App.Reports.PowerAbsences
        (PowerAbsenceReport, powerAbsenceReport)
-import Futurice.App.Reports.PowerUser    (PowerUserReport, powerUserReport)
+import Futurice.App.Reports.PowerUser         (PowerUserReport, powerUserReport)
+import Futurice.App.Reports.TimereportsByTask
+       (TimereportsByTaskReport, timereportsByTaskReport)
 
 -- /TODO/ Make proper type
 type Ctx = (DynMapCache, Manager, Config)
@@ -94,6 +96,13 @@ servePowerAbsencesReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
         (ctxToIntegrationsConfig now ctx)
         powerAbsenceReport
 
+serveTimereportsByTaskReport :: Ctx -> IO TimereportsByTaskReport
+serveTimereportsByTaskReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
+    now <- currentTime
+    runIntegrations
+        (ctxToIntegrationsConfig now ctx)
+        timereportsByTaskReport
+
 -- All report endpoints
 -- this is used for api 'server' and pericron
 reports :: NP ReportEndpoint Reports
@@ -104,6 +113,7 @@ reports =
     ReportEndpoint serveBalancesReport :*
     ReportEndpoint servePowerUsersReport :*
     ReportEndpoint servePowerAbsencesReport :*
+    ReportEndpoint serveTimereportsByTaskReport :*
     Nil
 
 makeServer :: Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)

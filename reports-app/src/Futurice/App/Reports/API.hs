@@ -16,12 +16,13 @@ import Futurice.Servant
 import GHC.TypeLits              (KnownSymbol, Symbol)
 import Servant
 
-import Futurice.App.Reports.Balances     (BalanceReport)
-import Futurice.App.Reports.FumGithub    (FumGitHubReport)
-import Futurice.App.Reports.GithubIssues (IssueReport)
-import Futurice.App.Reports.MissingHours (MissingHoursReport)
-import Futurice.App.Reports.PowerUser    (PowerUserReport)
-import Futurice.App.Reports.PowerAbsences    (PowerAbsenceReport)
+import Futurice.App.Reports.Balances          (BalanceReport)
+import Futurice.App.Reports.FumGithub         (FumGitHubReport)
+import Futurice.App.Reports.GithubIssues      (IssueReport)
+import Futurice.App.Reports.MissingHours      (MissingHoursReport)
+import Futurice.App.Reports.PowerAbsences     (PowerAbsenceReport)
+import Futurice.App.Reports.PowerUser         (PowerUserReport)
+import Futurice.App.Reports.TimereportsByTask (TimereportsByTaskReport)
 
 type ReportTypes = '[HTML, CSV, JSON]
 
@@ -34,6 +35,7 @@ type Reports =
     , R "balances"       BalanceReport
     , R "power-users"    PowerUserReport
     , R "power-absences" PowerAbsenceReport
+    , R "hours-by-task" TimereportsByTaskReport
     ]
 
 -- | This, 'RReport' and 'RName', type families are needed to make 'FoldReportsAPI' reduce
