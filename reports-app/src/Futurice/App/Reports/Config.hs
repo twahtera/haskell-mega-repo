@@ -4,12 +4,12 @@ module Futurice.App.Reports.Config (
 
 import Prelude ()
 import Futurice.Prelude
+import Futurice.EnvConfig
+import Network.HTTP.Client (Request, responseTimeout, responseTimeoutMicro)
 
+import qualified Chat.Flowdock.REST as FD
 import qualified FUM
-import           Futurice.EnvConfig
-import qualified GitHub              as GH
-import           Network.HTTP.Client
-                 (Request, responseTimeout, responseTimeoutMicro)
+import qualified GitHub             as GH
 
 data Config = Config
     { cfgGhAuth                   :: !GH.Auth
@@ -19,6 +19,8 @@ data Config = Config
     , cfgFumAuth                  :: !FUM.AuthToken     -- ^ FUM auth token
     , cfgFumBaseUrl               :: !FUM.BaseUrl       -- ^ FUM base url
     , cfgFumUserList              :: !FUM.ListName      -- ^ FUM user list
+    , cfgFlowdockAuthToken        :: !FD.AuthToken
+    , cfgFlowdockOrgName          :: !(FD.ParamName FD.Organisation)
     , cfgReposUrl                 :: !Text
     , cfgPlanmillProxyBaseRequest :: !Request
     , cfgPort                     :: !Int
@@ -37,6 +39,8 @@ instance GetConfig Config where
         <*> parseEnvVar "FUM_TOKEN"
         <*> parseEnvVar "FUM_BASEURL"
         <*> parseEnvVar "FUM_LISTNAME"
+        <*> parseEnvVar "FD_AUTH_TOKEN"
+        <*> parseEnvVar "FD_ORGANISATION"
         <*> parseEnvVar "REPORTS_GH_REPOSURL" -- TODO: change to REPORTSAPP_GH_REPOSURL
         <*> (f <$> parseEnvVar "PLANMILLPROXY_HAXLURL")
         <*> parseDefaultPort "REPORTSAPP"

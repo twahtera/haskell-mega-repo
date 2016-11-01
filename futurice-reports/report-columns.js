@@ -457,7 +457,7 @@ window.addEventListener("load", function () {
 
             var rows = _.map(contents, function (entry) {
                 return dom("tr", _.map(entry, function (cell, colIdx) {
-                    return dom("td", [ "" + cell ]); // to apply function
+                    return dom("td", [ renderCellContents(cell) ]); // to apply function
                 }));
             });
 
@@ -467,6 +467,13 @@ window.addEventListener("load", function () {
                 tableBodyEl.appendChild(row);
             });
         });
+
+        /* Cell rendering */
+        function renderCellContents(contents) {
+            if (contents === null) return dom("i", "???");
+
+            return "" + contents;
+        }
 
         /* Bind quick controls */
         assert(_.slice(quickControls.children).length === data.columns.length, "Wrong amount of quick controls");

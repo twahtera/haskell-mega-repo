@@ -30,6 +30,7 @@ dependencies:
   - env-config
   - exceptions
   - filepath
+  - flowdock-rest
   - friendly-time >=0.4 && <0.5
   - fum-client
   - futulogo

@@ -37,6 +37,7 @@ library
     , constraints
     , containers
     , file-embed
+    , flowdock-rest
     , fum-client
     , futurice-foundation
     , futurice-prelude

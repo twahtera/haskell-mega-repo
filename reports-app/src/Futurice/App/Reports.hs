@@ -30,6 +30,7 @@ import qualified GitHub               as GH
 import Futurice.App.Reports.API
 import Futurice.App.Reports.Balances          (BalanceReport, balanceReport)
 import Futurice.App.Reports.Config
+import Futurice.App.Reports.FumFlowdock       (FumFlowdockReport, fumFlowdockReport)
 import Futurice.App.Reports.FumGithub         (FumGitHubReport, fumGithubReport)
 import Futurice.App.Reports.GithubIssues
        (GitHubRepo (..), IssueReport, issueReport)
@@ -62,6 +63,13 @@ serveIssues (cache, mgr, cfg) = cachedIO cache 600 () $ do
 serveFumGitHubReport :: Ctx -> IO FumGitHubReport
 serveFumGitHubReport (cache, mgr, cfg) = cachedIO cache 600 () $
     fumGithubReport mgr cfg
+
+serveFumFlowdockReport :: Ctx -> IO FumFlowdockReport
+serveFumFlowdockReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
+    now <- currentTime
+    runIntegrations
+        (ctxToIntegrationsConfig now ctx)
+        fumFlowdockReport
 
 serveMissingHoursReport :: Ctx -> IO MissingHoursReport
 serveMissingHoursReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
@@ -109,6 +117,7 @@ reports :: NP ReportEndpoint Reports
 reports =
     ReportEndpoint serveIssues :*
     ReportEndpoint serveFumGitHubReport :*
+    ReportEndpoint serveFumFlowdockReport :*
     ReportEndpoint serveMissingHoursReport :*
     ReportEndpoint serveBalancesReport :*
     ReportEndpoint servePowerUsersReport :*
@@ -157,6 +166,9 @@ ctxToIntegrationsConfig now (_cache, mgr, cfg) = MkIntegrationsConfig
     , integrCfgFumAuthToken             = cfgFumAuth cfg
     , integrCfgFumBaseUrl               = cfgFumBaseUrl cfg
     , integrCfgFumEmployeeListName      = cfgFumUserList cfg
+    -- Flowdock
+    , integrCfgFlowdockToken            = cfgFlowdockAuthToken cfg
+    , integrCfgFlowdockOrgName          = cfgFlowdockOrgName cfg
     }
 
 -------------------------------------------------------------------------------

@@ -5,7 +5,7 @@
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
+{-# LANGUAGE TypeSynonymInstances, UndecidableInstances  #-}
 -- | Missing hours report
 module Futurice.App.Reports.TimereportsByTask (
     -- * Report
@@ -20,6 +20,7 @@ import Futurice.Prelude
 import Data.Either               (partitionEithers)
 import Data.Fixed                (Centi)
 import Futurice.Generics
+import Futurice.List
 import Futurice.Integrations
 import Futurice.Report.Columns
 import Futurice.Time
@@ -35,11 +36,28 @@ import qualified PlanMill.Queries as PMQ
 -- Data
 -------------------------------------------------------------------------------
 
+data TimereportsStats = TimereportsStats
+    { _tsHours  :: !(NDT 'Hours Centi)
+    , _tsCount  :: !Int
+    , _tsMedian :: !(NDT 'Hours Centi)
+    }
+    deriving (Eq, Ord, Show, Typeable, Generic)
+
+deriveGeneric ''TimereportsStats
+
+instance NFData TimereportsStats
+instance ToColumns TimereportsStats
+instance ToSchema TimereportsStats where declareNamedSchema = sopDeclareNamedSchema
+instance ToJSON TimereportsStats where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
+
+
 data TimereportsByTask = TimereportsByTask
-    { _tbtProjectName :: !Text
-    , _tbtTaskName    :: !Text
-    , _tbtHoursPrevMonth :: !(NDT 'Hours Centi)
-    , _tbtHoursCurrMonth :: !(NDT 'Hours Centi)
+    { _tbtProjectName    :: !Text
+    , _tbtTaskName       :: !Text
+    , _tbtHoursPrevMonth :: !TimereportsStats
+    , _tbtHoursCurrMonth :: !TimereportsStats
     }
     deriving (Eq, Ord, Show, Typeable, Generic)
 
@@ -53,6 +71,24 @@ instance ToJSON TimereportsByTask where
     toEncoding = sopToEncoding
 
 instance ToColumns TimereportsByTask where
+    type Columns TimereportsByTask =
+        Append '[Text, Text] (Append (Columns TimereportsStats) (Columns TimereportsStats))
+
+    columnNames _ =
+        K "project-name" :*
+        K "task-name" :*
+        K "prev-hours" :*
+        K "prev-count" :*
+        K "prev-median" :*
+        K "curr-hours" :*
+        K "curr-count" :*
+        K "curr-median" :*
+        Nil
+
+    toColumns (TimereportsByTask p t prev curr) =
+        f <$> toColumns prev <*> toColumns curr
+      where
+        f prev' curr' = append (I p :* I t :* Nil) (append prev' curr')
 
 -------------------------------------------------------------------------------
 -- Report
@@ -109,14 +145,32 @@ timereportsByTask
 timereportsByTask midDay taskId reports = do
     task <- PMQ.task taskId
     project <- traverse PMQ.project (PM.taskProject task)
+    -- TODO: use foldl package
     let (prev, curr) = partitionEithers $ map classifyReports $ toList reports
+    let prev' = map PM.trAmount prev
+    let curr' = map PM.trAmount curr
     pure $ TimereportsByTask
         { _tbtProjectName    = maybe "" PM.pName project
         , _tbtTaskName       = PM.taskName task
-        , _tbtHoursPrevMonth = ndtConvert' $ sum $ map PM.trAmount prev
-        , _tbtHoursCurrMonth = ndtConvert' $ sum $ map PM.trAmount curr
+        , _tbtHoursPrevMonth = TimereportsStats
+            { _tsHours = ndtConvert' $ sum prev'
+            , _tsCount = length prev
+            , _tsMedian = ndtConvert' $ median 0 prev'
+            }
+        , _tbtHoursCurrMonth = TimereportsStats
+            { _tsHours = ndtConvert' $ sum curr'
+            , _tsCount = length curr
+            , _tsMedian = ndtConvert' $ median 0 curr'
+            }
         }
   where
     classifyReports r
         | PM.trStart r < midDay = Left r
         | otherwise             = Right r
+
+-- almost correct
+median :: Ord a => a -> [a] -> a
+median d [] = d
+median _ x  = sort x !! n2
+  where
+    n2 = length x `div` 2

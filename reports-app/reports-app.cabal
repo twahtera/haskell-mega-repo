@@ -45,6 +45,7 @@ library
     , env-config
     , exceptions
     , filepath
+    , flowdock-rest
     , friendly-time >=0.4 && <0.5
     , fum-client
     , futulogo
@@ -95,6 +96,7 @@ library
       Futurice.App.Reports.API
       Futurice.App.Reports.Balances
       Futurice.App.Reports.Config
+      Futurice.App.Reports.FumFlowdock
       Futurice.App.Reports.FumGithub
       Futurice.App.Reports.GithubIssues
       Futurice.App.Reports.Markup
@@ -129,6 +131,7 @@ executable reports-app-server
     , env-config
     , exceptions
     , filepath
+    , flowdock-rest
     , friendly-time >=0.4 && <0.5
     , fum-client
     , futulogo
