@@ -14,6 +14,7 @@ module Futurice.App.FutuhoursMock.Types (
     projectTasks,
     -- * Task
     Task (..),
+    taskName,
     taskLatestEntry,
     taskId,
     mkTask,
@@ -36,9 +37,12 @@ module Futurice.App.FutuhoursMock.Types (
 
 import Prelude ()
 import Futurice.Prelude
-import Futurice.Generics
-import Data.Time (UTCTime, diffUTCTime, getCurrentTime)
+
+import Data.Fixed                (Centi)
 import Data.Map (Map)
+import Data.Time (UTCTime, diffUTCTime, getCurrentTime)
+import Futurice.Generics
+import Futurice.Time
 
 import qualified PlanMill as PM
 

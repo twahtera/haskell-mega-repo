@@ -11,6 +11,8 @@
 module Futurice.App.FutuhoursMock.MockData (
   projects,
   days,
+  internalProject,
+  absenceProject,
   ) where
 import Futurice.App.FutuhoursMock.Types
 import Futurice.Prelude
