@@ -35,7 +35,6 @@ library:
     - machines           >= 0.6.1
     - machines-directory >= 0.2.1.0 # for directoryWalk'
     - optparse-applicative
-    - parallel
     - process
     - regex-applicative
     - regex-applicative-text

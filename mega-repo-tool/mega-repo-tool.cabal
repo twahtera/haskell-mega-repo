@@ -45,18 +45,17 @@ library
     , http-client
     , http-client-tls
     , lens
-    , parallel
     , machines           >= 0.6.1
     , machines-directory >= 0.2.1.0
     , optparse-applicative
     , process
     , regex-applicative
     , regex-applicative-text
+    , semigroups
     , tagged
     , tdigest
     , text
     , time
-    , semigroups
     , transformers
     , turtle >=1.2.8 && <1.3
     , unordered-containers

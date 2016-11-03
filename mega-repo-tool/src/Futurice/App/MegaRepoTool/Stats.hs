@@ -10,11 +10,12 @@ import Futurice.Prelude
 import Data.List                (isSuffixOf)
 import Data.Machine
 import Data.Machine.Runner      (foldT)
+import Data.Maybe               (fromJust)
+import Data.Semigroup           (Max (..))
 import Data.Semigroup.Generic   (gmappend, gmempty)
-import Data.TDigest             (TDigest, singleton, quantile)
+import Data.TDigest             (TDigest, quantile, singleton)
 import System.Directory.Machine (directoryWalk', files)
-import Text.Printf (printf)
-import Data.Maybe (fromJust)
+import Text.Printf              (printf)
 
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
@@ -29,6 +30,7 @@ data Stats = Stats
     , _statsLines    :: !(Sum Int)
     , _statsNELines  :: !(Sum Int)
     , _statsLinesAvg :: !(Average Double)
+    , _statsLinesMax :: !(Max Int)
     , _statsLinesTD  :: !(TDigest 100)
     }
     deriving (Show, Generic)
@@ -46,6 +48,7 @@ fileStats t = Stats
     , _statsLines    = Sum $ lineCount
     , _statsNELines  = Sum $ length . filter (not . T.null) $ ls
     , _statsLinesAvg = Average 1 $ fromIntegral lineCount
+    , _statsLinesMax = Max $ lineCount
     , _statsLinesTD  = singleton $ fromIntegral lineCount
     }
   where
@@ -72,11 +75,13 @@ statsMachine
         , isSuffixOf ".stack-work-docker"
         ]
 
-    filePredicate f = isSuffixOf ".hs" f && not (isSuffixOf "Setup.hs" f)
+    filePredicate f = isSuffixOf ".hs" f
+        && not (isSuffixOf "Setup.hs" f)
+        && not (isSuffixOf "Main.hs" f)
 
 stats :: IO ()
 stats = do
-    Stats fs ls nels lavg td <- foldT (statsMachine <~ source ["."])
+    Stats fs ls nels lavg lmax td <- foldT (statsMachine <~ source ["."])
     putStrLn $ "total files:     " ++ show (getSum fs)
     putStrLn $ "total lines:     " ++ show (getSum ls)
     putStrLn $ "non-empty lines: " ++ show (getSum nels)
@@ -86,6 +91,9 @@ stats = do
     putStrLn $ "line count 50%:  " ++ printf "%2.2f" (fromJust $ quantile 0.5 td)
     putStrLn $ "line count 75%:  " ++ printf "%2.2f" (fromJust $ quantile 0.76 td)
     putStrLn $ "line count 90%:  " ++ printf "%2.2f" (fromJust $ quantile 0.9 td)
+    putStrLn $ "line count 95%:  " ++ printf "%2.2f" (fromJust $ quantile 0.95 td)
+    putStrLn $ "line count 98%:  " ++ printf "%2.2f" (fromJust $ quantile 0.98 td)
+    putStrLn $ "max lines:       " ++ show (getMax lmax)
 
 -------------------------------------------------------------------------------
 -- Average
