@@ -1,12 +1,20 @@
+{-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Futurice.App.MegaRepoTool.Stats (stats) where
+module Futurice.App.MegaRepoTool.Stats (
+    stats,
+    ) where
 
 import Prelude ()
 import Futurice.Prelude
 import Data.List                (isSuffixOf)
 import Data.Machine
 import Data.Machine.Runner      (foldT)
-import System.Directory.Machine (files, directoryWalk')
+import Data.Semigroup.Generic   (gmappend, gmempty)
+import Data.TDigest             (TDigest, singleton, quantile)
+import System.Directory.Machine (directoryWalk', files)
+import Text.Printf (printf)
+import Data.Maybe (fromJust)
 
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
@@ -17,29 +25,32 @@ import qualified Data.Text.IO as T
 
 -- | TODO: collect other stats as well
 data Stats = Stats
-    { _statsFiles   :: !Int
-    , _statsLines   :: !Int
-    , _statsNELines :: !Int
+    { _statsFiles    :: !(Sum Int)
+    , _statsLines    :: !(Sum Int)
+    , _statsNELines  :: !(Sum Int)
+    , _statsLinesAvg :: !(Average Double)
+    , _statsLinesTD  :: !(TDigest 100)
     }
-    deriving Show
-
-makeLenses ''Stats
+    deriving (Show, Generic)
 
 instance Semigroup Stats where
-    Stats ax ay az <> Stats bx by bz = Stats
-        (ax + bx)
-        (ay + by)
-        (az + bz)
+    (<>) = gmappend
 
 instance Monoid Stats where
-    mempty = Stats 0 0 0
+    mempty = gmempty
     mappend = (<>)
 
-lineStats :: Text -> Stats
-lineStats t = Stats 0 1 ne
+fileStats :: Text -> Stats
+fileStats t = Stats
+    { _statsFiles    = Sum $ 1
+    , _statsLines    = Sum $ lineCount
+    , _statsNELines  = Sum $ length . filter (not . T.null) $ ls
+    , _statsLinesAvg = Average 1 $ fromIntegral lineCount
+    , _statsLinesTD  = singleton $ fromIntegral lineCount
+    }
   where
-    ne | isn't _Empty t = 1
-       | otherwise      = 0
+    ls        = T.lines t
+    lineCount = length ls
 
 -------------------------------------------------------------------------------
 -- Machine
@@ -49,9 +60,9 @@ statsMachine :: ProcessT IO FilePath Stats
 statsMachine
     =  directoryWalk' dirPredicate
     ~> files
-    ~> filtered (isSuffixOf ".hs")
-    ~> autoM (fmap T.lines . T.readFile)
-    ~> mapping ((statsFiles .~ 1) . foldMap lineStats)
+    ~> filtered filePredicate
+    ~> autoM T.readFile
+    ~> mapping fileStats
   where
     dirPredicate d = not . any ($ d) $
         [ isSuffixOf ".git"
@@ -61,11 +72,35 @@ statsMachine
         , isSuffixOf ".stack-work-docker"
         ]
 
+    filePredicate f = isSuffixOf ".hs" f && not (isSuffixOf "Setup.hs" f)
+
 stats :: IO ()
-stats = do 
-    Stats fs ls nels <- foldT (statsMachine <~ source ["."])
-    putStrLn $ "total files:     " ++ show fs
-    putStrLn $ "total lines:     " ++ show ls
-    putStrLn $ "non-empty lines: " ++ show nels
+stats = do
+    Stats fs ls nels lavg td <- foldT (statsMachine <~ source ["."])
+    putStrLn $ "total files:     " ++ show (getSum fs)
+    putStrLn $ "total lines:     " ++ show (getSum ls)
+    putStrLn $ "non-empty lines: " ++ show (getSum nels)
+    putStrLn $ "average lines:   " ++ printf "%2.2f" (getAverage lavg)
+    putStrLn $ "line count 10%:  " ++ printf "%2.2f" (fromJust $ quantile 0.1 td)
+    putStrLn $ "line count 25%:  " ++ printf "%2.2f" (fromJust $ quantile 0.25 td)
+    putStrLn $ "line count 50%:  " ++ printf "%2.2f" (fromJust $ quantile 0.5 td)
+    putStrLn $ "line count 75%:  " ++ printf "%2.2f" (fromJust $ quantile 0.76 td)
+    putStrLn $ "line count 90%:  " ++ printf "%2.2f" (fromJust $ quantile 0.9 td)
 
+-------------------------------------------------------------------------------
+-- Average
+-------------------------------------------------------------------------------
 
+-- | Numerically stable average.
+data Average a = Average { _samples :: !a, getAverage :: !a }
+  deriving (Eq, Show)
+
+instance Fractional a => Semigroup (Average a) where
+    Average n x <> Average n' x' = Average m y
+      where
+        m = n + n'
+        y = (n * x + n' * x') / m
+
+instance Fractional a => Monoid (Average a) where
+    mempty = Average 0 0
+    mappend = (<>)

@@ -22,3 +22,6 @@
 [submodule "futurice-prelude"]
 	path = futurice-prelude
 	url = git@github.com:futurice/haskell-futurice-prelude.git
+[submodule "tdigest"]
+	path = tdigest
+	url = git@github.com:futurice/haskell-tdigest.git

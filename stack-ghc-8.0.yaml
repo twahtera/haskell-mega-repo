@@ -34,6 +34,7 @@ packages:
 - servant-cache/
 - servant-status/
 - spice-stats/
+- tdigest/
 - location:
     git: https://github.com/necrobious/uuid-aeson.git
     commit: f5fd573c7cb098515d0093acb2879520e190cc08
