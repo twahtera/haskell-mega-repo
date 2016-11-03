@@ -45,6 +45,11 @@ packages:
     git: https://github.com/phadej/machines-directory.git
     commit: ff01ef0cd0ce0ff092eb1d2fcaa64f6fbad547c2
   extra-dep: true
+# https://github.com/aloiscochard/machines-directory/pull/7
+- location:
+    git: https://github.com/phadej/machines-directory.git
+    commit: ff01ef0cd0ce0ff092eb1d2fcaa64f6fbad547c2
+  extra-dep: true
 extra-deps:
 - aeson-1.0.1.0
 - aeson-extra-0.4.0.0
@@ -62,6 +67,7 @@ extra-deps:
 - io-streams-haproxy-1.0.0.1
 - kan-extensions-5.0.1
 - lens-4.15.1
+- machines-0.6.1
 - monad-http-0.2.0.0
 - pointed-5
 - QuickCheck-2.9.2

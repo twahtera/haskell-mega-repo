@@ -45,6 +45,9 @@ library
     , http-client
     , http-client-tls
     , lens
+    , parallel
+    , machines           >= 0.6.1
+    , machines-directory >= 0.2.1.0
     , optparse-applicative
     , process
     , regex-applicative
@@ -62,6 +65,7 @@ library
       Futurice.App.MegaRepoTool.Command.BuildDocker
       Futurice.App.MegaRepoTool.Command.ListSnapshotDependencies
       Futurice.App.MegaRepoTool.Scripts
+      Futurice.App.MegaRepoTool.Stats
   default-language: Haskell2010
 
 executable mega-repo-tool
