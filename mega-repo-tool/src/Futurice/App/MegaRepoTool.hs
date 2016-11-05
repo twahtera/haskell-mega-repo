@@ -10,6 +10,7 @@ import qualified Options.Applicative as O
 import Futurice.App.MegaRepoTool.Command.ListSnapshotDependencies
 import Futurice.App.MegaRepoTool.Command.BuildDocker
 import Futurice.App.MegaRepoTool.Scripts
+import Futurice.App.MegaRepoTool.Stats
 
 -- text argument
 textArgument :: IsString s => O.Mod O.ArgumentFields String -> O.Parser s
@@ -19,6 +20,7 @@ data Cmd
     = ListSnapshotDependencies 
     | BuildDocker [ImageName]
     | Script (Turtle.Shell Text)
+    | Action (IO ())
 
 listSnapshotDependenciesOptions :: O.Parser Cmd
 listSnapshotDependenciesOptions = pure ListSnapshotDependencies
@@ -34,7 +36,7 @@ dotOptions :: O.Parser Cmd
 dotOptions = pure $ Script dotScript
 
 statsOptions :: O.Parser Cmd
-statsOptions =  pure $ Script statsScript
+statsOptions =  pure $ Action stats
 
 optsParser :: O.Parser Cmd
 optsParser = O.subparser $ mconcat
@@ -53,6 +55,7 @@ main' :: Cmd -> IO ()
 main' ListSnapshotDependencies = listSnapshotDependencies
 main' (BuildDocker imgs)       = buildDocker imgs
 main' (Script cmd)             = Turtle.stdout cmd
+main' (Action x)               = x
 
 defaultMain :: IO ()
 defaultMain =

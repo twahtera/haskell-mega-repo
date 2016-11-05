@@ -36,13 +36,20 @@ packages:
 - servant-status/
 - spice-stats/
 - theme-app/
+- tdigest/
 - location:
     git: https://github.com/necrobious/uuid-aeson.git
     commit: f5fd573c7cb098515d0093acb2879520e190cc08
   extra-dep: true
+# https://github.com/aloiscochard/machines-directory/pull/7
 - location:
-    git: https://github.com/phadej/github.git
-    commit: dd149a469cad0fb4ecbb75a76efc633d92870a0c
+    git: https://github.com/phadej/machines-directory.git
+    commit: ff01ef0cd0ce0ff092eb1d2fcaa64f6fbad547c2
+  extra-dep: true
+# https://github.com/aloiscochard/machines-directory/pull/7
+- location:
+    git: https://github.com/phadej/machines-directory.git
+    commit: ff01ef0cd0ce0ff092eb1d2fcaa64f6fbad547c2
   extra-dep: true
 extra-deps:
 - aeson-1.0.1.0
@@ -52,6 +59,7 @@ extra-deps:
 - comonad-5
 - friendly-time-0.4
 - generics-sop-lens-0.1.2.0
+- github-0.15.0
 - haxl-0.4.0.0
 - http-api-data-0.3.1
 - http-client-0.5.3.2
@@ -60,6 +68,7 @@ extra-deps:
 - io-streams-haproxy-1.0.0.1
 - kan-extensions-5.0.1
 - lens-4.15.1
+- machines-0.6.1
 - monad-http-0.2.0.0
 - pointed-5
 - QuickCheck-2.9.2
