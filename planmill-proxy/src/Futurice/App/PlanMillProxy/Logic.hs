@@ -228,7 +228,7 @@ storeInPostgres
     :: (Binary a, HasSemanticVersion a, HasStructuralInfo a)
     => Postgres.Connection -> Query a -> a -> LIO ()
 storeInPostgres conn q x = do
-    -- $(logInfo) $ "Storing in postgres" <> textShow q
+    -- -- $(logInfo) $ "Storing in postgres" <> textShow q
     i <- handleSqlError 0 $
         Postgres.execute conn postgresQuery (q, Postgres.Binary $ taggedEncode x)
     when (i == 0) $
