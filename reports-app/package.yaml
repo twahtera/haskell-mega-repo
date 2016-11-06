@@ -12,6 +12,7 @@ ghc-options: -Wall
 
 dependencies:
   - base >= 4.8 && <4.10
+  - base-compat
   - aeson
   - aeson-pretty
   - ansi-pretty

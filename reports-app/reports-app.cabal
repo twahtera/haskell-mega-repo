@@ -27,6 +27,7 @@ library
   ghc-options: -Wall
   build-depends:
       base >= 4.8 && <4.10
+    , base-compat
     , aeson
     , aeson-pretty
     , ansi-pretty
@@ -99,6 +100,7 @@ library
       Futurice.App.Reports.FumFlowdock
       Futurice.App.Reports.FumGithub
       Futurice.App.Reports.GithubIssues
+      Futurice.App.Reports.GithubUsers
       Futurice.App.Reports.Markup
       Futurice.App.Reports.MissingHours
       Futurice.App.Reports.PowerAbsences
@@ -113,6 +115,7 @@ executable reports-app-server
   ghc-options: -Wall -Wall -threaded
   build-depends:
       base >= 4.8 && <4.10
+    , base-compat
     , aeson
     , aeson-pretty
     , ansi-pretty

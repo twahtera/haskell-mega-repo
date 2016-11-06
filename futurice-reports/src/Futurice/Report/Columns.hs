@@ -313,6 +313,12 @@ instance ToColumns FUM.UserName where
     columnNames _ = K "fum" :* Nil
     toColumns u   = [I u :* Nil]
 
+-- | TODO: differentiate differet names ('columnNames')
+instance ToColumns (GH.Name a) where
+    type Columns (GH.Name a) = '[GH.Name a]
+    columnNames _ = K "gh" :* Nil
+    toColumns n   = [I n :* Nil]
+
 -------------------------------------------------------------------------------
 -- Containers
 -------------------------------------------------------------------------------
