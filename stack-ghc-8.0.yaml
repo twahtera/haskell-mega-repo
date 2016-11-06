@@ -1,4 +1,4 @@
-resolver: nightly-2016-10-26
+resolver: nightly-2016-11-06
 packages:
 - ansi-pretty/
 - avar/

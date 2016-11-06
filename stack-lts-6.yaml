@@ -1,4 +1,4 @@
-resolver: lts-6.23
+resolver: lts-6.24
 packages:
 - ansi-pretty/
 - avar/
@@ -35,16 +35,11 @@ packages:
 - servant-cache/
 - servant-status/
 - spice-stats/
-- theme-app/
 - tdigest/
+- theme-app/
 - location:
     git: https://github.com/necrobious/uuid-aeson.git
     commit: f5fd573c7cb098515d0093acb2879520e190cc08
-  extra-dep: true
-# https://github.com/aloiscochard/machines-directory/pull/7
-- location:
-    git: https://github.com/phadej/machines-directory.git
-    commit: ff01ef0cd0ce0ff092eb1d2fcaa64f6fbad547c2
   extra-dep: true
 # https://github.com/aloiscochard/machines-directory/pull/7
 - location:
@@ -57,6 +52,7 @@ extra-deps:
 - bifunctors-5.4.1
 - clay-0.11
 - comonad-5
+- extra-1.5.1
 - friendly-time-0.4
 - generics-sop-lens-0.1.2.0
 - github-0.15.0
@@ -69,6 +65,7 @@ extra-deps:
 - kan-extensions-5.0.1
 - lens-4.15.1
 - machines-0.6.1
+- machines-directory-0.2.1.0
 - monad-http-0.2.0.0
 - pointed-5
 - QuickCheck-2.9.2
