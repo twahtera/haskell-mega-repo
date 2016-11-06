@@ -12,7 +12,6 @@ import Prelude ()
 
 import Control.Lens
        (Getter, filtered, has, ifoldMapOf, foldMapOf, non, only, re, to, _Wrapped)
-import Data.List           (sortOn)
 import Data.Maybe          (catMaybes)
 import Data.Time           (addDays, diffDays)
 import Servant.Utils.Links (URI (..), safeLink)
