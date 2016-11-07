@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.Task (taskPage) where
 
-import Futurice.Prelude
+--import Futurice.Prelude
 import Prelude ()
 import Futurice.Lucid.Foundation
 
@@ -11,6 +11,6 @@ import Futurice.App.Checklist.Pages.Error (notFoundPage)
 
 taskPage
     :: World
-    -> UUID -- todo
+    -> Identifier Task
     -> HtmlPage "task"
 taskPage _ _ = notFoundPage

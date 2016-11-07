@@ -89,15 +89,15 @@ indexPageHref
     => Maybe Location -> Maybe c -> Maybe t -> Attribute
 indexPageHref mloc mlist mtask =
     href_ $ uriText $ safeLink checklistApi indexPageEndpoint mloc
-        (mlist ^? _Just . identifier . uuid)
-        (mtask ^? _Just . identifier . uuid)
+        (mlist ^? _Just . identifier)
+        (mtask ^? _Just . identifier)
 
 tasksPageHref
     :: (HasIdentifier c Checklist)
     => Maybe TaskRole -> Maybe c -> Attribute
 tasksPageHref mrole mlist =
     href_ $ uriText $ safeLink checklistApi tasksPageEndpoint mrole
-        (mlist ^? _Just . identifier . uuid)
+        (mlist ^? _Just . identifier)
 
 checklistPageHref
     :: (HasIdentifier c Checklist)
@@ -105,7 +105,7 @@ checklistPageHref
     -> Attribute
 checklistPageHref l =
     href_ $ uriText $ safeLink checklistApi checklistPageEndpoint
-        (l ^. identifier . uuid)
+        (l ^. identifier)
 
 -------------------------------------------------------------------------------
 -- Miscs

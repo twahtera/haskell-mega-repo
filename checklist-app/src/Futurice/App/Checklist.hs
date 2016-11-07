@@ -35,8 +35,8 @@ indexPageImpl
     => Ctx
     -> Maybe FUM.UserName
     -> Maybe Location
-    -> Maybe UUID
-    -> Maybe UUID
+    -> Maybe (Identifier Checklist)
+    -> Maybe (Identifier Task)
     -> m (HtmlPage "indexpage")
 indexPageImpl ctx fu loc cid tid = withAuthUser ctx fu impl
   where
@@ -46,18 +46,18 @@ indexPageImpl ctx fu loc cid tid = withAuthUser ctx fu impl
       where
         checklist = do
             cid' <- cid
-            world ^? worldLists . ix (Identifier cid')
+            world ^? worldLists . ix cid'
 
         task = do
             tid' <- tid
-            world ^? worldTasks . ix (Identifier tid')
+            world ^? worldTasks . ix tid'
 
 tasksPageImpl
     :: (MonadIO m)
     => Ctx
     -> Maybe FUM.UserName
     -> Maybe TaskRole
-    -> Maybe UUID
+    -> Maybe (Identifier Checklist)
     -> m (HtmlPage "tasks")
 tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
   where
@@ -66,7 +66,7 @@ tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
       where
         checklist = do
             cid' <- cid
-            world ^? worldLists . ix (Identifier cid')
+            world ^? worldLists . ix cid'
 
 -- | Read only pages
 withAuthUser
