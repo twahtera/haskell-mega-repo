@@ -12,8 +12,8 @@ import Test.QuickCheck           (arbitrary, generate, resize)
 
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Config
-import Futurice.App.Checklist.Markup          (nonAuthorizedPage)
 import Futurice.App.Checklist.Pages.Checklist
+import Futurice.App.Checklist.Pages.Error     (forbiddedPage)
 import Futurice.App.Checklist.Pages.Index
 import Futurice.App.Checklist.Pages.Tasks
 import Futurice.App.Checklist.Types
@@ -70,7 +70,7 @@ withAuthUser
     -> (World -> AuthUser -> m (HtmlPage a))
     -> m (HtmlPage a)
 withAuthUser ctx fu f = case userInfo of
-    Nothing        -> pure nonAuthorizedPage
+    Nothing        -> pure forbiddedPage
     Just userInfo' -> f ctx userInfo'
   where
     userInfo :: Maybe (FUM.UserName, TaskRole, Location)

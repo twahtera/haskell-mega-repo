@@ -83,5 +83,3 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
  where
   countUsers TaskItemDone = TodoCounter 0 0 1 1
   countUsers TaskItemTodo = TodoCounter 0 0 0 1
-
-

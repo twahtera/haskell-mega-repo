@@ -2,8 +2,6 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Markup (
-    -- * 404 / 403
-    nonAuthorizedPage,
     -- * Structure
     navigation,
     header,
@@ -31,18 +29,11 @@ import Data.Maybe          (catMaybes)
 import Servant.Utils.Links (URI (..), safeLink)
 
 import Futurice.App.Checklist.API
-import Futurice.App.Checklist.Clay
 import Futurice.App.Checklist.Types
 import Futurice.Lucid.Foundation
 
 import qualified Data.Text as T
 import qualified FUM
-
-nonAuthorizedPage :: HtmlPage sym
-nonAuthorizedPage = page_ "Non-authorized" pageParams $ do
-    row_ $ large_ 12 $ header_ $ h1_ $ "Non-authorized"
-    row_ $ large_ 12 $ p_ $
-        "Ask IT-team to create you an account."
 
 -------------------------------------------------------------------------------
 -- Navigation

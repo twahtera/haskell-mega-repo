@@ -52,6 +52,7 @@ library
       Futurice.App.Checklist.Config
       Futurice.App.Checklist.Markup
       Futurice.App.Checklist.Pages.Checklist
+      Futurice.App.Checklist.Pages.Error
       Futurice.App.Checklist.Pages.Index
       Futurice.App.Checklist.Pages.Tasks
       Futurice.App.Checklist.Types
