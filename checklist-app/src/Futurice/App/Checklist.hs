@@ -3,18 +3,20 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist (defaultMain) where
 
-import Futurice.Prelude
 import Prelude ()
-
+import Futurice.Prelude
+import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Servant
 import Servant
-import Test.QuickCheck  (arbitrary, generate, resize)
+import Test.QuickCheck           (arbitrary, generate, resize)
 
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Config
-import Futurice.App.Checklist.Markup
+import Futurice.App.Checklist.Markup          (nonAuthorizedPage)
+import Futurice.App.Checklist.Pages.Checklist
+import Futurice.App.Checklist.Pages.Index
+import Futurice.App.Checklist.Pages.Tasks
 import Futurice.App.Checklist.Types
-import Futurice.Lucid.Foundation     (HtmlPage)
 
 import qualified FUM (UserName (..))
 
