@@ -13,6 +13,7 @@ import Servant.HTML.Lucid        (HTML)
 import Futurice.App.Checklist.Types (Location, TaskRole)
 
 type ChecklistAPI = IndexPageEndpoint
+    :<|> ChecklistPageEndpoint
     :<|> TasksPageEndpoint
 
 checklistApi :: Proxy ChecklistAPI
@@ -25,6 +26,12 @@ type IndexPageEndpoint =
     QueryParam "task" UUID :>
     Get '[HTML] (HtmlPage "indexpage")
 
+type ChecklistPageEndpoint =
+    SSOUser :>
+    "checklists" :>
+    Capture "checklist-id" UUID :>
+    Get '[HTML] (HtmlPage "checklist")
+
 type TasksPageEndpoint =
     "tasks" :>
     SSOUser :>
@@ -34,6 +41,9 @@ type TasksPageEndpoint =
 
 indexPageEndpoint :: Proxy IndexPageEndpoint
 indexPageEndpoint = Proxy
+
+checklistPageEndpoint :: Proxy ChecklistPageEndpoint
+checklistPageEndpoint = Proxy
 
 tasksPageEndpoint :: Proxy TasksPageEndpoint
 tasksPageEndpoint = Proxy

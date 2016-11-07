@@ -4,6 +4,7 @@
 module Futurice.App.Checklist.Markup (
     nonAuthorizedPage,
     indexPage,
+    checklistPage,
     tasksPage,
     ) where
 
@@ -140,6 +141,12 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
                             td_ $ toHtml (show a) *> "/" *> toHtml (show b)
                             td_ $ toHtml (show i) *> "/" *> toHtml (show j)
 
+checklistPage
+    :: World
+    -> UUID -- todo
+    -> HtmlPage "checklist"
+checklistPage _ _ = nonAuthorizedPage
+
 tasksPage
     :: World                                 -- ^ the world
     -> (FUM.UserName, TaskRole, Location)    -- ^ logged in user
@@ -196,6 +203,7 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
                 th_ [ title_ "Task" ]                       "Task"
                 th_ [ title_ "Role" ]                       "Role"
                 th_ [ title_ "Active employees todo/done" ] "Employees"
+                th_ [ title_ "Checklists with the task" ]   "Checklists"
 
             tbody_ $ for_ tasks' $ \task -> tr_ $ do
                 let tid = task ^. identifier
@@ -203,7 +211,9 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
                 td_ $ a_ [ indexPageHref Nothing mlist (Just tid) ] $ task ^. nameHtml
                 td_ $ roleHtml mlist (task ^. taskRole)
                 td_ $ case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
-                    TodoCounter _ _ i j -> td_ $ toHtml (show i) *> "/" *> toHtml (show j)
+                    TodoCounter _ _ i j -> toHtml (show i) *> "/" *> toHtml (show j)
+                td_ $ forWith_ (br_ []) (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l)) $ \cl ->
+                    a_ [ checklistPageHref cl ] $ cl ^. nameHtml
  where
   countUsers TaskItemDone = TodoCounter 0 0 1 1
   countUsers TaskItemTodo = TodoCounter 0 0 0 1
@@ -271,6 +281,14 @@ tasksPageHref
 tasksPageHref mrole mlist =
     href_ $ uriText $ safeLink checklistApi tasksPageEndpoint mrole
         (mlist ^? _Just . identifier . uuid)
+
+checklistPageHref
+    :: (HasIdentifier c Checklist)
+    => c
+    -> Attribute
+checklistPageHref l =
+    href_ $ uriText $ safeLink checklistApi checklistPageEndpoint
+        (l ^. identifier . uuid)
 
 -------------------------------------------------------------------------------
 -- Miscs

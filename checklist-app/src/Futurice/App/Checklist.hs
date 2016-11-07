@@ -20,6 +20,7 @@ import qualified FUM (UserName (..))
 
 server :: Ctx -> Server ChecklistAPI
 server ctx = indexPageImpl ctx
+    :<|> (\_ -> pure . checklistPage undefined) -- todo
     :<|> tasksPageImpl ctx
 
 indexPageImpl
