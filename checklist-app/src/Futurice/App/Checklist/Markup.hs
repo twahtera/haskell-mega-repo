@@ -9,6 +9,7 @@ module Futurice.App.Checklist.Markup (
     indexPageHref,
     tasksPageHref,
     checklistPageHref,
+    taskPageHref,
     -- * ToHtml
     nameHtml,
     nameText,
@@ -98,6 +99,14 @@ tasksPageHref
 tasksPageHref mrole mlist =
     href_ $ uriText $ safeLink checklistApi tasksPageEndpoint mrole
         (mlist ^? _Just . identifier)
+
+taskPageHref
+    :: (HasIdentifier t Task)
+    => t
+    -> Attribute
+taskPageHref t =
+    href_ $ uriText $ safeLink checklistApi taskPageEndpoint
+        (t ^. identifier)
 
 checklistPageHref
     :: (HasIdentifier c Checklist)
