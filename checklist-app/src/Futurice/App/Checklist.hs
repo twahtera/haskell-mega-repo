@@ -28,7 +28,7 @@ server ctx = indexPageImpl ctx
     -- todo
     :<|> (\_ -> pure . checklistPage undefined)
     :<|> taskPageImpl ctx
-    :<|> (\_ -> pure . employeePage undefined)
+    :<|> employeePageImpl ctx
 
 indexPageImpl
     :: (MonadIO m, MonadTime m)
@@ -79,6 +79,18 @@ taskPageImpl ctx fu tid = withAuthUser ctx fu impl
     impl world userInfo = pure $ case world ^? worldTasks . ix tid of
         Nothing   -> notFoundPage
         Just task -> taskPage world userInfo task
+
+employeePageImpl
+    :: (MonadIO m)
+    => Ctx
+    -> Maybe FUM.UserName
+    -> Identifier Employee
+    -> m (HtmlPage "employee")
+employeePageImpl ctx fu tid = withAuthUser ctx fu impl
+  where
+    impl world userInfo = pure $ case world ^? worldEmployees . ix tid of
+        Nothing   -> notFoundPage
+        Just employee -> employeePage world userInfo employee
 
 -- | Read only pages
 withAuthUser

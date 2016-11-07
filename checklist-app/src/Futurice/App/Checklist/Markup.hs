@@ -10,6 +10,7 @@ module Futurice.App.Checklist.Markup (
     tasksPageHref,
     checklistPageHref,
     taskPageHref,
+    employeePageHref,
     -- * ToHtml
     nameHtml,
     nameText,
@@ -22,10 +23,9 @@ module Futurice.App.Checklist.Markup (
     toTodoCounter,
     ) where
 
-import Futurice.Prelude
 import Prelude ()
-import Control.Lens
-       (Getter, has, non, only, re, to, _Wrapped)
+import Futurice.Prelude
+import Control.Lens        (Getter, has, non, only, re, to, _Wrapped)
 import Data.Maybe          (catMaybes)
 import Servant.Utils.Links (URI (..), safeLink)
 
@@ -115,6 +115,14 @@ checklistPageHref
 checklistPageHref l =
     href_ $ uriText $ safeLink checklistApi checklistPageEndpoint
         (l ^. identifier)
+
+employeePageHref
+    :: (HasIdentifier e Employee)
+    => e
+    -> Attribute
+employeePageHref e =
+    href_ $ uriText $ safeLink checklistApi employeePageEndpoint
+        (e ^. identifier)
 
 -------------------------------------------------------------------------------
 -- Miscs
