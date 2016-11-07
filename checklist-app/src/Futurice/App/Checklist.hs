@@ -3,32 +3,40 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist (defaultMain) where
 
-import Futurice.Prelude
 import Prelude ()
-
+import Futurice.Prelude
+import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Servant
 import Servant
-import Test.QuickCheck  (arbitrary, generate, resize)
+import Test.QuickCheck           (arbitrary, generate, resize)
 
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Config
-import Futurice.App.Checklist.Markup
+import Futurice.App.Checklist.Pages.Checklist
+import Futurice.App.Checklist.Pages.Employee
+import Futurice.App.Checklist.Pages.Error     (forbiddedPage, notFoundPage)
+import Futurice.App.Checklist.Pages.Index
+import Futurice.App.Checklist.Pages.Task
+import Futurice.App.Checklist.Pages.Tasks
 import Futurice.App.Checklist.Types
-import Futurice.Lucid.Foundation     (HtmlPage)
 
 import qualified FUM (UserName (..))
 
 server :: Ctx -> Server ChecklistAPI
 server ctx = indexPageImpl ctx
     :<|> tasksPageImpl ctx
+    -- todo
+    :<|> (\_ -> pure . checklistPage undefined)
+    :<|> taskPageImpl ctx
+    :<|> (\_ -> pure . employeePage undefined)
 
 indexPageImpl
     :: (MonadIO m, MonadTime m)
     => Ctx
     -> Maybe FUM.UserName
     -> Maybe Location
-    -> Maybe UUID
-    -> Maybe UUID
+    -> Maybe (Identifier Checklist)
+    -> Maybe (Identifier Task)
     -> m (HtmlPage "indexpage")
 indexPageImpl ctx fu loc cid tid = withAuthUser ctx fu impl
   where
@@ -38,18 +46,18 @@ indexPageImpl ctx fu loc cid tid = withAuthUser ctx fu impl
       where
         checklist = do
             cid' <- cid
-            world ^? worldLists . ix (Identifier cid')
+            world ^? worldLists . ix cid'
 
         task = do
             tid' <- tid
-            world ^? worldTasks . ix (Identifier tid')
+            world ^? worldTasks . ix tid'
 
 tasksPageImpl
     :: (MonadIO m)
     => Ctx
     -> Maybe FUM.UserName
     -> Maybe TaskRole
-    -> Maybe UUID
+    -> Maybe (Identifier Checklist)
     -> m (HtmlPage "tasks")
 tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
   where
@@ -58,7 +66,19 @@ tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
       where
         checklist = do
             cid' <- cid
-            world ^? worldLists . ix (Identifier cid')
+            world ^? worldLists . ix cid'
+
+taskPageImpl
+    :: (MonadIO m)
+    => Ctx
+    -> Maybe FUM.UserName
+    -> Identifier Task
+    -> m (HtmlPage "task")
+taskPageImpl ctx fu tid = withAuthUser ctx fu impl
+  where
+    impl world userInfo = pure $ case world ^? worldTasks . ix tid of
+        Nothing   -> notFoundPage
+        Just task -> taskPage world userInfo task
 
 -- | Read only pages
 withAuthUser
@@ -67,7 +87,7 @@ withAuthUser
     -> (World -> AuthUser -> m (HtmlPage a))
     -> m (HtmlPage a)
 withAuthUser ctx fu f = case userInfo of
-    Nothing        -> pure nonAuthorizedPage
+    Nothing        -> pure forbiddedPage
     Just userInfo' -> f ctx userInfo'
   where
     userInfo :: Maybe (FUM.UserName, TaskRole, Location)

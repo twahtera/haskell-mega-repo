@@ -172,9 +172,13 @@ instance HasKey Checklist where
     key = checklistId
 
 
-instance HasIdentifier Employee Employee where identifier = key
-instance HasIdentifier Task Task where identifier = key
+instance HasIdentifier Employee  Employee  where identifier = key
+instance HasIdentifier Task      Task      where identifier = key
 instance HasIdentifier Checklist Checklist where identifier = key
+
+instance Entity Employee  where entityName _ = "Employee"
+instance Entity Task      where entityName _ = "Task"
+instance Entity Checklist where entityName _ = "Checklist"
 
 -------------------------------------------------------------------------------
 -- Some arbitraries
