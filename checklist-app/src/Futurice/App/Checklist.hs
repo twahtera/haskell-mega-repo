@@ -13,8 +13,10 @@ import Test.QuickCheck           (arbitrary, generate, resize)
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Pages.Checklist
+import Futurice.App.Checklist.Pages.Employee
 import Futurice.App.Checklist.Pages.Error     (forbiddedPage)
 import Futurice.App.Checklist.Pages.Index
+import Futurice.App.Checklist.Pages.Task
 import Futurice.App.Checklist.Pages.Tasks
 import Futurice.App.Checklist.Types
 
@@ -22,8 +24,11 @@ import qualified FUM (UserName (..))
 
 server :: Ctx -> Server ChecklistAPI
 server ctx = indexPageImpl ctx
-    :<|> (\_ -> pure . checklistPage undefined) -- todo
     :<|> tasksPageImpl ctx
+    -- todo
+    :<|> (\_ -> pure . checklistPage undefined)
+    :<|> (\_ -> pure . taskPage undefined)
+    :<|> (\_ -> pure . employeePage undefined)
 
 indexPageImpl
     :: (MonadIO m, MonadTime m)

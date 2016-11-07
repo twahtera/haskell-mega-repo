@@ -13,11 +13,17 @@ import Servant.HTML.Lucid        (HTML)
 import Futurice.App.Checklist.Types (Location, TaskRole)
 
 type ChecklistAPI = IndexPageEndpoint
-    :<|> ChecklistPageEndpoint
     :<|> TasksPageEndpoint
+    :<|> ChecklistPageEndpoint
+    :<|> TaskPageEndpoint
+    :<|> EmployeePageEndpoint
 
 checklistApi :: Proxy ChecklistAPI
 checklistApi = Proxy
+
+-------------------------------------------------------------------------------
+-- Collections
+-------------------------------------------------------------------------------
 
 type IndexPageEndpoint =
     SSOUser :>
@@ -26,12 +32,6 @@ type IndexPageEndpoint =
     QueryParam "task" UUID :>
     Get '[HTML] (HtmlPage "indexpage")
 
-type ChecklistPageEndpoint =
-    SSOUser :>
-    "checklists" :>
-    Capture "checklist-id" UUID :>
-    Get '[HTML] (HtmlPage "checklist")
-
 type TasksPageEndpoint =
     "tasks" :>
     SSOUser :>
@@ -39,11 +39,43 @@ type TasksPageEndpoint =
     QueryParam "checklist" UUID :>
     Get '[HTML] (HtmlPage "tasks")
 
+-------------------------------------------------------------------------------
+-- Items
+-------------------------------------------------------------------------------
+
+type ChecklistPageEndpoint =
+    SSOUser :>
+    "checklists" :>
+    Capture "checklist-id" UUID :>
+    Get '[HTML] (HtmlPage "checklist")
+
+type TaskPageEndpoint =
+    SSOUser :>
+    "tasks" :>
+    Capture "task-id" UUID :>
+    Get '[HTML] (HtmlPage "task")
+
+type EmployeePageEndpoint =
+    SSOUser :>
+    "employees" :>
+    Capture "employee-id" UUID :>
+    Get '[HTML] (HtmlPage "employee")
+
+-------------------------------------------------------------------------------
+-- Proxies
+-------------------------------------------------------------------------------
+
 indexPageEndpoint :: Proxy IndexPageEndpoint
 indexPageEndpoint = Proxy
+
+tasksPageEndpoint :: Proxy TasksPageEndpoint
+tasksPageEndpoint = Proxy
 
 checklistPageEndpoint :: Proxy ChecklistPageEndpoint
 checklistPageEndpoint = Proxy
 
-tasksPageEndpoint :: Proxy TasksPageEndpoint
-tasksPageEndpoint = Proxy
+taskPageEndpoint :: Proxy TaskPageEndpoint
+taskPageEndpoint = Proxy
+
+employeePageEndpoint :: Proxy EmployeePageEndpoint
+employeePageEndpoint = Proxy
