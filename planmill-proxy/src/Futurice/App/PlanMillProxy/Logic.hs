@@ -48,6 +48,13 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import qualified Numeric.Interval.NonEmpty  as Interval
 import qualified PlanMill                   as PM
 
+import Data.Binary        (get)
+import Data.Binary.Get    (Get, runGetOrFail)
+import Data.Binary.Tagged
+       (SemanticVersion, Version, structuralInfo,
+       structuralInfoSha1ByteStringDigest)
+import GHC.TypeLits       (natVal)
+
 -------------------------------------------------------------------------------
 -- Intervals
 -------------------------------------------------------------------------------
@@ -133,19 +140,20 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
         nfdataDict = queryDict (Proxy :: Proxy NFData) q
 
     fetch'
-        :: (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a)
+        :: forall a. (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a)
         => CacheLookup  -> Postgres.Connection -> Query a
         -> LIO (Either Text SomeResponse)
     fetch' cacheResult conn q = case HM.lookup (SomeQuery q) cacheResult of
         Just bs -> do
-            x <- liftIO $ tryDeep (return . MkSomeResponse q . taggedDecode $ bs)
-            case x of
-                Right y -> return (Right y)
-                Left exc -> do
+            -- we only check tags, the rest of the response is decoded lazily
+            -- Hopefully when the end result is constructed.
+            if checkTagged (Proxy :: Proxy a) bs
+                then pure $ Right $ MkSomeResponse q $ taggedDecode bs
+                else do
                     $(logWarn) $ "Borked cache content for " <> textShow q
                     _ <- handleSqlError 0 $
                         Postgres.execute conn deleteQuery (Postgres.Only q)
-                    return $ Left $ show exc ^. packed
+                    return $ Left $ "structure tags don't match"
         Nothing -> MkSomeResponse q <$$> fetch'' conn q
 
     -- Fetch and store
@@ -558,3 +566,24 @@ runLoggingT' ctx l =
     runStderrLoggingT $ filterLogger p l
   where
     p _ level = level >= ctxLogLevel ctx
+
+-------------------------------------------------------------------------------
+-- binary-tagged additions
+-------------------------------------------------------------------------------
+
+-- | Check whether the tag at the beginning of the 'LazyByteString' is correct.
+checkTagged
+    :: forall a. (HasStructuralInfo a, HasSemanticVersion a)
+    => Proxy a -> LazyByteString -> Bool
+checkTagged _ lbs = either (const False) (view _3) $ runGetOrFail decoder lbs
+  where
+    decoder :: Get Bool
+    decoder = do
+        ver <- get
+        hash' <- get
+        pure $ ver == ver' && hash' == hash''
+
+    proxyV = Proxy :: Proxy (SemanticVersion a)
+    proxyA = Proxy :: Proxy a
+    ver' = fromIntegral (natVal proxyV) :: Version
+    hash'' = structuralInfoSha1ByteStringDigest . structuralInfo $ proxyA
