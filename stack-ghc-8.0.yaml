@@ -20,6 +20,7 @@ packages:
 - futurice-prelude/
 - futurice-reports/
 - futurice-servant/
+- github-proxy/
 - haxl-fxtra/
 - haxl-typed/
 - mega-repo-tool/

@@ -108,7 +108,7 @@ instance MonadFUM Wrap where
     fumAction = Wrap . lift . FUMDataSource.request
 
 instance MonadGitHub Wrap where
-    type MonadGitHubC Wrap a = ShowTypeable a
+    type MonadGitHubC Wrap = ShowTypeable
     githubReq = Wrap . lift . GHDataSource.request
 
 -------------------------------------------------------------------------------
@@ -118,3 +118,10 @@ instance MonadGitHub Wrap where
 class (Eq a, Show a, Typeable a, FromJSON a) => ShowTypeable a
 instance (Eq a, Show a, Typeable a, FromJSON a) => ShowTypeable (Vector a)
 instance ShowTypeable GH.User
+instance ShowTypeable GH.Organization
+instance ShowTypeable GH.Team
+instance ShowTypeable GH.Repo
+instance ShowTypeable GH.Issue
+instance ShowTypeable GH.Owner
+instance ShowTypeable GH.SimpleUser
+instance ShowTypeable GH.SimpleTeam

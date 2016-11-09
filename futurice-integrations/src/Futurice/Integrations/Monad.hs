@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UndecidableInstances  #-}
 module Futurice.Integrations.Monad (
     Integrations,
     Env,
@@ -14,15 +15,18 @@ import Control.Monad.PlanMill     (MonadPlanMillConstraint (..))
 import Control.Monad.Trans.Reader (ReaderT, runReaderT)
 import Data.Constraint
 import Futurice.Constraint.Unit1  (Unit1)
+import Futurice.Has               (FlipIn)
 import Network.HTTP.Client        (Manager, Request)
 import PlanMill.Queries.Haxl      (initDataSourceBatch)
 
-import qualified Chat.Flowdock.REST   as FD
+import qualified Chat.Flowdock.REST           as FD
+import qualified Flowdock.Haxl                as FD.Haxl
 import qualified FUM
 import qualified FUM.Haxl
-import qualified Flowdock.Haxl as FD.Haxl
-import qualified Haxl.Core            as H
-import qualified PlanMill.Types.Query as Q
+import qualified Futurice.GitHub              as GH
+import qualified Futurice.Integrations.GitHub as GH
+import qualified Haxl.Core                    as H
+import qualified PlanMill.Types.Query         as Q
 
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Common
@@ -47,6 +51,8 @@ data IntegrationsConfig = MkIntegrationsConfig
     , integrCfgFumAuthToken             :: !FUM.AuthToken
     , integrCfgFumBaseUrl               :: !FUM.BaseUrl
     , integrCfgFumEmployeeListName      :: !FUM.ListName
+    -- GitHub
+    , integrCfgGithubProxyBaseRequest   :: !Request
     -- Flowdock
     , integrCfgFlowdockToken            :: !FD.AuthToken
     , integrCfgFlowdockOrgName          :: !(FD.ParamName FD.Organisation)
@@ -61,18 +67,20 @@ runIntegrations cfg (Integr m) = do
             }
     let haxl = runReaderT m env
     let stateStore
-            = H.stateSet (initDataSourceBatch mgr planmillReq)
+            = H.stateSet (initDataSourceBatch mgr planmillBaseReq)
             $ H.stateSet (FUM.Haxl.initDataSource' mgr fumToken fumBaseUrl)
             $ H.stateSet (FD.Haxl.initDataSource' mgr fdToken)
+            $ H.stateSet (GH.initDataSource mgr githubBaseReq)
             $ H.stateEmpty
     haxlEnv <- H.initEnv stateStore ()
     H.runHaxl haxlEnv haxl
   where
-    mgr         = integrCfgManager cfg
-    planmillReq = integrCfgPlanmillProxyBaseRequest cfg
-    fumToken    = integrCfgFumAuthToken cfg
-    fumBaseUrl  = integrCfgFumBaseUrl cfg
-    fdToken     = integrCfgFlowdockToken cfg
+    mgr             = integrCfgManager cfg
+    planmillBaseReq = integrCfgPlanmillProxyBaseRequest cfg
+    fumToken        = integrCfgFumAuthToken cfg
+    fumBaseUrl      = integrCfgFumBaseUrl cfg
+    fdToken         = integrCfgFlowdockToken cfg
+    githubBaseReq   = integrCfgGithubProxyBaseRequest cfg
 
 -------------------------------------------------------------------------------
 -- Instances
@@ -114,6 +122,19 @@ instance MonadFUM Integrations where
 
 instance MonadFlowdock Integrations where
     flowdockOrganisationReq = Integr . lift . FD.Haxl.organisation
+
+-------------------------------------------------------------------------------
+-- MonadGitHub
+-------------------------------------------------------------------------------
+
+instance MonadGitHub Integrations where
+    type MonadGitHubC Integrations = FlipIn GH.GHTypes
+    githubReq req = case (showDict, typeableDict) of
+        (Dict, Dict) -> Integr (lift $ H.dataFetch $ GH.GHR tag req)
+      where
+        tag = GH.mkTag
+        showDict     = GH.tagDict (Proxy :: Proxy Show) tag
+        typeableDict = GH.tagDict (Proxy :: Proxy Typeable) tag
 
 -------------------------------------------------------------------------------
 -- Has* instances
