@@ -35,6 +35,7 @@ import Futurice.Integrations.Common
 data Env = Env
     { _envFumEmployeeListName :: !FUM.ListName
     , _envFlowdockOrgName     :: !(FD.ParamName FD.Organisation)
+    , _envGithubOrgName       :: !(GH.Name GH.Organization)
     , _envNow                 :: !UTCTime
     }
 
@@ -53,6 +54,7 @@ data IntegrationsConfig = MkIntegrationsConfig
     , integrCfgFumEmployeeListName      :: !FUM.ListName
     -- GitHub
     , integrCfgGithubProxyBaseRequest   :: !Request
+    , integrCfgGithubOrgName            :: !(GH.Name GH.Organization)
     -- Flowdock
     , integrCfgFlowdockToken            :: !FD.AuthToken
     , integrCfgFlowdockOrgName          :: !(FD.ParamName FD.Organisation)
@@ -64,6 +66,7 @@ runIntegrations cfg (Integr m) = do
             { _envFumEmployeeListName = integrCfgFumEmployeeListName cfg
             , _envNow                 = integrCfgNow cfg
             , _envFlowdockOrgName     = integrCfgFlowdockOrgName cfg
+            , _envGithubOrgName       = integrCfgGithubOrgName cfg
             }
     let haxl = runReaderT m env
     let stateStore
@@ -149,3 +152,6 @@ instance HasFUMEmployeeListName Env where
 
 instance HasFlowdockOrgName Env where
     flowdockOrganisationName = envFlowdockOrgName
+
+instance HasGithubOrgName Env where
+    githubOrganisationName = envGithubOrgName

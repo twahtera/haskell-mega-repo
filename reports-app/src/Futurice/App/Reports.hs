@@ -168,6 +168,7 @@ ctxToIntegrationsConfig now (_cache, mgr, cfg) = MkIntegrationsConfig
     , integrCfgFumEmployeeListName      = cfgFumUserList cfg
     -- GitHub
     , integrCfgGithubProxyBaseRequest   = cfgGithubProxyBaseRequest cfg
+    , integrCfgGithubOrgName            = cfgGhOrg cfg
     -- Flowdock
     , integrCfgFlowdockToken            = cfgFlowdockAuthToken cfg
     , integrCfgFlowdockOrgName          = cfgFlowdockOrgName cfg
