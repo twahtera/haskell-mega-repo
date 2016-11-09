@@ -15,6 +15,7 @@ packages:
 - futuhours-api/
 - futulogo/
 - futurice-foundation/
+- futurice-github/
 - futurice-integrations/
 - futurice-prelude/
 - futurice-reports/
