@@ -24,7 +24,6 @@ import Futurice.Prelude
 import Control.Arrow         ((&&&))
 import Control.Lens          (to)
 import Data.Swagger          (NamedSchema (..))
-import Data.Bifunctor (bimap)
 import Futurice.Generics
 import Futurice.Integrations
 --import Futurice.Lucid.Foundation
