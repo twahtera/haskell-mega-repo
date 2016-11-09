@@ -70,6 +70,7 @@ library
     , mtl
     , parallel-io
     , periocron
+    , planmill-client
     , rfc5051
     , semigroups
     , servant
