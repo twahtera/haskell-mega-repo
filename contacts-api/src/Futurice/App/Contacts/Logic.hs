@@ -10,7 +10,6 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Contacts.Logic (
     contacts,
-    ContactsM,
     ) where
 
 import Futurice.Prelude
@@ -37,21 +36,12 @@ import Futurice.App.Contacts.Types.Tri (lessSure)
 compareUnicodeText :: Text -> Text -> Ordering
 compareUnicodeText = compareUnicode `on` T.unpack
 
--- | Constraint for 'contacts'
-type ContactsM env m =
-    ( MonadReader env m
-    , HasFUMEmployeeListName env
-    , HasFlowdockOrgName env
-    , HasGithubOrgName env
-    , MonadGitHub m, MonadFUM m, MonadFlowdock m
-    , MonadFUMC m (Vector FUM.User)
-    , MonadGitHubC m (Vector GH.SimpleUser)
-    , MonadGitHubC m GH.User
-    )
-
 -- | Get contacts data
 contacts
-    :: ContactsM env m
+    :: ( MonadFlowdock m, MonadGitHub m, MonadFUM m
+       , MonadReader env m
+       , HasGithubOrgName env, HasFUMEmployeeListName env, HasFlowdockOrgName env
+       )
     => m [Contact Text]
 contacts = contacts'
     <$> fumEmployeeList
@@ -90,8 +80,6 @@ userToContact FUM.User{..} = Contact
 
 githubDetailedMembers
     :: ( MonadGitHub m
-       , MonadGitHubC m (Vector GH.SimpleUser)
-       , MonadGitHubC m GH.User
        , MonadReader env m, HasGithubOrgName env
        )
     => m (Vector GH.User)

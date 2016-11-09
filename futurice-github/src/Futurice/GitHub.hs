@@ -79,6 +79,12 @@ type ReqTag a = NS (Is a) GHTypes
 data SomeTag where
     MkSomeTag :: ReqTag a -> SomeTag
 
+instance Show SomeTag where
+    showsPrec d (MkSomeTag t) = showParen (d > 10)
+        $ showString "MkSomeTag (intToSomeRep "
+        . showsPrec 11 (nsToInt t)
+        . showString ")"
+
 instance ToJSON SomeTag where
     toJSON (MkSomeTag t) = toJSON (nsToInt t)
 
@@ -252,7 +258,7 @@ instance Binary SomeResponse where
         case repDict (Proxy :: Proxy Binary) t of
             Dict -> do
                 x <- get
-                pure $ MkSomeResponse t  x
+                pure $ MkSomeResponse t x
 
 instance HasSemanticVersion SomeResponse
 

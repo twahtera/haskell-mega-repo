@@ -98,7 +98,6 @@ library
       Futurice.App.Contacts
       Futurice.App.Contacts.API
       Futurice.App.Contacts.Config
-      Futurice.App.Contacts.Executor
       Futurice.App.Contacts.Logic
       Futurice.App.Contacts.Types
       Futurice.App.Contacts.Types.Tri

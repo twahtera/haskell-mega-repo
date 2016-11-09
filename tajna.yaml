@@ -46,7 +46,8 @@ envs:
 
     # proxy-app
     FUTUHOURSAPI_BASEURL: http://localhost:8803
-    PLANMILLPROXY_BASEURL: http://localhost:8808
+    PLANMILLPROXY_BASEURL: http://localhost:8808/haxl
+    GITHUBPROXY_HAXLURL: http://localhost:8811/haxl
 
     # spice stats
     FD_FLOW: "open-source"
