@@ -46,7 +46,8 @@ envs:
 
     # proxy-app
     FUTUHOURSAPI_BASEURL: http://localhost:8803
-    PLANMILLPROXY_BASEURL: http://localhost:8808
+    PLANMILLPROXY_BASEURL: http://localhost:8808/haxl
+    GITHUBPROXY_HAXLURL: http://localhost:8811/haxl
 
     # spice stats
     FD_FLOW: "open-source"
@@ -62,6 +63,7 @@ envs:
     PLANMILLPROXY_PORT: "8808"
     PROXYMGMT_PORT:     "8809"
     CHECKLIST_PORT:     "8810"
+    GITHUBPROXY_PORT:   "8811"
 
     ## Development
     CHECKLIST_MOCKAUTH: "YES"
@@ -73,3 +75,7 @@ envs:
     PLANMILLPROXY_CLI_ENDPOINT: "http://localhost:8804/planmill-proxy"
     PLANMILLPROXY_CLI_HTTPUSER: "test"
     PLANMILLPROXY_CLI_HTTPPASS: "password"
+
+    GITHUBPROXY_CLI_ENDPOINT: "http://localhost:8811/haxl"
+    GITHUBPROXY_CLI_HTTPUSER: "test"
+    GITHUBPROXY_CLI_HTTPPASS: "password"

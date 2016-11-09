@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -6,6 +7,9 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
+#endif
 module Futurice.App.Reports (defaultMain) where
 
 import Prelude ()
@@ -56,13 +60,19 @@ newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
 -- uses both @key@ and @value@ TypeRep's as key to non-typed map.
 
 serveIssues :: Ctx -> IO IssueReport
-serveIssues (cache, mgr, cfg) = cachedIO cache 600 () $ do
+serveIssues ctx@(cache, mgr, cfg) = cachedIO cache 600 () $ do
     repos' <- repos mgr (cfgReposUrl cfg)
-    issueReport mgr (cfgGhAuth cfg) repos'
+    now <- currentTime
+    runIntegrations
+        (ctxToIntegrationsConfig now ctx)
+        (issueReport repos')
 
 serveFumGitHubReport :: Ctx -> IO FumGitHubReport
-serveFumGitHubReport (cache, mgr, cfg) = cachedIO cache 600 () $
-    fumGithubReport mgr cfg
+serveFumGitHubReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
+    now <- currentTime
+    runIntegrations
+        (ctxToIntegrationsConfig now ctx)
+        fumGithubReport
 
 serveFumFlowdockReport :: Ctx -> IO FumFlowdockReport
 serveFumFlowdockReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
@@ -166,6 +176,9 @@ ctxToIntegrationsConfig now (_cache, mgr, cfg) = MkIntegrationsConfig
     , integrCfgFumAuthToken             = cfgFumAuth cfg
     , integrCfgFumBaseUrl               = cfgFumBaseUrl cfg
     , integrCfgFumEmployeeListName      = cfgFumUserList cfg
+    -- GitHub
+    , integrCfgGithubProxyBaseRequest   = cfgGithubProxyBaseRequest cfg
+    , integrCfgGithubOrgName            = cfgGhOrg cfg
     -- Flowdock
     , integrCfgFlowdockToken            = cfgFlowdockAuthToken cfg
     , integrCfgFlowdockOrgName          = cfgFlowdockOrgName cfg

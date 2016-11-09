@@ -12,9 +12,8 @@ import qualified FUM
 import qualified GitHub             as GH
 
 data Config = Config
-    { cfgGhAuth                   :: !GH.Auth
-    , cfgGhOrg                    :: !(GH.Name GH.Organization)
-    , cfgGhTeam                   :: !Text
+    { cfgGhOrg                    :: !(GH.Name GH.Organization)
+    , cfgGithubProxyBaseRequest   :: !Request
     , cfgFumPubUrl                :: !Text
     , cfgFumAuth                  :: !FUM.AuthToken     -- ^ FUM auth token
     , cfgFumBaseUrl               :: !FUM.BaseUrl       -- ^ FUM base url
@@ -32,9 +31,8 @@ instance HasPort Config where
 
 instance GetConfig Config where
     getConfig = Config
-        <$> parseEnvVar "GH_AUTH_TOKEN"
-        <*> parseEnvVar "GH_ORG"
-        <*> parseEnvVar "GH_TEAM"
+        <$> parseEnvVar "GH_ORG"
+        <*> (f <$> parseEnvVar "GITHUBPROXY_HAXLURL")
         <*> parseEnvVar "FUM_PUBLICURL"
         <*> parseEnvVar "FUM_TOKEN"
         <*> parseEnvVar "FUM_BASEURL"

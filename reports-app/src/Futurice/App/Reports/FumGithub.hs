@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -7,6 +8,9 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE UndecidableInstances  #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
+#endif
 -- | FUM
 module Futurice.App.Reports.FumGithub (
     -- * Report
@@ -28,18 +32,15 @@ import Futurice.Generics
 
 import Control.Arrow             ((&&&))
 import Data.Maybe                (mapMaybe)
+import Futurice.Integrations
 import Futurice.Lucid.Foundation
 import Futurice.Report.Columns
-import Network.HTTP.Client       (Manager)
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Vector         as V
 import qualified FUM
 import qualified GitHub              as GH
 
-import Futurice.App.Reports.Config
-
---import Data.Time.Format.Human    (humanReadableTime')
 -------------------------------------------------------------------------------
 -- Data
 -------------------------------------------------------------------------------
@@ -131,18 +132,19 @@ instance HasFUMPublicURL FumGithubReportParams where
 -------------------------------------------------------------------------------
 
 fumGithubReport
-    :: Manager
-    -> Config
-    -> IO FumGitHubReport
-fumGithubReport mgr cfg = do
+    :: forall m env.
+       ( MonadTime m, MonadFUM m, MonadGitHub m
+       , MonadReader env m
+       , HasGithubOrgName env, HasFUMEmployeeListName env
+       )
+    => m FumGitHubReport
+fumGithubReport = do
     now <- currentTime
-    fs <- fumUsers
-    gs <- githubUsers
-    return $ Report (FumGithubReportParams now $ cfgFumPubUrl cfg) $ makeReport gs fs
+    report <- makeReport <$> githubUsers <*> fumUsers
+    return $ Report (FumGithubReportParams now "") report
   where
-    fumUsers :: IO (Vector FUMUser)
-    fumUsers = V.fromList . mapMaybe mk . V.toList <$>
-        FUM.fetchList mgr (cfgFumAuth cfg) (cfgFumBaseUrl cfg) (cfgFumUserList cfg)
+    fumUsers :: m (Vector FUMUser)
+    fumUsers = V.fromList . mapMaybe mk . V.toList <$> fumEmployeeList
       where
         mk u = case u ^. FUM.userGithub ^. lazy of
             Nothing -> Nothing
@@ -152,29 +154,13 @@ fumGithubReport mgr cfg = do
                 , _fumGhLogin   = ghLogin
                 }
 
-    githubUsers :: IO (Vector GitHubUser)
-    githubUsers = do
-        let team = cfgGhTeam cfg
-        teams <- exec $ GH.teamsOfR (cfgGhOrg cfg) GH.FetchAll
-        case V.find ((team ==) . GH.simpleTeamName) teams of
-            Nothing ->
-                traverse mk =<< exec (GH.membersOfR (cfgGhOrg cfg) GH.FetchAll)
-            Just t ->
-                traverse mk =<< exec (GH.listTeamMembersR (GH.simpleTeamId t) GH.TeamMemberRoleAll GH.FetchAll)
-
+    githubUsers :: m (Vector GitHubUser)
+    githubUsers = mk <$$> githubDetailedMembers
       where
-        exec :: GH.Request k a -> IO a
-        exec req = do
-            print req
-            r <- GH.executeRequestWithMgr mgr (cfgGhAuth cfg) req
-            either throwM pure r
-
-        mk u = do
-            u' <- exec (GH.userInfoForR (GH.simpleUserLogin u))
-            pure $ GitHubUser
-                { _ghUserName  = GH.userName u'
-                , _ghUserLogin = GH.untagName $ GH.userLogin u'
-                }
+        mk u = GitHubUser
+            { _ghUserName  = GH.userName u
+            , _ghUserLogin = GH.untagName $ GH.userLogin u
+            }
 
     -- | Align on `
     makeReport
@@ -186,3 +172,12 @@ fumGithubReport mgr cfg = do
             fs' = HM.fromList . map (_fumGhLogin &&& id) . V.toList $ fs
             hm  = align gs' fs'
         in V.fromList . sort . HM.elems $ hm
+
+githubDetailedMembers
+    :: ( MonadGitHub m
+       , MonadReader env m, HasGithubOrgName env
+       )
+    => m (Vector GH.User)
+githubDetailedMembers = do
+    githubMembers <- githubOrganisationMembers
+    traverse (githubReq . GH.userInfoForR . GH.simpleUserLogin) githubMembers

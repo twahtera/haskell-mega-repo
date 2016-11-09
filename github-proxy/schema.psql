@@ -1,0 +1,13 @@
+-- CREATE SCHEMA githubproxy;
+
+-------------------------------------------------------------------------------
+-- Generic cache for github queries
+-------------------------------------------------------------------------------
+
+CREATE TABLE githubproxy.cache (
+  query TEXT PRIMARY KEY,
+  updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  variance FLOAT NOT NULL DEFAULT random(),
+  viewed INT NOT NULL DEFAULT 0,
+  data BYTEA NOT NULL
+);

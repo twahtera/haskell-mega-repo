@@ -17,18 +17,25 @@ library:
   source-dirs: src
   dependencies:
     - base                  >=4.7   && <4.10
+    - aeson
+    - async
+    - binary-tagged
     - bytestring
     - cassava
     - constraints
     - containers
     - flowdock-rest
     - fum-client
+    - futurice-github
     - futurice-prelude
     - futurice-reports
+    - generics-sop
     - github
     - haxl
     - haxl-fxtra
     - http-client
+    - http-client-tls
+    - intervals
     - lens
     - lucid
     - monad-logger

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -6,6 +7,9 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
+#endif
 -- | Missing hours report
 module Futurice.App.Reports.GithubIssues (
     -- * Report
@@ -22,6 +26,7 @@ module Futurice.App.Reports.GithubIssues (
 import Prelude ()
 import Futurice.Prelude
 import Futurice.Generics
+import Futurice.Integrations
 import Futurice.Lucid.Foundation
 import Futurice.Report.Columns
 
@@ -29,11 +34,6 @@ import qualified Data.Csv          as Csv
 import qualified Data.Tuple.Strict as S
 import qualified Data.Vector       as V
 import qualified GitHub            as GH
-
-import Network.HTTP.Client (Manager)
-
--- TODO: use me
---import Futurice.Integrations
 
 -------------------------------------------------------------------------------
 -- Data
@@ -118,19 +118,17 @@ type IssueReport = Report
 -- Logic
 -------------------------------------------------------------------------------
 
--- TODO: use futurice-integrations
 issueReport
-    :: Manager
-    -> GH.Auth
-    -> [GitHubRepo]
-    -> IO IssueReport
-issueReport mgr auth repos = do
+    :: forall m. (MonadTime m, MonadGitHub m)
+    => [GitHubRepo]
+    -> m IssueReport
+issueReport repos = do
     now <- currentTime
     Report (ReportGenerated now) . V.fromList <$> traverse fetch repos
   where
-    fetch :: GitHubRepo -> IO (StrictPair GitHubRepo (Vector IssueInfo))
-    fetch ghr@(GitHubRepo owner repo) = (S.:!:) ghr . fmap t . e <$>
-       GH.executeRequestWithMgr mgr auth (GH.issuesForRepoR owner repo opts GH.FetchAll)
+    fetch :: GitHubRepo -> m (StrictPair GitHubRepo (Vector IssueInfo))
+    fetch ghr@(GitHubRepo owner repo) = (S.:!:) ghr . fmap t <$>
+       githubReq (GH.issuesForRepoR owner repo opts GH.FetchAll)
 
     opts = GH.stateOpen
 
@@ -140,6 +138,3 @@ issueReport mgr auth repos = do
         , _issueCreated = GH.issueCreatedAt pr
         , _issueUrl     = maybe "" GH.getUrl $ GH.issueHtmlUrl pr
         }
-
-    e (Right x) = x
-    e (Left _)  = mempty
