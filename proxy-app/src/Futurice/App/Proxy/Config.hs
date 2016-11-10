@@ -10,17 +10,19 @@ import Futurice.EnvConfig
 
 data Config = Config
     { cfgPort                 :: !Int
+    , cfgEkgPort              :: !Int
     , cfgPostgresConnInfo     :: !ConnectInfo
     , cfgFutuhoursBaseurl     :: !String
     , cfgPlanmillProxyBaseurl :: !String
     }
 
-instance HasPort Config where
-    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
-
 instance GetConfig Config where
+    port = cfgPort
+    ekgPort = cfgEkgPort
+
     getConfig = Config
         <$> parseDefaultPort "PROXYAPP"
+        <*> parseDefaultEkgPort "PROXYAPP"
         <*> getConnectInfo
         <*> parseEnvVar "FUTUHOURSAPI_BASEURL"
         <*> parseEnvVar "PLANMILLPROXY_BASEURL"

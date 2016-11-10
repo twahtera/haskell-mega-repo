@@ -29,17 +29,16 @@ data Config = Config
     , cfgFumBaseurl        :: !FUM.BaseUrl
     , cfgFumList           :: !FUM.ListName
     , cfgPort              :: !Int
-      -- ^ Port to listen from, default is 'defaultPort'.
+    , cfgEkgPort           :: !Int
     , cfgDevelopment       :: !Development
     , cfgLogLevel          :: !LogLevel
-    , cfgEkgPort           :: !Int
     }
     deriving (Show)
 
-instance HasPort Config where
-    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
-
 instance GetConfig Config where
+    port = cfgPort
+    ekgPort = cfgEkgPort
+
     getConfig = Config
         <$> parseEnvVar "PLANMILL_BASEURL"
         <*> parseEnvVar "PLANMILL_ADMIN"
@@ -49,6 +48,6 @@ instance GetConfig Config where
         <*> parseEnvVar "FUM_BASEURL"
         <*> parseEnvVar "FUM_LISTNAME"
         <*> parseDefaultPort "FUTUHOURSAPI"
+        <*> parseDefaultEkgPort "FUTUHOURSAPI"
         <*> parseEnvVarWithDefault "DEVELOPMENT" Production
         <*> parseEnvVarWithDefault "LOGLEVEL" LevelInfo
-        <*> parseEnvVarWithDefault "EKG_PORT" 8081

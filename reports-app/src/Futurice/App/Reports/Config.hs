@@ -23,13 +23,14 @@ data Config = Config
     , cfgReposUrl                 :: !Text
     , cfgPlanmillProxyBaseRequest :: !Request
     , cfgPort                     :: !Int
+    , cfgEkgPort                  :: !Int
     }
     deriving (Show)
 
-instance HasPort Config where
-    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
-
 instance GetConfig Config where
+    port = cfgPort
+    ekgPort = cfgEkgPort
+
     getConfig = Config
         <$> parseEnvVar "GH_ORG"
         <*> (f <$> parseEnvVar "GITHUBPROXY_HAXLURL")
@@ -42,5 +43,6 @@ instance GetConfig Config where
         <*> parseEnvVar "REPORTS_GH_REPOSURL" -- TODO: change to REPORTSAPP_GH_REPOSURL
         <*> (f <$> parseEnvVar "PLANMILLPROXY_HAXLURL")
         <*> parseDefaultPort "REPORTSAPP"
+        <*> parseDefaultEkgPort "REPORTSAPP"
       where
         f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }

@@ -60,13 +60,14 @@ import Futurice.Prelude
 import Control.Concurrent.STM               (atomically)
 import Control.Lens                         (Lens, LensLike)
 import Data.Char                            (isAlpha)
-import Data.Swagger                         hiding (HasPort (..))
+import Data.Swagger hiding (port)
 import Development.GitRev                   (gitCommitDate, gitHash)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
-import Futurice.EnvConfig                   (GetConfig (..), HasPort (..))
+import Futurice.EnvConfig                   (GetConfig (..))
 import GHC.Prim                             (coerce)
 import Network.Wai                          (Middleware, requestHeaders)
+import Network.Wai.Metrics                  (metrics, registerWaiMetrics)
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import Servant
 import Servant.Cache.Class
@@ -79,6 +80,7 @@ import Servant.Server.Internal              (passToServer)
 import Servant.Swagger
 import Servant.Swagger.UI
 import System.IO                            (stderr)
+import System.Remote.Monitoring             (forkServer, serverMetricStore)
 
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as TE
@@ -185,25 +187,31 @@ serverColour = lens (const Proxy) $ \sc _ -> coerce sc
 -- TODO: make class for config, to get ekg port later
 futuriceServerMain
     :: forall cfg ctx api colour.
-       (GetConfig cfg, HasPort cfg, HasSwagger api, HasServer api '[], SColour colour)
+       (GetConfig cfg, HasSwagger api, HasServer api '[], SColour colour)
     => (cfg -> DynMapCache -> IO ctx)
        -- ^ Initialise the context for application
     -> ServerConfig colour ctx api
        -- ^ Server configuration
     -> IO ()
 futuriceServerMain makeCtx (SC t d server middleware)  = do
-    let cfgPort = view port
     T.hPutStrLn stderr $ "Hello, " <> t <> " is alive"
     cfg         <- getConfig
-    let p       = cfgPort cfg
+    let p       =  port cfg
+    let ekgP    =  ekgPort cfg
     cache       <- newDynMapCache
     ctx         <- makeCtx cfg cache
     let server' = futuriceServer t d cache proxyApi (server ctx)
                 :: Server (FuturiceAPI api colour)
-    T.hPutStrLn stderr $ "Starting " <> t <> " at port " <> show p ^. packed
-    T.hPutStrLn stderr $ "- http://localhost:" <> show p ^. packed <> "/"
-    T.hPutStrLn stderr $ "- http://localhost:" <> show p ^. packed <> "/swagger-ui/"
-    Warp.run p $ middleware ctx $ serve proxyApi' server'
+
+    store <- serverMetricStore <$> forkServer "localhost" ekgP
+    waiMetrics <- registerWaiMetrics store
+
+    T.hPutStrLn stderr $ "Starting " <> t <> " at port " <> textShow p
+    T.hPutStrLn stderr $ "-          http://localhost:" <> textShow p <> "/"
+    T.hPutStrLn stderr $ "- swagger: http://localhost:" <> textShow p <> "/swagger-ui/"
+    T.hPutStrLn stderr $ "- ekg:     http://localhost:" <> textShow ekgP <> "/"
+
+    Warp.run p $ metrics waiMetrics $ middleware ctx $ serve proxyApi' server'
   where
     proxyApi :: Proxy api
     proxyApi = Proxy
