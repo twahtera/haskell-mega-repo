@@ -10,7 +10,7 @@
 #if __GLASGOW_HASKELL__ >= 800
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
 #endif
--- | Missing hours report
+-- | GitHub issues in some repositories.
 module Futurice.App.Reports.GithubIssues (
     -- * Report
     IssueReport,
@@ -44,7 +44,7 @@ data GitHubRepo = GitHubRepo
     { _ghRepoOwner :: !(GH.Name GH.Owner)
     , _ghRepoName  :: !(GH.Name GH.Repo)
     }
-    deriving (Eq, Ord, Typeable, Generic)
+    deriving (Eq, Ord, Show, Typeable, Generic)
 
 makeLenses ''GitHubRepo
 deriveGeneric ''GitHubRepo

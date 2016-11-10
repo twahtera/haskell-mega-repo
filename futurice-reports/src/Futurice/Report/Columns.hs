@@ -313,6 +313,12 @@ instance ToColumns FUM.UserName where
     columnNames _ = K "fum" :* Nil
     toColumns u   = [I u :* Nil]
 
+-- | TODO: differentiate differet names ('columnNames')
+instance ToColumns (GH.Name a) where
+    type Columns (GH.Name a) = '[GH.Name a]
+    columnNames _ = K "gh" :* Nil
+    toColumns n   = [I n :* Nil]
+
 -------------------------------------------------------------------------------
 -- Containers
 -------------------------------------------------------------------------------
@@ -558,7 +564,7 @@ instance ReportValue a => ReportValue (Maybe a) where
 
 instance ReportValue Bool where
     reportValueType _ = CTBool
-    reportValueHtml   = bool "yes" "no"
+    reportValueHtml   = bool "no" "yes"
 
 instance ReportValue FUM.UserName where
     reportValueHtml = toHtml . FUM._getUserName
