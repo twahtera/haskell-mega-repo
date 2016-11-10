@@ -54,7 +54,7 @@ buildCmd buildImage = T.unwords
     , "--entrypoint /app/src/build-in-docker.sh"
     , "-v $(pwd):/app/src"
     , "-v $(pwd)/build:/app/bin"
-    , "-v $(pwd)/.stack-root:/app/stack-root"
+    , "-v hmr-stack-root:/stack-root"
     , buildImage
     ]
 
@@ -79,6 +79,7 @@ buildDocker imgs = do
     githashBuild <- (T.strip <$> T.readFile "build/git-hash.txt") `catch` onIOError "<none>"
     when (githashBuild /= githash) $ do
         T.putStrLn $ "Git hash in build directory don't match: " <> githashBuild  <> " != " <> githash
+        T.putStrLn $ "Make sure you have hmr-stack-root volume: docker volume create --name hmr-stack-root"
         T.putStrLn $ "Run following command to build image:"
         T.putStrLn $ buildCmd $ mrtDockerBaseImage cfg
         exitFailure
