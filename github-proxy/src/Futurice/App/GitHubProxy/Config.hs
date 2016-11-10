@@ -16,15 +16,17 @@ data Config = Config
     , cfgPostgresConnInfo :: !ConnectInfo
     , cfgLogLevel         :: !LogLevel
     , cfgPort             :: !Int
+    , cfgEkgPort          :: !Int
     }
     deriving (Show)
 
-instance HasPort Config where
-    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
-
 instance GetConfig Config where
+    port = cfgPort
+    ekgPort = cfgEkgPort
+
     getConfig = Config
         <$> parseEnvVar "GH_AUTH_TOKEN"
         <*> getConnectInfo
         <*> parseEnvVarWithDefault "GITHUBPROXY_LOGLEVEL" LevelInfo
         <*> parseDefaultPort "GITHUBPROXY"
+        <*> parseDefaultEkgPort "GITHUBPROXY"

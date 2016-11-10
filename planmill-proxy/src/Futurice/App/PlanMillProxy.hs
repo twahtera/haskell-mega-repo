@@ -39,7 +39,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp planmillProxyApi .~ server
   where
     makeCtx :: Config -> DynMapCache -> IO Ctx
-    makeCtx (Config cfg connectionInfo logLevel _) cache = do
+    makeCtx (Config cfg connectionInfo logLevel _ _) cache = do
         postgresPool <- createPool
             (Postgres.connect connectionInfo)
             Postgres.close

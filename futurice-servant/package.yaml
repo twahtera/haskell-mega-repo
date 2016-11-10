@@ -25,6 +25,7 @@ library:
   dependencies:
     - base                  >=4.7   && <4.10
     - base-compat
+    - ekg
     - env-config
     - fum-client
     - futulogo
@@ -45,4 +46,5 @@ library:
     - text
     - wai
     - wai-extra
+    - wai-middleware-metrics
     - warp

@@ -24,14 +24,14 @@ data Config = Config
       -- ^ Flowdock organisation
     , cfgPmBaseReq   :: !Request
     , cfgPort        :: !Int
-      -- ^ Port to listen from, default is 'defaultPort'.
+    , cfgEkgPort     :: !Int
     }
     deriving (Show)
 
-instance HasPort Config where
-    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
-
 instance GetConfig Config where
+    port = cfgPort
+    ekgPort = cfgEkgPort
+
     getConfig = Config
         <$> parseEnvVar "FUM_AUTH_TOKEN"
         <*> parseEnvVar "FUM_BASE_URL"
@@ -42,5 +42,6 @@ instance GetConfig Config where
         <*> parseEnvVar "FD_ORGANISATION"
         <*> (f <$> parseEnvVar "PLANMILLPROXY_HAXLURL")
         <*> parseDefaultPort "CONTACTS"
+        <*> parseDefaultEkgPort "CONTACTS"
       where
         f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }

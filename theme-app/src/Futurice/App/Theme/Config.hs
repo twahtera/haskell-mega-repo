@@ -2,20 +2,20 @@ module Futurice.App.Theme.Config (
     Config(..),
     ) where
 
+import Prelude ()
 import Futurice.Prelude
-import Prelude          ()
-
 import Futurice.EnvConfig
 
 data Config = Config
-    { cfgPort :: !Int
+    { cfgPort    :: !Int
+    , cfgEkgPort :: !Int
     }
     deriving (Show)
 
-instance HasPort Config where
-    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
-
-
 instance GetConfig Config where
+    port = cfgPort
+    ekgPort = cfgEkgPort
+
     getConfig = Config
         <$> parseDefaultPort "THEMAPP"
+        <*> parseDefaultEkgPort "THEMAPP"

@@ -17,15 +17,17 @@ import qualified FUM
 import qualified GitHub             as GH
 import qualified PlanMill           as PM
 
-class HasPort cfg where
-    port :: Lens' cfg Int
-
--- TODO: write generics
 class GetConfig cfg where
     getConfig :: IO cfg
 
+    port :: cfg -> Int
+    ekgPort :: cfg -> Int
+
 defaultPort :: Int
 defaultPort = 8000
+
+defaultEkgPort :: Int
+defaultEkgPort = 9000
 
 -- | Parse port, @parseDefaultPort prefix@ first tries to parse @PREFIX_PORT@,
 -- then @PORT@ and after that defaults to 'defaultPort'
@@ -38,6 +40,16 @@ parseDefaultPort prefix = do
   where
     var0 = map toUpper prefix ++ "_PORT"
     var1 = "PORT"
+
+parseDefaultEkgPort :: String -> IO Int
+parseDefaultEkgPort prefix = do
+    val0 <- parseEnvVarMaybe var0
+    case val0 of
+        Just x -> pure x
+        Nothing ->  parseEnvVarWithDefault var1 defaultEkgPort
+  where
+    var0 = map toUpper prefix ++ "_EKGPORT"
+    var1 = "EKGPORT"
 
 -- | Class to parse env variables
 class FromEnvVar a where

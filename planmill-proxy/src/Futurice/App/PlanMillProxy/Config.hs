@@ -16,13 +16,14 @@ data Config = Config
     , cfgPostgresConnInfo :: !ConnectInfo
     , cfgLogLevel         :: !LogLevel
     , cfgPort             :: !Int
+    , cfgEkgPort          :: !Int
     }
     deriving (Show)
 
-instance HasPort Config where
-    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
-
 instance GetConfig Config where
+    port = cfgPort
+    ekgPort = cfgEkgPort
+
     getConfig = config
         <$> parseEnvVar "PLANMILL_ADMIN"
         <*> parseEnvVar "PLANMILL_SIGNATURE"
@@ -30,6 +31,7 @@ instance GetConfig Config where
         <*> getConnectInfo
         <*> parseEnvVarWithDefault "PLANMILLPROXY_LOGLEVEL" LevelInfo
         <*> parseDefaultPort "PLANMILLPROXY"
+        <*> parseDefaultEkgPort "PLANMILLPROXY"
       where
         config userid apikey baseurl =
           Config (Cfg userid apikey baseurl)

@@ -38,7 +38,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp githubProxyApi .~ server
   where
     makeCtx :: Config -> DynMapCache -> IO Ctx
-    makeCtx (Config auth connectionInfo logLevel _) cache = do
+    makeCtx (Config auth connectionInfo logLevel _ _) cache = do
         postgresPool <- createPool
             (Postgres.connect connectionInfo)
             Postgres.close
