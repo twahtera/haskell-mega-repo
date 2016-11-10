@@ -113,7 +113,7 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
                         (taskCheckbox world employee)
                         mtask
                     td_ $ toHtml $ show startingDay
-                    td_ $ bool (toHtmlRaw ("&#8868;" :: Text)) (pure ()) $ employee ^. employeeConfirmed
+                    td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
                     td_ $ toHtml $ show (diffDays startingDay today) <> " days"
                     case ifoldMapOf
                         (worldTaskItems . ix eid . ifolded)

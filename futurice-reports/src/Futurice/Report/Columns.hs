@@ -564,7 +564,7 @@ instance ReportValue a => ReportValue (Maybe a) where
 
 instance ReportValue Bool where
     reportValueType _ = CTBool
-    reportValueHtml   = bool "yes" "no"
+    reportValueHtml   = bool "no" "yes"
 
 instance ReportValue FUM.UserName where
     reportValueHtml = toHtml . FUM._getUserName
