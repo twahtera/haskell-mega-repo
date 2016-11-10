@@ -21,17 +21,16 @@ module Futurice.App.Reports.FumFlowdock (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Arrow         ((&&&))
-import Control.Lens          (to)
-import Data.Swagger          (NamedSchema (..))
+import Control.Arrow           ((&&&))
+import Control.Lens            (to)
+import Data.List               (partition)
+import Data.Swagger            (NamedSchema (..))
 import Futurice.Generics
 import Futurice.Integrations
---import Futurice.Lucid.Foundation
 import Futurice.Report.Columns
 
-import qualified Chat.Flowdock.REST  as FD
-import qualified Data.HashMap.Strict as HM
-import qualified Data.Vector         as V
+import qualified Chat.Flowdock.REST as FD
+import qualified Data.Vector        as V
 import qualified FUM
 
 -------------------------------------------------------------------------------
@@ -75,14 +74,14 @@ instance ToSchema FUMUser where
     declareNamedSchema = sopDeclareNamedSchema
 
 instance ToColumns FlowdockUser where
-    columnNames _ = 
+    columnNames _ =
         K "fd-name" :*
         K "fd-nick" :*
         K "fd-uid":*
         Nil
 
 instance ToColumns FUMUser where
-    columnNames _ = 
+    columnNames _ =
         K "fum-name" :*
         K "fum-login" :*
         K "fum-flowdock-uid" :*
@@ -110,7 +109,7 @@ fumFlowdockReport
 fumFlowdockReport = do
     now <- currentTime
     fs <- fumEmployeeList
-    fds <- view FD.orgUsers <$> flowdockOrganisation 
+    fds <- view FD.orgUsers <$> flowdockOrganisation
     return $ Report (ReportGenerated now) $ makeReport fds fs
 
   where
@@ -141,10 +140,10 @@ fumFlowdockReport = do
         :: Vector FD.OrgUser -> Vector FUM.User
         -> Vector (These FlowdockUser FUMUser)
     makeReport gs fs =
-        let gs' = HM.fromList . map (fdKey &&& id) . V.toList $ gs
-            fs' = HM.fromList . map (fumKey &&& id) . V.toList $ fs
-            hm  = align gs' fs'
-        in fmap (bimap mkFD mkFum) . V.fromList . sort . toList $ hm
+        let gs' = map (fdKey &&& mkFD) . toList $ gs
+            fs' = map (fumKey &&& mkFum) . toList $ fs
+            hm  = alignByKey gs' fs'
+        in V.fromList . sort $ hm
 
 -------------------------------------------------------------------------------
 -- Auxiliary type to align users
@@ -152,12 +151,23 @@ fumFlowdockReport = do
 
 -- | user-id, email, name
 data Key = Key (Maybe FD.UserId) Text Text
+  deriving (Show)
 
-instance Eq Key where
-    Key a b c == Key a' b' c' = a == a' || b == b' || c == c'
+-- | This is not actual equality comparison, as it's not transitive.
+keyEq :: Key -> Key -> Bool
+keyEq (Key a b c) (Key a' b' c')
+    = fromMaybe False ((==) <$> a <*> a')
+    || b == b'
+    || c == c'
 
-instance Hashable Key where
-    hashWithSalt salt (Key _ b _) = hashWithSalt salt b 
+alignByKey :: [(Key, a)] -> [(Key, b)] -> [These a b]
+alignByKey [] ys       = map (That . snd) ys
+alignByKey ((k, x) : xs) ys = case as of
+    [] -> This x : rest
+    _  -> map (These x . snd) as ++ rest
+  where
+    (as, bs) = partition (keyEq k . fst) ys
+    rest     = alignByKey xs bs
 
 -------------------------------------------------------------------------------
 -- Flowdock orphans
