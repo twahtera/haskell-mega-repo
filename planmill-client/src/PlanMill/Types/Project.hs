@@ -31,7 +31,7 @@ data Project = Project
     , pBillableStatus             :: !(Maybe Int) -- @TODO enum;!SCHEMA NULL
     , pCategory                   :: !(Maybe Int)
     , pFinish                     :: !(Maybe UTCTime)
-    , pFixedRevenue               :: !(Maybe Int)
+    , pFixedRevenue               :: !(Maybe Double)
     , pFixedWork                  :: !(Maybe Int)
     , pFixedWorkEffort            :: !(Maybe Int)
     , pInvoiceAppendix            :: !(Maybe Int)

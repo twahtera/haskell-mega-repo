@@ -32,6 +32,7 @@ dependencies:
   - exceptions
   - filepath
   - flowdock-rest
+  - folds
   - friendly-time >=0.4 && <0.5
   - fum-client
   - futulogo
@@ -70,6 +71,7 @@ dependencies:
   - strict-base-types
   - swagger2
   - tagged
+  - tdigest
   - text
   - these
   - time

@@ -56,6 +56,7 @@ class (MonadPlanMillC m a, Binary a, HasStructuralInfo a, HasSemanticVersion a)
 
 -- Unfortunate boilerplate 
 instance MonadPlanMillC m Absence              => CachingTC m Absence
+instance MonadPlanMillC m Account              => CachingTC m Account
 instance MonadPlanMillC m Assignment           => CachingTC m Assignment
 instance MonadPlanMillC m Me                   => CachingTC m Me
 instance MonadPlanMillC m Meta                 => CachingTC m Meta

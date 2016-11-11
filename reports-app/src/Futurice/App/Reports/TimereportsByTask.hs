@@ -5,7 +5,8 @@
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE TypeSynonymInstances, UndecidableInstances  #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
+{-# LANGUAGE UndecidableInstances  #-}
 -- | Missing hours report
 module Futurice.App.Reports.TimereportsByTask (
     -- * Report
@@ -17,20 +18,20 @@ module Futurice.App.Reports.TimereportsByTask (
 
 import Prelude ()
 import Futurice.Prelude
-import Data.Either               (partitionEithers)
 import Data.Fixed                (Centi)
+import Data.Fold                 (L' (..), filtering, run)
 import Futurice.Generics
-import Futurice.List
 import Futurice.Integrations
+import Futurice.List
 import Futurice.Report.Columns
 import Futurice.Time
 import Numeric.Interval.NonEmpty ((...))
 
 import qualified Data.List.NonEmpty as NE
-
-import qualified Data.Map.Strict  as Map
-import qualified PlanMill         as PM
-import qualified PlanMill.Queries as PMQ
+import qualified Data.Map.Strict    as Map
+import qualified Data.TDigest       as TDigest
+import qualified PlanMill           as PM
+import qualified PlanMill.Queries   as PMQ
 
 -------------------------------------------------------------------------------
 -- Data
@@ -54,7 +55,8 @@ instance ToJSON TimereportsStats where
 
 
 data TimereportsByTask = TimereportsByTask
-    { _tbtProjectName    :: !Text
+    { _tbtAccountName    :: !Text
+    , _tbtProjectName    :: !Text
     , _tbtTaskName       :: !Text
     , _tbtHoursPrevMonth :: !TimereportsStats
     , _tbtHoursCurrMonth :: !TimereportsStats
@@ -72,9 +74,10 @@ instance ToJSON TimereportsByTask where
 
 instance ToColumns TimereportsByTask where
     type Columns TimereportsByTask =
-        Append '[Text, Text] (Append (Columns TimereportsStats) (Columns TimereportsStats))
+        Append '[Text, Text, Text] (Append (Columns TimereportsStats) (Columns TimereportsStats))
 
     columnNames _ =
+        K "account-name" :*
         K "project-name" :*
         K "task-name" :*
         K "prev-hours" :*
@@ -85,10 +88,10 @@ instance ToColumns TimereportsByTask where
         K "curr-median" :*
         Nil
 
-    toColumns (TimereportsByTask p t prev curr) =
+    toColumns (TimereportsByTask a p t prev curr) =
         f <$> toColumns prev <*> toColumns curr
       where
-        f prev' curr' = append (I p :* I t :* Nil) (append prev' curr')
+        f prev' curr' = append (I a :* I p :* I t :* Nil) (append prev' curr')
 
 -------------------------------------------------------------------------------
 -- Report
@@ -145,32 +148,46 @@ timereportsByTask
 timereportsByTask midDay taskId reports = do
     task <- PMQ.task taskId
     project <- traverse PMQ.project (PM.taskProject task)
-    -- TODO: use foldl package
-    let (prev, curr) = partitionEithers $ map classifyReports $ toList reports
-    let prev' = map PM.trAmount prev
-    let curr' = map PM.trAmount curr
-    pure $ TimereportsByTask
-        { _tbtProjectName    = maybe "" PM.pName project
-        , _tbtTaskName       = PM.taskName task
-        , _tbtHoursPrevMonth = TimereportsStats
-            { _tsHours = ndtConvert' $ sum prev'
-            , _tsCount = length prev
-            , _tsMedian = ndtConvert' $ median 0 prev'
-            }
-        , _tbtHoursCurrMonth = TimereportsStats
-            { _tsHours = ndtConvert' $ sum curr'
-            , _tsCount = length curr
-            , _tsMedian = ndtConvert' $ median 0 curr'
-            }
-        }
-  where
-    classifyReports r
-        | PM.trStart r < midDay = Left r
-        | otherwise             = Right r
+    account <- traverse PMQ.account (project >>= PM.pAccount)
 
--- almost correct
-median :: Ord a => a -> [a] -> a
-median d [] = d
-median _ x  = sort x !! n2
+    let mk p c = TimereportsByTask
+            { _tbtAccountName    = maybe "<unknown account>" PM.saName account
+            , _tbtProjectName    = maybe "<unknown project>" PM.pName project
+            , _tbtTaskName       = PM.taskName task
+            , _tbtHoursPrevMonth = p
+            , _tbtHoursCurrMonth = c
+            }
+
+    pure $ run reports $ mk
+        <$> filtering isPrevMonth ftimereportStats
+        <*> filtering isCurrMonth ftimereportStats
   where
-    n2 = length x `div` 2
+    isPrevMonth r = PM.trStart r < midDay
+    isCurrMonth r = PM.trStart r >= midDay
+
+-------------------------------------------------------------------------------
+-- Folds
+-------------------------------------------------------------------------------
+
+fsum :: Num a => L' a a
+fsum = L' id (+) 0
+
+flength :: Num a => L' a Int
+flength = L' id (\x _ -> x + 1) 0
+
+fmedian :: L' Double Double
+fmedian = L'
+    (fromMaybe 0 . TDigest.median)
+    (flip TDigest.insert)
+    (mempty :: TDigest.TDigest 100)
+
+fmedian' :: Integral a => L' (NDT tu a) (NDT tu Double)
+fmedian' = dimap (\(NDT x) -> fromIntegral x) NDT fmedian
+
+ftimereportStats :: L' PM.Timereport TimereportsStats
+ftimereportStats = lmap PM.trAmount f
+  where
+    f = TimereportsStats
+        <$> rmap ndtConvert' fsum
+        <*> flength
+        <*> rmap (ndtConvert . fmap realToFrac) fmedian'

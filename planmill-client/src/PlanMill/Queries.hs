@@ -16,6 +16,7 @@ module PlanMill.Queries (
     team,
     userTimebalance,
     absences,
+    account,
     project,
     task,
     -- * Queries
@@ -32,12 +33,13 @@ import GHC.TypeLits    (KnownSymbol, symbolVal)
 import Control.Monad.PlanMill
 
 import PlanMill.Types
-       (Absences, Me, Project, ProjectId, Task, TaskId, Team, TeamId,
-       TimeBalance, User, Timereports, UserCapacities, UserId, Users)
+       (Absences, Account, AccountId, Me, Project, ProjectId, Task, TaskId,
+       Team, TeamId, TimeBalance, Timereports, User, UserCapacities, UserId,
+       Users)
 import PlanMill.Types.Enumeration
-import PlanMill.Types.Meta         (Meta, lookupFieldEnum)
-import PlanMill.Types.Query        (Query (..), QueryTag (..))
-import PlanMill.Types.UrlPart      (UrlParts, toUrlParts, (//))
+import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
+import PlanMill.Types.Query       (Query (..), QueryTag (..))
+import PlanMill.Types.UrlPart     (UrlParts, toUrlParts, (//))
 
 import qualified Data.IntMap.Strict as IM
 import qualified Data.Map           as Map
@@ -176,6 +178,15 @@ absences :: MonadPlanMillQuery m => m Absences
 absences = planmillVectorQuery
     $ QueryPagedGet QueryTagAbsence mempty
     $ toUrlParts $ ("absences" :: Text)
+
+
+-- | View details of a single account.
+--
+-- See <https://developers.planmill.com/api/#accounts__account_id__get>
+account :: MonadPlanMillQuery m => AccountId -> m Account
+account aid = planmillQuery
+    $ QueryGet QueryTagAccount mempty
+    $ toUrlParts $ ("accounts" :: Text) // aid
 
 -- | A single project in PlanMill
 --
