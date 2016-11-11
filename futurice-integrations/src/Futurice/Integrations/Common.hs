@@ -102,10 +102,8 @@ fumPlanmillMap
        , MonadReader env m, HasFUMEmployeeListName env
        )
     => m (HashMap FUM.UserName PM.User)
-fumPlanmillMap = do
-    fum <- fumEmployeeList
-    pm <- PMQ.users
-    return $ combine fum pm
+fumPlanmillMap =
+    combine <$> fumEmployeeList <*> PMQ.users
   where
     combine :: Vector FUM.User-> Vector PM.User -> HashMap FUM.UserName PM.User
     combine fum pm = HM.fromList $ catMaybes $ map extract $ toList pm
