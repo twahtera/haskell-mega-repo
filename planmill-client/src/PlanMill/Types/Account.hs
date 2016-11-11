@@ -19,12 +19,13 @@ type Accounts = Vector Account
 data Account = Account
     { _saId                 :: !AccountId
     , saName                :: !Text
-    , saLineOfBusiness      :: !(Maybe Text)
+    {-
+    -- , saLineOfBusiness      :: !(Maybe Text)
     , saShippingCity        :: !(Maybe Text)
     , saHandlingFee         :: !(Maybe Int)
+    , saInvoiceVat          :: !(Maybe Int)
     --, saBusinessId          :: !Text -- @TODO: [String,Int,null]
     --, saVatId               :: !Text -- @TODO: [String,Int,null]
-    , saInvoiceVat          :: !(Maybe Int)
     , saRevenueLastYear     :: !(Maybe Int)
     , saIndustry            :: !(Maybe Int)
     , saInvoiceEmail        :: !(Maybe Text)
@@ -63,6 +64,7 @@ data Account = Account
     , saBillingAddress      :: !(Maybe Text)
     , saTermsOfPayment      :: !(Maybe Int)
     , saBillingCity         :: !(Maybe Text)
+    -}
     }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
 
@@ -83,7 +85,8 @@ instance FromJSON Account where
     parseJSON = withObject "Account" $ \obj ->
         Account <$> obj .: "id"
                 <*> obj .: "name"
-                <*> obj .:? "lineOfBusiness"
+                {-
+                -- <*> obj .:? "lineOfBusiness"
                 <*> obj .: "shippingCity"
                 <*> obj .:? "handlingFee"
                 -- <*> obj .: "businessId"
@@ -114,7 +117,7 @@ instance FromJSON Account where
                 <*> obj .: "supplierAccount"
                 <*> optional (getU <$> obj .: "created")
                 <*> obj .: "facebook"
-                <*> obj .: "revenueThisYear"
+                -- <*> obj .: "revenueThisYear"
                 <*> obj .: "serviceLevel"
                 <*> obj .: "passive"
                 <*> obj .: "invoiceNetOperator"
@@ -127,3 +130,4 @@ instance FromJSON Account where
                 <*> obj .: "billingAddress"
                 <*> obj .: "termsOfPayment"
                 <*> obj .: "billingCity"
+                -}

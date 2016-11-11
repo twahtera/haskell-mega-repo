@@ -47,6 +47,7 @@ library
     , exceptions
     , filepath
     , flowdock-rest
+    , folds
     , friendly-time >=0.4 && <0.5
     , fum-client
     , futulogo
@@ -85,6 +86,7 @@ library
     , strict-base-types
     , swagger2
     , tagged
+    , tdigest
     , text
     , these
     , time
@@ -135,6 +137,7 @@ executable reports-app-server
     , exceptions
     , filepath
     , flowdock-rest
+    , folds
     , friendly-time >=0.4 && <0.5
     , fum-client
     , futulogo
@@ -173,6 +176,7 @@ executable reports-app-server
     , strict-base-types
     , swagger2
     , tagged
+    , tdigest
     , text
     , these
     , time

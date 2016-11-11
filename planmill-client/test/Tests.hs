@@ -134,6 +134,7 @@ queryTagIdentityGen = elements
     , SomeQueryTag QueryTagTask
     , SomeQueryTag QueryTagProject
     , SomeQueryTag QueryTagAbsence
+    , SomeQueryTag QueryTagAccount
     , SomeQueryTag $ QueryTagEnumDesc (Proxy :: Proxy "foo")
     , SomeQueryTag $ QueryTagEnumDesc (Proxy :: Proxy "bar")
     ]
@@ -143,7 +144,9 @@ queryTagVectorGen = elements
     [ SomeQueryTag QueryTagTeam
     , SomeQueryTag QueryTagUser
     , SomeQueryTag QueryTagTask
+    , SomeQueryTag QueryTagProject
     , SomeQueryTag QueryTagAbsence
+    , SomeQueryTag QueryTagAccount
     ]
 
 queryGen :: Gen SomeQuery

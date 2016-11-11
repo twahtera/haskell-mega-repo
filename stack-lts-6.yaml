@@ -55,6 +55,7 @@ extra-deps:
 - clay-0.11
 - comonad-5
 - extra-1.5.1
+- folds-0.7.1
 - friendly-time-0.4
 - generics-sop-lens-0.1.2.0
 - github-0.15.0

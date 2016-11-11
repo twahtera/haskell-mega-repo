@@ -50,6 +50,7 @@ import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 
 import PlanMill.Types.Absence        (Absence, Absences)
+import PlanMill.Types.Account        (Account, Accounts)
 import PlanMill.Types.Enumeration    (EnumDesc)
 import PlanMill.Types.Identifier     (Identifier (..))
 import PlanMill.Types.Me             (Me)
@@ -83,6 +84,7 @@ data QueryTag f a where
     QueryTagTask        :: QueryTag f Task    -- can be I or Vector
     QueryTagProject     :: QueryTag f Project -- can be I or Vector
     QueryTagAbsence     :: QueryTag f Absence -- can be I or Vector
+    QueryTagAccount     :: QueryTag f Account -- can be I or Vector
     QueryTagEnumDesc    :: KnownSymbol enum => !(Proxy enum) -> QueryTag I (EnumDesc enum)
 
 -- | Planmill query (i.e. read-only operation).
@@ -157,6 +159,7 @@ instance GEq (QueryTag f) where
     geq QueryTagTask QueryTagTask                  = Just Refl
     geq QueryTagProject QueryTagProject            = Just Refl
     geq QueryTagAbsence QueryTagAbsence            = Just Refl
+    geq QueryTagAccount QueryTagAccount            = Just Refl
     geq (QueryTagEnumDesc p) (QueryTagEnumDesc p') = do
         Refl <- sameSymbol p p'
         pure Refl
@@ -176,6 +179,7 @@ instance Show (QueryTag f a) where
         QueryTagTask        -> showString "QueryTagTask"
         QueryTagProject     -> showString "QueryTagProject"
         QueryTagAbsence     -> showString "QueryTagAbsence"
+        QueryTagAccount     -> showString "QueryTagAccount"
         QueryTagEnumDesc p  -> showParen (d > 10)
             $ showString "QueryTagEnumDesc "
             . showsPrec 11 (symbolVal p)
@@ -190,6 +194,7 @@ instance Hashable (QueryTag f a) where
     hashWithSalt salt QueryTagTask         = salt `hashWithSalt` (6 :: Int)
     hashWithSalt salt QueryTagProject      = salt `hashWithSalt` (7 :: Int)
     hashWithSalt salt QueryTagAbsence      = salt `hashWithSalt` (8 :: Int)
+    hashWithSalt salt QueryTagAccount      = salt `hashWithSalt` (9 :: Int)
     hashWithSalt salt (QueryTagEnumDesc p) = salt
         -- We don't add a int prehash, as it's unnecessary
         `hashWithSalt` (symbolVal p)
@@ -216,6 +221,7 @@ instance SBoolI (f == I) => Binary (SomeQueryTag f) where
     put (SomeQueryTag QueryTagTask)         = put (7 :: Word8)
     put (SomeQueryTag QueryTagProject)      = put (8 :: Word8)
     put (SomeQueryTag QueryTagAbsence)      = put (9 :: Word8)
+    put (SomeQueryTag QueryTagAccount)      = put (10 :: Word8)
 
     get = get >>= \n -> case (n :: Word8, sboolEqRefl :: Maybe (f :~: I)) of
         (0, Just Refl) -> do
@@ -231,6 +237,7 @@ instance SBoolI (f == I) => Binary (SomeQueryTag f) where
         (7, _)         -> pure $ SomeQueryTag QueryTagTask
         (8, _)         -> pure $ SomeQueryTag QueryTagProject
         (9, _)         -> pure $ SomeQueryTag QueryTagAbsence
+        (10, _)        -> pure $ SomeQueryTag QueryTagAccount
 
         _ -> fail $ "Invalid tag " ++ show n
 
@@ -244,6 +251,7 @@ instance ToJSON (QueryTag f a) where
     toJSON QueryTagTask         = String "task"
     toJSON QueryTagProject      = String "project"
     toJSON QueryTagAbsence      = String "absence"
+    toJSON QueryTagAccount      = String "account"
     toJSON (QueryTagEnumDesc p) = String $ "enumdesc-" <> symbolVal p ^. packed
 
 instance ToJSON (SomeQueryTag f) where
@@ -260,6 +268,7 @@ instance SBoolI (f == I) => FromJSON (SomeQueryTag f) where
         ("task", _)                -> pure $ SomeQueryTag QueryTagTask
         ("project", _)             -> pure $ SomeQueryTag QueryTagProject
         ("absence", _)             -> pure $ SomeQueryTag QueryTagAbsence
+        ("account", _)             -> pure $ SomeQueryTag QueryTagAccount
         (_, Just Refl) | T.isPrefixOf pfx t
             -> pure $ reifySymbol (T.drop (T.length pfx) t ^. unpacked) mk
           where
@@ -279,6 +288,7 @@ instance HasStructuralInfo (QueryTag f a) where
         ,  NominalType "QueryTagTask"
         ,  NominalType "QueryTagProject"
         ,  NominalType "QueryTagAbsence"
+        ,  NominalType "QueryTagAccount"
         ]]
 
 -------------------------------------------------------------------------------
@@ -408,6 +418,7 @@ type QueryTypes = '[ Timereports, UserCapacities
     , Project, Projects
     , Task, Tasks
     , Absence, Absences
+    , Account, Accounts
     ]
 
 -- | A bit fancier than ':~:'
@@ -426,6 +437,7 @@ queryTagType QueryTagTimereport   = Right $ insertNS Refl
 queryTagType QueryTagTask         = Right $ insertNS Refl
 queryTagType QueryTagProject      = Right $ insertNS Refl
 queryTagType QueryTagAbsence      = Right $ insertNS Refl
+queryTagType QueryTagAccount      = Right $ insertNS Refl
 queryTagType (QueryTagEnumDesc p) = Left $ IsSomeEnumDesc p
 
 queryTagVectorType
@@ -436,6 +448,7 @@ queryTagVectorType QueryTagTeam    = insertNS Refl
 queryTagVectorType QueryTagTask    = insertNS Refl
 queryTagVectorType QueryTagProject = insertNS Refl
 queryTagVectorType QueryTagAbsence = insertNS Refl
+queryTagVectorType QueryTagAccount = insertNS Refl
 #if __GLASGOW_HASKELL__ < 800
 queryTagVectorType _ = error "queryTagVectorType: panic!"
 #endif

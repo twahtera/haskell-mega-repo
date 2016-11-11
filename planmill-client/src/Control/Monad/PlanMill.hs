@@ -54,6 +54,7 @@ class
     ( Monad m
     -- Unfortunately we have to write all of those down
     , MonadPlanMillC m Absence
+    , MonadPlanMillC m Account
     , MonadPlanMillC m Assignment
     , MonadPlanMillC m Me
     , MonadPlanMillC m Meta
