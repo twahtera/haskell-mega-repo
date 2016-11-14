@@ -8,7 +8,7 @@ module FUM.Types where
 
 import Prelude ()
 import Futurice.Prelude
-
+import Control.Lens      (Getter, to)
 import Data.Aeson.Compat
 import Data.Aeson.Types
        (FromJSONKey (..), ToJSONKey (..), fromJSONKeyCoerce, toJSONKeyText)
@@ -149,19 +149,21 @@ instance FromJSON UserStatus where
 -------------------------------------------------------------------------------
 
 data User = User
-    { _userName     :: !UserName
-    , _userFirst    :: !Text
-    , _userLast     :: !Text
-    , _userTitle    :: !(S.Maybe Text)
-    , _userGithub   :: !(S.Maybe Text)
-    , _userFlowdock :: !(S.Maybe Int)
-    , _userEmail    :: !(S.Maybe Text) -- can be empty?
-    , _userPhone1   :: !(S.Maybe Text)
-    , _userPhone2   :: !(S.Maybe Text)
-    , _userStatus   :: !UserStatus
-    , _userImageUrl :: !(S.Maybe Text)
-    , _userThumbUrl :: !(S.Maybe Text)
-    , _userBadgeUrl :: !(S.Maybe Text)
+    { _userName       :: !UserName
+    , _userFirst      :: !Text
+    , _userLast       :: !Text
+    , _userTitle      :: !(S.Maybe Text)
+    , _userGithub     :: !(S.Maybe Text)
+    , _userFlowdock   :: !(S.Maybe Int)
+    , _userEmail      :: !(S.Maybe Text) -- can be empty?
+    , _userPhone1     :: !(S.Maybe Text)
+    , _userPhone2     :: !(S.Maybe Text)
+    , _userStatus     :: !UserStatus
+    , _userImageUrl   :: !(S.Maybe Text)
+    , _userThumbUrl   :: !(S.Maybe Text)
+    , _userBadgeUrl   :: !(S.Maybe Text)
+    , _userId         :: !Int
+    , _userSupervisor :: !(S.Maybe Int)
     }
     deriving (Eq, Ord, Show, Read, Typeable, Generic)
 
@@ -184,6 +186,11 @@ instance FromJSON User where
         <*> v .: "portrait_full_url"
         <*> v .: "portrait_thumb_url"
         <*> v .: "portrait_badge_url"
+        <*> v .: "id"
+        <*> v .:?? "supervisor"
+
+userFullName :: Getter User Text
+userFullName = to $ \u -> u ^. userFirst <> " " <> u ^. userLast
 
 -------------------------------------------------------------------------------
 -- Utilities for aeson

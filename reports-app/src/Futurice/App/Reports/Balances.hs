@@ -25,6 +25,7 @@ import Prelude ()
 import Futurice.Prelude
 import Control.Lens              (sumOf)
 import Data.Fixed                (Centi)
+import Data.Maybe                (mapMaybe)
 import Data.Ord                  (comparing)
 import Futurice.Generics
 import Futurice.Integrations
@@ -36,6 +37,7 @@ import qualified Data.Csv            as Csv
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Tuple.Strict   as S
 import qualified Data.Vector         as V
+import qualified FUM                 as FUM
 import qualified PlanMill            as PM
 import qualified PlanMill.Queries    as PMQ
 
@@ -96,9 +98,27 @@ makeLenses ''Balance
 deriveGeneric ''Balance
 
 instance NFData Balance
-instance ToJSON Balance where toJSON = sopToJSON
+instance ToJSON Balance where
+    toJSON     = sopToJSON
+    toEncoding = sopToEncoding
 instance FromJSON Balance where parseJSON = sopParseJSON
 instance ToSchema Balance where declareNamedSchema = sopDeclareNamedSchema
+
+
+newtype Supervisor = Supervisor Text
+    deriving (Eq, Ord, Show, Typeable, Generic)
+
+deriveGeneric ''Supervisor
+
+instance ToColumns Supervisor where
+    columnNames _ = K "supervisor" :* Nil
+
+instance NFData Supervisor
+instance ToJSON Supervisor where
+    toJSON     = sopToJSON
+    toEncoding = sopToEncoding
+instance FromJSON Supervisor where parseJSON = sopParseJSON
+instance ToSchema Supervisor where declareNamedSchema = sopDeclareNamedSchema
 
 -------------------------------------------------------------------------------
 -- Report
@@ -107,7 +127,7 @@ instance ToSchema Balance where declareNamedSchema = sopDeclareNamedSchema
 type BalanceReport = Report
     "Hour marking flex saldos"
     ReportGenerated
-    (Vector :$ StrictPair Employee :$ Balance)
+    (Vector :$ StrictPair Employee :$ StrictPair Supervisor :$ Balance)
 
 -------------------------------------------------------------------------------
 -- Logic
@@ -136,17 +156,40 @@ balanceReport
     -> m BalanceReport
 balanceReport interval = do
     now <- currentTime
+    fumUsers <- fumEmployeeList
     fpm <- fumPlanmillMap
-    fpm' <- traverse (perUser . view PM.identifier) fpm
+    fpm' <- itraverse (perUser $ supervisors fumUsers) fpm
     let fpm'' = V.fromList . sortBy cmpPE . HM.elems $ fpm'
     pure $ Report (ReportGenerated now) fpm''
   where
     cmpPE :: StrictPair Employee a -> StrictPair Employee a -> Ordering
     cmpPE = (comparing employeeTeam <> comparing employeeName) `on` S.fst
 
+    supervisors :: Vector FUM.User -> HashMap FUM.UserName Text
+    supervisors us = HM.fromList . mapMaybe mk $ us'
+      where
+        us' = toList us
+
+        mk u = (,) (u ^. FUM.userName) <$>
+            (join $ flip HM.lookup ss <$> u ^. FUM.userSupervisor . lazy)
+
+        -- id to name map
+        ss :: HashMap Int Text
+        ss = HM.fromList
+            . map (\u -> (u ^. FUM.userId, u ^. FUM.userFullName))
+            $ us'
+
     -- TODO: put planmillEmployee into fumPlanmillMap!
     -- Also MissingHours report
-    perUser :: PM.UserId -> m (StrictPair Employee Balance)
-    perUser pmUid = (S.:!:)
+    perUser
+        :: HashMap FUM.UserName Text
+        -> FUM.UserName
+        -> PM.User
+        -> m (StrictPair Employee (StrictPair Supervisor Balance))
+    perUser svs fumLogin pmUser = mk
         <$> planmillEmployee pmUid
+        <*> pure (Supervisor $ fromMaybe "<unknown>" $ HM.lookup fumLogin svs)
         <*> balanceForUser interval pmUid
+      where
+        pmUid = pmUser ^. PM.identifier
+        mk e s b = e S.:!: (s S.:!: b)
