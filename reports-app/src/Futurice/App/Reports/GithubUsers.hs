@@ -20,6 +20,7 @@ module Futurice.App.Reports.GithubUsers (
     -- * Lenses
     userInfoMember,
     userInfoLastActivity,
+    userInfoHasActivity,
     ) where
 
 import Prelude ()
@@ -27,6 +28,7 @@ import Futurice.Prelude
 import Control.Lens                     ((%=))
 import Control.Monad.Trans.State.Strict (execState)
 import Data.Foldable                    (foldl')
+import Data.Maybe                       (isJust)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Report.Columns
@@ -46,6 +48,7 @@ import Unsafe.Coerce (unsafeCoerce)
 data UserInfo = UserInfo
     { _userInfoMember       :: !Bool  -- ^ if false: outside collaborator
     , _userInfoLastActivity :: !(Maybe UTCTime)
+    , _userInfoHasActivity  :: !Bool
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
 
@@ -105,7 +108,7 @@ githubUsersReport = do
 
     -- fetch activity
     -- TODO: change to applicative style
-    let m' = foldl' applyActivity (Map.union m collM) repoEvents
+    let m' = fmap updateHasActivity $ foldl' applyActivity (Map.union m collM) repoEvents
 
     -- report
     pure $ Report (ReportGenerated now) m'
@@ -124,9 +127,13 @@ githubUsersReport = do
         let login = GH.simpleUserLogin $ GH.eventActor ev
         ix login . userInfoLastActivity %= Just . pickLatest (GH.eventCreatedAt ev)
 
+    updateHasActivity a = a
+        { _userInfoHasActivity = isJust (_userInfoLastActivity a)
+        }
+
     pickLatest :: UTCTime -> Maybe UTCTime -> UTCTime
     pickLatest x Nothing  = x
     pickLatest x (Just y) = max x y
 
 emptyInfo :: Bool -> UserInfo
-emptyInfo member = UserInfo member Nothing
+emptyInfo member = UserInfo member Nothing False
