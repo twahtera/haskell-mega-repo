@@ -44,7 +44,6 @@ import Futurice.App.FutuHours.Types
 server :: Ctx -> Server FutuHoursAPI
 server ctx = pure "Hello to futuhours api"
     :<|> addPlanmillApiKey ctx
-    :<|> getBalances ctx
     :<|> (getMissingHoursReport ctx
          )
     :<|> (getPowerUsers ctx
@@ -73,7 +72,6 @@ defaultableEndpoints =
     [ (15 * 60, SDE powerAbsencesEndpoint)
     , (5  * 60, SDE powerUsersEndpoint)
     , (21 * 60, SDE missingHoursEndpoint)
-    , (31 * 60, SDE balanceReportEndpoint)
     ]
 
 ekg :: Int -> IO Middleware

@@ -25,7 +25,6 @@ type LegacyFutuhoursAPI =
 
 type FutuHoursAPI = Get '[PlainText] Text
     :<|> "add-planmill-token" :> Capture "fum-id" FUMUsername :> ReqBody '[JSON] PlanmillApiKey :> Put '[JSON] ()
-    :<|> "balances" :> Get '[HTML, JSON, CSV] BalanceReport
     :<|> "reports" :>
         ( "missinghours" :> QueryParam "from" Day :> QueryParam "to" Day :> QueryParam "users" FUMUsernamesParam :> Get '[HTML, JSON, CSV] MissingHoursReport
         )
