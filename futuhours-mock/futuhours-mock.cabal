@@ -51,7 +51,9 @@ library
     , servant-lucid
     , servant-server
     , swagger2
+    , text
     , time
+    , time-locale-compat
     , transformers
     , vector
   exposed-modules:

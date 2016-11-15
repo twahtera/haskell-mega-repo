@@ -109,7 +109,7 @@ data User = User
   , _userHolidaysLeft :: !Int
   , _userUtilizationRate :: !Float
   , _userProfilePicture :: !Text
-  }
+  } deriving (Eq, Show, Typeable, Generic)
 
 -- filling HolidayName marks Day as a Holiday
 data HoursDay = HoursDay
@@ -117,7 +117,7 @@ data HoursDay = HoursDay
   , _dayHours :: !Float
   , _dayEntries :: ![Entry]
   , _dayClosed :: !Bool
-  }
+  } deriving (Eq, Show, Typeable, Generic)
 
 mkHoursDay = HoursDay
               { _dayHolidayName=Nothing
@@ -132,31 +132,31 @@ data HoursDayUpdate = HoursDayUpdate
   { _hoursDayUpdateHolidayName :: !Text
   , _hoursDayUpdateHours :: !Float
   , _hoursDayUpdateEntry :: !Entry
-  }
+  } deriving (Eq, Show, Typeable, Generic)
 
 data HoursMonth = HoursMonth
   { _monthHours :: !Float
   , _monthUtilizationRate :: !Float
   , _monthDays :: Map Text [HoursDay]
-  }
+  } deriving (Eq, Show, Typeable, Generic)
 
 data HoursMonthUpdate = HoursMonthUpdate
   { _hoursMonthUpdateHours :: !Float
   , _hoursMonthUpdateUtilizationRate :: !Float
   , _hoursMonthUpdateDays :: Map Text [HoursDayUpdate]
-  }
+  } deriving (Eq, Show, Typeable, Generic)
 
 data HoursResponse = HoursResponse
   { _hoursResponseDefaultWorkHours :: !Float
   , _hoursResponseProjects :: ![Project]
-  , _hoursResponseMonths :: Map Text [HoursMonth]
-  }
+  , _hoursResponseMonths :: Map Text HoursMonth
+  } deriving (Eq, Show, Typeable, Generic)
 
 data HoursUpdateResponse = HoursUpdateResponse
   { _hoursUpdateResponseDefaultWorkHours :: !Float
   , _hoursUpdateResponseProjects :: ![Project]
   , _hoursUpdateResponseMonths :: Map Text [HoursMonthUpdate]
-  }
+  } deriving (Eq, Show, Typeable, Generic)
 
 makeLenses ''Project
 deriveGeneric ''Project
