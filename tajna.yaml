@@ -45,7 +45,7 @@ envs:
       http://localhost:8808/haxl
 
     # proxy-app
-    FUTUHOURSAPI_BASEURL: http://localhost:8803
+    REPORTSAPP_BASEURL: http://localhost:8807
     PLANMILLPROXY_BASEURL: http://localhost:8808/haxl
     GITHUBPROXY_HAXLURL: http://localhost:8811/haxl
 

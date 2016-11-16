@@ -416,8 +416,6 @@ instance ToSchema PowerAbsence where declareNamedSchema = sopDeclareNamedSchema
 -------------------------------------------------------------------------------
 
 data EndpointTag a where
-    EMissingHours      :: EndpointTag MissingHoursReport
-    -- missing hours from beginning of the previous month till today
     EPowerUsers       :: EndpointTag (Vector PowerUser)
     -- Users in planmill with some additional information
     EPowerAbsences    :: EndpointTag (Vector PowerAbsence)
@@ -425,15 +423,11 @@ data EndpointTag a where
     deriving (Typeable)
 
 instance GEq EndpointTag where
-    geq EMissingHours     EMissingHours     = Just Refl
     geq EPowerUsers       EPowerUsers       = Just Refl
     geq EPowerAbsences    EPowerAbsences    = Just Refl
     geq _ _ = Nothing
 
 instance GCompare EndpointTag where
-    gcompare EMissingHours     EMissingHours = GEQ
-    gcompare EMissingHours     _                 = GLT
-    gcompare _                 EMissingHours = GGT
     gcompare EPowerUsers       EPowerUsers       = GEQ
     gcompare EPowerUsers       _                 = GLT
     gcompare _                 EPowerUsers       = GGT

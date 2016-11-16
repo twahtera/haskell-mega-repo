@@ -9,9 +9,7 @@ module Futurice.App.FutuHours.API where
 import Futurice.Prelude
 import Futurice.Colour
 import Servant
-import Servant.CSV.Cassava (CSV)
 import Servant.Futurice
-import Servant.HTML.Lucid  (HTML)
 
 import Futurice.App.FutuHours.Types
 
@@ -25,9 +23,6 @@ type LegacyFutuhoursAPI =
 
 type FutuHoursAPI = Get '[PlainText] Text
     :<|> "add-planmill-token" :> Capture "fum-id" FUMUsername :> ReqBody '[JSON] PlanmillApiKey :> Put '[JSON] ()
-    :<|> "reports" :>
-        ( "missinghours" :> QueryParam "from" Day :> QueryParam "to" Day :> QueryParam "users" FUMUsernamesParam :> Get '[HTML, JSON, CSV] MissingHoursReport
-        )
     :<|> "power" :>
         ( "users" :> Get '[JSON] (Vector PowerUser)
         :<|> "absences" :> QueryParam "from" Day :> QueryParam "to" Day :> Get '[JSON] (Vector PowerAbsence)

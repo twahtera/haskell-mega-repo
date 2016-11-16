@@ -16,9 +16,6 @@ module Futurice.App.FutuHours.Endpoints (
     addPlanmillApiKey,
     getProjects,
     -- getTimereports,
-    -- * Reports
-    getMissingHoursReport,
-    missingHoursEndpoint,
     -- * Power
     getPowerUsers,
     powerUsersEndpoint,
@@ -56,7 +53,6 @@ import Futurice.App.FutuHours.Context
 import Futurice.App.FutuHours.PlanMill
 import Futurice.App.FutuHours.PlanMillCache
 import Futurice.App.FutuHours.Precalc
-import Futurice.App.FutuHours.Reports.MissingHours
 import Futurice.App.FutuHours.Types
 
 -- Planmill modules
@@ -72,27 +68,6 @@ addPlanmillApiKey Ctx { ctxPostgresPool = pool } username apikey =
         print username
         print apikey
         print rows
-
-{-
-getPlanmillApiKey :: MonadIO m => Ctx -> FUMUsername -> m (Maybe PlanmillApiKey)
-getPlanmillApiKey  Ctx { ctxPostgresPool = pool } username =
-    liftIO $ withResource pool $ \conn ->
-        fromOnly <$$> singleQuery conn "SELECT planmill_apikey FROM futuhours.apikeys WHERE fum_username = ? LIMIT 1" (Only username)
-
-getPlanmillApiKey' :: (MonadIO m, Functor m) => Ctx -> FUMUsername -> m (Maybe PM.ApiKey)
-getPlanmillApiKey' ctx username = (fmap . fmap) f (getPlanmillApiKey ctx username)
-  where f (PlanmillApiKey apiKey) = PM.ApiKey (TE.encodeUtf8 apiKey)
-
-getTimereports :: Ctx  -> FUMUsername -> ExceptT ServantErr IO (V.Vector Timereport)
-getTimereports = withPlanmillCfg $ \cfg -> liftIO $ runHaxl cfg getTimereports'
-  where
-    getTimereports' :: (MonadPlanMill m) => m (V.Vector Timereport)
-    getTimereports' = do
-        timereports <- planmillAction PM.timereports
-        return $ fmap convert timereports
-    convert :: PM.Timereport -> Timereport
-    convert tr = Timereport (tr ^. PM.identifier) (PM.trComment tr)
--}
 
 -- | Return projects for user
 --
@@ -166,62 +141,6 @@ getLegacyHours gteDay lteDay =
         , hourUserId          = PM.trPerson t
         , hourUser            = "someuser" -- TODO
         }
-
-
--------------------------------------------------------------------------------
--- Reports
--------------------------------------------------------------------------------
-
-getMissingHoursReport
-    :: Ctx
-    -> Maybe Day -> Maybe Day -> Maybe FUMUsernamesParam
-    -> ExceptT ServantErr IO  MissingHoursReport
-getMissingHoursReport = servantEndpoint missingHoursEndpoint
-
-{-
-ctx a b usernames = do
-    userLookup <- liftIO $ readTVarIO (ctxPlanmillUserLookup ctx)
-    case PM.mkInterval a b of
-        Nothing -> throwError err400
-        Just interval -> executeCachedAdminPlanmill ctx p $
-            missingHours userLookup interval usernames'
-  where
-    p = Proxy :: Proxy
-        '[PM.UserCapacities, PM.Timereports, PM.User, PM.Team, PM.Meta]
-
-    usernames' :: [FUMUsername]
-    usernames' = maybe [] getFUMUsernamesParam usernames
--}
-
-missingHoursEndpoint
-    :: DefaultableEndpoint
-        '[Maybe Day, Maybe Day, Maybe FUMUsernamesParam]
-        (PM.Interval Day, [FUMUsername])
-        MissingHoursReport
-missingHoursEndpoint = DefaultableEndpoint
-    { defEndTag = EMissingHours
-    , defEndDefaultParsedParam = do
-        b <- pred <$> currentDay  -- Do not include today
-        let a = beginningOfPrevMonth b
-        return (fromJust $ PM.mkInterval a b, [])
-    , defEndDefaultParams = I Nothing :* I Nothing :* I Nothing :* Nil
-    , defEndParseParams = \(I a :* I b :* I usernames :* Nil) -> do
-        b' <- maybe currentDay pure b
-        let a' = fromMaybe (beginningOfPrevMonth b') a
-        interval <- maybe (throwError err400) pure $ PM.mkInterval a' b'
-        let usernames' = maybe [] getFUMUsernamesParam usernames
-        pure (interval, usernames')
-    , defEndAction = missingHours'
-    }
-  where
-    missingHours' :: Ctx -> (PM.Interval Day, [FUMUsername]) -> IO MissingHoursReport
-    missingHours' ctx (interval, usernames) = do
-        now <-currentTime
-        pmUsers <- readTVarIO (ctxPlanmillUserLookup ctx)
-        executeCachedAdminPlanmill ctx p $ missingHours now pmUsers interval usernames
-     where
-        p = Proxy :: Proxy
-            '[PM.UserCapacities, PM.Timereports, PM.User, PM.Team, PM.Meta]
 
 -------------------------------------------------------------------------------
 -- Power
@@ -337,16 +256,6 @@ toResultInterval = PM.ResultInterval PM.IntervalStart . PM.intervalDayToInterval
 -------------------------------------------------------------------------------
 -- Helpers
 -------------------------------------------------------------------------------
-
-{-
-withPlanmillCfg :: (PM.Cfg -> IO a) -> Ctx -> FUMUsername -> ExceptT ServantErr IO a
-withPlanmillCfg action ctx username =do
-    planmillLookup <- liftIO $ readTVarIO  (ctxPlanmillUserLookup ctx)
-    planMillId <- maybe (throwError err404) (pure . view PM.identifier) $ HM.lookup username planmillLookup
-    apiKey     <- maybe (throwError err403) pure =<< getPlanmillApiKey' ctx username
-    let cfg = (ctxPlanmillCfg ctx) { PM.cfgUserId = planMillId, PM.cfgApiKey = apiKey }
-    liftIO $ action cfg
--}
 
 withLegacyPlanmill
     :: forall m a as. (MonadIO m, MonadError ServantErr m, All BinaryFromJSON as)

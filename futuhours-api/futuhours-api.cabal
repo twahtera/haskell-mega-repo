@@ -89,7 +89,6 @@ library
     , resource-pool
     , semigroups
     , servant
-    , servant-blaze
     , servant-cache
     , servant-cassava
     , servant-docs
@@ -128,7 +127,6 @@ library
       Futurice.App.FutuHours.PlanmillDataSource
       Futurice.App.FutuHours.PlanMillUserIds
       Futurice.App.FutuHours.Precalc
-      Futurice.App.FutuHours.Reports.MissingHours
       Futurice.App.FutuHours.Timereports
       Futurice.App.FutuHours.Tools
       Futurice.App.FutuHours.Types
