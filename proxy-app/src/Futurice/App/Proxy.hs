@@ -34,20 +34,20 @@ import System.IO                       (hPutStrLn, stderr)
 import qualified Database.PostgreSQL.Simple as Postgres
 import qualified Network.Wai.Handler.Warp   as Warp
 
-import Futurice.App.FutuHours.Types (MissingHoursReport)
 import Futurice.App.Proxy.Config
 import Futurice.App.Proxy.Ctx
+import Futurice.App.Reports.MissingHours (MissingHoursReport)
 
 -------------------------------------------------------------------------------
 -- Services
 -------------------------------------------------------------------------------
 
-data FutuhoursApiService
+data ReportsAppService
 data PlanmillProxyService
 
-instance HasClientBaseurl Ctx FutuhoursApiService where
-    clientBaseurl _ = lens ctxFutuhoursBaseurl $ \ctx x ->
-        ctx { ctxFutuhoursBaseurl = x }
+instance HasClientBaseurl Ctx ReportsAppService where
+    clientBaseurl _ = lens ctxReportsAppBaseurl $ \ctx x ->
+        ctx { ctxReportsAppBaseurl = x }
 
 instance HasClientBaseurl Ctx PlanmillProxyService where
     clientBaseurl _ = lens ctxPlanmillProxyBaseurl $ \ctx x ->
@@ -59,8 +59,8 @@ instance HasClientBaseurl Ctx PlanmillProxyService where
 
 type MissingReportsEndpoint = ProxyPair
     ("futuhours" :> "reports" :> "missinghours" :> Get '[CSV, JSON] MissingHoursReport)
-    FutuhoursApiService
-    ("reports" :> "missinghours" :> Get '[JSON] MissingHoursReport)
+    ReportsAppService
+    ("missing-hours" :> Get '[JSON] MissingHoursReport)
 
 -- TODO: we actually decode/encode when proxying.
 -- Is this bad?
@@ -112,13 +112,13 @@ defaultMain = do
     Config{..}           <- getConfig
     mgr                  <- newManager tlsManagerSettings
     cache                <- newDynMapCache
-    futuhoursBaseurl     <- parseBaseUrl cfgFutuhoursBaseurl
+    reportsAppBaseurl    <- parseBaseUrl cfgReportsAppBaseurl
     planmillProxyBaseUrl <- parseBaseUrl cfgPlanmillProxyBaseurl
     postgresPool         <- createPool
         (Postgres.connect cfgPostgresConnInfo)
         Postgres.close
         1 10 5
-    let ctx = Ctx mgr futuhoursBaseurl planmillProxyBaseUrl
+    let ctx = Ctx mgr reportsAppBaseurl planmillProxyBaseUrl
     let app' = basicAuth (checkCreds postgresPool) "P-R-O-X-Y" $ app cache ctx
     hPutStrLn stderr "Starting web server"
     Warp.run cfgPort app'

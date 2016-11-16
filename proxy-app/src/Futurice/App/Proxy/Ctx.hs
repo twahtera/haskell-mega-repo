@@ -9,7 +9,7 @@ import Servant.Proxy       (HasHttpManager (..))
 -- | Context type, holds http manager and baseurl configurations
 data Ctx = Ctx
     { ctxManager              :: !Manager
-    , ctxFutuhoursBaseurl     :: !BaseUrl
+    , ctxReportsAppBaseurl    :: !BaseUrl
     , ctxPlanmillProxyBaseurl :: !BaseUrl
     }
 

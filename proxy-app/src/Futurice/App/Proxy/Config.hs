@@ -12,7 +12,7 @@ data Config = Config
     { cfgPort                 :: !Int
     , cfgEkgPort              :: !Int
     , cfgPostgresConnInfo     :: !ConnectInfo
-    , cfgFutuhoursBaseurl     :: !String
+    , cfgReportsAppBaseurl    :: !String
     , cfgPlanmillProxyBaseurl :: !String
     }
 
@@ -24,5 +24,5 @@ instance GetConfig Config where
         <$> parseDefaultPort "PROXYAPP"
         <*> parseDefaultEkgPort "PROXYAPP"
         <*> getConnectInfo
-        <*> parseEnvVar "FUTUHOURSAPI_BASEURL"
+        <*> parseEnvVar "REPORTSAPP_BASEURL"
         <*> parseEnvVar "PLANMILLPROXY_BASEURL"

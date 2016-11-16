@@ -38,7 +38,6 @@ library
     , bytestring
     , cassava
     , env-config
-    , futuhours-api
     , futurice-prelude
     , futurice-servant
     , http-client
@@ -47,16 +46,16 @@ library
     , markdown
     , planmill-client
     , postgresql-simple
+    , reports-app
     , resource-pool
     , semigroups
     , servant
-    , servant-blaze
+    , servant-binary-tagged
     , servant-cassava
     , servant-client >= 0.9
     , servant-lucid
     , servant-server
     , servant-swagger
-    , servant-binary-tagged
     , stm
     , swagger2
     , tagged
