@@ -20,6 +20,7 @@ module Futurice.App.FutuhoursMock.Types (
     mkTask,
     -- * Entry
     Entry (..),
+    EntryUpdate (..),
     LatestEntry (..),
     latestEntryDescription,
     mkLatestEntry,
@@ -33,6 +34,7 @@ module Futurice.App.FutuhoursMock.Types (
     HoursMonth (..),
     HoursResponse (..),
     HoursDayUpdate (..),
+    HoursUpdateResponse (..),
     ) where
 
 import Prelude ()
@@ -57,19 +59,6 @@ data Project = Project
     , _projectClosed :: !Bool
     }
   deriving (Eq, Show, Typeable, Generic)
-
--- perhaps a lens getter for an Entry?
-data LatestEntry = LatestEntry
-  { _latestEntryDescription :: !Text
-  , _latestEntryDate :: Maybe UTCTime
-  , _latestEntryHours :: Maybe Float
-  } deriving (Eq, Show, Typeable, Generic)
-
-mkLatestEntry desc = Just LatestEntry
-                        { _latestEntryDescription=desc
-                        , _latestEntryDate=Nothing
-                        , _latestEntryHours=Nothing
-                        }
 
 data Task = Task
   { _taskId :: PM.TaskId
@@ -100,6 +89,34 @@ data Entry = Entry
   , _entryClosed :: !Bool
   , _entryHours :: !Float
   } deriving (Eq, Show, Typeable, Generic)
+
+-- perhaps a lens getter for an Entry?
+data LatestEntry = LatestEntry
+  { _latestEntryDescription :: !Text
+  , _latestEntryDate :: Maybe UTCTime
+  , _latestEntryHours :: Maybe Float
+  } deriving (Eq, Show, Typeable, Generic)
+
+mkLatestEntry desc = Just LatestEntry
+                        { _latestEntryDescription=desc
+                        , _latestEntryDate=Nothing
+                        , _latestEntryHours=Nothing
+                        }
+
+-- When frontend sends closed entry to be updated, API doesn't do anything, just respond ok
+data EntryUpdate = EntryUpdate
+  { _euTaskId :: PM.TaskId
+  , _euProjectId :: PM.ProjectId
+  , _euDescription :: !Text
+  , _euDate :: !UTCTime
+  , _euHours :: !Float
+  , _euClosed :: Maybe Bool
+  } deriving (Eq, Show, Typeable, Generic)
+
+data EntryUpdateResponse = EntryUpdateResponse
+  { _eurUser :: !User
+  , _eurHours :: !HoursUpdateResponse
+  }
 
 -- Golang: UserResponse
 data User = User
@@ -170,6 +187,9 @@ deriveGeneric ''LatestEntry
 makeLenses ''Entry
 deriveGeneric ''Entry
 
+makeLenses ''EntryUpdate
+deriveGeneric ''EntryUpdate
+
 makeLenses ''User
 deriveGeneric ''User
 
@@ -179,8 +199,17 @@ deriveGeneric ''HoursDay
 makeLenses ''HoursMonth
 deriveGeneric ''HoursMonth
 
+makeLenses ''HoursDayUpdate
+deriveGeneric ''HoursDayUpdate
+
+makeLenses ''HoursMonthUpdate
+deriveGeneric ''HoursMonthUpdate
+
 makeLenses ''HoursResponse
 deriveGeneric ''HoursResponse
+
+makeLenses ''HoursUpdateResponse
+deriveGeneric ''HoursUpdateResponse
 
 instance Arbitrary Project where
     arbitrary = sopArbitrary
@@ -214,6 +243,14 @@ instance ToJSON Entry where toJSON = sopToJSON
 instance FromJSON Entry where parseJSON = sopParseJSON
 instance ToSchema Entry where declareNamedSchema = sopDeclareNamedSchema
 
+instance Arbitrary EntryUpdate where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
+
+instance ToJSON EntryUpdate where toJSON = sopToJSON
+instance FromJSON EntryUpdate where parseJSON = sopParseJSON
+instance ToSchema EntryUpdate where declareNamedSchema = sopDeclareNamedSchema
+
 instance Arbitrary User where
     arbitrary = sopArbitrary
     shrink    = sopShrink
@@ -230,6 +267,14 @@ instance ToJSON HoursDay where toJSON = sopToJSON
 instance FromJSON HoursDay where parseJSON = sopParseJSON
 instance ToSchema HoursDay where declareNamedSchema = sopDeclareNamedSchema
 
+instance Arbitrary HoursDayUpdate where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
+
+instance ToJSON HoursDayUpdate where toJSON = sopToJSON
+instance FromJSON HoursDayUpdate where parseJSON = sopParseJSON
+instance ToSchema HoursDayUpdate where declareNamedSchema = sopDeclareNamedSchema
+
 instance Arbitrary HoursMonth where
     arbitrary = sopArbitrary
     shrink    = sopShrink
@@ -238,6 +283,14 @@ instance ToJSON HoursMonth where toJSON = sopToJSON
 instance FromJSON HoursMonth where parseJSON = sopParseJSON
 instance ToSchema HoursMonth where declareNamedSchema = sopDeclareNamedSchema
 
+instance Arbitrary HoursMonthUpdate where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
+
+instance ToJSON HoursMonthUpdate where toJSON = sopToJSON
+instance FromJSON HoursMonthUpdate where parseJSON = sopParseJSON
+instance ToSchema HoursMonthUpdate where declareNamedSchema = sopDeclareNamedSchema
+
 instance Arbitrary HoursResponse where
     arbitrary = sopArbitrary
     shrink    = sopShrink
@@ -245,6 +298,15 @@ instance Arbitrary HoursResponse where
 instance ToJSON HoursResponse where toJSON = sopToJSON
 instance FromJSON HoursResponse where parseJSON = sopParseJSON
 instance ToSchema HoursResponse where declareNamedSchema = sopDeclareNamedSchema
+
+instance Arbitrary HoursUpdateResponse where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
+
+instance ToJSON HoursUpdateResponse where toJSON = sopToJSON
+instance FromJSON HoursUpdateResponse where parseJSON = sopParseJSON
+instance ToSchema HoursUpdateResponse where declareNamedSchema = sopDeclareNamedSchema
+
 
 -------------------------------------------------------------------------------
 -- Context

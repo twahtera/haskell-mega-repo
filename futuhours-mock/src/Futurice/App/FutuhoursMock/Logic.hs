@@ -54,10 +54,11 @@ projectEndpoint _ctx = do
 
 userEndpoint :: Ctx -> IO (User)
 userEndpoint _ctx = do
+  -- GET /user
     -- TODO: how to generate unique values per request?
-    let _userBalance = unsafePerformIO $ (getStdRandom (randomR (-10,40)) :: IO Float)
-    let _userHolidaysLeft = unsafePerformIO $ randomRIO (0, 24)
-    let _userUtilizationRate = unsafePerformIO $ (getStdRandom (randomR (0,100)) :: IO Float)
+    _userBalance <- getStdRandom (randomR (-10,40)) :: IO Float
+    _userHolidaysLeft <- randomRIO (0, 24)
+    _userUtilizationRate <- getStdRandom (randomR (0,100)) :: IO Float
     pure $ User
         { _userFirstName="Test"
         , _userLastName="User"
@@ -76,6 +77,7 @@ hoursEndpoint
   -> Maybe Text
   -> ExceptT ServantErr IO HoursResponse
 hoursEndpoint _ctx sd ed = do
+  -- GET /hours
   let startDate = case sd of
                     Just x -> Just $ parseDayFormat x
                     Nothing -> Nothing
@@ -115,9 +117,11 @@ genMonths ds = do
   ms <- flip traverse (monthsForDays ds) $ \m -> do
     let go = \i -> days !! (mod (unsafePerformIO $ c i) (length days))
     let days = [go 1 | d<-ds, dayInMonth m d]
+    hrs <- randomRIO (0, 150) :: IO Int
+    utz <- getStdRandom (randomR (0,100)) :: IO Float
     pure $ (pack m, HoursMonth
-                    { _monthHours=8
-                    , _monthUtilizationRate=100
+                    { _monthHours=(fromIntegral hrs)*0.5
+                    , _monthUtilizationRate=utz
                     , _monthDays=Map.fromList [(pack m, days)]})
   pure $ Map.fromList ms
 
@@ -140,14 +144,23 @@ fillProjects = do
     pure $ p { _projectTasks=ts'}
   pure ps'
 
-entryEndpoint :: Ctx -> IO ([Int])
-entryEndpoint _ctx = do
-  pure $ [1]
+entryEndpoint
+  :: Ctx
+  -> EntryUpdate
+  -> ExceptT ServantErr IO HoursUpdateResponse
+entryEndpoint _ctx req = do
+  -- POST /entry
+  projects <- liftIO $ fillProjects
+  pure $ HoursUpdateResponse { _hoursUpdateResponseDefaultWorkHours=7.5
+                             , _hoursUpdateResponseProjects=[]
+                             , _hoursUpdateResponseMonths=Map.empty}
 
 entryIdEndpoint :: Ctx -> Int -> IO ([Int])
 entryIdEndpoint _ctx _id = do
+  -- PUT /entry/#id
   pure $ [1]
 
 entryDeleteEndpoint :: Ctx -> Int -> IO ([Int])
 entryDeleteEndpoint _ctx _id = do
+  -- DELETE /entry/#id
   pure $ [1]
