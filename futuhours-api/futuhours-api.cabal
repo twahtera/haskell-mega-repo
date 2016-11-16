@@ -89,7 +89,6 @@ library
     , resource-pool
     , semigroups
     , servant
-    , servant-blaze
     , servant-cache
     , servant-cassava
     , servant-docs
