@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Log.Backend.Papertrail (
     -- * Logger
     withPapertrailLogger,
@@ -9,20 +10,25 @@ module Log.Backend.Papertrail (
 
 import Prelude ()
 import Prelude.Compat
-import Data.Text                 (Text)
-import Data.Time
-       (UTCTime, defaultTimeLocale, formatTime, getCurrentTime)
-import Network
+import Data.FileEmbed (embedFile, makeRelativeToProject)
+import Data.Text      (Text)
+import Data.Time      (UTCTime, defaultTimeLocale, formatTime, getCurrentTime)
+import Network        (HostName)
 import Network.Socket
-import Network.Socket.ByteString (sendAll)
-import Network.URI               (URI (..), URIAuth (..), parseURI)
-import Text.Read                 (readMaybe)
+       (AddrInfo (..), AddrInfoFlag (AI_NUMERICSERV), SocketType (Stream),
+       connect, defaultHints, getAddrInfo, socket)
+import Network.URI    (URI (..), URIAuth (..), parseURI)
+import Text.Read      (readMaybe)
 
+import qualified Data.X509.CertificateStore as X509
+import qualified Data.X509.Memory           as X509
 import qualified Data.ByteString       as BS
 import qualified Data.ByteString.Char8 as BS8
+import qualified Data.ByteString.Lazy  as BSL
 import qualified Data.Text             as T
 import qualified Data.Text.Encoding    as TE
 import qualified Network.TLS           as TLS
+import qualified Network.TLS.Extra.Cipher as TLS
 
 -- | TODO: intergrate with @log@
 type Logger = ()
@@ -107,11 +113,26 @@ testLog d msg = do
         (addr : _) -> do
             sock <- socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr)
             connect sock (addrAddress addr)
-            sendAll sock bs
-            close sock
+            ctx <- TLS.contextNew sock $ tlsParams hostname
+            TLS.handshake ctx
+            TLS.sendData ctx $ BSL.fromChunks [bs]
+            TLS.contextClose ctx
 
 tlsParams :: HostName -> TLS.ClientParams
-tlsParams = undefined
+tlsParams hostname =
+    let cp0 = TLS.defaultParamsClient hostname "foo"
+        cp1 = cp0
+            { TLS.clientShared = (TLS.clientShared cp0)
+                { TLS.sharedCAStore = store
+                }
+            , TLS.clientSupported = (TLS.clientSupported cp0)
+                { TLS.supportedCiphers = TLS.ciphersuite_strong
+                }
+            }
+    in cp1
+  where
+    store = X509.makeCertificateStore $ X509.readSignedObjectFromMemory pem
+    pem   = $(makeRelativeToProject "papertrail-bundle.pem" >>= embedFile)
 
 -------------------------------------------------------------------------------
 -- Syslog
