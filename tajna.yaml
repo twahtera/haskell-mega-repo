@@ -37,6 +37,9 @@ envs:
     GH_TEAM:
       secret: github-team
 
+    PAPERTRAIL_DEST:
+      secret: papertrail-destination
+
     # reports-app
     REPORTS_GH_REPOSURL:
       secret: reports-gh-repos
