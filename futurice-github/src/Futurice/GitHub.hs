@@ -34,6 +34,7 @@ import Data.Constraint    (Dict (..))
 import Data.Maybe         (mapMaybe)
 import Data.Swagger       (NamedSchema (..), ToSchema (..))
 import Data.Type.Equality
+import Futurice.Aeson     (withValueDump)
 import Futurice.Has       (In, inj)
 import Futurice.List      (Append, TMap, splitAppend, tmapToNSComp)
 import Generics.SOP
@@ -202,7 +203,7 @@ simpleRequestToJSON (PagedQuery ps qs fc) =
     ]
 
 instance FromJSON SomeRequest where
-    parseJSON = withObject "SomeRequest" $ \obj -> do
+    parseJSON = withValueDump $ withObject "SomeRequest" $ \obj -> do
         MkSomeTag tag <- obj .: "tag"
         typ <- obj .: "type" :: Parser Text
         case repDict (Proxy :: Proxy FromJSON) tag of
