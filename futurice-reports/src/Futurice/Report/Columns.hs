@@ -29,6 +29,7 @@ import Futurice.Prelude
 import Data.Aeson                (encode, pairs, (.=))
 import Data.Aeson.Encoding       (encodingToLazyByteString, list, pair)
 import Data.Swagger              (NamedSchema (..))
+import Futurice.IsMaybe
 import Futurice.Generics
 import Futurice.List
 import Futurice.Lucid.Foundation
@@ -81,13 +82,13 @@ instance (NFData params, NFData a) => NFData (Report name params a) where
 -- Report + aeson
 -------------------------------------------------------------------------------
 
-instance (ToJSON a, ToJSON params)
+instance (ToJSON a, ToJSON params, IsMaybe a, IsMaybe params)
     => ToJSON (Report name params a)
   where
     toJSON = sopToJSON
     toEncoding = sopToEncoding
 
-instance (FromJSON a, FromJSON params, KnownSymbol name)
+instance (FromJSON a, FromJSON params, KnownSymbol name, IsMaybe a, IsMaybe params)
     => FromJSON (Report name params a)
   where
     parseJSON = sopParseJSON
