@@ -39,7 +39,10 @@ library
     , text
     , x509-store
     , time
+    , resource-pool
     , file-embed
   exposed-modules:
       Log.Backend.Papertrail
+      Papertrail
+      Papertrail.Certificate
   default-language: Haskell2010

@@ -32,5 +32,5 @@ library:
     - text
     - x509-store
     - time
+    - resource-pool
     - file-embed
-
