@@ -5,10 +5,11 @@
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE RecordWildCards        #-}
 -- | Basic types
 module Futurice.App.Checklist.Types.Basic where
 
-import Control.Lens       (Getter, Prism', prism')
+import Control.Lens       (Getter, Prism', prism', to)
 import Data.Aeson.Compat  (Value (String))
 import Data.Swagger
        (SwaggerType (SwaggerString), ToParamSchema (..), enum_, type_)
@@ -187,6 +188,10 @@ instance Entity Checklist where entityName _ = "Checklist"
 class    HasName a         where name :: Getter a (Name a)
 instance HasName Task      where name = taskName
 instance HasName Checklist where name = checklistName
+instance HasName Employee  where
+    name = to impl
+      where
+        impl e= Name $ _employeeFirstName e <> " " <> _employeeLastName e
 
 class ArbitraryName a where
     arbitraryName :: QC.Gen (Name a)

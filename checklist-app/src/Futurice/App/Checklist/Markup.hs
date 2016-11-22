@@ -8,8 +8,13 @@ module Futurice.App.Checklist.Markup (
     -- * Link attributes
     indexPageHref,
     tasksPageHref,
+    employeePageHref,
     checklistPageHref,
     taskPageHref,
+    -- * Links
+    employeeLink,
+    checklistLink,
+    taskLink,
     -- * ToHtml
     nameHtml,
     nameText,
@@ -20,12 +25,13 @@ module Futurice.App.Checklist.Markup (
     -- * Counter
     TodoCounter (..),
     toTodoCounter,
+    -- * Tasks
+    taskCheckbox,
     ) where
 
-import Futurice.Prelude
 import Prelude ()
-import Control.Lens
-       (Getter, has, non, only, re, to, _Wrapped)
+import Futurice.Prelude
+import Control.Lens        (Getter, has, non, only, re, to, _Wrapped)
 import Data.Maybe          (catMaybes)
 import Servant.Utils.Links (URI (..), safeLink)
 
@@ -34,6 +40,7 @@ import Futurice.App.Checklist.Types
 import Futurice.Lucid.Foundation
 
 import qualified Data.Text as T
+import qualified Data.UUID as UUID
 import qualified FUM
 
 -------------------------------------------------------------------------------
@@ -108,6 +115,14 @@ taskPageHref t =
     href_ $ uriText $ safeLink checklistApi taskPageEndpoint
         (t ^. identifier)
 
+employeePageHref
+    :: (HasIdentifier c Employee)
+    => c
+    -> Attribute
+employeePageHref e =
+    href_ $ uriText $ safeLink checklistApi employeePageEndpoint
+        (e ^. identifier)
+
 checklistPageHref
     :: (HasIdentifier c Checklist)
     => c
@@ -117,10 +132,21 @@ checklistPageHref l =
         (l ^. identifier)
 
 -------------------------------------------------------------------------------
--- Miscs
+-- Links
 -------------------------------------------------------------------------------
 
+employeeLink :: Monad m => Employee -> HtmlT m ()
+employeeLink e = a_ [ employeePageHref e ] $ e ^. nameHtml
 
+checklistLink :: Monad m => Checklist -> HtmlT m ()
+checklistLink cl = a_ [ checklistPageHref cl ] $ cl ^. nameHtml
+
+taskLink :: Monad m => Task -> HtmlT m ()
+taskLink task = a_ [taskPageHref task ] $ task ^. nameHtml
+
+-------------------------------------------------------------------------------
+-- Miscs
+-------------------------------------------------------------------------------
 
 locationHtml
     :: (Monad m, HasIdentifier c Checklist)
@@ -191,3 +217,25 @@ instance Semigroup TodoCounter where
 instance Monoid TodoCounter where
     mempty = TodoCounter 0 0 0 0
     mappend = (<>)
+
+-------------------------------------------------------------------------------
+-- Tasks
+-------------------------------------------------------------------------------
+
+taskCheckbox :: Monad m => World -> Employee -> Task -> HtmlT m ()
+taskCheckbox world employee task = do
+    checkbox_ checked [ id_ megaid ]
+    label_ [ attrfor_ megaid ] $ task ^. nameHtml
+  where
+    checked = flip has world
+        $ worldTaskItems
+        . ix (employee ^. identifier)
+        . ix (task ^. identifier)
+        . _TaskItemDone
+
+    megaid :: Text
+    megaid =
+        "task-checkbox-" <>
+        employee ^. identifier . uuid . to UUID.toText <>
+        "_" <>
+        task ^. identifier . uuid . to UUID.toText
