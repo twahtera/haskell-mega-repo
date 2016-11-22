@@ -77,16 +77,18 @@ tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
             world ^? worldLists . ix cid'
 
 taskPageImpl
-    :: (MonadIO m)
+    :: (MonadIO m, MonadTime m)
     => Ctx
     -> Maybe FUM.UserName
     -> Identifier Task
     -> m (HtmlPage "task")
 taskPageImpl ctx fu tid = withAuthUser ctx fu impl
   where
-    impl world userInfo = pure $ case world ^? worldTasks . ix tid of
-        Nothing   -> notFoundPage
-        Just task -> taskPage world userInfo task
+    impl world userInfo = case world ^? worldTasks . ix tid of
+        Nothing   -> pure notFoundPage
+        Just task -> do
+            today <- currentDay
+            pure $ taskPage world today userInfo task
 
 employeePageImpl
     :: (MonadIO m)
