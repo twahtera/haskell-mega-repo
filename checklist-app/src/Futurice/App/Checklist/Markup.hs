@@ -8,8 +8,12 @@ module Futurice.App.Checklist.Markup (
     -- * Link attributes
     indexPageHref,
     tasksPageHref,
+    employeePageHref,
     checklistPageHref,
     taskPageHref,
+    -- * Links
+    employeeLink,
+    checklistLink,
     -- * ToHtml
     nameHtml,
     nameText,
@@ -22,10 +26,9 @@ module Futurice.App.Checklist.Markup (
     toTodoCounter,
     ) where
 
-import Futurice.Prelude
 import Prelude ()
-import Control.Lens
-       (Getter, has, non, only, re, to, _Wrapped)
+import Futurice.Prelude
+import Control.Lens        (Getter, has, non, only, re, to, _Wrapped)
 import Data.Maybe          (catMaybes)
 import Servant.Utils.Links (URI (..), safeLink)
 
@@ -108,6 +111,14 @@ taskPageHref t =
     href_ $ uriText $ safeLink checklistApi taskPageEndpoint
         (t ^. identifier)
 
+employeePageHref
+    :: (HasIdentifier c Employee)
+    => c
+    -> Attribute
+employeePageHref e =
+    href_ $ uriText $ safeLink checklistApi employeePageEndpoint
+        (e ^. identifier)
+
 checklistPageHref
     :: (HasIdentifier c Checklist)
     => c
@@ -115,6 +126,16 @@ checklistPageHref
 checklistPageHref l =
     href_ $ uriText $ safeLink checklistApi checklistPageEndpoint
         (l ^. identifier)
+
+-------------------------------------------------------------------------------
+-- Links
+-------------------------------------------------------------------------------
+
+employeeLink :: Monad m => Employee -> HtmlT m ()
+employeeLink e = a_ [ employeePageHref e ] $ e ^. nameHtml
+
+checklistLink :: Monad m => Checklist -> HtmlT m ()
+checklistLink cl = a_ [ checklistPageHref cl ] $ cl ^. nameHtml
 
 -------------------------------------------------------------------------------
 -- Miscs

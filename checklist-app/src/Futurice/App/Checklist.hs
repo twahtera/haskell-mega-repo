@@ -22,13 +22,21 @@ import Futurice.App.Checklist.Types
 
 import qualified FUM (UserName (..))
 
+-------------------------------------------------------------------------------
+-- Server
+-------------------------------------------------------------------------------
+
 server :: Ctx -> Server ChecklistAPI
 server ctx = indexPageImpl ctx
     :<|> tasksPageImpl ctx
     -- todo
     :<|> (\_ -> pure . checklistPage undefined)
     :<|> taskPageImpl ctx
-    :<|> (\_ -> pure . employeePage undefined)
+    :<|> employeePageImpl ctx
+
+-------------------------------------------------------------------------------
+-- Endpoint wrappers
+-------------------------------------------------------------------------------
 
 indexPageImpl
     :: (MonadIO m, MonadTime m)
@@ -80,6 +88,22 @@ taskPageImpl ctx fu tid = withAuthUser ctx fu impl
         Nothing   -> notFoundPage
         Just task -> taskPage world userInfo task
 
+employeePageImpl
+    :: (MonadIO m)
+    => Ctx
+    -> Maybe FUM.UserName
+    -> Identifier Employee
+    -> m (HtmlPage "employee")
+employeePageImpl ctx fu eid = withAuthUser ctx fu impl
+  where
+    impl world userInfo = pure $ case world ^? worldEmployees . ix eid of
+        Nothing       -> notFoundPage
+        Just employee -> employeePage world userInfo employee
+
+-------------------------------------------------------------------------------
+-- Auth
+-------------------------------------------------------------------------------
+
 -- | Read only pages
 withAuthUser
     :: MonadIO m
@@ -92,6 +116,10 @@ withAuthUser ctx fu f = case userInfo of
   where
     userInfo :: Maybe (FUM.UserName, TaskRole, Location)
     userInfo = ctx ^? worldUsers . ix fu . _Just
+
+-------------------------------------------------------------------------------
+-- Main
+-------------------------------------------------------------------------------
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig

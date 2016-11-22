@@ -105,9 +105,7 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
                 tr_ [ class_ $ etaClass $ employee ^. employeeStartingDay ] $ do
                     td_ $ contractTypeHtml $ employee ^. employeeContractType
                     td_ $ locationHtml mlist $ employee ^. employeeLocation
-                    -- TODO: use safeLink
-                    td_ $ a_ [ href_ $ "/employee/" <> employee ^. identifier . to identifierToText ] $ toHtml $
-                        employee ^. employeeFirstName <> " " <> employee ^. employeeLastName
+                    td_ $ employeeLink employee
                     td_ $ maybe
                         (checklistNameHtml world mloc $ employee ^. employeeChecklist)
                         (taskCheckbox world employee)

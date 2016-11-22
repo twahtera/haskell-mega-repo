@@ -80,8 +80,10 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
                         TodoCounter _ _ i j ->
                             toHtml (show i) *> "/" *> toHtml (show j)
-                td_ $ forWith_ (br_ []) (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l)) $ \cl ->
-                    a_ [ checklistPageHref cl ] $ cl ^. nameHtml
+                td_ $ forWith_
+                    (br_ [])
+                    (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l))
+                    checklistLink
  where
   countUsers TaskItemDone = TodoCounter 0 0 1 1
   countUsers TaskItemTodo = TodoCounter 0 0 0 1
