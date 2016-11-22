@@ -28,7 +28,7 @@ server ctx = pure "This is futuhours mock api"
     :<|> liftIO (userEndpoint ctx)
     :<|> hoursEndpoint ctx
     :<|> entryEndpoint ctx
-    :<|> liftIO . entryIdEndpoint ctx
+    :<|> entryIdEndpoint ctx
     :<|> liftIO . entryDeleteEndpoint ctx
 
 defaultMain :: IO ()

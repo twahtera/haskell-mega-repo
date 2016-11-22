@@ -145,12 +145,8 @@ fillProjects = do
     pure $ p { _projectTasks=ts'}
   pure ps'
 
-entryEndpoint
-  :: Ctx
-  -> EntryUpdate
-  -> ExceptT ServantErr IO EntryUpdateResponse
-entryEndpoint _ctx req = do
-  -- POST /entry
+mkEntryEndPoint :: EntryUpdate -> IO EntryUpdateResponse
+mkEntryEndPoint req = do
   projects <- liftIO $ fillProjects
   let date = _euDate req
   userBalance <- liftIO $ getStdRandom (randomR (-10, 40))
@@ -189,14 +185,29 @@ entryEndpoint _ctx req = do
                          , _hoursUpdateResponseProjects=projects
                          , _hoursUpdateResponseMonths=months }
 
-  return $ EntryUpdateResponse
+  pure $ EntryUpdateResponse
           { _eurUser=userResponse
           , _eurHours=hoursResponse }
 
-entryIdEndpoint :: Ctx -> Int -> IO ([Int])
-entryIdEndpoint _ctx _id = do
+entryEndpoint
+  :: Ctx
+  -> EntryUpdate
+  -> ExceptT ServantErr IO EntryUpdateResponse
+entryEndpoint _ctx req = do
+  -- POST /entry
+  res <- liftIO $ (mkEntryEndPoint req)
+  return res
+
+entryIdEndpoint
+  :: Ctx
+  -> Int
+  -> EntryUpdate
+  -> ExceptT ServantErr IO EntryUpdateResponse
+entryIdEndpoint _ctx _id req = do
   -- PUT /entry/#id
-  pure $ [1]
+  res <- liftIO $ (mkEntryEndPoint req)
+  -- TODO: set res.Entry.ID as _id
+  return res
 
 entryDeleteEndpoint :: Ctx -> Int -> IO ([Int])
 entryDeleteEndpoint _ctx _id = do
