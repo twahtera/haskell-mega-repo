@@ -10,8 +10,15 @@ import Futurice.App.Checklist.Clay
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
-import qualified FUM (UserName (..))
+import qualified Data.Map       as Map
+import qualified FUM            (UserName (..))
+import qualified Futurice.IdMap as IdMap
 
+-- |
+--
+-- === Preconditions
+--
+-- * 'Employee' is in the 'World'.
 employeePage
     :: World
     -> (FUM.UserName, TaskRole, Location)    -- ^ logged in user
@@ -26,8 +33,7 @@ employeePage world authUser employee = page_ (view nameText employee <> " - Chec
     -- Info
     row_ $ large_ 12 $ dl_ $ do
         dt_ "Checklist"
-        dd_ $ maybe (pure ()) checklistLink $
-            world ^? worldLists . ix (employee ^. employeeChecklist)
+        dd_ $ maybe (pure ()) checklistLink mlist
 
     -- Edit
     row_ $ large_ 12 $ form_ $ do
@@ -43,3 +49,19 @@ employeePage world authUser employee = page_ (view nameText employee <> " - Chec
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success" ] $ "Save"
             button_ [ class_ "button" ] $ "Reset"
+
+    -- Tasks
+    row_ $ large_ 12 $ table_ $ do
+        thead_ $ tr_ $ do
+            th_ [ title_ "Task" ]  "Task"
+            th_ [ title_ "Role" ]  "Role"
+            th_ [ title_ "Check" ] "Check"
+        tbody_ $ for_ tasks $ \task -> tr_ $ do
+            td_ $ taskLink task
+            td_ $ roleHtml mlist (task ^. taskRole)
+            td_ $ taskCheckbox world employee task
+ where
+  tasks = toList $ Map.intersection
+        (IdMap.toMap (world ^. worldTasks))
+        (world ^. worldTaskItems . ix (employee ^. identifier))
+  mlist = world ^? worldLists . ix (employee ^. employeeChecklist)

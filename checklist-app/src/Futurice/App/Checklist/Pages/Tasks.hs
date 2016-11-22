@@ -74,7 +74,7 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
             tbody_ $ for_ tasks' $ \task -> tr_ $ do
                 let tid = task ^. identifier
 
-                td_ $ a_ [taskPageHref tid ] $ task ^. nameHtml
+                td_ $ taskLink task
                 td_ $ roleHtml mlist (task ^. taskRole)
                 td_ $ a_ [ indexPageHref Nothing mlist (Just tid) ] $
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of

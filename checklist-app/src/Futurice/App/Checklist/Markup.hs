@@ -14,6 +14,7 @@ module Futurice.App.Checklist.Markup (
     -- * Links
     employeeLink,
     checklistLink,
+    taskLink,
     -- * ToHtml
     nameHtml,
     nameText,
@@ -24,6 +25,8 @@ module Futurice.App.Checklist.Markup (
     -- * Counter
     TodoCounter (..),
     toTodoCounter,
+    -- * Tasks
+    taskCheckbox,
     ) where
 
 import Prelude ()
@@ -37,6 +40,7 @@ import Futurice.App.Checklist.Types
 import Futurice.Lucid.Foundation
 
 import qualified Data.Text as T
+import qualified Data.UUID as UUID
 import qualified FUM
 
 -------------------------------------------------------------------------------
@@ -137,11 +141,12 @@ employeeLink e = a_ [ employeePageHref e ] $ e ^. nameHtml
 checklistLink :: Monad m => Checklist -> HtmlT m ()
 checklistLink cl = a_ [ checklistPageHref cl ] $ cl ^. nameHtml
 
+taskLink :: Monad m => Task -> HtmlT m ()
+taskLink task = a_ [taskPageHref task ] $ task ^. nameHtml
+
 -------------------------------------------------------------------------------
 -- Miscs
 -------------------------------------------------------------------------------
-
-
 
 locationHtml
     :: (Monad m, HasIdentifier c Checklist)
@@ -212,3 +217,25 @@ instance Semigroup TodoCounter where
 instance Monoid TodoCounter where
     mempty = TodoCounter 0 0 0 0
     mappend = (<>)
+
+-------------------------------------------------------------------------------
+-- Tasks
+-------------------------------------------------------------------------------
+
+taskCheckbox :: Monad m => World -> Employee -> Task -> HtmlT m ()
+taskCheckbox world employee task = do
+    checkbox_ checked [ id_ megaid ]
+    label_ [ attrfor_ megaid ] $ task ^. nameHtml
+  where
+    checked = flip has world
+        $ worldTaskItems
+        . ix (employee ^. identifier)
+        . ix (task ^. identifier)
+        . _TaskItemDone
+
+    megaid :: Text
+    megaid =
+        "task-checkbox-" <>
+        employee ^. identifier . uuid . to UUID.toText <>
+        "_" <>
+        task ^. identifier . uuid . to UUID.toText

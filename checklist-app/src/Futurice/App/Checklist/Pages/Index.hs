@@ -13,8 +13,6 @@ import Futurice.App.Checklist.Clay
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
-import qualified Data.UUID as UUID
-
 indexPage
     :: World       -- ^ the world
     -> Day         -- ^ today
@@ -136,24 +134,6 @@ countEmployeesWithTask world task = toHtml' . foldMap f
         Nothing           -> TodoCounter 0 0 0 0
         Just TaskItemTodo -> TodoCounter 0 0 0 1
         Just TaskItemDone -> TodoCounter 0 0 1 1
-
-taskCheckbox :: Monad m => World -> Employee -> Task -> HtmlT m ()
-taskCheckbox world employee task = do
-    checkbox_ checked [ id_ megaid ]
-    label_ [ attrfor_ megaid ] $ task ^. nameHtml
-  where
-    checked = flip has world
-        $ worldTaskItems
-        . ix (employee ^. identifier)
-        . ix (task ^. identifier)
-        . _TaskItemDone
-
-    megaid :: Text
-    megaid =
-        "task-checkbox-" <>
-        employee ^. identifier . uuid . to UUID.toText <>
-        "_" <>
-        task ^. identifier . uuid . to UUID.toText
 
 viewerItemsHeader :: Monad m => TaskRole -> HtmlT m ()
 viewerItemsHeader TaskRoleIT         = th_ [title_ "IT tasks todo/done"]          "IT items"
