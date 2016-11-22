@@ -44,6 +44,7 @@ import Futurice.Servant
 import Servant
 import Control.Monad.Trans.Except (ExceptT (..), throwE)
 import System.IO                  (hPutStrLn, stderr)
+import qualified PlanMill as PM
 import qualified Data.Map.Strict as Map
 
 
@@ -147,13 +148,50 @@ fillProjects = do
 entryEndpoint
   :: Ctx
   -> EntryUpdate
-  -> ExceptT ServantErr IO HoursUpdateResponse
+  -> ExceptT ServantErr IO EntryUpdateResponse
 entryEndpoint _ctx req = do
   -- POST /entry
   projects <- liftIO $ fillProjects
-  pure $ HoursUpdateResponse { _hoursUpdateResponseDefaultWorkHours=7.5
-                             , _hoursUpdateResponseProjects=[]
-                             , _hoursUpdateResponseMonths=Map.empty}
+  let date = _euDate req
+  userBalance <- liftIO $ getStdRandom (randomR (-10, 40))
+  userHolidaysLeft <- liftIO $ randomRIO (0, 24)
+  userUtilizationRate <- liftIO $ getStdRandom (randomR (0,100))
+  newEntryId <- liftIO $ getStdRandom (randomR (0, 100))
+  let md = HoursDayUpdate
+            { _hoursDayUpdateHolidayName=Nothing
+            , _hoursDayUpdateHours=_euHours req
+            , _hoursDayUpdateEntry=Just Entry
+                          { _entryId=PM.Ident newEntryId
+                          , _entryProjectId=_euProjectId req
+                          , _entryTaskId=_euTaskId req
+                          , _entryDescription=_euDescription req
+                          , _entryHours=_euHours req
+                          , _entryClosed=fromMaybe False (_euClosed req) -- TODO: is Maybe open or closed?
+                          }
+            }
+  let days = Map.fromList [(pack $ formatTime defaultTimeLocale "%Y-%m-%d" date, [md])]
+  let mm = HoursMonthUpdate
+            { _hoursMonthUpdateHours=75
+            , _hoursMonthUpdateUtilizationRate=70
+            , _hoursMonthUpdateDays=days}
+  let months = Map.fromList [(pack $ formatTime defaultTimeLocale "%Y-%m" date, [mm])]
+
+  let userResponse = User
+                      { _userFirstName="Test"
+                      , _userLastName="User"
+                      , _userBalance=userBalance
+                      , _userHolidaysLeft=userHolidaysLeft
+                      , _userUtilizationRate=userUtilizationRate
+                      , _userProfilePicture="https://raw.githubusercontent.com/futurice/spiceprogram/gh-pages/assets/img/logo/chilicorn_no_text-128.png"
+                      }
+  let hoursResponse = HoursUpdateResponse
+                         { _hoursUpdateResponseDefaultWorkHours=7.5
+                         , _hoursUpdateResponseProjects=projects
+                         , _hoursUpdateResponseMonths=months }
+
+  return $ EntryUpdateResponse
+          { _eurUser=userResponse
+          , _eurHours=hoursResponse }
 
 entryIdEndpoint :: Ctx -> Int -> IO ([Int])
 entryIdEndpoint _ctx _id = do

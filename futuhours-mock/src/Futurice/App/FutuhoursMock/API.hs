@@ -19,7 +19,7 @@ type FutuhoursAPI = Get '[JSON] Text
     :<|> "hours" :> QueryParam "start-date" Text
                  :> QueryParam "end-date" Text
                  :> Get '[JSON] (HoursResponse)
-    :<|> "entry" :> ReqBody '[JSON] EntryUpdate :> Post '[JSON] (HoursUpdateResponse)
+    :<|> "entry" :> ReqBody '[JSON] EntryUpdate :> Post '[JSON] (EntryUpdateResponse)
     :<|> "entry" :> Capture "id" Int :> Put '[JSON] ([Int])
     :<|> "entry" :> Capture "id" Int :> Delete '[JSON] ([Int])
 

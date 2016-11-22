@@ -21,6 +21,7 @@ module Futurice.App.FutuhoursMock.Types (
     -- * Entry
     Entry (..),
     EntryUpdate (..),
+    EntryUpdateResponse (..),
     LatestEntry (..),
     latestEntryDescription,
     mkLatestEntry,
@@ -34,6 +35,7 @@ module Futurice.App.FutuhoursMock.Types (
     HoursMonth (..),
     HoursResponse (..),
     HoursDayUpdate (..),
+    HoursMonthUpdate (..),
     HoursUpdateResponse (..),
     ) where
 
@@ -133,7 +135,7 @@ data HoursDay = HoursDay
   { _dayHolidayName :: !(Maybe Text)
   , _dayHours :: !Float
   , _dayEntries :: ![Entry]
-  , _dayClosed :: !Bool
+  , _dayClosed :: !Bool -- TODO: Maybe Bool
   } deriving (Eq, Show, Typeable, Generic)
 
 mkHoursDay = HoursDay
@@ -146,9 +148,9 @@ mkHoursDay = HoursDay
 -- HoursDayUpdate is HoursDay with dayClosed::Maybe Bool AND *singular* dayEntries :: !Entry
 -- Keep different types now; perhaps refactor UI to lessen Backend types in Future *shrug*
 data HoursDayUpdate = HoursDayUpdate
-  { _hoursDayUpdateHolidayName :: !Text
+  { _hoursDayUpdateHolidayName :: !(Maybe Text)
   , _hoursDayUpdateHours :: !Float
-  , _hoursDayUpdateEntry :: !Entry
+  , _hoursDayUpdateEntry :: !(Maybe Entry)
   } deriving (Eq, Show, Typeable, Generic)
 
 data HoursMonth = HoursMonth
@@ -189,6 +191,9 @@ deriveGeneric ''Entry
 
 makeLenses ''EntryUpdate
 deriveGeneric ''EntryUpdate
+
+makeLenses ''EntryUpdateResponse
+deriveGeneric ''EntryUpdateResponse
 
 makeLenses ''User
 deriveGeneric ''User
@@ -250,6 +255,14 @@ instance Arbitrary EntryUpdate where
 instance ToJSON EntryUpdate where toJSON = sopToJSON
 instance FromJSON EntryUpdate where parseJSON = sopParseJSON
 instance ToSchema EntryUpdate where declareNamedSchema = sopDeclareNamedSchema
+
+instance Arbitrary EntryUpdateResponse where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
+
+instance ToJSON EntryUpdateResponse where toJSON = sopToJSON
+instance FromJSON EntryUpdateResponse where parseJSON = sopParseJSON
+instance ToSchema EntryUpdateResponse where declareNamedSchema = sopDeclareNamedSchema
 
 instance Arbitrary User where
     arbitrary = sopArbitrary
