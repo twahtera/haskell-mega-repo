@@ -37,9 +37,10 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
     & serverMiddleware    .~ liftFuturiceMiddleware logStdoutDev
     & serverApp planmillProxyApi .~ server
+    & serverEnvPfx        .~ "PLANMILLPROXY"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
-    makeCtx (Config cfg connectionInfo _ _) logger cache = do
+    makeCtx (Config cfg connectionInfo) logger cache = do
         postgresPool <- createPool
             (Postgres.connect connectionInfo)
             Postgres.close

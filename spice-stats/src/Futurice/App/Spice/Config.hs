@@ -4,7 +4,6 @@ module Futurice.App.Spice.Config (
 
 import Futurice.Prelude
 import Prelude          ()
-
 import Futurice.EnvConfig
 
 import qualified Chat.Flowdock.REST as FD
@@ -18,19 +17,12 @@ data Config = Config
         -- ^ Flowdock organisation
     , cfgFdFlow  :: !(FD.ParamName FD.Flow)
         -- ^ Flowdock flow
-    , cfgPort    :: !Int
-    , cfgEkgPort :: !Int
     }
     deriving (Show)
 
-instance GetConfig Config where
-    port = cfgPort
-    ekgPort = cfgEkgPort
-
-    getConfig = Config
-        <$> parseEnvVar "GH_AUTH_TOKEN"
-        <*> parseEnvVar "FD_AUTH_TOKEN"
-        <*> parseEnvVar "FD_ORGANISATION"
-        <*> parseEnvVar "FD_FLOW"
-        <*> parseDefaultPort "SPICESTATSAPP"
-        <*> parseDefaultEkgPort "SPICESTATSAPP"
+instance Configure Config where
+    configure = Config
+        <$> envVar "GH_AUTH_TOKEN"
+        <*> envVar "FD_AUTH_TOKEN"
+        <*> envVar "FD_ORGANISATION"
+        <*> envVar "FD_FLOW"

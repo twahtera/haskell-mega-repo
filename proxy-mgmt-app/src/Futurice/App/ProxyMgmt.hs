@@ -33,6 +33,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverDescription      .~ "Audit log"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC3))
     & serverApp proxyMgmtApi .~ server
+    & serverEnvPfx           .~ "PROXYMGMT"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
     makeCtx Config {..} _logger _cache = do

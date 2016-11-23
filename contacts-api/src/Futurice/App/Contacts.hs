@@ -34,6 +34,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverDescription     .~ "All employees and externals"
     & serverApp contactsApi .~ server
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
+    & serverEnvPfx          .~ "CONTACTSAPI"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
     makeCtx Config {..} logger cache = do

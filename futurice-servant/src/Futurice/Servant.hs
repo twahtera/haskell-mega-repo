@@ -42,6 +42,7 @@ module Futurice.Servant (
     serverApp,
     serverMiddleware,
     serverColour,
+    serverEnvPfx,
     -- ** WAI
     Application,
     Middleware,
@@ -65,7 +66,7 @@ import Data.Swagger                         hiding (port)
 import Development.GitRev                   (gitCommitDate, gitHash)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
-import Futurice.EnvConfig                   (GetConfig (..))
+import Futurice.EnvConfig                   (Configure, getConfigWithPorts)
 import GHC.Prim                             (coerce)
 import Network.Wai
        (Middleware, requestHeaders, responseLBS)
@@ -140,21 +141,23 @@ futuriceServer t d cache papi server
 -------------------------------------------------------------------------------
 
 -- | Data type containing the server setup
-data ServerConfig (colour :: Colour) ctx api = SC
+data ServerConfig f (colour :: Colour) ctx api = SC
     { _serverName        :: !Text
     , _serverDescription :: !Text
     , _serverApplication :: ctx -> Server api
     , _serverMiddleware  :: ctx -> Middleware
+    , _serverEnvPfx      :: !(f Text)
     }
 
 -- | Default server config, through the lenses the type of api will be refined
 --
-emptyServerConfig :: ServerConfig 'FutuGreen ctx (Get '[JSON] ())
+emptyServerConfig :: ServerConfig Proxy 'FutuGreen ctx (Get '[JSON] ())
 emptyServerConfig = SC
     { _serverName         = "Futurice Service"
     , _serverDescription  = "Some futurice service"
     , _serverApplication  = \_ -> pure ()
     , _serverMiddleware   = futuriceNoMiddleware
+    , _serverEnvPfx       = Proxy
     }
 
 -- | Default middleware: i.e. nothing.
@@ -165,45 +168,50 @@ futuriceNoMiddleware = liftFuturiceMiddleware id
 liftFuturiceMiddleware :: Middleware -> ctx -> Middleware
 liftFuturiceMiddleware mw _ = mw
 
-serverName :: Lens' (ServerConfig colour ctx api) Text
+serverName :: Lens' (ServerConfig f colour ctx api) Text
 serverName = lens _serverName $ \sc x -> sc { _serverName = x }
 
-serverDescription :: Lens' (ServerConfig colour ctx api) Text
+serverDescription :: Lens' (ServerConfig f colour ctx api) Text
 serverDescription = lens _serverDescription $ \sc x -> sc { _serverDescription = x }
+
+serverEnvPfx :: Lens
+    (ServerConfig f colour ctx api)
+    (ServerConfig I colour ctx api)
+    (f Text)
+    Text
+serverEnvPfx = lens _serverEnvPfx $ \sc x -> sc { _serverEnvPfx = I x }
 
 serverApp
     :: Functor f
     => Proxy api'
-    -> LensLike f (ServerConfig colour ctx api) (ServerConfig colour ctx api')
+    -> LensLike f (ServerConfig g colour ctx api) (ServerConfig g colour ctx api')
        (ctx -> Server api) (ctx -> Server api')
 serverApp _ = lens _serverApplication $ \sc x -> sc { _serverApplication = x }
 
-serverMiddleware :: Lens' (ServerConfig colour ctx api) (ctx -> Middleware)
+serverMiddleware :: Lens' (ServerConfig g colour ctx api) (ctx -> Middleware)
 serverMiddleware = lens _serverMiddleware $ \sc x -> sc { _serverMiddleware = x }
 
 serverColour
-    :: Lens (ServerConfig colour ctx api) (ServerConfig colour' ctx api)
+    :: Lens (ServerConfig f colour ctx api) (ServerConfig f colour' ctx api)
        (Proxy colour) (Proxy colour')
 serverColour = lens (const Proxy) $ \sc _ -> coerce sc
 
 futuriceServerMain
     :: forall cfg ctx api colour.
-       (GetConfig cfg, HasSwagger api, HasServer api '[], SColour colour)
+       (Configure cfg, HasSwagger api, HasServer api '[], SColour colour)
     => (cfg -> Logger -> DynMapCache -> IO ctx)
        -- ^ Initialise the context for application
-    -> ServerConfig colour ctx api
+    -> ServerConfig I colour ctx api
        -- ^ Server configuration
     -> IO ()
-futuriceServerMain makeCtx (SC t d server middleware) = withStderrLogger $ \logger ->
+futuriceServerMain makeCtx (SC t d server middleware (I envpfx)) = withStderrLogger $ \logger ->
     handleAll (handler logger) $ do
         runLogT "futurice-servant" logger $ logInfo_ $ "Hello, " <> t <> " is alive"
-        cfg         <- getConfig
-        let p       =  port cfg
-        let ekgP    =  ekgPort cfg
-        cache       <- newDynMapCache
-        ctx         <- makeCtx cfg logger cache
-        let server' = futuriceServer t d cache proxyApi (server ctx)
-                    :: Server (FuturiceAPI api colour)
+        (cfg, p, ekgP) <- getConfigWithPorts logger (envpfx ^. from packed)
+        cache          <- newDynMapCache
+        ctx            <- makeCtx cfg logger cache
+        let server'    =  futuriceServer t d cache proxyApi (server ctx)
+                       :: Server (FuturiceAPI api colour)
 
         store      <- serverMetricStore <$> forkServer "localhost" ekgP
         waiMetrics <- registerWaiMetrics store

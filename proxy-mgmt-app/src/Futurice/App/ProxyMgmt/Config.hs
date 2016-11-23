@@ -10,16 +10,9 @@ import Futurice.EnvConfig
 
 data Config = Config
     { cfgPostgresConnInfo :: !ConnectInfo
-    , cfgPort             :: !Int
-    , cfgEkgPort :: !Int
     }
     deriving (Show)
 
-instance GetConfig Config where
-    port = cfgPort
-    ekgPort = cfgEkgPort
-
-    getConfig = Config
-        <$> getConnectInfo
-        <*> parseDefaultPort "PROXYMGMT"
-        <*> parseDefaultEkgPort "PROXYMGMT"
+instance Configure Config where
+    configure = Config
+        <$> envConnectInfo

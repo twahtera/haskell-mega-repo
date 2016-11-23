@@ -125,10 +125,11 @@ withAuthUser ctx fu f = case userInfo of
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
-    & serverName             .~ "Checklist API"
+    & serverName             .~ "Checklist"
     & serverDescription      .~ "Super TODO"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
     & serverApp checklistApi .~ server
+    & serverEnvPfx           .~ "CHECKLISTAPP"
   where
     mockCredentials = (FUM.UserName "phadej", TaskRoleIT, LocHelsinki)
 

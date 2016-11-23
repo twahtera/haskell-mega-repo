@@ -36,9 +36,10 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
     & serverMiddleware    .~ liftFuturiceMiddleware logStdoutDev
     & serverApp githubProxyApi .~ server
+    & serverEnvPfx        .~ "GITHUBPROXY"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
-    makeCtx (Config auth connectionInfo _ _) logger cache = do
+    makeCtx (Config auth connectionInfo) logger cache = do
         postgresPool <- createPool
             (Postgres.connect connectionInfo)
             Postgres.close

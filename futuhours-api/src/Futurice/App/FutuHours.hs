@@ -57,10 +57,11 @@ defaultableEndpoints =
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
-    & serverName        .~ "Futuhours API"
-    & serverDescription .~ "Futuhours related stuff"
-    & serverColour      .~ (Proxy :: Proxy 'FutuBlack)
+    & serverName             .~ "Futuhours API"
+    & serverDescription      .~ "Futuhours related stuff"
+    & serverColour           .~ (Proxy :: Proxy 'FutuBlack)
     & serverApp futuhoursAPI .~ server
+    & serverEnvPfx           .~ "FUTUHOURSAPI"
  where
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
     makeCtx Config {..} logger _cache = do

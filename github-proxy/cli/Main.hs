@@ -10,7 +10,7 @@ module Main (main) where
 import Prelude ()
 import Futurice.Prelude
 import Data.Constraint
-import Futurice.EnvConfig            (parseEnvVar)
+import Futurice.EnvConfig            (getConfig', envVar)
 import Futurice.Has                  (FlipIn)
 import Futurice.Integrations.Classes (MonadGitHub (..))
 import Futurice.Integrations.GitHub  (GHR (..), initDataSource)
@@ -22,18 +22,19 @@ import qualified Futurice.GitHub as GH
 import qualified Haxl.Core       as H
 
 main :: IO ()
-main = do
+main = withStderrLogger $ \logger -> do
     -- config
-    baseUrl  <- parseEnvVar "GITHUBPROXY_CLI_ENDPOINT"
-    authUser <- parseEnvVar "GITHUBPROXY_CLI_HTTPUSER"
-    authPass <- parseEnvVar "GITHUBPROXY_CLI_HTTPPASS"
+    (baseUrl, authUser, authPass) <- getConfig' logger "GITHUBPROXY" $ (,,)
+        <$> envVar "ENDPOINT"
+        <*> envVar "HTTPUSER"
+        <*> envVar "HTTPPASS"
     -- assemble
     baseReq <- parseUrlThrow baseUrl
     let baseReq' = applyBasicAuth authUser authPass baseReq
     -- http manager
     manager <- newManager tlsManagerSettings
     -- execute
-    result <- runH manager baseReq' script0
+    result <- runH logger manager baseReq' script0
     -- print
     print result
 
@@ -68,8 +69,8 @@ instance MonadGitHub H where
         showDict     = GH.tagDict (Proxy :: Proxy Show) tag
         typeableDict = GH.tagDict (Proxy :: Proxy Typeable) tag
 
-runH :: Manager -> Request -> H a -> IO a
-runH mgr req (H haxl) = withStderrLogger $ \lgr -> do
+runH :: Logger -> Manager -> Request -> H a -> IO a
+runH lgr mgr req (H haxl) = do
     let stateStore = H.stateSet (initDataSource lgr mgr req) H.stateEmpty
     env <- H.initEnv stateStore ()
     H.runHaxl env haxl
