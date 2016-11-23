@@ -29,6 +29,7 @@ library:
     - blaze-html
     - bytestring
     - cassava
+    - constraints
     - containers
     - dependent-map
     - dependent-sum
@@ -36,7 +37,6 @@ library:
     - ekg
     - ekg-core
     - env-config
-    - constraints
     - exceptions
     - fum-client
     - futulogo
@@ -44,6 +44,7 @@ library:
     - futurice-integrations
     - futurice-prelude
     - futurice-reports
+    - futurice-servant
     - generics-sop
     - generics-sop-lens
     - hashable

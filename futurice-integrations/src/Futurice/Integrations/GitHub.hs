@@ -22,7 +22,7 @@ import qualified Network.HTTP.Client as HTTP
 import Network.HTTP.Client (Manager, Request)
 
 -- | Init Haxl data source.
-initDataSource :: Manager -> Request -> H.State GHR
+initDataSource :: Logger -> Manager -> Request -> H.State GHR
 initDataSource = GHState
 
 -- | Haxl github request.
@@ -40,30 +40,34 @@ instance Show (GHR a) where
 instance H.Show1 GHR where show1 = show
 
 instance H.StateKey GHR where
-    data State GHR = GHState !Manager !Request
+    data State GHR = GHState !Logger !Manager !Request
 
 instance H.DataSourceName GHR where
     dataSourceName _ = "GitHub.Request"
 
 instance H.DataSource u GHR where
-    fetch (GHState mgr baseReq) _flags _userEnv blockedFetches = H.AsyncFetch $ \inner -> do
+    fetch (GHState lgr mgr baseReq) _flags _userEnv blockedFetches = H.AsyncFetch $ \inner -> do
         -- We execute queries in batches
         let batchSize = clamp (32 ... maxBatchSize) $ 1 + length blockedFetches `div` 4
         let blockedFetchesChunks = chunksOf batchSize blockedFetches
         -- TODO: write own logging lib, we don't like monad-logger that much
         -- startTime <- currentTime
         --
-        asyncs <- for blockedFetchesChunks $ \bf -> fmap (bf,) . async $ do
-            res  <- HTTP.httpLbs (mkRequest bf) mgr
-            -- Use for debugging:
-            -- print (() <$ res)
-            -- print (BSL.take 1000 $ HTTP.responseBody res)
-            -- print (last $ BSL.toChunks $ HTTP.responseBody res)
-            -- print (BSL.length $ HTTP.responseBody res)
-            let x = Binary.taggedDecode (HTTP.responseBody res) :: [Either Text GH.SomeResponse]
+        asyncs <- for blockedFetchesChunks
+            $ \bf -> fmap (bf,) . async
+            $ runLogT "github-haxl" lgr $ do
+                logTrace "request" (Aeson.toJSON $ map extractQuery $ take 10 $ bf)
+                liftIO $ do
+                    res  <- HTTP.httpLbs (mkRequest bf) mgr
+                    -- Use for debugging:
+                    -- print (() <$ res)
+                    -- print (BSL.take 1000 $ HTTP.responseBody res)
+                    -- print (last $ BSL.toChunks $ HTTP.responseBody res)
+                    -- print (BSL.length $ HTTP.responseBody res)
+                    let x = Binary.taggedDecode (HTTP.responseBody res) :: [Either Text GH.SomeResponse]
 
-            -- return blocked fetches as well.
-            evaluate $!! x
+                    -- return blocked fetches as well.
+                    evaluate $!! x
 
         -- Allow inner block to perform
         inner

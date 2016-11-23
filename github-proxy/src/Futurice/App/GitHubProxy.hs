@@ -37,8 +37,8 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverMiddleware    .~ liftFuturiceMiddleware logStdoutDev
     & serverApp githubProxyApi .~ server
   where
-    makeCtx :: Config -> DynMapCache -> IO Ctx
-    makeCtx (Config auth connectionInfo logLevel _ _) cache = do
+    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx (Config auth connectionInfo _ _) logger cache = do
         postgresPool <- createPool
             (Postgres.connect connectionInfo)
             Postgres.close
@@ -47,7 +47,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                 { ctxCache        = cache
                 , ctxGitHubAuth   = auth
                 , ctxPostgresPool = postgresPool
-                , ctxLogLevel     = logLevel
+                , ctxLogger       = logger
                 }
         let jobs =
                 -- See every 5 minutes, if there's something to update in cache
@@ -61,6 +61,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                 ]
 
         -- Spawn periocron, polling each minute
-        _ <- spawnPeriocron (Options runStderrLoggingT 60) jobs
+        _ <- spawnPeriocron (Options logger 60) jobs
 
         pure ctx

@@ -22,7 +22,7 @@ import Futurice.App.FutuHours.PlanMill
 import Futurice.App.FutuHours.Types
 
 planMillUserIds
-    :: (HasDevelopment env, HasPlanmillCfg env, HasLogLevel env)
+    :: (HasDevelopment env, HasPlanmillCfg env, HasLogger env)
     => env
     -> Connection
     -> FUM.AuthToken

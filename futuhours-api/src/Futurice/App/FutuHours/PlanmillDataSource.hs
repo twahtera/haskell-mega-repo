@@ -1,11 +1,10 @@
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE GADTs    #-}
 {-# LANGUAGE StandaloneDeriving    #-}
-{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
@@ -16,14 +15,13 @@ module Futurice.App.FutuHours.PlanmillDataSource
     , initDataSource
     ) where
 
+import Prelude ()
 import Futurice.Prelude
-
 import Control.Concurrent.Async         (async, wait)
 import Control.Monad.Catch              (handle)
-import Control.Monad.CryptoRandom.Extra (CRandT, GenError, HashDRBG,
-                                         evalCRandTThrow, mkHashDRBG)
+import Control.Monad.CryptoRandom.Extra
+       (CRandT, GenError, HashDRBG, evalCRandTThrow, mkHashDRBG)
 import Control.Monad.Http               (HttpT, evalHttpT)
-import Control.Monad.Logger             (LogLevel, LoggingT)
 import Control.Monad.Reader             (ReaderT, runReaderT)
 import Data.Binary.Tagged               (taggedDecodeOrFail, taggedEncode)
 import Data.BinaryFromJSON              (BinaryFromJSON)
@@ -33,14 +31,14 @@ import Haxl.Core
 import Haxl.Typed
 
 import qualified Data.ByteString.Lazy             as BSL
-import qualified Data.HashMap.Strict as HM
+import qualified Data.HashMap.Strict              as HM
 import qualified Data.Text                        as T
 import qualified Database.PostgreSQL.Simple.Fxtra as Postgres
 
 import Futurice.App.FutuHours.Context
 
-import qualified PlanMill             as PM
-import qualified PlanMill.Eval        as PM
+import qualified PlanMill      as PM
+import qualified PlanMill.Eval as PM
 
 -------------------------------------------------------------------------------
 -- Request
@@ -59,7 +57,7 @@ instance Hashable (PlanmillRequest a) where
     hashWithSalt salt (PMR r) = hashWithSalt salt r
 
 instance StateKey PlanmillRequest where
-    data State PlanmillRequest = PMRS Postgres.Connection PM.Cfg LogLevel
+    data State PlanmillRequest = PMRS Postgres.Connection PM.Cfg Logger
 
 instance DataSourceName PlanmillRequest where
     dataSourceName _ = "PlanmillDataSource"
@@ -69,16 +67,16 @@ instance DataSourceName PlanmillRequest where
 -------------------------------------------------------------------------------
 
 initDataSource
-    :: forall env. (HasDevelopment env, HasPlanmillCfg env, HasLogLevel env)
+    :: forall env. (HasDevelopment env, HasPlanmillCfg env, HasLogger env)
     => env
     -> Postgres.Connection
     -> IO (State PlanmillRequest)
 initDataSource e conn = pure $
-    PMRS conn (e ^. planmillCfg) (e ^. logLevel)
+    PMRS conn (e ^. planmillCfg) (e ^. logger)
 
 instance In' PlanmillRequest r => PM.MonadPlanMillConstraint (GenTyHaxl r u) where
     type MonadPlanMillC (GenTyHaxl r u) = BinaryFromJSON
-    entailMonadPlanMillCVector _ _ = Sub Dict 
+    entailMonadPlanMillCVector _ _ = Sub Dict
 
 instance In' PlanmillRequest r => PM.MonadPlanMill (GenTyHaxl r u) where
     planmillAction = GenTyHaxl . dataFetch . PMR
@@ -87,7 +85,7 @@ instance In' PlanmillRequest r => PM.MonadPlanMill (GenTyHaxl r u) where
 -- Fetching
 -------------------------------------------------------------------------------
 
-type M = CRandT HashDRBG GenError :$ ReaderT PM.Cfg :$ LoggingT :$ HttpT IO
+type M = CRandT HashDRBG GenError :$ ReaderT PM.Cfg :$ LogT :$ HttpT IO
 
 -- | Postgres cache key, i.e. path
 newtype Key = Key { getKey :: Text }
@@ -130,7 +128,7 @@ makeCacheLookup :: [(Key, Postgres.Binary BSL.ByteString)] -> CacheLookup
 makeCacheLookup = HM.fromList . (fmap . fmap) Postgres.fromBinary
 
 instance DataSource u PlanmillRequest where
-    fetch (PMRS conn cfg ll) _flags _userEnv blockedFetches =
+    fetch (PMRS conn cfg lgr) _flags _userEnv blockedFetches =
         AsyncFetch $ \inner -> do
             a <- async action
             inner
@@ -145,10 +143,10 @@ instance DataSource u PlanmillRequest where
             g <- mkHashDRBG
             -- Go thru each request individual, using postgres results
             evalHttpT
-                . runFutuhoursLoggingT (I ll)
+                . runLogT "planmill-data-source" lgr
                 . flip runReaderT cfg
                 . flip evalCRandTThrow g
-                $ do $(logInfo) $ "Blocked fetches " <> textShow (HM.size cache) <> " / " <> textShow (length blockedFetches')
+                $ do logInfo_ $ "Blocked fetches " <> textShow (HM.size cache) <> " / " <> textShow (length blockedFetches')
                      traverse_ (singleFetch cache) blockedFetches'
 
         singleFetch :: CacheLookup -> P -> M ()
@@ -163,7 +161,7 @@ instance DataSource u PlanmillRequest where
         -- | Perform actual fetch and store in DB
         singleFetch' :: forall a. BinaryFromJSON a => Key -> PM.PlanMill a -> M a
         singleFetch' key req = do
-            $(logDebug) $ "Requesting API: " <> getKey key
+            logTrace_ $ "Requesting API: " <> getKey key
             x <- PM.evalPlanMill req
             -- Store in postgres
             let bs = taggedEncode x
@@ -180,7 +178,7 @@ selectQuery = "SELECT path, data FROM futuhours.cache WHERE path in ? and update
 
 -- | Extract cache value from single db query result
 extract
-    :: forall m a. (MonadLogger m, BinaryFromJSON a)
+    :: forall m a. (MonadLog m, BinaryFromJSON a)
     => Key
     -> BSL.ByteString
     -> m (Maybe a)
@@ -188,13 +186,13 @@ extract key bs = case taggedDecodeOrFail bs of
     Right (bsLeft, _, x)
         | BSL.null bsLeft -> return $ Just x
         | otherwise       -> do
-            $(logDebug) $ "Didn't consume all input from cache: " <> getKey key
+            logAttention_ $ "Didn't consume all input from cache: " <> getKey key
             return Nothing
     Left (_, _, err) -> do
-            $(logWarn) $ "Cannot decode cached value: " <> getKey key <> " -- " <> T.pack err
+            logAttention_ $ "Cannot decode cached value: " <> getKey key <> " -- " <> T.pack err
             return Nothing
 
-omitSqlError :: MonadLogger m => Postgres.SqlError -> m ()
+omitSqlError :: MonadLog m => Postgres.SqlError -> m ()
 omitSqlError err = do
-    $(logError) $ textShow err
+    logAttention_ $ textShow err
     return ()

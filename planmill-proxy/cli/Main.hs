@@ -36,7 +36,7 @@ main = do
     -- http manager
     manager <- newManager tlsManagerSettings
     -- execute
-    result <- runH manager baseReq' script0
+    result <- withStderrLogger $ \logger -> runH manager logger baseReq' script0
     -- print
     putDoc . (<> linebreak) . ansiPretty $ result
 
@@ -73,8 +73,8 @@ instance MonadPlanMillQuery H where
         typeableDict = Q.queryDict (Proxy :: Proxy Typeable) q
         showDict     = Q.queryDict (Proxy :: Proxy Show)     q
 
-runH :: Manager -> Request -> H a -> IO a
-runH mgr req (H haxl) = do
-    let stateStore = H.stateSet (initDataSourceBatch mgr req) H.stateEmpty
+runH :: Manager -> Logger -> Request -> H a -> IO a
+runH mgr lgr req (H haxl) = do
+    let stateStore = H.stateSet (initDataSourceBatch lgr mgr req) H.stateEmpty
     env <- H.initEnv stateStore ()
     H.runHaxl env haxl

@@ -45,6 +45,7 @@ newtype Integrations a = Integr { unIntegr :: ReaderT Env (H.GenHaxl ()) a }
 
 data IntegrationsConfig = MkIntegrationsConfig
     { integrCfgManager                  :: !Manager
+    , integrCfgLogger                   :: !Logger
     , integrCfgNow                      :: !UTCTime
     -- Planmill
     , integrCfgPlanmillProxyBaseRequest :: !Request
@@ -70,15 +71,16 @@ runIntegrations cfg (Integr m) = do
             }
     let haxl = runReaderT m env
     let stateStore
-            = H.stateSet (initDataSourceBatch mgr planmillBaseReq)
+            = H.stateSet (initDataSourceBatch lgr mgr planmillBaseReq)
             $ H.stateSet (FUM.Haxl.initDataSource' mgr fumToken fumBaseUrl)
             $ H.stateSet (FD.Haxl.initDataSource' mgr fdToken)
-            $ H.stateSet (GH.initDataSource mgr githubBaseReq)
+            $ H.stateSet (GH.initDataSource lgr mgr githubBaseReq)
             $ H.stateEmpty
     haxlEnv <- H.initEnv stateStore ()
     H.runHaxl haxlEnv haxl
   where
     mgr             = integrCfgManager cfg
+    lgr             = integrCfgLogger cfg
     planmillBaseReq = integrCfgPlanmillProxyBaseRequest cfg
     fumToken        = integrCfgFumAuthToken cfg
     fumBaseUrl      = integrCfgFumBaseUrl cfg

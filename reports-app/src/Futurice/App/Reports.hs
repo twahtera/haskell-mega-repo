@@ -51,7 +51,7 @@ import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport, timereportsByTaskReport)
 
 -- /TODO/ Make proper type
-type Ctx = (DynMapCache, Manager, Config)
+type Ctx = (DynMapCache, Manager, Logger, Config)
 
 newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
 
@@ -63,7 +63,7 @@ newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
 -- uses both @key@ and @value@ TypeRep's as key to non-typed map.
 
 serveIssues :: Ctx -> IO IssueReport
-serveIssues ctx@(cache, mgr, cfg) = cachedIO cache 600 () $ do
+serveIssues ctx@(cache, mgr, _lgr, cfg) = cachedIO cache 600 () $ do
     repos' <- repos mgr (cfgReposUrl cfg)
     now <- currentTime
     runIntegrations
@@ -71,28 +71,28 @@ serveIssues ctx@(cache, mgr, cfg) = cachedIO cache 600 () $ do
         (issueReport repos')
 
 serveFumGitHubReport :: Ctx -> IO FumGitHubReport
-serveFumGitHubReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
+serveFumGitHubReport ctx@(cache, _, _,_) = cachedIO cache 600 () $ do
     now <- currentTime
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
         fumGithubReport
 
 serveGithubUsersReport :: Ctx -> IO GithubUsersReport
-serveGithubUsersReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
+serveGithubUsersReport ctx@(cache, _, _,_) = cachedIO cache 600 () $ do
     now <- currentTime
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
         githubUsersReport
 
 serveFumFlowdockReport :: Ctx -> IO FumFlowdockReport
-serveFumFlowdockReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
+serveFumFlowdockReport ctx@(cache, _, _,_) = cachedIO cache 600 () $ do
     now <- currentTime
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
         fumFlowdockReport
 
 serveMissingHoursReport :: Ctx -> IO MissingHoursReport
-serveMissingHoursReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
+serveMissingHoursReport ctx@(cache, _, _,_) = cachedIO cache 600 () $ do
     now <- currentTime
     day <- currentDay
     -- TODO: end date to the last friday
@@ -102,7 +102,7 @@ serveMissingHoursReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
         (missingHoursReport interval)
 
 serveBalancesReport :: Ctx -> IO BalanceReport
-serveBalancesReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
+serveBalancesReport ctx@(cache, _, _,_) = cachedIO cache 600 () $ do
     now <- currentTime
     day <- currentDay
     let interval = beginningOfPrevMonth day ... day
@@ -111,21 +111,21 @@ serveBalancesReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
         (balanceReport interval)
 
 servePowerUsersReport :: Ctx -> IO PowerUserReport
-servePowerUsersReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
+servePowerUsersReport ctx@(cache, _, _,_) = cachedIO cache 600 () $ do
     now <- currentTime
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
         powerUserReport
 
 servePowerAbsencesReport :: Ctx -> IO PowerAbsenceReport
-servePowerAbsencesReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
+servePowerAbsencesReport ctx@(cache, _, _,_) = cachedIO cache 600 () $ do
     now <- currentTime
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
         powerAbsenceReport
 
 serveTimereportsByTaskReport :: Ctx -> IO TimereportsByTaskReport
-serveTimereportsByTaskReport ctx@(cache, _, _) = cachedIO cache 600 () $ do
+serveTimereportsByTaskReport ctx@(cache, _, _,_) = cachedIO cache 600 () $ do
     now <- currentTime
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
@@ -163,12 +163,12 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverColour         .~ (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
     & serverApp reportsApi .~ server
   where
-    makeCtx :: Config -> DynMapCache -> IO Ctx
-    makeCtx cfg cache = do
+    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx cfg lgr cache = do
         manager <- newManager tlsManagerSettings
-        let ctx = (cache, manager, cfg)
+        let ctx = (cache, manager, lgr, cfg)
 
-        _ <- spawnPeriocron (Options runStderrLoggingT 300) $ hcollapse $
+        _ <- spawnPeriocron (Options lgr 300) $ hcollapse $
             hcmap (Proxy :: Proxy RClass) (K . mkReportPeriocron ctx) reports
 
         return ctx
@@ -178,9 +178,10 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
           (Job "Updating report " $ r ctx, tail $ every $ 60 * 60)
 
 ctxToIntegrationsConfig :: UTCTime -> Ctx -> IntegrationsConfig
-ctxToIntegrationsConfig now (_cache, mgr, cfg) = MkIntegrationsConfig
+ctxToIntegrationsConfig now (_cache, mgr, lgr, cfg) = MkIntegrationsConfig
     { integrCfgManager                  = mgr
     , integrCfgNow                      = now
+    , integrCfgLogger                   = lgr
     -- Planmill
     , integrCfgPlanmillProxyBaseRequest = cfgPlanmillProxyBaseRequest cfg
     -- FUM

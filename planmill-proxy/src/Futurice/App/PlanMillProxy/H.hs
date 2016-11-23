@@ -10,7 +10,6 @@ module Futurice.App.PlanMillProxy.H (
 import Futurice.Prelude
 import Prelude ()
 
-import           Control.Monad.Logger      (LogLevel (LevelInfo))
 import           Control.Monad.PlanMill
                  (MonadPlanMillConstraint (..), MonadPlanMillQuery (..))
 import           Data.Constraint
@@ -47,8 +46,8 @@ instance MonadPlanMillQuery H where
         typeableDict = Q.queryDict (Proxy :: Proxy Typeable) q
         showDict     = Q.queryDict (Proxy :: Proxy Show)     q
 
-runH :: Cfg -> H a -> IO a
-runH cfg (H haxl) = do
-    let stateStore = H.stateSet (initDataSourceSimpleIO LevelInfo cfg) H.stateEmpty
+runH :: Logger -> Cfg -> H a -> IO a
+runH lgr cfg (H haxl) = do
+    let stateStore = H.stateSet (initDataSourceSimpleIO lgr cfg) H.stateEmpty
     env <- H.initEnv stateStore ()
     H.runHaxl env haxl

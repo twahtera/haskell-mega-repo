@@ -35,12 +35,13 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp contactsApi .~ server
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
   where
-    makeCtx :: Config -> DynMapCache -> IO Ctx
-    makeCtx Config {..} cache = do
+    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx Config {..} logger cache = do
         mgr <- newManager tlsManagerSettings
         now <- currentTime
         let cfg = MkIntegrationsConfig
                 { integrCfgManager                  = mgr
+                , integrCfgLogger                   = logger
                 , integrCfgNow                      = now
                 -- Planmill
                 , integrCfgPlanmillProxyBaseRequest = cfgPmBaseReq
@@ -63,7 +64,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         let action = cachedIO cache 3600 () getContacts
 
         -- Periodically try to fetch new data
-        _ <- spawnPeriocron (Options runStderrLoggingT 300)
+        _ <- spawnPeriocron (Options logger 300)
             [ (Job "update contacts" action, every 300)
             ]
         pure action

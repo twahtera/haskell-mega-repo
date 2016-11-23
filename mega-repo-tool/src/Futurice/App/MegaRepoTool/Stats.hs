@@ -70,6 +70,7 @@ statsMachine
     dirPredicate d = not . any ($ d) $
         [ isSuffixOf ".git"
         , isSuffixOf ".stack-work"
+        , isSuffixOf ".stack-work-dev"
         -- build-in-docker.sh artifacts
         , isSuffixOf ".stack-root"
         , isSuffixOf ".stack-work-docker"

@@ -59,14 +59,16 @@ import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM               (atomically)
 import Control.Lens                         (Lens, LensLike)
+import Control.Monad.Catch                  (fromException, handleAll)
 import Data.Char                            (isAlpha)
-import Data.Swagger hiding (port)
+import Data.Swagger                         hiding (port)
 import Development.GitRev                   (gitCommitDate, gitHash)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
 import Futurice.EnvConfig                   (GetConfig (..))
 import GHC.Prim                             (coerce)
-import Network.Wai                          (Middleware, requestHeaders)
+import Network.Wai
+       (Middleware, requestHeaders, responseLBS)
 import Network.Wai.Metrics                  (metrics, registerWaiMetrics)
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import Servant
@@ -79,13 +81,13 @@ import Servant.HTML.Lucid                   (HTML)
 import Servant.Server.Internal              (passToServer)
 import Servant.Swagger
 import Servant.Swagger.UI
-import System.IO                            (stderr)
 import System.Remote.Monitoring             (forkServer, serverMetricStore)
 
+import qualified Data.Aeson                    as Aeson
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as TE
-import qualified Data.Text.IO                  as T
 import qualified FUM
+import qualified Network.HTTP.Types            as H
 import qualified Network.Wai.Handler.Warp      as Warp
 import qualified Servant.Cache.Internal.DynMap as DynMap
 
@@ -184,35 +186,64 @@ serverColour
        (Proxy colour) (Proxy colour')
 serverColour = lens (const Proxy) $ \sc _ -> coerce sc
 
--- TODO: make class for config, to get ekg port later
 futuriceServerMain
     :: forall cfg ctx api colour.
        (GetConfig cfg, HasSwagger api, HasServer api '[], SColour colour)
-    => (cfg -> DynMapCache -> IO ctx)
+    => (cfg -> Logger -> DynMapCache -> IO ctx)
        -- ^ Initialise the context for application
     -> ServerConfig colour ctx api
        -- ^ Server configuration
     -> IO ()
-futuriceServerMain makeCtx (SC t d server middleware)  = do
-    T.hPutStrLn stderr $ "Hello, " <> t <> " is alive"
-    cfg         <- getConfig
-    let p       =  port cfg
-    let ekgP    =  ekgPort cfg
-    cache       <- newDynMapCache
-    ctx         <- makeCtx cfg cache
-    let server' = futuriceServer t d cache proxyApi (server ctx)
-                :: Server (FuturiceAPI api colour)
+futuriceServerMain makeCtx (SC t d server middleware) = withStderrLogger $ \logger ->
+    handleAll (handler logger) $ do
+        runLogT "futurice-servant" logger $ logInfo_ $ "Hello, " <> t <> " is alive"
+        cfg         <- getConfig
+        let p       =  port cfg
+        let ekgP    =  ekgPort cfg
+        cache       <- newDynMapCache
+        ctx         <- makeCtx cfg logger cache
+        let server' = futuriceServer t d cache proxyApi (server ctx)
+                    :: Server (FuturiceAPI api colour)
 
-    store <- serverMetricStore <$> forkServer "localhost" ekgP
-    waiMetrics <- registerWaiMetrics store
+        store      <- serverMetricStore <$> forkServer "localhost" ekgP
+        waiMetrics <- registerWaiMetrics store
 
-    T.hPutStrLn stderr $ "Starting " <> t <> " at port " <> textShow p
-    T.hPutStrLn stderr $ "-          http://localhost:" <> textShow p <> "/"
-    T.hPutStrLn stderr $ "- swagger: http://localhost:" <> textShow p <> "/swagger-ui/"
-    T.hPutStrLn stderr $ "- ekg:     http://localhost:" <> textShow ekgP <> "/"
+        runLogT "futurice-servant" logger $ do
+            logInfo_ $ "Starting " <> t <> " at port " <> textShow p
+            logInfo_ $ "-          http://localhost:" <> textShow p <> "/"
+            logInfo_ $ "- swagger: http://localhost:" <> textShow p <> "/swagger-ui/"
+            logInfo_ $ "- ekg:     http://localhost:" <> textShow ekgP <> "/"
 
-    Warp.run p $ metrics waiMetrics $ middleware ctx $ serve proxyApi' server'
+        Warp.runSettings (settings p logger)
+            $ metrics waiMetrics
+            $ middleware ctx
+            $ serve proxyApi' server'
   where
+    handler logger e = do
+        runLogT "futurice-servant" logger $ logAttention_ $ textShow e
+        throwM e
+
+    settings p logger = Warp.defaultSettings
+        & Warp.setPort p
+        & Warp.setOnException (onException logger)
+        & Warp.setOnExceptionResponse onExceptionResponse
+
+    onException logger mreq e = do
+        runLogT "warp" logger $ do
+            logAttention (textShow e) mreq
+
+    -- On exception return JSON
+    -- TODO: we could return some UUID and log exception with it.
+    -- but maybe it's worth doing only when errors are rare.
+    onExceptionResponse e = responseLBS
+        s
+        [(H.hContentType, "application/json; charset=utf-8")]
+        (Aeson.encode ("Something went wrong" :: Text))
+      where
+        s = case fromException e :: Maybe Warp.InvalidRequest of
+            Just _  -> H.badRequest400
+            Nothing -> H.internalServerError500
+
     proxyApi :: Proxy api
     proxyApi = Proxy
 
