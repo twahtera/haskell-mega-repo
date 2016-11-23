@@ -55,8 +55,8 @@ dependencies:
   - http-types
   - intervals
   - lens
+  - log
   - monad-http
-  - monad-logger
   - monad-time
   - monadcryptorandom >=0.7.0
   - mtl

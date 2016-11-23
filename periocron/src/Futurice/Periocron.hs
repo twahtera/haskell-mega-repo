@@ -1,7 +1,6 @@
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TupleSections     #-}
 -- | Pediodic execution on @IO@ actions.
 module Futurice.Periocron (
@@ -18,7 +17,6 @@ module Futurice.Periocron (
 import Futurice.Prelude
 
 import Control.Concurrent               (ThreadId, forkIO, threadDelay)
-import Control.Monad.Logger             (LoggingT)
 import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, modify')
 import Data.Time
        (addUTCTime, diffUTCTime, getCurrentTime)
@@ -28,13 +26,12 @@ import Data.Time
 -------------------------------------------------------------------------------
 
 data Options = Options
-    { optionsLogger   :: forall m a. MonadIO m => LoggingT m a -> m a
+    { optionsLogger   :: !Logger
     , optionsInterval :: !NominalDiffTime
     }
 
 spawnPeriocron :: Options -> [(Job, Intervals)] -> IO ThreadId
 spawnPeriocron options defs = do
-    optionsLogger options $ $(logInfo) "Spawning periocron worker"
     now <- getCurrentTime
     let jobs :: [(UTCTime, Job)]
         jobs = map (first (flip addUTCTime now)) $ mergeDefs defs
@@ -42,18 +39,18 @@ spawnPeriocron options defs = do
 
 workerLoop :: Options -> [(UTCTime, Job)] -> IO ()
 workerLoop options
-    = optionsLogger options
+    = runLogT "periocron" (optionsLogger options)
     . flip evalStateT 0
     . iterateM go
   where
-    go :: (Applicative m, MonadLogger m, MonadTime m, MonadIO m)
+    go :: (Applicative m, MonadLog m, MonadTime m, MonadIO m)
         => [(UTCTime, Job)] -> StateT Int m [(UTCTime, Job)]
     go jobs = do
         now <- liftIO $ getCurrentTime
         let (todo, rest) = span ((< now) . fst) jobs
 
-        $(logInfo) $
-            "[periocron] [worker loop] heart beat at " <> textShow now <>
+        logLocalDomain "worker-loop" $ logInfo_ $
+            "heart beat at " <> textShow now <>
             "; jobs to do: " <> textShow (length todo)
 
         -- Execute jobs
@@ -66,24 +63,24 @@ workerLoop options
         pure rest
 
     executeJob
-        :: (Applicative m, MonadLogger m, MonadTime m, MonadIO m)
+        :: (Applicative m, MonadLog m, MonadTime m, MonadIO m)
         => Job -> StateT Int m ()
     executeJob (Job label action) = do
         -- jobid
         jobId <- textShow <$> get
         modify' (+1)
-        -- execute job
-        $(logInfo) $ "[periocron] [job " <> jobId <> "] Executing '" <> label <> "'"
-        startTime <- currentTime
-        x <- liftIO $ tryDeep action
-        endTime <- currentTime
-        case x of
-            Right _  -> pure ()
-            Left exc ->
-                $(logError) $ "[periocron] [job " <> jobId <> "] Exception -- "
-                    <> textShow exc
-        let d = diffUTCTime endTime startTime
-        $(logDebug) $ "[periocron] [job " <> jobId <> "] Execution took " <> textShow d
+        logLocalDomain ("job-" <> jobId) $ do
+            -- execute job
+            logInfo_ $ "Executing '" <> label <> "'"
+            startTime <- currentTime
+            x <- liftIO $ tryDeep action
+            endTime <- currentTime
+            case x of
+                Right _  -> pure ()
+                Left exc ->
+                    logAttention_ $ "Exception -- " <> textShow exc
+            let d = diffUTCTime endTime startTime
+            logInfo_ $ "Execution took " <> textShow d
 
 -------------------------------------------------------------------------------
 -- Job

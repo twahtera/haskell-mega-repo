@@ -7,9 +7,7 @@
 module Futurice.App.FutuHours.API where
 
 import Futurice.Prelude
-import Futurice.Colour
 import Servant
-import Servant.Futurice
 
 import Futurice.App.FutuHours.Types
 
@@ -31,8 +29,3 @@ type FutuHoursAPI = Get '[PlainText] Text
 
 futuhoursAPI :: Proxy FutuHoursAPI
 futuhoursAPI = Proxy
-
-type FutuHoursAPI' = FuturiceAPI FutuHoursAPI ('FutuAccent 'AF3 'AC3)
-
-futuhoursAPI' :: Proxy FutuHoursAPI'
-futuhoursAPI' = Proxy

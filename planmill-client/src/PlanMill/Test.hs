@@ -36,5 +36,6 @@ evalPlanMillIO
     -> IO a
 evalPlanMillIO cfg planmill = do
     g <- mkHashDRBG
-    evalHttpT $ runStderrLoggingT $ flip runReaderT cfg $ flip evalCRandTThrow g $
-        evalPlanMill planmill
+    withStderrLogger $ \logger ->
+        evalHttpT $ runLogT "evalPlanMillIO" logger $ flip runReaderT cfg $ flip evalCRandTThrow g $
+            evalPlanMill planmill

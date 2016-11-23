@@ -3,7 +3,6 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
 #if __GLASGOW_HASKELL__ >= 800
 {-# OPTIONS_GHC -freduction-depth=0 #-}
 #endif
@@ -18,7 +17,6 @@ module Futurice.App.GitHubProxy.Logic (
 import Prelude ()
 import Futurice.Prelude
 import Control.Monad.Catch            (handle)
-import Control.Monad.Logger           (LoggingT, filterLogger)
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, taggedDecode, taggedEncode)
 import Data.Constraint
@@ -60,10 +58,10 @@ type CacheLookup = HashMap SomeRequest BSL.ByteString
 lookupCache :: [(SomeRequest, Postgres.Binary BSL.ByteString)] -> CacheLookup
 lookupCache ps = HM.fromList (Postgres.fromBinary <$$> ps)
 
-type LIO = LoggingT IO
+type LIO = LogT IO
 
 runLIO :: Ctx -> (Postgres.Connection -> LIO a) -> IO a
-runLIO ctx f = withResource (ctxPostgresPool ctx) $ \conn -> runLoggingT' ctx $ f conn
+runLIO ctx f = withResource (ctxPostgresPool ctx) $ \conn -> runLogT' ctx $ f conn
 
 -------------------------------------------------------------------------------
 -- Logic
@@ -79,7 +77,7 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
     cacheResult <- liftIO $ lookupCache <$> Postgres.query conn selectQuery postgresQs
 
     -- Info about cache success
-    $(logInfo) $ "Found "
+    logInfo_ $ "Found "
         <> textShow (HM.size cacheResult) <> " / "
         <> textShow (length qs) <> " (found/all) query results in postgres"
 
@@ -90,7 +88,7 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
     -- Log the first errorneous response
     case (res ^? folded . _Left) of
         Nothing  -> pure ()
-        Just err -> $(logWarn) $ "haxl response contains errors : " <> err
+        Just err -> logAttention_ $ "haxl response contains errors : " <> err
 
     -- return
     pure res
@@ -121,7 +119,7 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
             if checkTagged (Proxy :: Proxy a) bs
                 then pure $ Right $ MkSomeResponse tag $ taggedDecode bs
                 else do
-                    $(logWarn) $ "Borked cache content for " <> textShow sreq
+                    logAttention_ $ "Borked cache content for " <> textShow sreq
                     _ <- handleSqlError 0 $
                         Postgres.execute conn deleteQuery (Postgres.Only sreq)
                     return $ Left $ "structure tags don't match"
@@ -134,7 +132,7 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
         :: (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a)
         => Postgres.Connection -> ReqTag a -> Request 'RA a -> LIO (Either Text a)
     fetch'' conn tag req = do
-        res <- liftIO $ tryDeep $ runLoggingT' ctx $ do
+        res <- liftIO $ tryDeep $ runLogT' ctx $ do
             x <- fetchFromGitHub (ctxCache ctx) (ctxGitHubAuth ctx) tag req
             storeInPostgres conn tag req x
             pure $! x
@@ -164,7 +162,7 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
 updateCache :: Ctx -> IO ()
 updateCache ctx = runLIO ctx $ \conn -> do
     qs <- handleSqlError [] $ Postgres.query_ conn selectQuery
-    $(logInfo) $ "Updating " <> textShow (length qs) <> " cache items"
+    logInfo_ $ "Updating " <> textShow (length qs) <> " cache items"
     for_ qs $ \(Postgres.Only (MkSomeRequest tag req)) -> fetch conn tag req
   where
     fetch :: Postgres.Connection -> ReqTag a -> Request 'RA a -> LIO (Either SomeException ())
@@ -180,7 +178,7 @@ updateCache ctx = runLIO ctx $ \conn -> do
     fetch'
       :: (Binary a, HasStructuralInfo a, HasSemanticVersion a)
       => Postgres.Connection -> ReqTag a -> Request 'RA a -> LIO (Either SomeException ())
-    fetch' conn tag req = liftIO $ tryDeep $ runLoggingT' ctx $ do
+    fetch' conn tag req = liftIO $ tryDeep $ runLogT' ctx $ do
         x <- fetchFromGitHub (ctxCache ctx) (ctxGitHubAuth ctx) tag req
         storeInPostgres conn tag req x
 
@@ -198,7 +196,7 @@ updateCache ctx = runLIO ctx $ \conn -> do
 cleanupCache :: Ctx -> IO ()
 cleanupCache ctx = runLIO ctx $ \conn -> do
     i <- handleSqlError 0 $ Postgres.execute_ conn cleanupQuery
-    $(logInfo) $  "cleaned up " <> textShow i <> " cache items"
+    logInfo_ $  "cleaned up " <> textShow i <> " cache items"
   where
     cleanupQuery :: Postgres.Query
     cleanupQuery = fromString $ unwords $
@@ -211,11 +209,11 @@ storeInPostgres
     :: (Binary a, HasSemanticVersion a, HasStructuralInfo a)
     => Postgres.Connection -> ReqTag a -> Request 'RA a -> a -> LIO ()
 storeInPostgres conn tag req x = do
-    -- -- $(logInfo) $ "Storing in postgres" <> textShow q
+    -- -- logInfo_ $ "Storing in postgres" <> textShow q
     i <- handleSqlError 0 $
         Postgres.execute conn postgresQuery (MkSomeRequest tag req, Postgres.Binary $ taggedEncode x)
     when (i == 0) $
-        $(logWarn) $ "Storing in postgres failed: " <> textShow (MkSomeRequest tag req)
+        logAttention_ $ "Storing in postgres failed: " <> textShow (MkSomeRequest tag req)
   where
     postgresQuery = fromString $ unwords $
         [ "INSERT INTO githubproxy.cache as c (query, data)"
@@ -246,14 +244,11 @@ handleSqlError x action = handle (omitSqlError x) $ liftIO action
 
 omitSqlError :: a -> Postgres.SqlError -> LIO a
 omitSqlError a err = do
-    $(logError) $ textShow err
+    logAttention_ $ textShow err
     return a
 
-runLoggingT' :: Ctx -> LoggingT IO a -> IO a
-runLoggingT' ctx l =
-    runStderrLoggingT $ filterLogger p l
-  where
-    p _ level = level >= ctxLogLevel ctx
+runLogT' :: Ctx -> LogT IO a -> IO a
+runLogT' ctx = runLogT "github-proxy" (ctxLogger ctx)
 
 -------------------------------------------------------------------------------
 -- binary-tagged additions

@@ -34,8 +34,8 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC3))
     & serverApp proxyMgmtApi .~ server
   where
-    makeCtx :: Config -> DynMapCache -> IO Ctx
-    makeCtx Config {..} _cache = do
+    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx Config {..} _logger _cache = do
         postgresPool <- createPool
             (Postgres.connect cfgPostgresConnInfo)
             Postgres.close

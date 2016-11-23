@@ -39,7 +39,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverColour            .~ (Proxy :: Proxy ('FutuAccent 'AF3 'AC2))
     & serverApp spiceStatsApi .~ server
   where
-    makeCtx :: Config -> DynMapCache -> IO Ctx
-    makeCtx cfg cache = do
+    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx cfg _ cache = do
         mgr <- newManager tlsManagerSettings
         return (cache, mgr, cfg)

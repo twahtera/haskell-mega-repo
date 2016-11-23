@@ -121,7 +121,7 @@ instance Monad m
 -------------------------------------------------------------------------------
 
 instance
-    ( MonadIO m, MonadHttp m, MonadThrow m, MonadTime m, MonadLogger m
+    ( MonadIO m, MonadHttp m, MonadThrow m, MonadTime m, MonadLog m
     , HasPlanMillBaseUrl env, HasCredentials env
     )
   => MonadPlanMill (ReaderT env m) where
@@ -130,7 +130,7 @@ instance
         liftIO $ evalPlanMillIO cfg planmill
 
 instance
-    ( MonadIO m, MonadHttp m, MonadThrow m, MonadTime m, MonadLogger m
+    ( MonadIO m, MonadHttp m, MonadThrow m, MonadTime m, MonadLog m
     , Applicative m
     , HasPlanMillBaseUrl env, HasCredentials env
     )

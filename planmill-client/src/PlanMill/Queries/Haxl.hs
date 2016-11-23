@@ -26,7 +26,6 @@ import PlanMill.Types.Query
 import Control.Monad.CryptoRandom.Extra
        (MonadInitHashDRBG (..), evalCRandTThrow)
 import Control.Monad.Http               (runHttpT)
-import Control.Monad.Logger             (LogLevel, filterLogger)
 import Control.Monad.Reader             (runReaderT)
 import Data.Constraint                  (Dict (..))
 import PlanMill.Eval                    (evalPlanMill)
@@ -57,8 +56,8 @@ instance DataSource u Query where
 -- It's smart enough to reuse http/random-gen for blocked fetches
 --
 -- /TODO/ take 'HTTP.Manager' as a param
-initDataSourceSimpleIO :: LogLevel -> Cfg -> State Query
-initDataSourceSimpleIO loglevel cfg = QueryFunction $ \blockedFetches -> SyncFetch $ do
+initDataSourceSimpleIO :: Logger -> Cfg -> State Query
+initDataSourceSimpleIO lgr cfg = QueryFunction $ \blockedFetches -> SyncFetch $ do
     prng <- mkHashDRBG
     manager <- HTTP.newManager HTTP.tlsManagerSettings
         -- 5 min timeout
@@ -71,13 +70,11 @@ initDataSourceSimpleIO loglevel cfg = QueryFunction $ \blockedFetches -> SyncFet
                 res <- evalPlanMill $ queryToRequest q
                 liftIO $ putSuccess v res
   where
-    perform manager prng
-        = flip runHttpT manager
-        . runStderrLoggingT
-        . filterLogger logPred
+    perform mgr prng
+        = flip runHttpT mgr
+        . runLogT "planmill-simple" lgr
         . flip runReaderT cfg
         . flip evalCRandTThrow prng
-    logPred _ = (>= loglevel)
 
 -- | This is batched query function.
 --
@@ -88,10 +85,11 @@ initDataSourceSimpleIO loglevel cfg = QueryFunction $ \blockedFetches -> SyncFet
 --
 -- See @servant-binary-tagged@.
 initDataSourceBatch
-    :: HTTP.Manager  -- ^ Manager
-    -> HTTP.Request  -- ^ Base request
+    :: Logger
+    -> HTTP.Manager  -- ^ Manager
+    -> HTTP.Request   -- ^ Base request
     -> State Query
-initDataSourceBatch mgr req = QueryFunction queryFunction
+initDataSourceBatch lgr mgr req = QueryFunction queryFunction
   where
     req' = req
         { HTTP.requestHeaders
@@ -110,17 +108,21 @@ initDataSourceBatch mgr req = QueryFunction queryFunction
         -- TODO: write own logging lib, we don't like monad-logger that much
         -- startTime <- currentTime
         --
-        asyncs <- for blockedFetchesChunks $ \bf -> fmap (bf,) . async $ do
-            res  <- HTTP.httpLbs (mkRequest bf) mgr
-            -- Use for debugging:
-            -- print (() <$ res)
-            -- print (BSL.take 1000 $ HTTP.responseBody res)
-            -- print (last $ BSL.toChunks $ HTTP.responseBody res)
-            -- print (BSL.length $ HTTP.responseBody res)
-            let x = Binary.taggedDecode (HTTP.responseBody res) :: [Either Text SomeResponse]
+        asyncs <- for blockedFetchesChunks
+            $ \bf -> fmap (bf,) . async
+            $ runLogT "planmill-haxl" lgr $ do
+                logTrace "requesting" (Aeson.toJSON $ map extractQuery bf)
+                liftIO $ do
+                    res <- HTTP.httpLbs (mkRequest bf) mgr
+                    -- Use for debugging:
+                    -- print (() <$ res)
+                    -- print (BSL.take 1000 $ HTTP.responseBody res)
+                    -- print (last $ BSL.toChunks $ HTTP.responseBody res)
+                    -- print (BSL.length $ HTTP.responseBody res)
+                    let x = Binary.taggedDecode (HTTP.responseBody res) :: [Either Text SomeResponse]
 
-            -- return blocked fetches as well.
-            evaluate $!! x
+                    -- return blocked fetches as well.
+                    evaluate $!! x
 
         -- Allow inner block to perform
         inner

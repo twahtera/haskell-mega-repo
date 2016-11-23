@@ -43,6 +43,7 @@ library
     , blaze-html
     , bytestring
     , cassava
+    , constraints
     , containers
     , dependent-map
     , dependent-sum
@@ -50,7 +51,6 @@ library
     , ekg
     , ekg-core
     , env-config
-    , constraints
     , exceptions
     , fum-client
     , futulogo
@@ -58,6 +58,7 @@ library
     , futurice-integrations
     , futurice-prelude
     , futurice-reports
+    , futurice-servant
     , generics-sop
     , generics-sop-lens
     , hashable
@@ -132,7 +133,6 @@ library
       Futurice.App.FutuHours.Types
       Futurice.ExpFit
       Generics.SOP.Curry
-      Servant.Futurice
   default-language: Haskell2010
 
 executable futuhours-api-server

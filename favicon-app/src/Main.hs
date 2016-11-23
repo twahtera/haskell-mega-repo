@@ -44,8 +44,8 @@ main = futuriceServerMain makeCtx $ emptyServerConfig
     & serverColour      .~ (Proxy :: Proxy 'FutuBlack)
     & serverApp api     .~ server
   where
-    makeCtx :: Config -> DynMapCache -> IO Ctx
-    makeCtx _cfg = return
+    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx _cfg _logger = return
 
 instance GetConfig Config where
     port = getPort

@@ -132,8 +132,8 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
   where
     mockCredentials = (FUM.UserName "phadej", TaskRoleIT, LocHelsinki)
 
-    makeCtx :: Config -> DynMapCache -> IO Ctx
-    makeCtx cfg _cache = do
+    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx cfg _logger _cache = do
         world0 <- generate (resize 200 arbitrary)
         let world1 = if cfgMockAuth cfg
             then world0 & worldUsers .~ const (Just mockCredentials)

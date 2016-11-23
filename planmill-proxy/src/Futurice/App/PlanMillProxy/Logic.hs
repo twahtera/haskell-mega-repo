@@ -22,7 +22,6 @@ module Futurice.App.PlanMillProxy.Logic (
 import Prelude ()
 import Futurice.Prelude
 import Control.Monad.Catch              (handle)
-import Control.Monad.Logger             (LoggingT, filterLogger)
 import Control.Monad.PlanMill           (planmillQuery)
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, taggedDecode, taggedEncode)
@@ -31,11 +30,9 @@ import Data.Pool                        (withResource)
 import Data.Time                        (addDays)
 import Futurice.App.PlanMillProxy.H
 import Futurice.App.PlanMillProxy.Types (Ctx (..))
-import Futurice.Servant
-       (CachePolicy (..), DynMapCache, genCachedIO)
+import Futurice.Servant                 (CachePolicy (..), genCachedIO)
 import Numeric.Interval.NonEmpty        (inf, sup, (...))
 import PlanMill.Queries                 (usersQuery)
-import PlanMill.Types                   (Cfg)
 import PlanMill.Types.Query
        (Query (..), SomeQuery (..), SomeResponse (..), queryDict)
 
@@ -78,10 +75,10 @@ type CacheLookup = HashMap SomeQuery BSL.ByteString
 lookupCache :: [(SomeQuery, Postgres.Binary BSL.ByteString)] -> CacheLookup
 lookupCache ps = HM.fromList (Postgres.fromBinary <$$> ps)
 
-type LIO = LoggingT IO
+type LIO = LogT IO
 
 runLIO :: Ctx -> (Postgres.Connection -> LIO a) -> IO a
-runLIO ctx f = withResource (ctxPostgresPool ctx) $ \conn -> runLoggingT' ctx $ f conn
+runLIO ctx f = withResource (ctxPostgresPool ctx) $ \conn -> runLogT' ctx $ f conn
 
 -------------------------------------------------------------------------------
 -- Logic
@@ -97,7 +94,7 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
     cacheResult <- liftIO $ lookupCache <$> Postgres.query conn selectQuery postgresQs
 
     -- Info about cache success
-    $(logInfo) $ "Found "
+    logInfo_ $ "Found "
         <> textShow (HM.size cacheResult) <> " / "
         <> textShow (length primitiveQs) <> " / "
         <> textShow (length qs) <> " (found/primitive/all) query results in postgres"
@@ -109,7 +106,7 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
     -- Log the first errorneous response
     case (res ^? folded . _Left) of
         Nothing  -> pure ()
-        Just err -> $(logWarn) $ "haxl response contains errors : " <> err
+        Just err -> logAttention_ $ "haxl response contains errors : " <> err
 
     -- return
     pure res
@@ -150,7 +147,7 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
             if checkTagged (Proxy :: Proxy a) bs
                 then pure $ Right $ MkSomeResponse q $ taggedDecode bs
                 else do
-                    $(logWarn) $ "Borked cache content for " <> textShow q
+                    logAttention_ $ "Borked cache content for " <> textShow q
                     _ <- handleSqlError 0 $
                         Postgres.execute conn deleteQuery (Postgres.Only q)
                     return $ Left $ "structure tags don't match"
@@ -161,8 +158,8 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
         :: (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a)
         => Postgres.Connection -> Query a -> LIO (Either Text a)
     fetch'' conn q = do
-        res <- liftIO $ tryDeep $ runLoggingT' ctx $ do
-            x <- fetchFromPlanMill (ctxCache ctx) (ctxPlanmillCfg ctx) q
+        res <- liftIO $ tryDeep $ runLogT' ctx $ do
+            x <- fetchFromPlanMill ctx q
             storeInPostgres conn q x
             pure $! x
         -- liftIO $ print (res ^? _Left, q)
@@ -189,7 +186,7 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
 updateCache :: Ctx -> IO ()
 updateCache ctx = runLIO ctx $ \conn -> do
     qs <- handleSqlError [] $ Postgres.query_ conn selectQuery
-    $(logInfo) $ "Updating " <> textShow (length qs) <> " cache items"
+    logInfo_ $ "Updating " <> textShow (length qs) <> " cache items"
     for_ qs $ \(Postgres.Only (SomeQuery q)) -> fetch conn q
   where
     fetch :: Postgres.Connection -> Query a -> LIO (Either SomeException ())
@@ -205,8 +202,8 @@ updateCache ctx = runLIO ctx $ \conn -> do
     fetch'
       :: (Binary a, HasStructuralInfo a, HasSemanticVersion a)
       => Postgres.Connection -> Query a -> LIO (Either SomeException ())
-    fetch' conn q = liftIO $ tryDeep $ runLoggingT' ctx $ do
-        x <- fetchFromPlanMill (ctxCache ctx) (ctxPlanmillCfg ctx) q
+    fetch' conn q = liftIO $ tryDeep $ runLogT' ctx $ do
+        x <- fetchFromPlanMill ctx q
         storeInPostgres conn q x
 
     -- Fetch queries which are old enough, and viewed at least once
@@ -223,7 +220,7 @@ updateCache ctx = runLIO ctx $ \conn -> do
 cleanupCache :: Ctx -> IO ()
 cleanupCache ctx = runLIO ctx $ \conn -> do
     i <- handleSqlError 0 $ Postgres.execute_ conn cleanupQuery
-    $(logInfo) $  "cleaned up " <> textShow i <> " cache items"
+    logInfo_ $  "cleaned up " <> textShow i <> " cache items"
   where
     cleanupQuery :: Postgres.Query
     cleanupQuery = fromString $ unwords $
@@ -236,11 +233,11 @@ storeInPostgres
     :: (Binary a, HasSemanticVersion a, HasStructuralInfo a)
     => Postgres.Connection -> Query a -> a -> LIO ()
 storeInPostgres conn q x = do
-    -- -- $(logInfo) $ "Storing in postgres" <> textShow q
+    -- -- logInfo_ $ "Storing in postgres" <> textShow q
     i <- handleSqlError 0 $
         Postgres.execute conn postgresQuery (q, Postgres.Binary $ taggedEncode x)
     when (i == 0) $
-        $(logWarn) $ "Storing in postgres failed: " <> textShow q
+        logAttention_ $ "Storing in postgres failed: " <> textShow q
   where
     postgresQuery = fromString $ unwords $
         [ "INSERT INTO planmillproxy.cache as c (query, data)"
@@ -269,7 +266,7 @@ selectTimereports _ctx conn uid minterval = do
     case res' of
         Right x -> return x
         Left exc -> do
-            $(logWarn) $ "selectTimereports: " <> textShow exc
+            logAttention_ $ "selectTimereports: " <> textShow exc
             _ <- handleSqlError 0 $ case minterval of
                 Nothing       -> Postgres.execute conn deleteQueryWithoutInterval (Postgres.Only uid)
                 Just interval -> Postgres.execute conn deleteQueryWithInterval (uid, inf interval, sup interval)
@@ -312,9 +309,9 @@ selectTimereports _ctx conn uid minterval = do
 updateWithoutTimereports
     :: Ctx -> IO ()
 updateWithoutTimereports ctx = runLIO ctx $ \conn -> do
-    $(logInfo) $ "Selecting timereports for users without any"
+    logInfo_ $ "Selecting timereports for users without any"
 
-    allUsers <- fetchFromPlanMill (ctxCache ctx) (ctxPlanmillCfg ctx) usersQuery
+    allUsers <- fetchFromPlanMill ctx usersQuery
     let allUidsSet = Set.fromList $ allUsers ^.. traverse . PM.identifier
 
     uids <- Postgres.fromOnly <$$> handleSqlError [] (Postgres.query_ conn selectUsersQuery)
@@ -331,11 +328,11 @@ updateWithoutTimereports ctx = runLIO ctx $ \conn -> do
 updateAllTimereports
     :: Ctx -> IO ()
 updateAllTimereports ctx = runLIO ctx $ \conn -> do
-    $(logInfo) $ "Updating timereports for users"
+    logInfo_ $ "Updating timereports for users"
 
     -- Select uids with oldest updated time reports
     uids <- Postgres.fromOnly <$$> handleSqlError [] (Postgres.query_ conn selectUsersQuery)
-    $(logInfo) $ "Updating timereports for users: " <>
+    logInfo_ $ "Updating timereports for users: " <>
         T.intercalate ", " (textShow . getIdent <$> uids)
 
     for_ uids (updateTimereportsForUser ctx conn)
@@ -356,7 +353,7 @@ updateTimereportsForUser ctx conn uid = do
     let q = QueryTimereports (Just interval) uid
     --
     -- Fetch timereports from planmill
-    tr <- fetchFromPlanMill (ctxCache ctx) (ctxPlanmillCfg ctx) q
+    tr <- fetchFromPlanMill ctx q
 
     -- Check what timereports we have stored, remove ones not in planmill anymore
     let planmillTrids = Set.fromList (tr ^.. traverse . PM.identifier)
@@ -366,13 +363,13 @@ updateTimereportsForUser ctx conn uid = do
     let notInPlanmill = Set.difference postgresTrids planmillTrids
     when (not $ Set.null notInPlanmill) $ do
         let notInPlanmillCount = Set.size notInPlanmill
-        $(logInfo) $
+        logInfo_ $
             "Found " <> textShow notInPlanmillCount <>
             " timereports not in planmill anymore"
         i <- handleSqlError 0 $ Postgres.execute conn deleteQuery
             (Postgres.Only $ Postgres.In $ Set.toList notInPlanmill)
         when (fromIntegral i /= notInPlanmillCount) $
-            $(logWarn) $
+            logAttention_ $
                 "Deleted " <> textShow i <>
                 " out of " <> textShow notInPlanmillCount <> " timereports"
 
@@ -404,7 +401,7 @@ updateRecentTimereports ctx = runLIO ctx $ \conn -> do
     -- For each user...
     for_ uids $ \uid -> do
         [(mi, ma)] <- liftIO $ Postgres.query conn selectQuery (Postgres.Only uid)
-        $(logInfo) $ "Last updated timereports at " <> textShow (mi :: UTCTime)
+        logInfo_ $ "Last updated timereports at " <> textShow (mi :: UTCTime)
 
         let q = timereportsModifiedQuery uid mi ma
         timereports <- fetchFromPlanMill (ctxCache ctx) (ctxPlanmillCfg ctx) q
@@ -462,7 +459,7 @@ selectCapacities ctx conn uid interval = do
     res <- handleSqlError [] $ Postgres.query conn selectQuery (uid, inf interval, sup interval)
     if (length res /= intervalLength)
         then do
-            $(logInfo) $
+            logInfo_ $
                 "Less entries for " <> textShow interval <>
                 " capacity interval for " <> textShow uid <>
                 ": " <> textShow (length res) <> "/" <> textShow intervalLength
@@ -472,15 +469,15 @@ selectCapacities ctx conn uid interval = do
             case res' of
                 Right x  -> return x
                 Left exc -> do
-                    $(logWarn) $ "selectCapacities: " <> textShow exc
+                    logAttention_ $ "selectCapacities: " <> textShow exc
                     fallback
   where
     fallback = do
         -- We get an extended interval
-        x <- fetchFromPlanMill (ctxCache ctx) (ctxPlanmillCfg ctx) q
+        x <- fetchFromPlanMill ctx q
         i <- handleSqlError 0 $ Postgres.executeMany conn insertQuery (transformForInsert x)
         when (fromIntegral i /= length x) $
-            $(logWarn) $ "Inserted less capacities than we got from planmill"
+            logAttention_ $ "Inserted less capacities than we got from planmill"
         -- ... so we trim the result
         let x' = V.filter (\c -> PM.userCapacityDate c `Interval.elem` interval) x
         return $! x'
@@ -544,28 +541,28 @@ updateCapacities ctx = runLIO ctx $ \conn -> do
 -------------------------------------------------------------------------------
 
 -- | Run query on real planmill backend.
-fetchFromPlanMill :: DynMapCache -> Cfg -> Query a -> LIO a
-fetchFromPlanMill cache cfg q = case typeableDict of
+fetchFromPlanMill :: Ctx -> Query a -> LIO a
+fetchFromPlanMill ctx q = case typeableDict of
     Dict -> liftIO
         -- TODO: add cache cleanup
         $ genCachedIO RequestNew cache (10 * 60) q
-        $ runH cfg $ planmillQuery q
+        $ runH lgr cfg $ planmillQuery q
   where
     typeableDict = queryDict (Proxy :: Proxy Typeable) q
+    cache        = ctxCache ctx
+    cfg          = ctxPlanmillCfg ctx
+    lgr          = ctxLogger ctx
 
 handleSqlError :: a -> IO a -> LIO a
 handleSqlError x action = handle (omitSqlError x) $ liftIO action
 
 omitSqlError :: a -> Postgres.SqlError -> LIO a
 omitSqlError a err = do
-    $(logError) $ textShow err
+    logAttention_ $ textShow err
     return a
 
-runLoggingT' :: Ctx -> LoggingT IO a -> IO a
-runLoggingT' ctx l =
-    runStderrLoggingT $ filterLogger p l
-  where
-    p _ level = level >= ctxLogLevel ctx
+runLogT' :: Ctx -> LogT IO a -> IO a
+runLogT' ctx = runLogT "logic" (ctxLogger ctx)
 
 -------------------------------------------------------------------------------
 -- binary-tagged additions

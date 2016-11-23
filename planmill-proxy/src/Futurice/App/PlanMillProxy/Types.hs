@@ -6,7 +6,7 @@ module Futurice.App.PlanMillProxy.Types (
     ) where
 
 import Prelude ()
-import Control.Monad.Logger       (LogLevel (..))
+import Futurice.Prelude
 import Data.Pool                  (Pool)
 import Database.PostgreSQL.Simple (Connection)
 import Futurice.Servant           (DynMapCache)
@@ -20,5 +20,5 @@ data Ctx = Ctx
     { ctxCache        :: !DynMapCache
     , ctxPlanmillCfg  :: !Cfg
     , ctxPostgresPool :: !(Pool Connection)  -- TODO: write a lib to handle these
-    , ctxLogLevel     :: !LogLevel
+    , ctxLogger       :: !Logger
     }

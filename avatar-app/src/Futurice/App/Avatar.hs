@@ -7,18 +7,17 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Avatar (defaultMain) where
 
-import Futurice.Prelude
 import Prelude ()
-
+import Futurice.Prelude
 import Codec.Picture              (DynamicImage)
 import Control.Monad.Trans.Except (ExceptT (..), throwE)
 import Futurice.Servant
 import Servant
 import System.IO                  (hPutStrLn, stderr)
 
-import qualified Data.ByteString.Lazy     as LBS
-import qualified Data.Text                as T
-import qualified Data.Text.Encoding       as TE
+import qualified Data.ByteString.Lazy as LBS
+import qualified Data.Text            as T
+import qualified Data.Text.Encoding   as TE
 
 import Network.HTTP.Client
        (Manager, httpLbs, newManager, parseUrlThrow, responseBody)
@@ -75,7 +74,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
     & serverApp avatarApi .~ server
   where
-    makeCtx :: Config -> DynMapCache -> IO Ctx
-    makeCtx _cfg cache = do
+    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx _cfg _logger cache = do
         mgr <- newManager tlsManagerSettings
         return (cache, mgr)

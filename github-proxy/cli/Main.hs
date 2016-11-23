@@ -69,7 +69,7 @@ instance MonadGitHub H where
         typeableDict = GH.tagDict (Proxy :: Proxy Typeable) tag
 
 runH :: Manager -> Request -> H a -> IO a
-runH mgr req (H haxl) = do
-    let stateStore = H.stateSet (initDataSource mgr req) H.stateEmpty
+runH mgr req (H haxl) = withStderrLogger $ \lgr -> do
+    let stateStore = H.stateSet (initDataSource lgr mgr req) H.stateEmpty
     env <- H.initEnv stateStore ()
     H.runHaxl env haxl

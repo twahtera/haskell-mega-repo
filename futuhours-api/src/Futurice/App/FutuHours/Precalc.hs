@@ -3,7 +3,6 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 -- | Module for precalculated values.
@@ -57,15 +56,15 @@ servantEndpoint de ctx = hCurry endpoint
   where
     endpoint :: NP I xs -> ExceptT ServantErr IO r
     endpoint xs
-        | xs == defEndDefaultParams de = runFutuhoursLoggingT ctx $ do
+        | xs == defEndDefaultParams de = runLogT "precalc" (ctxLogger ctx) $ do
             l <- liftIO $ lookupEndpoint ctx (defEndTag de)
             case l of
                 -- Shouldn't happen
                 Nothing -> do
-                    $(logWarn) $ "non-cached endpoint: " <> (textShow $ defEndTag de)
+                    logAttention_ $ "non-cached endpoint: " <> (textShow $ defEndTag de)
                     throwM $ err500
                 Just r  -> do
-                    $(logInfo) $ "cached endpoint: " <> (textShow $ defEndTag de)
+                    logAttention_ $ "cached endpoint: " <> (textShow $ defEndTag de)
                     return r
         | otherwise = do
             p <- defEndParseParams de xs

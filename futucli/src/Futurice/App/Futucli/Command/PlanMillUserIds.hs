@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Futucli.Command.PlanMillUserIds (planMillUserIds) where
 
+import Prelude ()
 import Futurice.Prelude
-
 import Control.Monad.Http          (evalHttpT)
 import Control.Monad.Reader        (runReaderT)
 import Network.HTTP.Client         (newManager)
@@ -20,9 +20,9 @@ import qualified PlanMill               as PM
 import Futurice.App.Futucli.Cfg
 
 planMillUserIds :: Cfg -> IO ()
-planMillUserIds cfg = do
+planMillUserIds cfg = withStderrLogger $ \logger -> do
     manager <- newManager tlsManagerSettings
-    planmillUsers <- evalHttpT $ runStderrLoggingT $ flip runReaderT cfg $ PM.planmillAction PM.users
+    planmillUsers <- evalHttpT $ runLogT "futucli" logger $ flip runReaderT cfg $ PM.planmillAction PM.users
     fumUsers <- FUM.fetchList manager (_cfgFumToken cfg) (_cfgFumBaseurl cfg) (_cfgFumList cfg)
     process planmillUsers fumUsers
   where
