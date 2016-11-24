@@ -37,6 +37,10 @@ envs:
     GH_TEAM:
       secret: github-team
 
+    # logging
+    LOGENTRIES_TOKEN:
+      secret: logentries-token
+
     # reports-app
     REPORTS_GH_REPOSURL:
       secret: reports-gh-repos

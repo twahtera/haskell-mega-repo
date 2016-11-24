@@ -23,7 +23,7 @@ install:
   cat installplan.txt; stack --no-terminal --skip-ghc-check setup; if diff -u $HOME/.stack-work-cache/installplan.txt
   installplan.txt; then echo "cabal build-cache HIT"; rm -rf .stack-work; cp -a $HOME/.stack-work-cache
   .stack-work; rm -f .stack-work/installplan.txt; else echo "cabal build-cache MISS";
-  rm -rf $HOME/.stack-work-cache; stack --no-terminal --skip-ghc-check build --test
+  rm -rf $HOME/.stack-work-cache; JOB_CURR_TIME=$(date +%s); timeout $((JOB_START_TIME + 2400 - JOB_CURR_TIME)) stack --no-terminal --skip-ghc-check build --test
   --only-dependencies -j1 --ghc-options="-j2 +RTS -M2G -A128M -n2m -RTS"; fi; if [
   ! -d $HOME/.stack-work-cache ]; then echo "snapshotting package-db to build-cache";
   cp -a .stack-work $HOME/.stack-work-cache; cp -a installplan.txt $HOME/.stack-work-cache/installplan.txt;

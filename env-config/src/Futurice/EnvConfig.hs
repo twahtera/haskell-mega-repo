@@ -150,11 +150,12 @@ optionalEnvVar name = Just <$> envVar name <!> pure Nothing
 envVarWithDefault :: FromEnvVar a => String -> a -> ConfigParser a
 envVarWithDefault name d = envVar name <!> pure d
 
-getConfigWithPorts :: Configure cfg => Logger -> String -> IO (cfg, Int, Int)
-getConfigWithPorts logger name = getConfig' logger name $ (,,)
+getConfigWithPorts :: Configure cfg => Logger -> String -> IO (cfg, Int, Int, UUID.UUID)
+getConfigWithPorts logger name = getConfig' logger name $ (,,,)
     <$> configure
     <*> envVarWithDefault "PORT" defaultPort
     <*> envVarWithDefault "EKGPORT" defaultEkgPort
+    <*> envVar "LOGENTRIES_TOKEN"
 
 envConnectInfo :: ConfigParser ConnectInfo
 envConnectInfo = f
