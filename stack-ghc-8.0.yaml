@@ -1,4 +1,4 @@
-resolver: nightly-2016-11-06
+resolver: nightly-2016-11-24
 packages:
 - ansi-pretty/
 - avar/
@@ -46,26 +46,11 @@ packages:
     git: https://github.com/phadej/machines-directory.git
     commit: ff01ef0cd0ce0ff092eb1d2fcaa64f6fbad547c2
   extra-dep: true
-# https://github.com/aloiscochard/machines-directory/pull/7
-- location:
-    git: https://github.com/phadej/machines-directory.git
-    commit: ff01ef0cd0ce0ff092eb1d2fcaa64f6fbad547c2
-  extra-dep: true
-# https://github.com/bitemyapp/bloodhound/pull/155
-- location:
-    git: https://github.com/bitemyapp/bloodhound.git
-    commit: 0ee54ec08793d742225645aa80321c6158966d6a
-  extra-dep: true
 extra-deps:
-- alex-3.1.7
 - folds-0.7.1
-- github-0.15.0
-- haxl-0.4.0.0
-- lens-4.15.1
+- haxl-0.4.0.2
 - log-0.6
 - hpqtypes-1.5.1.1
-- lucid-2.9.7
 - monad-http-0.2.0.0
-- rfc5051-0.1.0.3
-- servant-0.9
+- turtle-1.2.8
 flags: {}

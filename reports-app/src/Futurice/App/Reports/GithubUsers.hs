@@ -36,7 +36,7 @@ import Futurice.Report.Columns
 import qualified Data.Map.Strict as Map
 import qualified GitHub          as GH
 
--- | TODO: repositoryEventsR
+-- TODO: repositoryEventsR
 import Unsafe.Coerce (unsafeCoerce)
 
 -- TODO: add foldl' to futurice-prelude
