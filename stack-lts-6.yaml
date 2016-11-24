@@ -48,16 +48,12 @@ packages:
     git: https://github.com/phadej/machines-directory.git
     commit: ff01ef0cd0ce0ff092eb1d2fcaa64f6fbad547c2
   extra-dep: true
-# https://github.com/bitemyapp/bloodhound/pull/155
-- location:
-    git: https://github.com/bitemyapp/bloodhound.git
-    commit: 0ee54ec08793d742225645aa80321c6158966d6a
-  extra-dep: true
 extra-deps:
 - aeson-1.0.1.0
 - aeson-extra-0.4.0.0
 - aeson-pretty-0.8.2
 - bifunctors-5.4.1
+- bloodhound-0.12.0.0
 - clay-0.11
 - comonad-5
 - extra-1.5.1

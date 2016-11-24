@@ -226,7 +226,7 @@ timereportsByTask midDay1 midDay2 taskId reports = do
 fsum :: Num a => L' a a
 fsum = L' id (+) 0
 
-flength :: Num a => L' a Int
+flength :: L' a Int
 flength = L' id (\x _ -> x + 1) 0
 
 fmedian :: L' Double Double

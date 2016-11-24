@@ -17,6 +17,7 @@ before_install:
 - stack +RTS -N2 -RTS --version
 - ghc --version
 install:
+- JOB_START_TIME=$(date +%s)
 - if [ "$STACK_SOLVER" = "YES" ]; then rm -f stack.yaml; stack update; stack init
   --solver; fi; stack --no-terminal --skip-ghc-check list-dependencies|sort > installplan.txt;
   cat installplan.txt; stack --no-terminal --skip-ghc-check setup; if diff -u $HOME/.stack-work-cache/installplan.txt
@@ -29,7 +30,8 @@ install:
   fi;
 script:
 - if [ "$PEDANTIC" = "YES" ]; then export STACKOPTS=--pedantic; fi
-- stack --no-terminal --skip-ghc-check build --test $STACKOPTS -j1 --ghc-options="-j2
+- JOB_CURR_TIME=$(date +%s)
+- timeout $((JOB_START_TIME + 2400 - JOB_CURR_TIME)) stack --no-terminal --skip-ghc-check build --test $STACKOPTS -j1 --ghc-options="-j2
   +RTS -M2G -A128M -n2m -RTS"
 - stack --no-terminal --skip-ghc-check sdist
 matrix:

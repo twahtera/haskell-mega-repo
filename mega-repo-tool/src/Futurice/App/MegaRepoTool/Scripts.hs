@@ -1,37 +1,39 @@
-{-# LANGUAGE OverloadedStrings  #-}
 module Futurice.App.MegaRepoTool.Scripts (
     dotScript,
     packdepsScript,
     ) where
 
-import Futurice.Prelude hiding (foldMap, fold)
 import Prelude ()
-
-import Turtle
-
-import qualified Data.Text as T
-
-find' :: (Text -> Bool) -> Turtle.FilePath -> Shell Turtle.FilePath
-find' p path = mfilter p' $ lsif predicate path
-  where
-    p' = p . format fp
-    predicate = pure . (/= ".stack-work")
+import Futurice.Prelude
+import Control.Monad            ((>=>))
+import Data.List                (isSuffixOf)
+import Data.Machine
+import System.Directory.Machine (directoryWalk', files)
+import System.Process           (callProcess, readProcess)
 
 -- |
 -- @
 -- packdeps "**/*.cabal"
 -- @
-packdepsScript :: Shell Text
-packdepsScript
-    = inshell "xargs packdeps"
-    $ format fp <$> find' predicate "."
+packdepsScript :: IO ()
+packdepsScript = do
+    args   <- runT $ source ["."] ~> directoryWalk' dirPredicate ~> files ~> filtered filePredicate
+    callProcess "packdeps" args
   where
-    predicate :: Text -> Bool
-    predicate path = not (".stack-work" `T.isInfixOf` path) && ".cabal" `T.isSuffixOf` path
+    dirPredicate d = not . any ($ d) $
+        [ isSuffixOf ".git"
+        , isSuffixOf ".stack-work"
+        , isSuffixOf ".stack-work-dev"
+        -- build-in-docker.sh artifacts
+        , isSuffixOf ".stack-root"
+        , isSuffixOf ".stack-work-docker"
+        ]
 
-dotScript :: Shell Text
-dotScript
-    = inshell "dot -Tpng -o deps.png"
-    $ inshell "tred"
-    $ inshell "stack dot"
-    $ mempty
+    filePredicate = isSuffixOf ".cabal"
+
+dotScript :: IO ()
+dotScript = () <$ pipe ""
+  where
+    pipe = readProcess "stack" ["dot"]
+        >=> readProcess "tred" []
+        >=> readProcess "dot" ["-Tpng", "-o", "deps.png" ]

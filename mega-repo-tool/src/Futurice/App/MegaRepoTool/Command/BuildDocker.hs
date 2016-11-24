@@ -4,16 +4,15 @@ module Futurice.App.MegaRepoTool.Command.BuildDocker (
     ImageName,
     ) where
 
+import Prelude ()
+import Futurice.Prelude
 import Data.Aeson       (FromJSON (..), withObject, (.:))
 import Data.Yaml        (decodeFileEither)
-import Futurice.Prelude hiding (fold)
-import Prelude ()
-import Turtle           hiding (when, (<>))
+import System.Exit      (exitFailure)
+import System.IO        (hClose, hFlush)
+import System.IO.Temp   (withTempFile)
+import System.Process   (callProcess, readProcess)
 
-import System.Exit (exitFailure)
-import System.IO   (hClose, hFlush)
-
-import qualified Control.Foldl as Fold
 import qualified Data.Map      as Map
 import qualified Data.Text     as T
 import qualified Data.Text.IO  as T
@@ -72,12 +71,14 @@ buildDocker imgs = do
              | otherwise = Map.filterWithKey (\k _ -> k `elem` imgs) $ mrtApps cfg
 
     -- Get the hash of current commit
-    githash <- fold (inshell "git log --pretty=format:'%h' -n 1" empty) $ Fold.lastDef "HEAD"
-    shells ("git rev-parse --verify " <> githash) empty
+    githash' <- readProcess "git" ["log", "--pretty=format:%h", "-n", "1"] ""
+    _        <- readProcess "git" ["rev-parse", "--verify", githash'] ""
+    let githash = githash' ^. packed
     T.putStrLn $ "Git hash aka tag for images: " <> githash
 
     -- Check that binaries are build with current hash
     githashBuild <- (T.strip <$> T.readFile "build/git-hash.txt") `catch` onIOError "<none>"
+
     when (githashBuild /= githash) $ do
         T.putStrLn $ "Git hash in build directory don't match: " <> githashBuild  <> " != " <> githash
         T.putStrLn $ "Make sure you have data volumes: "
@@ -88,18 +89,17 @@ buildDocker imgs = do
         exitFailure
 
     -- Build docker images
-    ifor_ apps $ \image (ImageDefinition exe) -> sh $ do
+    ifor_ apps $ \image (ImageDefinition exe) -> do
         -- Write Dockerfile
         let dockerfile' = dockerfile exe
-        (file,handle) <- using $ mktemp "build" "Dockerfile"
-        liftIO $ do
+        withTempFile "build" "Dockerfile." $ \fp handle -> do
             T.hPutStrLn handle dockerfile'
             hFlush handle
             hClose handle
 
-        -- Build an image
-        let fullimage = "futurice/" <> image <> ":" <> githash
-        procs "docker" ["build", "-t", fullimage, "-f", format fp file, "build" ] empty
+            -- Build an image
+            let fullimage = "futurice/" <> image <> ":" <> githash
+            callProcess "docker" ["build", "-t", T.unpack fullimage, "-f", fp, "build" ]
 
 dockerfile :: Text -> Text
 dockerfile exe = T.unlines $

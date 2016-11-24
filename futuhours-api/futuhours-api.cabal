@@ -115,7 +115,6 @@ library
       Data.BinaryFromJSON
       Data.Time.Fxtra
       Database.PostgreSQL.Simple.Fxtra
-      Distribution.Server.Framework.Cron
       Futurice.App.FutuHours
       Futurice.App.FutuHours.API
       Futurice.App.FutuHours.Config
