@@ -9,8 +9,7 @@ import Prelude ()
 import Futurice.Prelude
 import Codec.Picture       (Image, PixelRGBA8)
 import Futurice.Colour
-import Futurice.EnvConfig
-       (GetConfig (..), parseDefaultEkgPort, parseDefaultPort)
+import Futurice.EnvConfig  (Configure (..))
 import Futurice.Logo
 import Futurice.Servant
 import Lucid               hiding (for_)
@@ -29,8 +28,11 @@ api = Proxy
 iconEndpoint :: Proxy IconAPI
 iconEndpoint = Proxy
 
-data Config = Config { getPort :: !Int, getEkgPort :: !Int }
+data Config = Config
 type Ctx = DynMapCache
+
+instance Configure Config where
+    configure = pure Config
 
 server :: Ctx -> Server API
 server cache = pure IndexPage :<|> liftIO . makeLogo'
@@ -43,16 +45,10 @@ main = futuriceServerMain makeCtx $ emptyServerConfig
     & serverDescription .~ "Futurice favicons"
     & serverColour      .~ (Proxy :: Proxy 'FutuBlack)
     & serverApp api     .~ server
+    & serverEnvPfx      .~ "FAVICON"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
     makeCtx _cfg _logger = return
-
-instance GetConfig Config where
-    port = getPort
-    ekgPort = getEkgPort
-    getConfig = Config
-        <$> parseDefaultPort "FAVICON"
-        <*> parseDefaultEkgPort "FAVICON"
 
 -------------------------------------------------------------------------------
 -- IndexPage

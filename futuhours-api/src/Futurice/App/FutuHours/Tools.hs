@@ -18,7 +18,7 @@ import Futurice.App.FutuHours.PlanMillUserIds (planMillUserIds)
 
 populateTimeReports :: IO ()
 populateTimeReports = withStderrLogger $ \logger -> do
-    Config{..} <- getConfig
+    Config{..} <- getConfig logger "FUTUHOURSAPI"
     let pmCfg = PM.Cfg
             { PM.cfgUserId  = cfgPlanmillAdminUser
             , PM.cfgApiKey  = cfgPlanmillSignature
@@ -37,7 +37,7 @@ populateTimeReports = withStderrLogger $ \logger -> do
 
 updateTimeReports :: IO ()
 updateTimeReports = withStderrLogger $ \logger -> do
-    Config{..} <- getConfig
+    Config{..} <- getConfig logger "FUTUHOURSAPI"
     let pmCfg = PM.Cfg
             { PM.cfgUserId  = cfgPlanmillAdminUser
             , PM.cfgApiKey  = cfgPlanmillSignature

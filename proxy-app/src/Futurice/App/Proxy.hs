@@ -15,10 +15,8 @@ module Futurice.App.Proxy (
 
 import Prelude ()
 import Futurice.Prelude
-import Data.Pool                       (Pool, createPool, withResource)
+import Data.Pool                       (createPool, withResource)
 import Data.Text.Encoding              (decodeLatin1)
-import Database.PostgreSQL.Simple      (Connection)
-import Futurice.EnvConfig              (getConfig)
 import Futurice.Servant
 import Network.HTTP.Client             (newManager)
 import Network.HTTP.Client.TLS         (tlsManagerSettings)
@@ -32,7 +30,6 @@ import Servant.Proxy
 import System.IO                       (hPutStrLn, stderr)
 
 import qualified Database.PostgreSQL.Simple as Postgres
-import qualified Network.Wai.Handler.Warp   as Warp
 
 import Futurice.App.Proxy.Config
 import Futurice.App.Proxy.Ctx
@@ -78,13 +75,9 @@ type ProxyDefinition =
     ]
 
 type ProxyAPI  = Get '[JSON] Text :<|> ProxyServer ProxyDefinition
-type ProxyAPI' = FuturiceAPI ProxyAPI ('FutuAccent 'AF3 'AC3)
 
 proxyAPI :: Proxy ProxyAPI
 proxyAPI = Proxy
-
-proxyAPI' :: Proxy ProxyAPI'
-proxyAPI' = Proxy
 
 -------------------------------------------------------------------------------
 -- WAI/startup
@@ -95,36 +88,28 @@ server ctx = pure "P-R-O-X-Y"
     :<|> makeProxy (Proxy :: Proxy MissingReportsEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy PlanmillProxyEndpoint) ctx
 
--- | Server with docs and cache and status
-server' :: DynMapCache -> Ctx -> Server ProxyAPI'
-server' cache ctx = futuriceServer
-    "Proxy"
-    "Proxy into Futurice internal services"
-    cache proxyAPI (server ctx)
-
--- | Wai application
-app :: DynMapCache -> Ctx -> Application
-app cache ctx = serve proxyAPI' (server' cache ctx)
-
 defaultMain :: IO ()
-defaultMain = do
-    hPutStrLn stderr "Hello, proxy-app is alive"
-    Config{..}           <- getConfig
-    mgr                  <- newManager tlsManagerSettings
-    cache                <- newDynMapCache
-    reportsAppBaseurl    <- parseBaseUrl cfgReportsAppBaseurl
-    planmillProxyBaseUrl <- parseBaseUrl cfgPlanmillProxyBaseurl
-    postgresPool         <- createPool
-        (Postgres.connect cfgPostgresConnInfo)
-        Postgres.close
-        1 10 5
-    let ctx = Ctx mgr reportsAppBaseurl planmillProxyBaseUrl
-    let app' = basicAuth (checkCreds postgresPool) "P-R-O-X-Y" $ app cache ctx
-    hPutStrLn stderr "Starting web server"
-    Warp.run cfgPort app'
+defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+    & serverName         .~ "Proxy-app management"
+    & serverDescription  .~ "Audit log"
+    & serverColour       .~ (Proxy :: Proxy ('FutuAccent 'AF3 'AC3))
+    & serverApp proxyAPI .~ server
+    & serverMiddleware   .~ (\ctx -> basicAuth (checkCreds ctx) "P-R-O-X-Y")
+    & serverEnvPfx       .~ "PROXYMGMT"
+  where
+    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx Config {..} _logger _cache = do
+        mgr                  <- newManager tlsManagerSettings
+        reportsAppBaseurl    <- parseBaseUrl cfgReportsAppBaseurl
+        planmillProxyBaseUrl <- parseBaseUrl cfgPlanmillProxyBaseurl
+        postgresPool         <- createPool
+            (Postgres.connect cfgPostgresConnInfo)
+            Postgres.close
+            1 10 5
+        pure $ Ctx mgr postgresPool reportsAppBaseurl planmillProxyBaseUrl
 
-checkCreds :: Pool Connection -> ByteString -> ByteString -> IO Bool
-checkCreds pool u p = withResource pool $ \conn -> do
+checkCreds :: Ctx -> ByteString -> ByteString -> IO Bool
+checkCreds ctx u p = withResource (ctxPostgresPool ctx) $ \conn -> do
     let u' = decodeLatin1 u
         p' = decodeLatin1 p
     res <- Postgres.query conn

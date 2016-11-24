@@ -23,25 +23,18 @@ data Config = Config
     , cfgFdOrg       :: !(FD.ParamName FD.Organisation)
       -- ^ Flowdock organisation
     , cfgPmBaseReq   :: !Request
-    , cfgPort        :: !Int
-    , cfgEkgPort     :: !Int
     }
     deriving (Show)
 
-instance GetConfig Config where
-    port = cfgPort
-    ekgPort = cfgEkgPort
-
-    getConfig = Config
-        <$> parseEnvVar "FUM_AUTH_TOKEN"
-        <*> parseEnvVar "FUM_BASE_URL"
-        <*> parseEnvVar "FUM_USER_LIST"
-        <*> (f <$> parseEnvVar "GITHUBPROXY_HAXLURL")
-        <*> parseEnvVar "GH_ORGANISATION"
-        <*> parseEnvVar "FD_AUTH_TOKEN"
-        <*> parseEnvVar "FD_ORGANISATION"
-        <*> (f <$> parseEnvVar "PLANMILLPROXY_HAXLURL")
-        <*> parseDefaultPort "CONTACTS"
-        <*> parseDefaultEkgPort "CONTACTS"
+instance Configure Config where
+    configure = Config
+        <$> envVar "FUM_AUTH_TOKEN"
+        <*> envVar "FUM_BASE_URL"
+        <*> envVar "FUM_USER_LIST"
+        <*> (f <$> envVar "GITHUBPROXY_HAXLURL")
+        <*> envVar "GH_ORGANISATION"
+        <*> envVar "FD_AUTH_TOKEN"
+        <*> envVar "FD_ORGANISATION"
+        <*> (f <$> envVar "PLANMILLPROXY_HAXLURL")
       where
         f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }

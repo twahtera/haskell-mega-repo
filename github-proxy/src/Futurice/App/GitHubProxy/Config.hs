@@ -12,17 +12,10 @@ import Futurice.EnvConfig
 data Config = Config
     { cfgAuth             :: !Auth
     , cfgPostgresConnInfo :: !ConnectInfo
-    , cfgPort             :: !Int
-    , cfgEkgPort          :: !Int
     }
     deriving (Show)
 
-instance GetConfig Config where
-    port    = cfgPort
-    ekgPort = cfgEkgPort
-
-    getConfig = Config
-        <$> parseEnvVar "GH_AUTH_TOKEN"
-        <*> getConnectInfo
-        <*> parseDefaultPort "GITHUBPROXY"
-        <*> parseDefaultEkgPort "GITHUBPROXY"
+instance Configure Config where
+    configure = Config
+        <$> (envVar "GH_AUTH_TOKEN" <!> envVar "GH_AUTH_TOKEN2")
+        <*> envConnectInfo

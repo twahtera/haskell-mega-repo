@@ -32,16 +32,21 @@ library
   build-depends:
       base                  >=4.7   && <4.10
     , bytestring
+    , containers
     , flowdock-rest
     , fum-client
     , futurice-prelude
     , github
     , http-client
+    , lattices >=1.5.0
     , monad-logger
     , planmill-client
     , postgresql-simple
     , postgresql-simple-url
+    , semigroups
+    , semigroupoids
     , text
+    , uuid-types
   exposed-modules:
       Futurice.EnvConfig
   default-language: Haskell2010

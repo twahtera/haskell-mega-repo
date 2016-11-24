@@ -73,6 +73,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverDescription   .~ "Serve smaller versions of your favourite images"
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
     & serverApp avatarApi .~ server
+    & serverEnvPfx        .~ "AVATAR"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
     makeCtx _cfg _logger cache = do

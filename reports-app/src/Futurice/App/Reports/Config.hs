@@ -22,27 +22,20 @@ data Config = Config
     , cfgFlowdockOrgName          :: !(FD.ParamName FD.Organisation)
     , cfgReposUrl                 :: !Text
     , cfgPlanmillProxyBaseRequest :: !Request
-    , cfgPort                     :: !Int
-    , cfgEkgPort                  :: !Int
     }
     deriving (Show)
 
-instance GetConfig Config where
-    port = cfgPort
-    ekgPort = cfgEkgPort
-
-    getConfig = Config
-        <$> parseEnvVar "GH_ORG"
-        <*> (f <$> parseEnvVar "GITHUBPROXY_HAXLURL")
-        <*> parseEnvVar "FUM_PUBLICURL"
-        <*> parseEnvVar "FUM_TOKEN"
-        <*> parseEnvVar "FUM_BASEURL"
-        <*> parseEnvVar "FUM_LISTNAME"
-        <*> parseEnvVar "FD_AUTH_TOKEN"
-        <*> parseEnvVar "FD_ORGANISATION"
-        <*> parseEnvVar "REPORTS_GH_REPOSURL" -- TODO: change to REPORTSAPP_GH_REPOSURL
-        <*> (f <$> parseEnvVar "PLANMILLPROXY_HAXLURL")
-        <*> parseDefaultPort "REPORTSAPP"
-        <*> parseDefaultEkgPort "REPORTSAPP"
+instance Configure Config where
+    configure = Config
+        <$> envVar "GH_ORG"
+        <*> (f <$> envVar "GITHUBPROXY_HAXLURL")
+        <*> envVar "FUM_PUBLICURL"
+        <*> envVar "FUM_TOKEN"
+        <*> envVar "FUM_BASEURL"
+        <*> envVar "FUM_LISTNAME"
+        <*> envVar "FD_AUTH_TOKEN"
+        <*> envVar "FD_ORGANISATION"
+        <*> envVar "REPORTS_GH_REPOSURL" -- TODO: change to REPORTSAPP_GH_REPOSURL
+        <*> (f <$> envVar "PLANMILLPROXY_HAXLURL")
       where
         f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }

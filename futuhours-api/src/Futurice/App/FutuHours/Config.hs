@@ -5,8 +5,6 @@ module Futurice.App.FutuHours.Config (
 
 import Prelude ()
 import Futurice.Prelude
-
-import Control.Monad.Logger       (LogLevel (..))
 import Database.PostgreSQL.Simple (ConnectInfo)
 import Futurice.EnvConfig
 
@@ -28,26 +26,17 @@ data Config = Config
     , cfgFumToken          :: !FUM.AuthToken
     , cfgFumBaseurl        :: !FUM.BaseUrl
     , cfgFumList           :: !FUM.ListName
-    , cfgPort              :: !Int
-    , cfgEkgPort           :: !Int
     , cfgDevelopment       :: !Development
-    , cfgLogLevel          :: !LogLevel
     }
     deriving (Show)
 
-instance GetConfig Config where
-    port = cfgPort
-    ekgPort = cfgEkgPort
-
-    getConfig = Config
-        <$> parseEnvVar "PLANMILL_BASEURL"
-        <*> parseEnvVar "PLANMILL_ADMIN"
-        <*> parseEnvVar "PLANMILL_SIGNATURE"
-        <*> getConnectInfo
-        <*> parseEnvVar "FUM_TOKEN"
-        <*> parseEnvVar "FUM_BASEURL"
-        <*> parseEnvVar "FUM_LISTNAME"
-        <*> parseDefaultPort "FUTUHOURSAPI"
-        <*> parseDefaultEkgPort "FUTUHOURSAPI"
-        <*> parseEnvVarWithDefault "DEVELOPMENT" Production
-        <*> parseEnvVarWithDefault "LOGLEVEL" LevelInfo
+instance Configure Config where
+    configure = Config
+        <$> envVar "PLANMILL_BASEURL"
+        <*> envVar "PLANMILL_ADMIN"
+        <*> envVar "PLANMILL_SIGNATURE"
+        <*> envConnectInfo
+        <*> envVar "FUM_TOKEN"
+        <*> envVar "FUM_BASEURL"
+        <*> envVar "FUM_LISTNAME"
+        <*> envVarWithDefault "DEVELOPMENT" Production

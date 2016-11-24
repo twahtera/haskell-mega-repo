@@ -7,15 +7,5 @@ import Futurice.Prelude
 import Futurice.EnvConfig
 
 data Config = Config
-    { cfgPort    :: !Int
-    , cfgEkgPort :: !Int
-    }
-    deriving (Show)
-
-instance GetConfig Config where
-    port = cfgPort
-    ekgPort = cfgEkgPort
-
-    getConfig = Config
-        <$> parseDefaultPort "THEMAPP"
-        <*> parseDefaultEkgPort "THEMAPP"
+instance Configure Config where
+    configure = pure Config
