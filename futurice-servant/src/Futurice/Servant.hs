@@ -68,6 +68,7 @@ import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
 import Futurice.EnvConfig                   (Configure, getConfigWithPorts)
 import GHC.Prim                             (coerce)
+import Log.Backend.Logentries               (withLogentriesLogger)
 import Network.Wai
        (Middleware, requestHeaders, responseLBS)
 import Network.Wai.Metrics                  (metrics, registerWaiMetrics)
@@ -204,28 +205,33 @@ futuriceServerMain
     -> ServerConfig I colour ctx api
        -- ^ Server configuration
     -> IO ()
-futuriceServerMain makeCtx (SC t d server middleware (I envpfx)) = withStderrLogger $ \logger ->
+futuriceServerMain makeCtx (SC t d server middleware (I envpfx)) =
+    withStderrLogger $ \logger ->
     handleAll (handler logger) $ do
         runLogT "futurice-servant" logger $ logInfo_ $ "Hello, " <> t <> " is alive"
-        (cfg, p, ekgP) <- getConfigWithPorts logger (envpfx ^. from packed)
+        (cfg, p, ekgP, leToken) <- getConfigWithPorts logger (envpfx ^. from packed)
         cache          <- newDynMapCache
-        ctx            <- makeCtx cfg logger cache
-        let server'    =  futuriceServer t d cache proxyApi (server ctx)
-                       :: Server (FuturiceAPI api colour)
 
-        store      <- serverMetricStore <$> forkServer "localhost" ekgP
-        waiMetrics <- registerWaiMetrics store
+        withLogentriesLogger leToken $ \leLogger -> do
+            let logger' = logger <> leLogger
+            ctx            <- makeCtx cfg logger' cache
+            let server'    =  futuriceServer t d cache proxyApi (server ctx)
+                           :: Server (FuturiceAPI api colour)
 
-        runLogT "futurice-servant" logger $ do
-            logInfo_ $ "Starting " <> t <> " at port " <> textShow p
-            logInfo_ $ "-          http://localhost:" <> textShow p <> "/"
-            logInfo_ $ "- swagger: http://localhost:" <> textShow p <> "/swagger-ui/"
-            logInfo_ $ "- ekg:     http://localhost:" <> textShow ekgP <> "/"
+            store      <- serverMetricStore <$> forkServer "localhost" ekgP
+            waiMetrics <- registerWaiMetrics store
 
-        Warp.runSettings (settings p logger)
-            $ metrics waiMetrics
-            $ middleware ctx
-            $ serve proxyApi' server'
+
+            runLogT "futurice-servant" logger' $ do
+                logInfo_ $ "Starting " <> t <> " at port " <> textShow p
+                logInfo_ $ "-          http://localhost:" <> textShow p <> "/"
+                logInfo_ $ "- swagger: http://localhost:" <> textShow p <> "/swagger-ui/"
+                logInfo_ $ "- ekg:     http://localhost:" <> textShow ekgP <> "/"
+
+            Warp.runSettings (settings p logger')
+                $ metrics waiMetrics
+                $ middleware ctx
+                $ serve proxyApi' server'
   where
     handler logger e = do
         runLogT "futurice-servant" logger $ logAttention_ $ textShow e

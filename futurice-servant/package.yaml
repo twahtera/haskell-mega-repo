@@ -36,6 +36,7 @@ library:
     - gitrev >=1.2.0
     - http-types
     - lens
+    - log-logentries
     - servant ==0.9.*
     - servant-cache
     - servant-cassava
