@@ -9,10 +9,12 @@ module Log.Backend.Logentries (withLogentriesLogger) where
 
 import Prelude ()
 import Prelude.Compat
-import Data.Foldable   (for_)
+import Control.Concurrent (threadDelay)
+import Control.Exception  (SomeException, handle)
+import Data.Foldable      (for_)
 import Data.IORef
-import Data.UUID.Types (UUID)
-import Network         (HostName)
+import Data.UUID.Types    (UUID)
+import Network            (HostName)
 import Network.Socket
        (AddrInfo (..), AddrInfoFlag (AI_NUMERICSERV), SocketType (Stream),
        connect, defaultHints, getAddrInfo, socket)
@@ -39,28 +41,26 @@ withLogentriesLogger uuid act = do
   where
     uuidBS = UUID.toASCIIBytes uuid
 
-    logentriesWrite ref msgs = do
+    logentriesWrite ref msgs = handle retry $ do
         ctx <- readIORef ref
         for_ msgs $ \msg -> do
             send ctx uuidBS
             send ctx " "
             sendLazy ctx (Aeson.encode msg)
             send ctx "\n"
+      where
+        retry :: SomeException -> IO ()
+        retry ex = do
+            putStrLn $ "Logentries: unexpecter error: " ++ show ex
+            threadDelay $ 10 * 1000000
+            -- do we need to cleanup old connction ?
+            ctx <- Log.Backend.Logentries.connect "data.logentries.com" 443
+            writeIORef ref ctx
+            logentriesWrite ref msgs
 
     logentriesSync ref = do
         ctx <- readIORef ref
         TLS.contextFlush ctx
-
-{-
-retryOnException :: forall r. IO r -> IO r
-retryOnException m = try m >>= \case
-  Left (ex::SomeException) -> do
-    putStrLn $ "ElasticSearch: unexpected error: "
-      <> show ex <> ", retrying in 10 seconds"
-    threadDelay $ 10 * 1000000
-    retryOnException m
-  Right result -> return result
--}
 
 -------------------------------------------------------------------------------
 -- Connection
