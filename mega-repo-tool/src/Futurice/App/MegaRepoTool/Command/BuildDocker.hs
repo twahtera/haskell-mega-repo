@@ -81,7 +81,7 @@ buildDocker imgs = do
 
     when (githashBuild /= githash) $ do
         T.putStrLn $ "Git hash in build directory don't match: " <> githashBuild  <> " != " <> githash
-        T.putStrLn $ "Make sure you have data volumes: "
+        T.putStrLn $ "Make sure you have data volumes:"
         T.putStrLn $ "  docker volume create --name hmr-stack-root"
         T.putStrLn $ "  docker volume create --name hmr-stack-work"
         T.putStrLn $ "Run following command to build image:"
@@ -89,7 +89,7 @@ buildDocker imgs = do
         exitFailure
 
     -- Build docker images
-    ifor_ apps $ \image (ImageDefinition exe) -> do
+    images <- ifor apps $ \image (ImageDefinition exe) -> do
         -- Write Dockerfile
         let dockerfile' = dockerfile exe
         withTempFile "build" "Dockerfile." $ \fp handle -> do
@@ -100,6 +100,13 @@ buildDocker imgs = do
             -- Build an image
             let fullimage = "futurice/" <> image <> ":" <> githash
             callProcess "docker" ["build", "-t", T.unpack fullimage, "-f", fp, "build" ]
+
+            -- accumulate image names
+            pure fullimage
+
+    T.putStrLn "Upload images by:"
+    for_ images $ \image ->
+        T.putStrLn $ "  docker push " <> image
 
 dockerfile :: Text -> Text
 dockerfile exe = T.unlines $
