@@ -59,8 +59,7 @@ data Project = Project
     , _projectName   :: !Text
     , _projectTasks  :: [Task]
     , _projectClosed :: !Bool
-    }
-  deriving (Eq, Show, Typeable, Generic)
+    } deriving (Eq, Show, Typeable, Generic)
 
 data Task = Task
   { _taskId :: PM.TaskId
@@ -118,7 +117,7 @@ data EntryUpdate = EntryUpdate
 data EntryUpdateResponse = EntryUpdateResponse
   { _eurUser :: !User
   , _eurHours :: !HoursUpdateResponse
-  }
+  } deriving (Eq, Show, Typeable, Generic)
 
 -- Golang: UserResponse
 data User = User
@@ -156,7 +155,7 @@ data HoursDayUpdate = HoursDayUpdate
 data HoursMonth = HoursMonth
   { _monthHours :: !Float
   , _monthUtilizationRate :: !Float
-  , _monthDays :: Map Text [HoursDay]
+  , _monthDays :: Map Text HoursDay
   } deriving (Eq, Show, Typeable, Generic)
 
 data HoursMonthUpdate = HoursMonthUpdate

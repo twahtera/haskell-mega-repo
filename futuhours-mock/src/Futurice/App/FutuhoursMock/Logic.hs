@@ -13,13 +13,14 @@ module Futurice.App.FutuhoursMock.Logic (
     userEndpoint,
     hoursEndpoint,
     entryEndpoint,
+    mkEntryEndPoint,
     entryIdEndpoint,
     entryDeleteEndpoint,
     fillProjects,
     parseDayFormat,
     parseMonthFormat,
     daysFD,
-    monthsForDays,
+    monthForDay,
     dayInMonth,
     genMonths,
     ) where
@@ -28,17 +29,17 @@ import Futurice.App.FutuhoursMock.Types
 import Futurice.Prelude
 import Prelude ()
 
+import Control.Concurrent.STM
 import Data.IORef
 import Data.Vector.Lens (vector)
 import Data.Text (pack, unpack)
 import Futurice.App.FutuhoursMock.MockData
-import System.IO.Unsafe (unsafePerformIO)
 import System.Random (getStdRandom, randomR, randomRIO)
 import Test.QuickCheck (arbitrary, sample')
 import Data.Time (UTCTime, diffUTCTime, getCurrentTime)
 import Data.Time.Format (parseTimeOrError, formatTime)
 import Data.Time.Locale.Compat (defaultTimeLocale)
-import Data.Time.Calendar (diffDays, addDays, showGregorian)
+import Data.Time.Calendar (diffDays, addDays, showGregorian, toGregorian, fromGregorian)
 import Data.Maybe (fromJust)
 import Futurice.Servant
 import Servant
@@ -94,6 +95,15 @@ hoursEndpoint _ctx sd ed = do
                          , _hoursResponseDefaultWorkHours=7.5
                          }
 
+daysFD :: Integer -> Day -> [Day]
+daysFD duration start = [addDays i start | i <- [0..duration]]
+
+monthForDay :: Day -> String
+monthForDay x = formatTime defaultTimeLocale "%Y-%m" x
+
+dayInMonth :: String -> Day -> Bool
+dayInMonth m d = (m == formatTime defaultTimeLocale "%Y-%m" d)
+
 type Counter = Int -> IO Int
 
 makeCounter :: IO Counter
@@ -103,27 +113,33 @@ makeCounter = do
     modifyIORef' r (+i)
     readIORef r
 
-daysFD :: Integer -> Day -> [Day]
-daysFD duration start = [addDays i start | i <- [0..duration]]
+plusOne :: Counter -> IO Int
+plusOne cnt = do
+  val <- cnt 1
+  pure $ val
 
-monthsForDays :: [Day] -> [String]
-monthsForDays xs = nub [formatTime defaultTimeLocale "%Y-%m" x | x <- xs]
-
-dayInMonth :: String -> Day -> Bool
-dayInMonth m d = (m == formatTime defaultTimeLocale "%Y-%m" d)
+mkGo :: Counter -> IO (HoursDay)
+mkGo cnt = do
+  newval <- plusOne cnt
+  pure $ days !! mod (newval) (length days)
 
 genMonths :: [Day] -> IO (Map.Map Text HoursMonth)
 genMonths ds = do
-  c <- makeCounter
-  ms <- flip traverse (monthsForDays ds) $ \m -> do
-    let go = \i -> days !! (mod (unsafePerformIO $ c i) (length days))
-    let days = [go 1 | d<-ds, dayInMonth m d]
+  cnt <- makeCounter
+  ms <- flip traverse ds $ \mm -> do
+    let m = monthForDay mm
+    let days' = [(d, mkGo cnt) | d<-ds, dayInMonth m d]
     hrs <- randomRIO (0, 150) :: IO Int
     utz <- getStdRandom (randomR (0,100)) :: IO Float
+    days'' <- for days' $ \(d', d) -> do
+        let (ym',mm',_) = toGregorian mm
+        let (_,_,dd') = toGregorian d'
+        fsd <- d
+        pure $ (pack $ show $ fromGregorian ym' mm' dd', fsd)
     pure $ (pack m, HoursMonth
                     { _monthHours=(fromIntegral hrs)*0.5
                     , _monthUtilizationRate=utz
-                    , _monthDays=Map.fromList [(pack m, days)]})
+                    , _monthDays=Map.fromList days''})
   pure $ Map.fromList ms
 
 fillProjects :: IO [Project]

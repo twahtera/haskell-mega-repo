@@ -44,12 +44,14 @@ library
     , lucid
     , planmill-client
     , postgresql-simple
+    , pretty-show
     , QuickCheck
     , resource-pool
     , random
     , servant
     , servant-lucid
     , servant-server
+    , stm
     , swagger2
     , text
     , time
