@@ -21,7 +21,7 @@ type FutuhoursAPI = Get '[JSON] Text
                  :> Get '[JSON] (HoursResponse)
     :<|> "entry" :> ReqBody '[JSON] EntryUpdate :> Post '[JSON] (EntryUpdateResponse)
     :<|> "entry" :> Capture "id" Int :> ReqBody '[JSON] EntryUpdate :> Put '[JSON] (EntryUpdateResponse)
-    :<|> "entry" :> Capture "id" Int :> Delete '[JSON] ([Int])
+    :<|> "entry" :> Capture "id" Int :> ReqBody '[JSON] EntryUpdate :> Delete '[JSON] (EntryUpdateResponse)
 
 futuhoursApi :: Proxy FutuhoursAPI
 futuhoursApi = Proxy

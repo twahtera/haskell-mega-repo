@@ -29,7 +29,7 @@ server ctx = pure "This is futuhours mock api"
     :<|> hoursEndpoint ctx
     :<|> entryEndpoint ctx
     :<|> entryIdEndpoint ctx
-    :<|> liftIO . entryDeleteEndpoint ctx
+    :<|> entryDeleteEndpoint ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig

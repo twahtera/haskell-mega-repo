@@ -126,7 +126,7 @@ mkGo cnt = do
 genMonths :: [Day] -> IO (Map.Map Text HoursMonth)
 genMonths ds = do
   cnt <- makeCounter
-  ms <- flip traverse ds $ \mm -> do
+  ms <- flip traverse ds $ \mm -> do
     let m = monthForDay mm
     let days' = [(d, mkGo cnt) | d<-ds, dayInMonth m d]
     hrs <- randomRIO (0, 150) :: IO Int
@@ -157,8 +157,8 @@ fillProjects = do
                             x <- randomRIO (-10, 20) :: IO Float
                             pure $ Just x
                           False -> pure $ Nothing
-      pure $ t { _taskLatestEntry=t'', _taskHoursRemaining=hrsRemaining }
-    pure $ p { _projectTasks=ts'}
+      pure $ t { _taskLatestEntry=t'', _taskHoursRemaining=hrsRemaining }
+    pure $ p { _projectTasks=ts'}
   pure ps'
 
 mkEntryEndPoint :: EntryUpdate -> IO EntryUpdateResponse
@@ -225,7 +225,21 @@ entryIdEndpoint _ctx _id req = do
   -- TODO: set res.Entry.ID as _id
   return res
 
-entryDeleteEndpoint :: Ctx -> Int -> IO ([Int])
-entryDeleteEndpoint _ctx _id = do
+entryDeleteEndpoint
+  :: Ctx
+  -> Int
+  -> EntryUpdate
+  -> ExceptT ServantErr IO EntryUpdateResponse
+entryDeleteEndpoint _ctx _id req = do
   -- DELETE /entry/#id
-  pure $ [1]
+  now <- liftIO getCurrentTime
+  let dummyReq = EntryUpdate
+          { _euTaskId=PM.Ident 1
+          , _euProjectId=PM.Ident 1
+          , _euDescription="test"
+          , _euDate=now
+          , _euHours=7.5
+          , _euClosed=Nothing
+          }
+  res <- liftIO $ mkEntryEndPoint dummyReq
+  return res
