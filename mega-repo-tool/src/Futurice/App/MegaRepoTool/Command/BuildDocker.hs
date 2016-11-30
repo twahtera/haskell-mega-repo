@@ -114,12 +114,11 @@ dockerfile exe = T.unlines $
     , "MAINTAINER Oleg Grenrus <oleg.grenrus@iki.fi>"
     , "RUN apt-get -yq update && apt-get -yq --no-install-suggests --no-install-recommends --force-yes install " <> T.intercalate " " debs <> " && rm -rf /var/lib/apt/lists/*"
     , "RUN useradd -m -s /bin/bash -d /app app"
-    , "WORKDIR /app"
-    , "ADD " <> exe <> " /app"
-    , "RUN chown -R app:app /app"
     , "EXPOSE 8000"
     , "USER app"
     , "WORKDIR /app"
+    , "ADD " <> exe <> " /app"
+    , "RUN chown -R app:app /app"
     , "CMD [\"/app/" <> exe <> "\", \"+RTS\", \"-N\", \"-T\"]"
     ]
   where
@@ -128,6 +127,7 @@ dockerfile exe = T.unlines $
         , "libfftw3-bin"
         , "libgmp10"
         , "libpq5"
+        , "curl"
         ]
 
 onIOError :: Monad m => a -> IOError -> m a
