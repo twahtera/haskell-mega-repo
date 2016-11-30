@@ -39,7 +39,7 @@ import Data.Singletons.Bool             (SBoolI, sboolEqRefl)
 import Data.Swagger                     (NamedSchema (..), ToSchema (..))
 import Data.Text.Lens                   (unpacked)
 import Data.Type.Equality
-import Futurice.Aeson                   (withValueDump)
+import Futurice.Aeson                   (withObjectDump)
 import Futurice.Constraint.ForallSymbol (ForallFSymbol (..))
 import Generics.SOP                     (All, hcmap, hcollapse, hcpure)
 import GHC.TypeLits                     (KnownSymbol, sameSymbol, symbolVal)
@@ -494,7 +494,7 @@ instance ToSchema SomeQuery where
     declareNamedSchema _ = pure $ NamedSchema (Just "PlanMill Query") mempty
 
 instance FromJSON SomeQuery where
-    parseJSON = withValueDump $ withObject "Query" $ \obj -> do
+    parseJSON = withObjectDump "PM.Query" $ \obj -> do
         tag <- obj .: "tag"
         case (tag :: Text) of
             "get" -> mkSomeQueryGet
@@ -511,7 +511,7 @@ instance FromJSON SomeQuery where
             "capacities" -> mkSomeQueryCapacities
                 <$> obj .: "interval"
                 <*> obj .: "uid"
-            _ -> fail $ "Invalid tag: " ++ show tag
+            _ -> fail $ "Invalid query tag: " ++ show tag
 
 instance Binary SomeQuery where
     put (SomeQuery (QueryGet t q p)) = do

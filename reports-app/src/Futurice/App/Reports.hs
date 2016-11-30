@@ -20,6 +20,7 @@ import Futurice.Integrations
 import Futurice.Periocron
 import Futurice.Servant
 import Generics.SOP              (hcmap, hcollapse)
+import GHC.TypeLits              (symbolVal)
 import Network.HTTP.Client
        (Manager, httpLbs, newManager, parseUrlThrow, responseBody)
 import Network.HTTP.Client.TLS   (tlsManagerSettings)
@@ -174,9 +175,13 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
 
         return ctx
 
-    mkReportPeriocron :: RClass r => Ctx -> ReportEndpoint r -> (Job, Intervals)
+    mkReportPeriocron :: forall r. RClass r => Ctx -> ReportEndpoint r -> (Job, Intervals)
     mkReportPeriocron ctx (ReportEndpoint r) =
-          (Job "Updating report " $ r ctx, tail $ every $ 60 * 60)
+        ( Job (name ^. packed) (r ctx)
+        , tail $ every $ 10 * 60
+        )
+      where
+        name = "Updating report " <> symbolVal (Proxy :: Proxy (RName r))
 
 ctxToIntegrationsConfig :: UTCTime -> Ctx -> IntegrationsConfig
 ctxToIntegrationsConfig now (_cache, mgr, lgr, cfg) = MkIntegrationsConfig

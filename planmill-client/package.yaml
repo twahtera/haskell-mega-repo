@@ -55,7 +55,7 @@ dependencies:
   - http-types
   - intervals
   - lens
-  - log
+  - log-base
   - monad-http
   - monad-time
   - monadcryptorandom >=0.7.0
