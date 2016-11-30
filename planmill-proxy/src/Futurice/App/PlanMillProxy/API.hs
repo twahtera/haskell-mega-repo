@@ -16,7 +16,7 @@ import Servant.Binary.Tagged (BINARYTAGGED)
 
 type PlanMillProxyAPI =
     Get '[JSON] Text
-    :<|> "haxl" :> ReqBody '[JSON] [SomeQuery] :> Post '[BINARYTAGGED] [Either Text SomeResponse]
+    :<|> "planmill-haxl" :> ReqBody '[JSON] [SomeQuery] :> Post '[BINARYTAGGED] [Either Text SomeResponse]
 
 planmillProxyApi :: Proxy PlanMillProxyAPI
 planmillProxyApi = Proxy
