@@ -66,7 +66,7 @@ type PlanmillProxyEndpoint' =
 type PlanmillProxyEndpoint = ProxyPair
     ("planmill-proxy" :> PlanmillProxyEndpoint')
     PlanmillProxyService
-    ("haxl" :> PlanmillProxyEndpoint')
+    ("planmill-haxl" :> PlanmillProxyEndpoint')
 
 -- | Whole proxy definition
 type ProxyDefinition =
