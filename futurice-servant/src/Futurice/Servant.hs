@@ -241,6 +241,7 @@ futuriceServerMain makeCtx (SC t d server middleware (I envpfx)) =
         & Warp.setPort p
         & Warp.setOnException (onException logger)
         & Warp.setOnExceptionResponse onExceptionResponse
+        & Warp.setServerName (TE.encodeUtf8 t)
 
     onException logger mreq e = do
         runLogT "warp" logger $ do
