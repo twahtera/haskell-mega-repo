@@ -84,7 +84,7 @@ hoursEndpoint _ctx sd ed = do
                     Just x -> Just $ parseDayFormat x
                     Nothing -> Nothing
   let endDate = case ed of
-                  Just x -> Just $ parseDayFormat x
+                  Just x -> Just $ parseDayFormat x
                   Nothing -> Nothing
   let duration = diffDays (utctDay $ fromJust endDate) (utctDay $ fromJust startDate)
   let days = daysFD duration $ utctDay (fromJust startDate)
@@ -144,19 +144,19 @@ genMonths ds = do
 
 fillProjects :: IO [Project]
 fillProjects = do
-  ps' <- flip traverse projects $ \p -> do
-    ts' <- flip traverse (p ^.. projectTasks . traverse) $ \t -> do
+  ps' <- flip traverse projects $ \p -> do
+    ts' <- flip traverse (p ^.. projectTasks . traverse) $ \t -> do
       now <- getCurrentTime
       hrs <- randomRIO (1, 7) :: IO Int
       let t'' = case (fromMaybe Nothing $ t ^? taskLatestEntry) of
                   Just x -> Just $ x { _latestEntryDate = Just now
-                                     , _latestEntryHours = Just $ (fromIntegral hrs)*0.5 }
+                                     , _latestEntryHours = Just $ (fromIntegral hrs)*0.5 }
                   Nothing -> Nothing
       hrsRemaining <- case (_projectId p /= _projectId internalProject && _projectId p /= _projectId absenceProject) of
                           True -> do
                             x <- randomRIO (-10, 20) :: IO Float
                             pure $ Just x
-                          False -> pure $ Nothing
+                          False -> pure $ Nothing
       pure $ t { _taskLatestEntry=t'', _taskHoursRemaining=hrsRemaining }
     pure $ p { _projectTasks=ts'}
   pure ps'
@@ -222,8 +222,23 @@ entryIdEndpoint
 entryIdEndpoint _ctx _id req = do
   -- PUT /entry/#id
   res <- liftIO $ (mkEntryEndPoint req)
-  -- TODO: set res.Entry.ID as _id
-  return res
+  res' <- for [_eurHours res] $ \h -> do
+    h' <- for [_hoursUpdateResponseMonths h] $ \m -> do
+        m' <- sequence . flip Map.mapWithKey m $ \k ds -> do
+            d' <- for ds $ \d -> do
+                let dsu = _hoursMonthUpdateDays d
+                msu' <- sequence . flip Map.mapWithKey dsu $ \dsk dsv -> do
+                    hu' <- for dsv $ \dsvi -> do
+                        let finale = case (_hoursDayUpdateEntry dsvi) of
+                                        Just x  -> Just $ x { _entryId=PM.Ident 1 }
+                                        Nothing -> Nothing
+                        pure $ dsvi { _hoursDayUpdateEntry=finale }
+                    pure $ hu'
+                pure $ d { _hoursMonthUpdateDays=msu' }
+            pure $ d'
+        pure $ h { _hoursUpdateResponseMonths=m' }
+    pure $ res { _eurHours=h' !! 0 }
+  return (res' !! 0)
 
 entryDeleteEndpoint
   :: Ctx

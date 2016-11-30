@@ -20,8 +20,10 @@ module Futurice.App.FutuhoursMock.Types (
     mkTask,
     -- * Entry
     Entry (..),
+    entryId,
     EntryUpdate (..),
     EntryUpdateResponse (..),
+    eurHours,
     LatestEntry (..),
     latestEntryDescription,
     mkLatestEntry,
@@ -35,8 +37,11 @@ module Futurice.App.FutuhoursMock.Types (
     HoursMonth (..),
     HoursResponse (..),
     HoursDayUpdate (..),
+    hoursDayUpdateEntry,
     HoursMonthUpdate (..),
+    hoursMonthUpdateDays,
     HoursUpdateResponse (..),
+    hoursUpdateResponseMonths,
     ) where
 
 import Prelude ()
