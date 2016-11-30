@@ -511,7 +511,7 @@ instance FromJSON SomeQuery where
             "capacities" -> mkSomeQueryCapacities
                 <$> obj .: "interval"
                 <*> obj .: "uid"
-            _ -> fail $ "Invalid tag: " ++ show tag
+            _ -> fail $ "Invalid query tag: " ++ show tag
 
 instance Binary SomeQuery where
     put (SomeQuery (QueryGet t q p)) = do
