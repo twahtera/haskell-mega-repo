@@ -115,10 +115,10 @@ dockerfile exe = T.unlines $
     , "RUN apt-get -yq update && apt-get -yq --no-install-suggests --no-install-recommends --force-yes install " <> T.intercalate " " debs <> " && rm -rf /var/lib/apt/lists/*"
     , "RUN useradd -m -s /bin/bash -d /app app"
     , "EXPOSE 8000"
-    , "USER app"
     , "WORKDIR /app"
     , "ADD " <> exe <> " /app"
     , "RUN chown -R app:app /app"
+    , "USER app"
     , "CMD [\"/app/" <> exe <> "\", \"+RTS\", \"-N\", \"-T\"]"
     ]
   where
