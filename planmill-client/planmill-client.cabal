@@ -64,7 +64,7 @@ library
     , http-types
     , intervals
     , lens
-    , log
+    , log-base
     , monad-http
     , monad-time
     , monadcryptorandom >=0.7.0
@@ -172,7 +172,7 @@ executable planmill-client
     , http-types
     , intervals
     , lens
-    , log
+    , log-base
     , monad-http
     , monad-time
     , monadcryptorandom >=0.7.0
@@ -246,7 +246,7 @@ test-suite integration
     , http-types
     , intervals
     , lens
-    , log
+    , log-base
     , monad-http
     , monad-time
     , monadcryptorandom >=0.7.0
@@ -313,7 +313,7 @@ test-suite test
     , http-types
     , intervals
     , lens
-    , log
+    , log-base
     , monad-http
     , monad-time
     , monadcryptorandom >=0.7.0
