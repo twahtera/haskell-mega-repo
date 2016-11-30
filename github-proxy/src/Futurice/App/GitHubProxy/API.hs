@@ -16,7 +16,7 @@ import Servant.Binary.Tagged (BINARYTAGGED)
 
 type GitHubProxyAPI =
     Get '[JSON] Text
-    :<|> "haxl" :> ReqBody '[JSON] [SomeRequest] :> Post '[BINARYTAGGED] [Either Text SomeResponse]
+    :<|> "github-haxl" :> ReqBody '[JSON] [SomeRequest] :> Post '[BINARYTAGGED] [Either Text SomeResponse]
 
 githubProxyApi :: Proxy GitHubProxyAPI 
 githubProxyApi = Proxy

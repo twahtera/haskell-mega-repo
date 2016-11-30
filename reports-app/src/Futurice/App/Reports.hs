@@ -170,7 +170,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         manager <- newManager tlsManagerSettings
         let ctx = (cache, manager, lgr, cfg)
 
-        _ <- spawnPeriocron (Options lgr 300) $ hcollapse $
+        _ <- spawnPeriocron (Options lgr 60) $ hcollapse $
             hcmap (Proxy :: Proxy RClass) (K . mkReportPeriocron ctx) reports
 
         return ctx
@@ -178,7 +178,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     mkReportPeriocron :: forall r. RClass r => Ctx -> ReportEndpoint r -> (Job, Intervals)
     mkReportPeriocron ctx (ReportEndpoint r) =
         ( Job (name ^. packed) (r ctx)
-        , tail $ every $ 10 * 60
+        , shifted (2 * 60) $ every $ 10 * 60
         )
       where
         name = "Updating report " <> symbolVal (Proxy :: Proxy (RName r))

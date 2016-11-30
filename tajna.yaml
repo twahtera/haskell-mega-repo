@@ -46,12 +46,12 @@ envs:
       secret: reports-gh-repos
     PLANMILLPROXY_HAXLURL:
       # secret: prod-planmill-proxy-haxl
-      http://localhost:8808/haxl
+      http://localhost:8808/planmill-haxl
 
     # proxy-app
     REPORTSAPP_BASEURL: http://localhost:8807
-    PLANMILLPROXY_BASEURL: http://localhost:8808/haxl
-    GITHUBPROXY_HAXLURL: http://localhost:8811/haxl
+    PLANMILLPROXY_BASEURL: http://localhost:8808/planmill-haxl
+    GITHUBPROXY_HAXLURL: http://localhost:8811/github-haxl
 
     # spice stats
     FD_FLOW: "open-source"
@@ -92,6 +92,6 @@ envs:
     PLANMILLPROXY_CLI_HTTPUSER: "test"
     PLANMILLPROXY_CLI_HTTPPASS: "password"
 
-    GITHUBPROXY_CLI_ENDPOINT: "http://localhost:8811/haxl"
+    GITHUBPROXY_CLI_ENDPOINT: "http://localhost:8811/planmill-haxl"
     GITHUBPROXY_CLI_HTTPUSER: "test"
     GITHUBPROXY_CLI_HTTPPASS: "password"
