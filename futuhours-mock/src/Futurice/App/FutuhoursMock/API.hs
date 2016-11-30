@@ -14,14 +14,16 @@ import Futurice.App.FutuhoursMock.Types
 import Servant
 
 type FutuhoursAPI = Get '[JSON] Text
-    :<|> "projects" :> Get '[JSON] (Vector Project)
-    :<|> "user" :> Get '[JSON] (User) -- TODO: should return logged-in User information
-    :<|> "hours" :> QueryParam "start-date" Text
-                 :> QueryParam "end-date" Text
-                 :> Get '[JSON] (HoursResponse)
-    :<|> "entry" :> ReqBody '[JSON] EntryUpdate :> Post '[JSON] (EntryUpdateResponse)
-    :<|> "entry" :> Capture "id" Int :> ReqBody '[JSON] EntryUpdate :> Put '[JSON] (EntryUpdateResponse)
-    :<|> "entry" :> Capture "id" Int :> ReqBody '[JSON] EntryUpdate :> Delete '[JSON] (EntryUpdateResponse)
+    :<|> "api" :> "v1" :>
+      ( "projects" :> Get '[JSON] (Vector Project)
+        :<|> "user" :> Get '[JSON] (User) -- TODO: should return logged-in User information
+        :<|> "hours" :> QueryParam "start-date" Text
+                     :> QueryParam "end-date" Text
+                     :> Get '[JSON] (HoursResponse)
+        :<|> "entry" :> ReqBody '[JSON] EntryUpdate :> Post '[JSON] (EntryUpdateResponse)
+        :<|> "entry" :> Capture "id" Int :> ReqBody '[JSON] EntryUpdate :> Put '[JSON] (EntryUpdateResponse)
+        :<|> "entry" :> Capture "id" Int :> ReqBody '[JSON] EntryUpdate :> Delete '[JSON] (EntryUpdateResponse)
+      )
 
 futuhoursApi :: Proxy FutuhoursAPI
 futuhoursApi = Proxy
