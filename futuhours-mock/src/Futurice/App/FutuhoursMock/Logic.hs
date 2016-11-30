@@ -244,4 +244,8 @@ entryDeleteEndpoint _ctx _id req = do
           , _euClosed=Nothing
           }
   res <- liftIO $ mkEntryEndPoint dummyReq
-  return res
+  let travel = eurHours . hoursUpdateResponseMonths . traverse . traverse
+                 . hoursMonthUpdateDays . traverse . traverse
+  let res' = res & travel . hoursDayUpdateHours .~ 0
+                 & travel . hoursDayUpdateEntry .~ Nothing
+  return res'

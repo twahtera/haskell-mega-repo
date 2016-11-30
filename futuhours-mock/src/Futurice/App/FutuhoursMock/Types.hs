@@ -37,6 +37,7 @@ module Futurice.App.FutuhoursMock.Types (
     HoursMonth (..),
     HoursResponse (..),
     HoursDayUpdate (..),
+    hoursDayUpdateHours,
     hoursDayUpdateEntry,
     HoursMonthUpdate (..),
     hoursMonthUpdateDays,
