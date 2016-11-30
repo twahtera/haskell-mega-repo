@@ -222,23 +222,10 @@ entryIdEndpoint
 entryIdEndpoint _ctx _id req = do
   -- PUT /entry/#id
   res <- liftIO $ (mkEntryEndPoint req)
-  res' <- for [_eurHours res] $ \h -> do
-    h' <- for [_hoursUpdateResponseMonths h] $ \m -> do
-        m' <- sequence . flip Map.mapWithKey m $ \k ds -> do
-            d' <- for ds $ \d -> do
-                let dsu = _hoursMonthUpdateDays d
-                msu' <- sequence . flip Map.mapWithKey dsu $ \dsk dsv -> do
-                    hu' <- for dsv $ \dsvi -> do
-                        let finale = case (_hoursDayUpdateEntry dsvi) of
-                                        Just x  -> Just $ x { _entryId=PM.Ident 1 }
-                                        Nothing -> Nothing
-                        pure $ dsvi { _hoursDayUpdateEntry=finale }
-                    pure $ hu'
-                pure $ d { _hoursMonthUpdateDays=msu' }
-            pure $ d'
-        pure $ h { _hoursUpdateResponseMonths=m' }
-    pure $ res { _eurHours=h' !! 0 }
-  return (res' !! 0)
+  let res' = res & eurHours . hoursUpdateResponseMonths . traverse . traverse
+                   . hoursMonthUpdateDays . traverse . traverse
+                   . hoursDayUpdateEntry . traverse . entryId .~ PM.Ident 1
+  return res'
 
 entryDeleteEndpoint
   :: Ctx
