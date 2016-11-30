@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -25,8 +26,10 @@ import Futurice.Prelude
 import Data.Fixed                (Centi)
 import Futurice.Generics
 import Futurice.Integrations
+import Futurice.Lucid.Foundation
 import Futurice.Report.Columns
 import Futurice.Time
+import Numeric.Interval.NonEmpty (inf, sup)
 
 import qualified Data.Map          as Map
 import qualified Data.Tuple.Strict as S
@@ -64,8 +67,36 @@ instance ToColumns MissingHour where
 
 type MissingHoursReport = Report
     "Missing hour markings"
-    ReportGenerated
+    MissingHoursParams
     (HashMap FUM.UserName :$ StrictPair Employee :$ Vector :$ MissingHour)
+
+data MissingHoursParams = MissingHoursParams
+    { mhpGenerated :: !UTCTime
+    , mhbFromDay   :: !Day
+    , mhbToDay     :: !Day
+    }
+  deriving (Eq, Ord, Show, Typeable, Generic)
+
+deriveGeneric ''MissingHoursParams
+
+instance NFData MissingHoursParams
+instance ToSchema MissingHoursParams where declareNamedSchema = sopDeclareNamedSchema
+instance ToJSON MissingHoursParams where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
+instance FromJSON MissingHoursParams where
+    parseJSON = sopParseJSON
+
+instance ToHtml MissingHoursParams where
+    toHtmlRaw = toHtml
+    toHtml MissingHoursParams {..} = dl_ $ do
+        dd_ $ do
+            "Generated at "
+            i_ ("(Note: data is pulled from caches, so it is few hours old at worst)")
+        dt_ $ toHtml $ show mhpGenerated
+
+        dd_ "Interval"
+        dt_ $ toHtmlRaw $ show mhbFromDay <> " &mdash; " <> show mhbToDay
 
 -------------------------------------------------------------------------------
 -- Logic
@@ -124,7 +155,7 @@ missingHoursReport interval = do
     now <- PM.currentTime
     fpm <- fumPlanmillMap
     fpm' <- traverse (perUser . view PM.identifier) fpm
-    pure $ Report (ReportGenerated now) fpm'
+    pure $ Report (MissingHoursParams now (inf interval) (sup interval)) fpm'
   where
     perUser :: PM.UserId -> m (StrictPair Employee :$ Vector :$ MissingHour)
     perUser pmUid = (S.:!:)
