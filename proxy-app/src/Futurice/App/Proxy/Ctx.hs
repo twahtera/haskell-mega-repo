@@ -8,12 +8,17 @@ import Network.HTTP.Client        (Manager)
 import Servant.Client             (BaseUrl)
 import Servant.Proxy              (HasHttpManager (..))
 
+import qualified FUM
+
 -- | Context type, holds http manager and baseurl configurations
 data Ctx = Ctx
     { ctxManager              :: !Manager
     , ctxPostgresPool         :: !(Pool Connection)
     , ctxReportsAppBaseurl    :: !BaseUrl
     , ctxPlanmillProxyBaseurl :: !BaseUrl
+    , ctxGithubProxyBaseurl   :: !BaseUrl
+    , ctxFumBaseurl           :: !BaseUrl
+    , ctxFumAuthToken         :: !FUM.AuthToken
     }
 
 instance HasHttpManager Ctx where

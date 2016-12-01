@@ -38,6 +38,8 @@ library
     , bytestring
     , cassava
     , env-config
+    , fum-client
+    , futurice-github
     , futurice-prelude
     , futurice-servant
     , http-client
@@ -46,6 +48,7 @@ library
     , markdown
     , planmill-client
     , postgresql-simple
+    , reflection
     , reports-app
     , resource-pool
     , semigroups
@@ -65,7 +68,7 @@ library
     , unordered-containers
     , vector
     , wai
-    , wai-extra
+    , wai-extra >=3.0.19
     , warp
   exposed-modules:
       Futurice.App.Proxy

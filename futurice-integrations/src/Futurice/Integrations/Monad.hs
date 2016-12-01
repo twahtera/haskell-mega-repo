@@ -19,9 +19,6 @@ import Futurice.Has               (FlipIn)
 import Network.HTTP.Client        (Manager, Request)
 import PlanMill.Queries.Haxl      (initDataSourceBatch)
 
-import Network.HTTP.Client     (newManager)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
-
 import qualified Chat.Flowdock.REST           as FD
 import qualified Flowdock.Haxl                as FD.Haxl
 import qualified FUM
@@ -73,13 +70,11 @@ runIntegrations cfg (Integr m) = do
             , _envGithubOrgName       = integrCfgGithubOrgName cfg
             }
     let haxl = runReaderT m env
-    ghMgr <- newManager tlsManagerSettings
-    pmMgr <- newManager tlsManagerSettings
     let stateStore
-            = H.stateSet (initDataSourceBatch lgr pmMgr planmillBaseReq)
+            = H.stateSet (initDataSourceBatch lgr mgr planmillBaseReq)
             $ H.stateSet (FUM.Haxl.initDataSource' mgr fumToken fumBaseUrl)
             $ H.stateSet (FD.Haxl.initDataSource' mgr fdToken)
-            $ H.stateSet (GH.initDataSource lgr ghMgr githubBaseReq)
+            $ H.stateSet (GH.initDataSource lgr mgr githubBaseReq)
             $ H.stateEmpty
     haxlEnv <- H.initEnv stateStore ()
     H.runHaxl haxlEnv haxl
