@@ -7,12 +7,15 @@ import Futurice.Prelude
 import Database.PostgreSQL.Simple (ConnectInfo)
 import Futurice.EnvConfig
 
+import qualified FUM
+
 data Config = Config
     { cfgPostgresConnInfo     :: !ConnectInfo
     , cfgReportsAppBaseurl    :: !String
     , cfgPlanmillProxyBaseurl :: !String
     , cfgGithubProxyBaseurl   :: !String
     , cfgFumBaseurl           :: !String
+    , cfgFumAuthToken         :: !FUM.AuthToken
     }
 
 instance Configure Config where
@@ -22,3 +25,4 @@ instance Configure Config where
         <*> envVar "PLANMILLPROXY_BASEURL"
         <*> envVar "GITHUBPROXY_BASEURL"
         <*> envVar "FUM_BASEURL"
+        <*> envVar "FUM_TOKEN"

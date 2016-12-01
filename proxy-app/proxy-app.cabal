@@ -38,15 +38,17 @@ library
     , bytestring
     , cassava
     , env-config
+    , fum-client
+    , futurice-github
     , futurice-prelude
     , futurice-servant
-    , futurice-github
     , http-client
     , http-client-tls
     , lens
     , markdown
     , planmill-client
     , postgresql-simple
+    , reflection
     , reports-app
     , resource-pool
     , semigroups

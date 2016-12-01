@@ -17,6 +17,7 @@ import Prelude ()
 import Futurice.Prelude
 import Data.Aeson                      (Value)
 import Data.Pool                       (createPool, withResource)
+import Data.Reflection                 (Given (..), give)
 import Data.Text.Encoding              (decodeLatin1)
 import Futurice.Servant
 import Network.HTTP.Client             (newManager)
@@ -26,10 +27,12 @@ import Network.Wai.Middleware.HttpAuth (basicAuth)
 import Servant
 import Servant.Binary.Tagged           (BINARYTAGGED)
 import Servant.Client
+import Servant.Common.Req              (Req (headers))
 import Servant.Proxy
 import System.IO                       (hPutStrLn, stderr)
 
 import qualified Database.PostgreSQL.Simple as Postgres
+import qualified FUM
 import qualified Futurice.GitHub            as GH (SomeRequest, SomeResponse)
 import qualified PlanMill.Types.Query       as PM (SomeQuery, SomeResponse)
 
@@ -100,7 +103,7 @@ type FumEmployeesEndpoint = ProxyPair
 type FumUserEndpoint = ProxyPair
     ("fum" :> "users" :> Capture "uid" Text :> Get '[JSON] Value)
     FumService
-    ("users" :> Capture "uid" Text :> Get '[JSON] Value)
+    (WithFumAuthToken :> "users" :> Capture "uid" Text :> Get '[JSON] Value)
 
 -- | Whole proxy definition
 type ProxyDefinition =
@@ -117,11 +120,26 @@ proxyAPI :: Proxy ProxyAPI
 proxyAPI = Proxy
 
 -------------------------------------------------------------------------------
+-- Fum AuthToken "hack"
+-------------------------------------------------------------------------------
+
+-- We use @reflection@ to 'give' 'FUM.AuthToken'.
+
+data WithFumAuthToken
+instance (Given FUM.AuthToken, HasClient api)
+    => HasClient (WithFumAuthToken :> api)
+  where
+    type Client (WithFumAuthToken :> api) = Client api
+    clientWithRoute _ req = clientWithRoute (Proxy :: Proxy api) req'
+      where
+        req' = req { headers = ("Authorization", "Token " <> given ^. FUM.getAuthToken) : headers req }
+
+-------------------------------------------------------------------------------
 -- WAI/startup
 ------------------------------------------------------------------------------
 
 server :: Ctx -> Server ProxyAPI
-server ctx = pure "P-R-O-X-Y"
+server ctx = give (ctxFumAuthToken ctx) $ pure "P-R-O-X-Y"
     :<|> makeProxy (Proxy :: Proxy MissingReportsEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy PlanmillProxyEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy GithubProxyEndpoint) ctx
@@ -155,6 +173,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , ctxPlanmillProxyBaseurl = planmillProxyBaseUrl
             , ctxGithubProxyBaseurl   = githubProxyBaseurl
             , ctxFumBaseurl           = fumBaseurl
+            , ctxFumAuthToken         = cfgFumAuthToken
             }
 
 checkCreds :: Ctx -> ByteString -> ByteString -> IO Bool
