@@ -55,7 +55,7 @@ library:
     - unordered-containers
     - vector
     - wai
-    - wai-extra
+    - wai-extra >=3.0.19 # basicAuth'
     - warp
 
 executables:

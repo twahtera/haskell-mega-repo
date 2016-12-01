@@ -22,8 +22,8 @@ import Data.Text.Encoding              (decodeLatin1)
 import Futurice.Servant
 import Network.HTTP.Client             (newManager)
 import Network.HTTP.Client.TLS         (tlsManagerSettings)
-import Network.Wai ()
-import Network.Wai.Middleware.HttpAuth (basicAuth)
+import Network.Wai                     (Request, rawPathInfo)
+import Network.Wai.Middleware.HttpAuth (basicAuth')
 import Servant
 import Servant.Binary.Tagged           (BINARYTAGGED)
 import Servant.Client
@@ -152,7 +152,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverDescription  .~ "Proxy from the outer space"
     & serverColour       .~ (Proxy :: Proxy ('FutuAccent 'AF3 'AC3))
     & serverApp proxyAPI .~ server
-    & serverMiddleware   .~ (\ctx -> basicAuth (checkCreds ctx) "P-R-O-X-Y")
+    & serverMiddleware   .~ (\ctx -> basicAuth' (checkCreds ctx) "P-R-O-X-Y")
     & serverEnvPfx       .~ "PROXYMGMT"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
@@ -176,8 +176,8 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , ctxFumAuthToken         = cfgFumAuthToken
             }
 
-checkCreds :: Ctx -> ByteString -> ByteString -> IO Bool
-checkCreds ctx u p = withResource (ctxPostgresPool ctx) $ \conn -> do
+checkCreds :: Ctx -> Request -> ByteString -> ByteString -> IO Bool
+checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
     let u' = decodeLatin1 u
         p' = decodeLatin1 p
     res <- Postgres.query conn
@@ -188,7 +188,7 @@ checkCreds ctx u p = withResource (ctxPostgresPool ctx) $ \conn -> do
             hPutStrLn stderr $ "Invalid login with: " ++ show (u, p)
             pure False
         _ : _ -> do
-            let endpoint = "?" :: Text
+            let endpoint = decodeLatin1 $ rawPathInfo req
             _ <- Postgres.execute conn
                 "insert into proxyapp.accesslog (username, endpoint) values (?, ?);"
                 (u', endpoint)
