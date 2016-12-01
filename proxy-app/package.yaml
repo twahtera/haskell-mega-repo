@@ -27,6 +27,7 @@ library:
     - env-config
     - futurice-prelude
     - futurice-servant
+    - futurice-github
     - http-client
     - http-client-tls
     - lens

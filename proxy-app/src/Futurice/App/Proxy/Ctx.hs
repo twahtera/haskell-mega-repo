@@ -14,6 +14,8 @@ data Ctx = Ctx
     , ctxPostgresPool         :: !(Pool Connection)
     , ctxReportsAppBaseurl    :: !BaseUrl
     , ctxPlanmillProxyBaseurl :: !BaseUrl
+    , ctxGithubProxyBaseurl   :: !BaseUrl
+    , ctxFumBaseurl           :: !BaseUrl
     }
 
 instance HasHttpManager Ctx where

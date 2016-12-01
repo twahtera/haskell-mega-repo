@@ -11,6 +11,8 @@ data Config = Config
     { cfgPostgresConnInfo     :: !ConnectInfo
     , cfgReportsAppBaseurl    :: !String
     , cfgPlanmillProxyBaseurl :: !String
+    , cfgGithubProxyBaseurl   :: !String
+    , cfgFumBaseurl           :: !String
     }
 
 instance Configure Config where
@@ -18,3 +20,5 @@ instance Configure Config where
         <$> envConnectInfo
         <*> envVar "REPORTSAPP_BASEURL"
         <*> envVar "PLANMILLPROXY_BASEURL"
+        <*> envVar "GITHUBPROXY_BASEURL"
+        <*> envVar "FUM_BASEURL"
