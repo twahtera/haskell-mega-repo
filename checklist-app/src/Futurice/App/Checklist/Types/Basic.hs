@@ -10,7 +10,7 @@
 module Futurice.App.Checklist.Types.Basic where
 
 import Control.Lens       (Getter, Prism', prism', to)
-import Data.Aeson.Compat  (Value (String))
+import Data.Aeson.Compat  (Value (String), withText)
 import Data.Swagger
        (SwaggerType (SwaggerString), ToParamSchema (..), enum_, type_)
 import Futurice.Arbitrary (arbitraryAdjective, arbitraryNoun, arbitraryVerb)
@@ -28,6 +28,9 @@ import qualified Test.QuickCheck as QC
 
 newtype Name a = Name Text
   deriving (Eq, Ord, Show, Typeable, Generic)
+
+instance FromJSON (Name a) where
+    parseJSON v = Name <$> parseJSON v
 
 -- | All checklist tasks are tied to the employee
 --
@@ -88,19 +91,12 @@ data Task = Task
     { _taskId           :: !(Identifier Task)
     , _taskName         :: !(Name Task)
       -- ^ Display name
-    , _taskCanBeDone    :: Employee -> Bool
-      -- ^ Some tasks cannot be yet done, if some information is missing.
     , _taskDependencies :: !(Set :$ Identifier Task)
       -- ^ Some tasks can be done only after some other tasks are done.
-    , _taskCheck        :: Employee -> IO CheckResult
-      -- ^ Tasks can check themselves whether they are done. For example if 'employeeFUMLogin' is known,
-      --   then when such employee is seen in FUM, we can see that task is probably done.
     , _taskRole         :: !TaskRole
       -- ^ Tasks can be fullfilled by different roles.
     }
-  deriving (Typeable, Generic)
-
--- TODO: Show Task debugging instance
+  deriving (Eq, Ord, Show, Typeable, Generic)
 
 -- |
 data CheckResult
@@ -119,7 +115,6 @@ data TaskRole
     | TaskRoleHR
     | TaskRoleSupervisor
   deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
-
 
 -- | Checklist is collection of tasks. Used to group tasks together to create task instances together.
 --  Example lists are "new full-time employee in Helsinki"
@@ -259,17 +254,9 @@ instance Arbitrary TaskAppliance where
     arbitrary = pure TaskApplianceAll
     shrink    = const []
 
--- | /TODO/: no shrink
 instance Arbitrary Task where
-    arbitrary = Task
-        <$> arbitrary
-        <*> arbitrary
-        <*> pure (const True)
-        <*> arbitrary
-        <*> pure (const (pure CheckResultMaybe))
-        <*> arbitrary
-
-    shrink    = const []
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
 
 -------------------------------------------------------------------------------
 -- Location servant schema
@@ -332,3 +319,7 @@ instance FromHttpApiData TaskRole where
 
 instance ToHttpApiData TaskRole where
     toUrlPiece = roleToText
+
+instance FromJSON TaskRole where
+    parseJSON = withText "TaskRole" $ \t ->
+        maybe (fail $ "Invalid role: " <> T.unpack t) pure . roleFromText $ t

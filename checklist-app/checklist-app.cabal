@@ -37,6 +37,7 @@ library
     , futurice-servant
     , lens
     , lucid
+    , postgresql-simple
     , QuickCheck
     , servant
     , servant-lucid
@@ -49,6 +50,7 @@ library
       Futurice.App.Checklist
       Futurice.App.Checklist.API
       Futurice.App.Checklist.Clay
+      Futurice.App.Checklist.Command
       Futurice.App.Checklist.Config
       Futurice.App.Checklist.Markup
       Futurice.App.Checklist.Pages.Checklist
@@ -82,6 +84,7 @@ executable checklist-app-server
     , futurice-servant
     , lens
     , lucid
+    , postgresql-simple
     , QuickCheck
     , servant
     , servant-lucid
@@ -91,4 +94,35 @@ executable checklist-app-server
     , time
     , uuid
     , checklist-app
+  default-language: Haskell2010
+
+executable checklist-import
+  main-is: Import.hs
+  hs-source-dirs:
+      import
+  ghc-options: -Wall -Wall -threaded
+  build-depends:
+      base >= 4.7 && <4.10
+    , aeson-compat
+    , clay
+    , containers
+    , env-config
+    , fum-client
+    , futurice-foundation
+    , futurice-prelude
+    , futurice-servant
+    , lens
+    , lucid
+    , postgresql-simple
+    , QuickCheck
+    , servant
+    , servant-lucid
+    , servant-server
+    , swagger2
+    , text
+    , time
+    , uuid
+    , checklist-app
+    , transformers
+    , yaml
   default-language: Haskell2010

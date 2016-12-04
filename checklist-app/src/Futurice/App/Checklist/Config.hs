@@ -4,13 +4,16 @@ module Futurice.App.Checklist.Config (
 
 import Prelude ()
 import Futurice.Prelude
+import Database.PostgreSQL.Simple (ConnectInfo)
 import Futurice.EnvConfig
 
 data Config = Config
-    { cfgMockAuth :: !Bool
+    { cfgMockAuth         :: !Bool
+    , cfgPostgresConnInfo :: !ConnectInfo
     }
     deriving (Show)
 
 instance Configure Config where
     configure = Config
         <$> envVarWithDefault "CHECKLIST_MOCKAUTH" False
+        <*> envConnectInfo

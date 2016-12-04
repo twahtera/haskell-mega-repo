@@ -22,6 +22,7 @@ dependencies:
   - futurice-servant
   - lens
   - lucid
+  - postgresql-simple
   - QuickCheck
   - servant
   - servant-lucid
@@ -48,3 +49,12 @@ executables:
     ghc-options: -Wall -threaded
     dependencies:
       - checklist-app 
+
+  checklist-import:
+    main: Import.hs
+    source-dirs: import
+    ghc-options: -Wall -threaded
+    dependencies:
+      - checklist-app 
+      - transformers
+      - yaml
