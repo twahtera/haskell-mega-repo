@@ -10,7 +10,7 @@
 module Futurice.App.Checklist.Types.Basic where
 
 import Control.Lens       (Getter, Prism', prism', to)
-import Data.Aeson.Compat  (Value (String))
+import Data.Aeson.Compat  (Value (String), withText)
 import Data.Swagger
        (SwaggerType (SwaggerString), ToParamSchema (..), enum_, type_)
 import Futurice.Arbitrary (arbitraryAdjective, arbitraryNoun, arbitraryVerb)
@@ -28,6 +28,9 @@ import qualified Test.QuickCheck as QC
 
 newtype Name a = Name Text
   deriving (Eq, Ord, Show, Typeable, Generic)
+
+instance FromJSON (Name a) where
+    parseJSON v = Name <$> parseJSON v
 
 -- | All checklist tasks are tied to the employee
 --
@@ -112,7 +115,6 @@ data TaskRole
     | TaskRoleHR
     | TaskRoleSupervisor
   deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
-
 
 -- | Checklist is collection of tasks. Used to group tasks together to create task instances together.
 --  Example lists are "new full-time employee in Helsinki"
@@ -317,3 +319,7 @@ instance FromHttpApiData TaskRole where
 
 instance ToHttpApiData TaskRole where
     toUrlPiece = roleToText
+
+instance FromJSON TaskRole where
+    parseJSON = withText "TaskRole" $ \t ->
+        maybe (fail $ "Invalid role: " <> T.unpack t) pure . roleFromText $ t
