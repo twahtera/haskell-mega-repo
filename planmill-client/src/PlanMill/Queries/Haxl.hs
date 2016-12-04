@@ -40,7 +40,7 @@ import           Data.Type.Equality       ((:~:) (..))
 import qualified Network.HTTP.Client      as HTTP
 import qualified Network.HTTP.Client.TLS  as HTTP
 
-instance Show1 Query where show1 = show
+instance Haxl.Core.Show1 Query where show1 = show
 
 instance StateKey Query where
     data State Query = QueryFunction ([BlockedFetch Query] -> PerformFetch)

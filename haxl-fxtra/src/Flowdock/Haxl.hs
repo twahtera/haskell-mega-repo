@@ -31,7 +31,7 @@ deriving instance Show (FlowdockRequest a)
 deriving instance Typeable FlowdockRequest
 deriving instance Eq (FlowdockRequest a)
 
-instance Show1 FlowdockRequest where show1 = show
+instance Haxl.Core.Show1 FlowdockRequest where show1 = show
 
 instance Hashable (FlowdockRequest a) where
   hashWithSalt salt (FetchOrganisation org) =
