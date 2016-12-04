@@ -51,7 +51,7 @@ deriving instance Show (PlanmillRequest a)
 deriving instance Typeable PlanmillRequest
 deriving instance Eq (PlanmillRequest a)
 
-instance Show1 PlanmillRequest where show1 = show
+instance Haxl.Core.Show1 PlanmillRequest where show1 = show
 
 instance Hashable (PlanmillRequest a) where
     hashWithSalt salt (PMR r) = hashWithSalt salt r

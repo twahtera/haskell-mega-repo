@@ -52,7 +52,7 @@ deriving instance Show (PlanmillCacheRequest a)
 deriving instance Typeable PlanmillCacheRequest
 deriving instance Eq (PlanmillCacheRequest a)
 
-instance Show1 PlanmillCacheRequest where show1 = show
+instance Haxl.Core.Show1 PlanmillCacheRequest where show1 = show
 
 instance Hashable (PlanmillCacheRequest a) where
     hashWithSalt salt (Timereports interval uid) = salt
