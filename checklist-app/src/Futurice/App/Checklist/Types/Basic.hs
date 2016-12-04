@@ -88,19 +88,12 @@ data Task = Task
     { _taskId           :: !(Identifier Task)
     , _taskName         :: !(Name Task)
       -- ^ Display name
-    , _taskCanBeDone    :: Employee -> Bool
-      -- ^ Some tasks cannot be yet done, if some information is missing.
     , _taskDependencies :: !(Set :$ Identifier Task)
       -- ^ Some tasks can be done only after some other tasks are done.
-    , _taskCheck        :: Employee -> IO CheckResult
-      -- ^ Tasks can check themselves whether they are done. For example if 'employeeFUMLogin' is known,
-      --   then when such employee is seen in FUM, we can see that task is probably done.
     , _taskRole         :: !TaskRole
       -- ^ Tasks can be fullfilled by different roles.
     }
-  deriving (Typeable, Generic)
-
--- TODO: Show Task debugging instance
+  deriving (Eq, Ord, Show, Typeable, Generic)
 
 -- |
 data CheckResult
@@ -259,17 +252,9 @@ instance Arbitrary TaskAppliance where
     arbitrary = pure TaskApplianceAll
     shrink    = const []
 
--- | /TODO/: no shrink
 instance Arbitrary Task where
-    arbitrary = Task
-        <$> arbitrary
-        <*> arbitrary
-        <*> pure (const True)
-        <*> arbitrary
-        <*> pure (const (pure CheckResultMaybe))
-        <*> arbitrary
-
-    shrink    = const []
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
 
 -------------------------------------------------------------------------------
 -- Location servant schema

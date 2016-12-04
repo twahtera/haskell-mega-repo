@@ -45,7 +45,7 @@ module Futurice.App.Checklist.Types (
     _LocStockholm, _LocMunich, _LocOther,
     locationToText, locationFromText,
     -- ** Task
-    taskName, taskCanBeDone, taskDependencies, taskCheck, taskRole,
+    taskName, taskDependencies, taskRole,
     -- ** CheckResult
     _CheckResultSuccess, _CheckResultMaybe, _CheckResultFailure,
     -- ** TaskRole
