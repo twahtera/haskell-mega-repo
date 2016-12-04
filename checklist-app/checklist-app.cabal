@@ -49,6 +49,7 @@ library
       Futurice.App.Checklist
       Futurice.App.Checklist.API
       Futurice.App.Checklist.Clay
+      Futurice.App.Checklist.Command
       Futurice.App.Checklist.Config
       Futurice.App.Checklist.Markup
       Futurice.App.Checklist.Pages.Checklist
