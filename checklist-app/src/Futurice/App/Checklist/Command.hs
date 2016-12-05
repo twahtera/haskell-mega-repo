@@ -1,10 +1,18 @@
-{-# LANGUAGE RankNTypes    #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE KindSignatures       #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE RankNTypes           #-}
+{-# LANGUAGE TemplateHaskell      #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Futurice.App.Checklist.Command (
     -- * Command
     Command (..),
     traverseCommand,
     applyCommand,
+    transactCommand,
     -- * Edits
     TaskEdit (..),
     applyTaskEdit,
@@ -12,10 +20,66 @@ module Futurice.App.Checklist.Command (
 
 import Prelude ()
 import Futurice.Prelude
+import Data.Aeson.Compat (object, withObject, (.!=), (.:), (.:?), (.=))
+import Futurice.Generics
+import Futurice.IsMaybe
 
-import qualified Control.Lens as Lens
+import qualified Control.Lens                         as Lens
+import qualified Data.Aeson.Compat                    as Aeson
+import qualified Database.PostgreSQL.Simple           as Postgres
+import qualified Database.PostgreSQL.Simple.FromField as Postgres
+import qualified Database.PostgreSQL.Simple.ToField   as Postgres
+import qualified FUM
+import qualified Generics.SOP                         as SOP
 
 import Futurice.App.Checklist.Types
+
+-------------------------------------------------------------------------------
+-- Edit types
+-------------------------------------------------------------------------------
+
+data TaskEdit f = TaskEdit
+    { teName :: !(f :$ Name Task)
+    , teRole :: !(f TaskRole)
+    }
+
+deriveGeneric ''TaskEdit
+
+applyTaskEdit :: TaskEdit Maybe -> Task -> Task
+applyTaskEdit te
+    = maybe id (Lens.set taskName) (teName te)
+    . maybe id (Lens.set taskRole) (teRole te)
+
+instance Eq1 f => Eq (TaskEdit f) where
+    TaskEdit n r == TaskEdit n' r' = eq1 n n' && eq1 r r'
+
+instance Show1 f => Show (TaskEdit f) where
+    showsPrec d (TaskEdit n r) = showsBinaryWith
+        showsPrec1 showsPrec1
+        "TaskEdit" d n r
+
+instance SOP.All (SOP.Compose Arbitrary f) '[Name Task, TaskRole]
+    => Arbitrary (TaskEdit f)
+  where
+    arbitrary = sopArbitrary
+    shrink = sopShrink
+
+instance
+    ( SOP.All (SOP.Compose ToJSON f) '[Name Task, TaskRole]
+    , SOP.All (SOP.Compose IsMaybe f) '[Name Task, TaskRole]
+    )
+    => ToJSON (TaskEdit f)
+  where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
+
+instance
+    ( SOP.All (SOP.Compose FromJSON f) '[Name Task, TaskRole]
+    , SOP.All (SOP.Compose IsMaybe f) '[Name Task, TaskRole]
+    )
+    => FromJSON (TaskEdit f)
+  where
+    parseJSON = sopParseJSON
 
 -------------------------------------------------------------------------------
 -- Command
@@ -28,6 +92,8 @@ data Command f
     | CmdCreateTask (f :$ Identifier Task) (TaskEdit Identity)
     | CmdEditTask (Identifier Task) (TaskEdit Maybe)
     | CmdAddTask (Identifier Checklist) (Identifier Task) TaskAppliance
+
+deriveGeneric ''Command
 
 traverseCommand
     :: Applicative m
@@ -49,6 +115,31 @@ traverseCommand _f (CmdAddTask c t a) =
 applyCommand :: Command Identity -> World -> World
 applyCommand _ = id
 
+transactCommand
+    :: (MonadLog m, MonadIO m)
+    => Postgres.Connection -> FUM.UserName -> Command Identity -> m ()
+transactCommand conn ssoUser cmd = do
+    logInfo "transactCommand" cmd
+    _ <- liftIO $ Postgres.execute conn
+        "INSERT INTO checklist2.commands (username, cmddata) VALUES (?, ?)"
+        (ssoUser, cmd)
+    pure ()
+
+instance Eq1 f => Eq (Command f) where
+    CmdCreateChecklist cid n == CmdCreateChecklist cid' n'
+        = eq1 cid cid' && n == n'
+    CmdRenameChecklist cid n == CmdRenameChecklist cid' n'
+        = cid == cid' && n == n'
+    CmdCreateTask tid te == CmdCreateTask tid' te'
+        = eq1 tid tid' && te == te'
+    CmdEditTask tid te == CmdEditTask tid' te'
+        = tid == tid' && te == te'
+    CmdAddTask cid tid app == CmdAddTask cid' tid' app'
+        = cid == cid' && tid == tid' && app == app'
+
+    -- Otherwise false
+    _ == _ = False
+
 instance Show1 f => Show (Command f) where
     showsPrec d (CmdCreateChecklist i n) = showsBinaryWith
         showsPrec1 showsPrec
@@ -66,19 +157,80 @@ instance Show1 f => Show (Command f) where
         showsPrec showsPrec showsPrec
         "CmdAddTask" d c t a
 
--------------------------------------------------------------------------------
--- Edit types
--------------------------------------------------------------------------------
+instance SOP.All (SOP.Compose Arbitrary f) '[Identifier Checklist, Identifier Task]
+    => Arbitrary (Command f)
+  where
+    arbitrary = sopArbitrary
+    shrink = sopShrink
 
-data TaskEdit f = TaskEdit
-    { teName :: !(f :$ Name Task)
-    , teRole :: !(f TaskRole)
-    }
+-- | This and 'ParseJSON' instance is written by hand, as 'sopToJSON' and friends
+-- work with records only, and we want field names!
+instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task]
+    => ToJSON (Command f)
+  where
+    toJSON (CmdCreateChecklist cid n) = object
+        [ "cmd"  .= ("create-checklist" :: Text)
+        , "cid"  .= cid
+        , "name" .= n
+        ]
+    toJSON (CmdRenameChecklist cid n) = object
+        [ "cmd"  .= ("rename-checklist" :: Text)
+        , "cid"  .= cid
+        , "name" .= n
+        ]
+    toJSON (CmdCreateTask tid te) = object
+        [ "cmd"  .= ("create-task" :: Text)
+        , "tid"  .= tid
+        , "edit" .= te
+        ]
+    toJSON (CmdEditTask tid te) = object
+        [ "cmd"  .= ("edit-task" :: Text)
+        , "tid"  .= tid
+        , "edit" .= te
+        ]
+    toJSON (CmdAddTask cid tid TaskApplianceAll) = object
+        [ "cmd"       .= ("add-task" :: Text)
+        , "cid"       .= cid
+        , "tid"       .= tid
+        -- , "appliance" .= app
+        ]
 
-applyTaskEdit :: TaskEdit Maybe -> Task -> Task
-applyTaskEdit te
-    = maybe id (Lens.set taskName) (teName te)
-    . maybe id (Lens.set taskRole) (teRole te)
+    -- toEncoding
 
-instance Show1 f => Show (TaskEdit f) where
-    showsPrec _d _ = id
+instance SOP.All (SOP.Compose FromJSON f) '[Identifier Checklist, Identifier Task]
+    => FromJSON (Command f)
+  where
+    parseJSON = withObject "Command" $ \obj -> do
+        cmd <- obj .: "cmd" :: Aeson.Parser Text
+        case cmd of
+            "create-checklist" -> CmdCreateChecklist
+                <$> obj .: "cid"
+                <*> obj .: "name"
+            "rename-checklist" -> CmdRenameChecklist
+                <$> obj .: "cid"
+                <*> obj .: "name"
+            "create-task" -> CmdCreateTask
+                <$> obj .: "tid"
+                <*> obj .: "edit"
+            "edit-task" -> CmdEditTask
+                <$> obj .: "tid"
+                <*> obj .: "edit"
+            "add-task" -> CmdAddTask
+                <$> obj .: "cid"
+                <*> obj .: "tid"
+                <*> obj .:? "appliance" .!= TaskApplianceAll
+            _ -> fail $ "Invalid Command tag " ++ cmd ^. unpacked
+
+instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task]
+    => Postgres.ToField (Command f)
+  where
+    toField = Postgres.toField . Aeson.encode
+
+instance SOP.All (SOP.Compose FromJSON f) '[Identifier Checklist, Identifier Task]
+    => Postgres.FromField (Command f)
+  where
+    fromField f mdata = do
+        bs <- Postgres.fromField f mdata
+        case Aeson.eitherDecode bs of
+            Right x  -> pure x
+            Left err -> Postgres.conversionError (Aeson.AesonException err)

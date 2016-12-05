@@ -10,7 +10,7 @@
 module Futurice.App.Checklist.Types.Basic where
 
 import Control.Lens       (Getter, Prism', prism', to)
-import Data.Aeson.Compat  (Value (String), withText)
+import Data.Aeson.Compat  (Value (Null, String), withText)
 import Data.Swagger
        (SwaggerType (SwaggerString), ToParamSchema (..), enum_, type_)
 import Futurice.Arbitrary (arbitraryAdjective, arbitraryNoun, arbitraryVerb)
@@ -31,6 +31,9 @@ newtype Name a = Name Text
 
 instance FromJSON (Name a) where
     parseJSON v = Name <$> parseJSON v
+
+instance ToJSON (Name a) where
+    toJSON (Name n) = toJSON n
 
 -- | All checklist tasks are tied to the employee
 --
@@ -259,6 +262,16 @@ instance Arbitrary Task where
     shrink    = sopShrink
 
 -------------------------------------------------------------------------------
+-- aeson
+-------------------------------------------------------------------------------
+
+instance ToJSON TaskAppliance where
+    toJSON _ = Null
+
+instance FromJSON TaskAppliance where
+    parseJSON _ = pure TaskApplianceAll
+
+-------------------------------------------------------------------------------
 -- Location servant schema
 -------------------------------------------------------------------------------
 
@@ -319,6 +332,9 @@ instance FromHttpApiData TaskRole where
 
 instance ToHttpApiData TaskRole where
     toUrlPiece = roleToText
+
+instance ToJSON TaskRole where
+    toJSON = String . roleToText
 
 instance FromJSON TaskRole where
     parseJSON = withText "TaskRole" $ \t ->

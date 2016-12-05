@@ -14,8 +14,10 @@ import Data.Aeson.Types
        (FromJSONKey (..), ToJSONKey (..), fromJSONKeyCoerce, toJSONKeyText)
 import Data.Swagger      (ToSchema)
 
-import qualified Data.Csv          as Csv
-import qualified Data.Maybe.Strict as S
+import qualified Data.Csv                             as Csv
+import qualified Data.Maybe.Strict                    as S
+import qualified Database.PostgreSQL.Simple.FromField as Postgres
+import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 
 -------------------------------------------------------------------------------
 -- Authentication token
@@ -106,6 +108,15 @@ instance FromJSONKey UserName where
 
 instance Csv.ToField UserName where
     toField = Csv.toField . _getUserName
+
+instance Postgres.ToField UserName where
+    toField = Postgres.toField . _getUserName
+
+instance Postgres.FromField UserName where
+    fromField f mdata = UserName <$> Postgres.fromField f mdata
+
+instance IsString UserName where
+    fromString = UserName . fromString
 
 -------------------------------------------------------------------------------
 -- List name
