@@ -31,7 +31,6 @@ import Futurice.Time
 import Prelude ()
 
 import Control.Concurrent.STM           (readTVarIO)
-import Control.Monad.Trans.Except       (ExceptT)
 import Data.BinaryFromJSON              (BinaryFromJSON)
 import Data.Fixed                       (Centi)
 import Data.Maybe                       (fromJust)

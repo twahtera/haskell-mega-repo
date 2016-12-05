@@ -12,7 +12,6 @@ module Futurice.App.Checklist.Command (
 
 import Prelude ()
 import Futurice.Prelude
-import Data.Functor.Identity (Identity (..))
 
 import qualified Control.Lens as Lens
 

@@ -10,7 +10,6 @@ import Prelude ()
 import Data.Aeson.Compat       (FromJSON (..), decode, withObject, (.:))
 import Data.Aeson.Extra        (getSingObject)
 import Data.Char               (isSpace)
-import Data.Maybe              (mapMaybe)
 import Data.Yaml               (decodeFileEither)
 import Network.HTTP.Client
        (httpLbs, newManager, parseUrlThrow, requestHeaders, responseBody)

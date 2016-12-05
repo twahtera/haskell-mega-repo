@@ -18,7 +18,6 @@ module Futurice.App.Contacts.Logic (
 
 import Prelude ()
 import Futurice.Prelude
-import Data.Maybe            (mapMaybe)
 import Data.RFC5051          (compareUnicode)
 import Futurice.Integrations
 

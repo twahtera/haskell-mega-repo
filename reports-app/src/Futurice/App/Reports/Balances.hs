@@ -25,7 +25,6 @@ import Prelude ()
 import Futurice.Prelude
 import Control.Lens              (sumOf)
 import Data.Fixed                (Centi)
-import Data.Maybe                (mapMaybe)
 import Data.Ord                  (comparing)
 import Futurice.Generics
 import Futurice.Integrations

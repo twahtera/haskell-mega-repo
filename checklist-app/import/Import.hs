@@ -10,7 +10,6 @@ import Control.Lens                     (use, (%=), _4)
 import Control.Monad.Trans.State.Strict (StateT (..), evalState, execStateT, modify')
 import Data.Aeson.Compat
        (FromJSON (..), Parser, withObject, (.:))
-import Data.Functor.Identity            (Identity (..))
 import Data.Yaml                        (Value, decodeFileEither)
 import Futurice.UUID                    (uuidWords)
 import System.Environment               (getArgs)

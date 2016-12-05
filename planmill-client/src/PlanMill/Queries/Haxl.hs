@@ -26,7 +26,6 @@ import PlanMill.Types.Query
 import Control.Monad.CryptoRandom.Extra
        (MonadInitHashDRBG (..), evalCRandTThrow)
 import Control.Monad.Http               (runHttpT)
-import Control.Monad.Reader             (runReaderT)
 import Data.Constraint                  (Dict (..))
 import PlanMill.Eval                    (evalPlanMill)
 import Numeric.Interval.NonEmpty        (clamp)

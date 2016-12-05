@@ -37,7 +37,6 @@ import Data.GADT.Compare                (GEq (..), defaultEq)
 import Data.Reflection                  (reifySymbol)
 import Data.Singletons.Bool             (SBoolI, sboolEqRefl)
 import Data.Swagger                     (NamedSchema (..), ToSchema (..))
-import Data.Text.Lens                   (unpacked)
 import Data.Type.Equality
 import Futurice.Aeson                   (withObjectDump)
 import Futurice.Constraint.ForallSymbol (ForallFSymbol (..))

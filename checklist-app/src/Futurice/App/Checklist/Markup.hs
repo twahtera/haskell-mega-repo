@@ -32,7 +32,6 @@ module Futurice.App.Checklist.Markup (
 import Prelude ()
 import Futurice.Prelude
 import Control.Lens        (Getter, has, non, only, re, to, _Wrapped)
-import Data.Maybe          (catMaybes)
 import Servant.Utils.Links (URI (..), safeLink)
 
 import Futurice.App.Checklist.API

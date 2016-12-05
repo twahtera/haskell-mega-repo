@@ -10,7 +10,6 @@ import Prelude ()
 import Futurice.Prelude
 
 import Control.Monad.Http                      (evalHttpT)
-import Control.Monad.Reader                    (runReaderT)
 import Data.Constraint
 import Data.Maybe                              (isJust)
 import Futurice.Constraint.Unit1

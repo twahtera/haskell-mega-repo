@@ -31,7 +31,6 @@ import Data.Binary        (Binary (..))
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo (..), StructuralInfo (..))
 import Data.Constraint    (Dict (..))
-import Data.Maybe         (mapMaybe)
 import Data.Swagger       (NamedSchema (..), ToSchema (..))
 import Data.Type.Equality
 import Futurice.Aeson     (withObjectDump)

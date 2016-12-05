@@ -22,7 +22,6 @@ import Control.Monad.Catch              (handle)
 import Control.Monad.CryptoRandom.Extra
        (CRandT, GenError, HashDRBG, evalCRandTThrow, mkHashDRBG)
 import Control.Monad.Http               (HttpT, evalHttpT)
-import Control.Monad.Reader             (ReaderT, runReaderT)
 import Data.Binary.Tagged               (taggedDecodeOrFail, taggedEncode)
 import Data.BinaryFromJSON              (BinaryFromJSON)
 import Data.Constraint                  (Dict (..), type (:-)(..))

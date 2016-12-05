@@ -22,7 +22,6 @@ module Futurice.Integrations.Common (
 
 import Prelude ()
 import Futurice.Prelude
-import Data.Maybe                    (catMaybes)
 import Data.Time
        (addGregorianMonthsClip, fromGregorian, toGregorian)
 import Futurice.Integrations.Classes

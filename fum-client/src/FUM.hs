@@ -21,7 +21,6 @@ import Futurice.Prelude
 import Prelude          ()
 
 import Control.Monad.Http   (runHttpT)
-import Control.Monad.Reader (runReaderT)
 import Data.Aeson           (FromJSON)
 import Network.HTTP.Client  (Manager)
 

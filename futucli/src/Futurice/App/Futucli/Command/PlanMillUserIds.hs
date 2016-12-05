@@ -4,7 +4,6 @@ module Futurice.App.Futucli.Command.PlanMillUserIds (planMillUserIds) where
 import Prelude ()
 import Futurice.Prelude
 import Control.Monad.Http          (evalHttpT)
-import Control.Monad.Reader        (runReaderT)
 import Network.HTTP.Client         (newManager)
 import Network.HTTP.Client.TLS     (tlsManagerSettings)
 import Text.Regex.Applicative.Text (anySym, match)

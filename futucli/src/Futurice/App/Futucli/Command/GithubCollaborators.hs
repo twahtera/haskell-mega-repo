@@ -7,7 +7,6 @@ module Futurice.App.Futucli.Command.GithubCollaborators (githubCollaborators) wh
 
 import Futurice.Prelude
 
-import Control.Monad.Reader    (ReaderT (..))
 import GHC.Exts                (Constraint)
 import Network.HTTP.Client     (Manager, newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
