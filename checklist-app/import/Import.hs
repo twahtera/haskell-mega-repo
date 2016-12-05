@@ -1,4 +1,6 @@
-{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 -- |
 --
 -- > tajna run -s checklist-import checklist-app/data.sample.yaml
@@ -7,16 +9,19 @@ module Main (main) where
 import Prelude ()
 import Futurice.Prelude
 import Control.Lens                     (use, (%=), _4)
-import Control.Monad.Trans.State.Strict (StateT (..), evalState, execStateT, modify')
+import Control.Monad.Trans.State.Strict
+       (StateT (..), evalState, execStateT, modify')
 import Data.Aeson.Compat
        (FromJSON (..), Parser, withObject, (.:))
 import Data.Yaml                        (Value, decodeFileEither)
+import Futurice.EnvConfig               (getConfig)
 import Futurice.UUID                    (uuidWords)
 import System.Environment               (getArgs)
 
 import qualified Data.UUID as UUID
 
 import Futurice.App.Checklist.Command
+import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Types
 
 -------------------------------------------------------------------------------
@@ -31,12 +36,13 @@ main = do
         _    -> putStrLn "Usage: checklist-import data.yaml"
 
 main' :: FilePath -> IO ()
-main' fp = do
+main' fp = withStderrLogger $ \logger -> do
+    Config {..} <- getConfig logger "CHECKLIST"
+    print $ cfgPostgresConnInfo
     value <- decodeFileEither fp
     case value of
         Left exc -> putStrLn $ show exc
         Right v  -> do
-            print v
             let cmds = evalState (dataToCommands v) UUID.nil
             traverse_ print cmds
 
@@ -83,7 +89,7 @@ dataToCommands (Data cls ts) = ($ []) <$> execStateT action id
 
     tellCmd :: Command Identity -> StateT ([Command Identity] -> [Command Identity]) m ()
     tellCmd cmd = modify' (. (cmd :))
-        
+
 
 -------------------------------------------------------------------------------
 -- Data
