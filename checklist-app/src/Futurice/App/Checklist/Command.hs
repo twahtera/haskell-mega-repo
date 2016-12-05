@@ -121,7 +121,8 @@ transactCommand
 transactCommand conn ssoUser cmd = do
     logInfo "transactCommand" cmd
     _ <- liftIO $ Postgres.execute conn
-        "INSERT INTO (username, cmddata) VALUES (?, ?)" (ssoUser, cmd)
+        "INSERT INTO checklist2.commands (username, cmddata) VALUES (?, ?)"
+        (ssoUser, cmd)
     pure ()
 
 instance Eq1 f => Eq (Command f) where
