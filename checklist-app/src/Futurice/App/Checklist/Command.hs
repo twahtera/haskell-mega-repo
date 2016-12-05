@@ -20,14 +20,17 @@ module Futurice.App.Checklist.Command (
 
 import Prelude ()
 import Futurice.Prelude
-import Data.Aeson.Compat
-       (Parser, object, withObject, (.!=), (.:), (.:?), (.=))
+import Data.Aeson.Compat (object, withObject, (.!=), (.:), (.:?), (.=))
 import Futurice.Generics
 import Futurice.IsMaybe
 
-import qualified Control.Lens               as Lens
-import qualified Database.PostgreSQL.Simple as Postgres
-import qualified Generics.SOP               as SOP
+import qualified Control.Lens                         as Lens
+import qualified Data.Aeson.Compat                    as Aeson
+import qualified Database.PostgreSQL.Simple           as Postgres
+import qualified Database.PostgreSQL.Simple.FromField as Postgres
+import qualified Database.PostgreSQL.Simple.ToField   as Postgres
+import qualified FUM
+import qualified Generics.SOP                         as SOP
 
 import Futurice.App.Checklist.Types
 
@@ -112,8 +115,14 @@ traverseCommand _f (CmdAddTask c t a) =
 applyCommand :: Command Identity -> World -> World
 applyCommand _ = id
 
-transactCommand :: Postgres.Connection -> Command Identity -> IO ()
-transactCommand _ _ = pure ()
+transactCommand
+    :: (MonadLog m, MonadIO m)
+    => Postgres.Connection -> FUM.UserName -> Command Identity -> m ()
+transactCommand conn ssoUser cmd = do
+    logInfo "transactCommand" cmd
+    _ <- liftIO $ Postgres.execute conn
+        "INSERT INTO (username, cmddata) VALUES (?, ?)" (ssoUser, cmd)
+    pure ()
 
 instance Eq1 f => Eq (Command f) where
     CmdCreateChecklist cid n == CmdCreateChecklist cid' n'
@@ -191,7 +200,7 @@ instance SOP.All (SOP.Compose FromJSON f) '[Identifier Checklist, Identifier Tas
     => FromJSON (Command f)
   where
     parseJSON = withObject "Command" $ \obj -> do
-        cmd <- obj .: "cmd" :: Parser Text
+        cmd <- obj .: "cmd" :: Aeson.Parser Text
         case cmd of
             "create-checklist" -> CmdCreateChecklist
                 <$> obj .: "cid"
@@ -210,3 +219,17 @@ instance SOP.All (SOP.Compose FromJSON f) '[Identifier Checklist, Identifier Tas
                 <*> obj .: "tid"
                 <*> obj .:? "appliance" .!= TaskApplianceAll
             _ -> fail $ "Invalid Command tag " ++ cmd ^. unpacked
+
+instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task]
+    => Postgres.ToField (Command f)
+  where
+    toField = Postgres.toField . Aeson.encode
+
+instance SOP.All (SOP.Compose FromJSON f) '[Identifier Checklist, Identifier Task]
+    => Postgres.FromField (Command f)
+  where
+    fromField f mdata = do
+        bs <- Postgres.fromField f mdata
+        case Aeson.eitherDecode bs of
+            Right x  -> pure x
+            Left err -> Postgres.conversionError (Aeson.AesonException err)

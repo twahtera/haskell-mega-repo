@@ -8,6 +8,7 @@ module Main (main) where
 
 import Prelude ()
 import Futurice.Prelude
+import Control.Exception                (bracket)
 import Control.Lens                     (use, (%=), _4)
 import Control.Monad.Trans.State.Strict
        (StateT (..), evalState, execStateT, modify')
@@ -18,7 +19,8 @@ import Futurice.EnvConfig               (getConfig)
 import Futurice.UUID                    (uuidWords)
 import System.Environment               (getArgs)
 
-import qualified Data.UUID as UUID
+import qualified Data.UUID                  as UUID
+import qualified Database.PostgreSQL.Simple as Postgres
 
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
@@ -38,13 +40,14 @@ main = do
 main' :: FilePath -> IO ()
 main' fp = withStderrLogger $ \logger -> do
     Config {..} <- getConfig logger "CHECKLIST"
-    print $ cfgPostgresConnInfo
     value <- decodeFileEither fp
     case value of
         Left exc -> putStrLn $ show exc
         Right v  -> do
             let cmds = evalState (dataToCommands v) UUID.nil
-            traverse_ print cmds
+            bracket (Postgres.connect cfgPostgresConnInfo) Postgres.close $ \conn -> do
+                runLogT "checklist-import" logger $
+                    for_ cmds $ transactCommand conn "xxxx"
 
 -------------------------------------------------------------------------------
 -- MonadUUID
