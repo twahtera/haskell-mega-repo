@@ -81,4 +81,6 @@ applyTaskEdit te
     . maybe id (Lens.set taskRole) (teRole te)
 
 instance Show1 f => Show (TaskEdit f) where
-    showsPrec _d _ = id
+    showsPrec d (TaskEdit n r) = showsBinaryWith
+        showsPrec1 showsPrec1
+        "TaskEdit" d n r
