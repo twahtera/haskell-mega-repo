@@ -12,6 +12,7 @@ ghc-options: -Wall
 
 dependencies:
   - base >= 4.7 && <4.10
+  - aeson
   - aeson-compat
   - clay
   - containers
@@ -27,6 +28,7 @@ dependencies:
   - servant
   - servant-lucid
   - servant-server
+  - generics-sop
   - swagger2
   - text
   - time
@@ -58,3 +60,12 @@ executables:
       - checklist-app 
       - transformers
       - yaml
+
+tests:
+  unit-tests:
+    main: Tests.hs
+    source-dirs: tests/
+    dependencies:
+      - tasty
+      - tasty-quickcheck
+      - checklist-app

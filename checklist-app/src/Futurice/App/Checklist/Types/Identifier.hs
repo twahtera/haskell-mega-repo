@@ -43,6 +43,12 @@ instance Entity a => ToParamSchema (Identifier a) where
         & type_ .~ SwaggerString
         & format ?~ "Identifier " <> entityName (Proxy :: Proxy a) <> ": uuid"
 
+instance ToJSON (Identifier a) where
+    toJSON (Identifier u) = toJSON u
+
+instance FromJSON (Identifier a) where
+    parseJSON = fmap Identifier . parseJSON
+
 -------------------------------------------------------------------------------
 -- HasIdentifier
 -------------------------------------------------------------------------------

@@ -27,6 +27,7 @@ library
   ghc-options: -Wall
   build-depends:
       base >= 4.7 && <4.10
+    , aeson
     , aeson-compat
     , clay
     , containers
@@ -42,6 +43,7 @@ library
     , servant
     , servant-lucid
     , servant-server
+    , generics-sop
     , swagger2
     , text
     , time
@@ -74,6 +76,7 @@ executable checklist-app-server
   ghc-options: -Wall -Wall -threaded
   build-depends:
       base >= 4.7 && <4.10
+    , aeson
     , aeson-compat
     , clay
     , containers
@@ -89,6 +92,7 @@ executable checklist-app-server
     , servant
     , servant-lucid
     , servant-server
+    , generics-sop
     , swagger2
     , text
     , time
@@ -103,6 +107,7 @@ executable checklist-import
   ghc-options: -Wall -Wall -threaded
   build-depends:
       base >= 4.7 && <4.10
+    , aeson
     , aeson-compat
     , clay
     , containers
@@ -118,6 +123,7 @@ executable checklist-import
     , servant
     , servant-lucid
     , servant-server
+    , generics-sop
     , swagger2
     , text
     , time
@@ -125,4 +131,38 @@ executable checklist-import
     , checklist-app
     , transformers
     , yaml
+  default-language: Haskell2010
+
+test-suite unit-tests
+  type: exitcode-stdio-1.0
+  main-is: Tests.hs
+  hs-source-dirs:
+      tests/
+  ghc-options: -Wall
+  build-depends:
+      base >= 4.7 && <4.10
+    , aeson
+    , aeson-compat
+    , clay
+    , containers
+    , env-config
+    , fum-client
+    , futurice-foundation
+    , futurice-prelude
+    , futurice-servant
+    , lens
+    , lucid
+    , postgresql-simple
+    , QuickCheck
+    , servant
+    , servant-lucid
+    , servant-server
+    , generics-sop
+    , swagger2
+    , text
+    , time
+    , uuid
+    , tasty
+    , tasty-quickcheck
+    , checklist-app
   default-language: Haskell2010
