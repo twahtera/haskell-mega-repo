@@ -5,7 +5,6 @@ module Futurice.App.Futucli.Command.GithubOldRepos (githubOldRepos) where
 import Futurice.Prelude
 
 import Algebra.Lattice         ((\/))
-import Data.Maybe              (mapMaybe)
 import Data.Time               (diffUTCTime, getCurrentTime)
 import Network.HTTP.Client     (Manager, newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)

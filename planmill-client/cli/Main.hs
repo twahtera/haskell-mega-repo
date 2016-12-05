@@ -10,7 +10,6 @@ import PlanMill.Internal.Prelude
 
 import Control.Arrow        ((&&&))
 import Control.Monad.Http   (HttpT, evalHttpT)
-import Control.Monad.Reader (ReaderT (..))
 import Data.Yaml            (decodeFileEither)
 import System.Environment   (getArgs)
 import System.IO            (hPutStrLn, stderr)

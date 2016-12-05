@@ -31,7 +31,6 @@ import Futurice.Prelude
 import Futurice.Generics
 
 import Control.Arrow             ((&&&))
-import Data.Maybe                (mapMaybe)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation
 import Futurice.Report.Columns

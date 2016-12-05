@@ -1,20 +1,19 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
 -- | Module for precalculated values.
 module Futurice.App.FutuHours.Precalc where
 
 import Futurice.Prelude
 
-import Control.Monad.Trans.Except (ExceptT)
-import Futurice.AVar              (readAVarIO, writeAVarIO)
+import Futurice.AVar      (readAVarIO, writeAVarIO)
 import Generics.SOP
 import Generics.SOP.Curry
-import Servant                    (ServantErr, err500)
+import Servant            (ServantErr, err500)
 
 import qualified Data.Dependent.Map as DMap
 

@@ -10,7 +10,6 @@ module Futurice.App.Avatar (defaultMain) where
 import Prelude ()
 import Futurice.Prelude
 import Codec.Picture              (DynamicImage)
-import Control.Monad.Trans.Except (ExceptT (..), throwE)
 import Futurice.Servant
 import Servant
 import System.IO                  (hPutStrLn, stderr)
@@ -39,7 +38,7 @@ mkAvatar
     -> Bool        -- ^ greyscale
     -> ExceptT ServantErr IO DynamicImage'
 mkAvatar _ Nothing _ _ =
-    throwE $ ServantErr 400 errMsg (fromString errMsg) []
+    throwError $ ServantErr 400 errMsg (fromString errMsg) []
   where
     errMsg = "'url' query parameter is required"
 mkAvatar (cache, mgr) (Just url) msize grey = ExceptT . fmap (first f) $ do

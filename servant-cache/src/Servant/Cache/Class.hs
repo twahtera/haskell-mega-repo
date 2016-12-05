@@ -20,8 +20,6 @@ import Prelude ()
 import Futurice.Prelude            hiding (lookup)
 import Control.Concurrent.Async    (Async, async, wait, waitCatchSTM)
 import Control.Concurrent.STM      (STM, atomically)
-import Control.Monad.Base          (liftBase)
-import Control.Monad.Trans.Control (MonadBaseControl, liftBaseWith)
 import Data.Time                   (addUTCTime, getCurrentTime)
 
 import qualified Servant.Cache.Internal.DynMap as DynMap

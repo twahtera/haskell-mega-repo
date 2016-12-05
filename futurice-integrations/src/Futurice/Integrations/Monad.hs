@@ -12,7 +12,6 @@ module Futurice.Integrations.Monad (
 import Prelude ()
 import Futurice.Prelude
 import Control.Monad.PlanMill     (MonadPlanMillConstraint (..))
-import Control.Monad.Trans.Reader (ReaderT, runReaderT)
 import Data.Constraint
 import Futurice.Constraint.Unit1  (Unit1)
 import Futurice.Has               (FlipIn)

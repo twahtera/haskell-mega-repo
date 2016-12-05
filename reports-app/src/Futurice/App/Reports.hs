@@ -14,7 +14,6 @@ module Futurice.App.Reports (defaultMain) where
 
 import Prelude ()
 import Futurice.Prelude
-import Data.Maybe                (mapMaybe)
 import Futurice.Integrations
        (IntegrationsConfig (..), beginningOfPrevMonth, runIntegrations)
 import Futurice.Periocron

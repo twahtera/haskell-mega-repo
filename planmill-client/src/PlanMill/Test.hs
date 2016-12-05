@@ -13,7 +13,6 @@ module PlanMill.Test (
 import PlanMill.Internal.Prelude
 
 import Control.Monad.Http   (evalHttpT)
-import Control.Monad.Reader (runReaderT)
 import Control.Monad.CryptoRandom.Extra (MonadInitHashDRBG (..),
                                          evalCRandTThrow)
 

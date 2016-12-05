@@ -3,9 +3,8 @@
 -- | *TODO:* extract into common library
 module Futurice.App.FutuHours.PlanMillUserIds (planMillUserIds) where
 
+import Prelude ()
 import Futurice.Prelude
-
-import Data.Maybe                  (mapMaybe)
 import Database.PostgreSQL.Simple  (Connection)
 import Network.HTTP.Client         (newManager)
 import Network.HTTP.Client.TLS     (tlsManagerSettings)

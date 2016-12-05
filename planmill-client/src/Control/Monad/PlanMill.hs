@@ -29,7 +29,6 @@ import PlanMill.Internal.Prelude
 import Prelude ()
 
 import Control.Monad.Http               (MonadHttp)
-import Control.Monad.Reader             (ReaderT (..))
 import Data.Constraint                  (Constraint, Dict (..), type (:-)(..), (\\))
 import Futurice.Constraint.ForallSymbol (ForallFSymbol (..))
 

@@ -10,7 +10,6 @@ module Futurice.App.Spice (defaultMain) where
 import Futurice.Prelude
 import Prelude          ()
 
-import Control.Monad.Trans.Except (ExceptT (..))
 import Network.HTTP.Client        (Manager, newManager)
 import Network.HTTP.Client.TLS    (tlsManagerSettings)
 import Servant
