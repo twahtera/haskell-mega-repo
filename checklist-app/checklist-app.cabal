@@ -31,19 +31,23 @@ library
     , aeson-compat
     , clay
     , containers
+    , crypto-api
+    , DRBG
     , env-config
     , fum-client
     , futurice-foundation
     , futurice-prelude
     , futurice-servant
+    , generics-sop
     , lens
     , lucid
     , postgresql-simple
     , QuickCheck
+    , resource-pool
     , servant
     , servant-lucid
     , servant-server
-    , generics-sop
+    , stm
     , swagger2
     , text
     , time
@@ -80,19 +84,23 @@ executable checklist-app-server
     , aeson-compat
     , clay
     , containers
+    , crypto-api
+    , DRBG
     , env-config
     , fum-client
     , futurice-foundation
     , futurice-prelude
     , futurice-servant
+    , generics-sop
     , lens
     , lucid
     , postgresql-simple
     , QuickCheck
+    , resource-pool
     , servant
     , servant-lucid
     , servant-server
-    , generics-sop
+    , stm
     , swagger2
     , text
     , time
@@ -111,19 +119,23 @@ executable checklist-import
     , aeson-compat
     , clay
     , containers
+    , crypto-api
+    , DRBG
     , env-config
     , fum-client
     , futurice-foundation
     , futurice-prelude
     , futurice-servant
+    , generics-sop
     , lens
     , lucid
     , postgresql-simple
     , QuickCheck
+    , resource-pool
     , servant
     , servant-lucid
     , servant-server
-    , generics-sop
+    , stm
     , swagger2
     , text
     , time
@@ -145,19 +157,23 @@ test-suite unit-tests
     , aeson-compat
     , clay
     , containers
+    , crypto-api
+    , DRBG
     , env-config
     , fum-client
     , futurice-foundation
     , futurice-prelude
     , futurice-servant
+    , generics-sop
     , lens
     , lucid
     , postgresql-simple
     , QuickCheck
+    , resource-pool
     , servant
     , servant-lucid
     , servant-server
-    , generics-sop
+    , stm
     , swagger2
     , text
     , time

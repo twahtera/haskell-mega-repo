@@ -5,12 +5,15 @@ module Futurice.App.Checklist (defaultMain) where
 
 import Prelude ()
 import Futurice.Prelude
+import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
+import Data.Foldable             (foldl')
+import Data.Pool                 (withResource)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Servant
 import Servant
-import Test.QuickCheck           (arbitrary, generate, resize)
 
 import Futurice.App.Checklist.API
+import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Pages.Checklist
 import Futurice.App.Checklist.Pages.Employee
@@ -19,8 +22,10 @@ import Futurice.App.Checklist.Pages.Index
 import Futurice.App.Checklist.Pages.Task
 import Futurice.App.Checklist.Pages.Tasks
 import Futurice.App.Checklist.Types
+import Futurice.App.Checklist.Types.Ctx
 
-import qualified FUM (UserName (..))
+import qualified Database.PostgreSQL.Simple as Postgres
+import qualified FUM                        (UserName (..))
 
 -------------------------------------------------------------------------------
 -- Server
@@ -112,12 +117,14 @@ withAuthUser
     => Ctx -> Maybe FUM.UserName
     -> (World -> AuthUser -> m (HtmlPage a))
     -> m (HtmlPage a)
-withAuthUser ctx fu f = case userInfo of
-    Nothing        -> pure forbiddedPage
-    Just userInfo' -> f ctx userInfo'
+withAuthUser ctx fu f = do
+    world <- liftIO $ readTVarIO $ ctxWorld ctx
+    case userInfo world of
+        Nothing        -> pure forbiddedPage
+        Just userInfo' -> f world userInfo'
   where
-    userInfo :: Maybe (FUM.UserName, TaskRole, Location)
-    userInfo = ctx ^? worldUsers . ix fu . _Just
+    userInfo :: World -> Maybe (FUM.UserName, TaskRole, Location)
+    userInfo world = world ^? worldUsers . ix fu . _Just
 
 -------------------------------------------------------------------------------
 -- Main
@@ -135,8 +142,12 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
 
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
     makeCtx cfg _logger _cache = do
-        world0 <- generate (resize 200 arbitrary)
+        ctx <- newCtx (cfgPostgresConnInfo cfg) emptyWorld
+        cmds <- withResource (ctxPostgres ctx) $ \conn ->
+            Postgres.fromOnly <$$> Postgres.query_ conn "SELECT cmddata FROM checklist2.commands ORDER BY cid;"
+        let world0 = foldl' (flip applyCommand) emptyWorld cmds
         let world1 = if cfgMockAuth cfg
             then world0 & worldUsers .~ const (Just mockCredentials)
             else world0
-        pure world1
+        atomically $ writeTVar (ctxWorld ctx) world1
+        pure ctx
