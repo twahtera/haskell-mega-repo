@@ -113,7 +113,14 @@ traverseCommand _f (CmdAddTask c t a) =
 
 -- todo: in error monad, if e.g. identifier don't exist
 applyCommand :: Command Identity -> World -> World
-applyCommand _ = id
+applyCommand cmd world = case cmd of
+    CmdCreateChecklist (Identity cid) n ->
+        world & worldLists . at cid ?~ Checklist cid n mempty
+    CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity role)) ->
+        world & worldTasks . at tid ?~ Task tid n mempty role
+    CmdAddTask cid tid app ->
+        world & worldLists . ix cid . checklistTasks . at tid ?~ app
+    _ -> world
 
 transactCommand
     :: (MonadLog m, MonadIO m)

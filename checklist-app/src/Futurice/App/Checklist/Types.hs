@@ -58,6 +58,7 @@ module Futurice.App.Checklist.Types (
     _TaskItemDone, _TaskItemTodo,
     -- * World
     World,
+    emptyWorld,
     mkWorld,
     -- ** Lenses
     worldEmployees,
@@ -66,14 +67,11 @@ module Futurice.App.Checklist.Types (
     worldTaskItems,
     worldUsers,
     worldTaskItems',
-    -- ** Context
-    Ctx,
     -- * Access
     AuthUser,
     ) where
 
 import Futurice.App.Checklist.Types.Basic
-import Futurice.App.Checklist.Types.Ctx
 import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.World
 
