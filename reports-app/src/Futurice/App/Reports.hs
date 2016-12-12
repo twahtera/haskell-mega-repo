@@ -15,7 +15,8 @@ module Futurice.App.Reports (defaultMain) where
 import Prelude ()
 import Futurice.Prelude
 import Futurice.Integrations
-       (IntegrationsConfig (..), beginningOfPrevMonth, runIntegrations)
+       (IntegrationsConfig (..), beginningOfPrev2Month, beginningOfPrevMonth,
+       runIntegrations)
 import Futurice.Periocron
 import Futurice.Servant
 import Generics.SOP              (hcmap, hcollapse)
@@ -96,7 +97,7 @@ serveMissingHoursReport ctx@(cache, _, _,_) = cachedIO cache 600 () $ do
     now <- currentTime
     day <- currentDay
     -- TODO: end date to the last friday
-    let interval = beginningOfPrevMonth day ... pred day
+    let interval = beginningOfPrev2Month day ... pred day
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
         (missingHoursReport interval)
