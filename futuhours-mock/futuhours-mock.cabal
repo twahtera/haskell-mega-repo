@@ -27,7 +27,6 @@ source-repository head
 library
   hs-source-dirs:
       src
-  ghc-options: -Wall
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   build-depends:
       base
