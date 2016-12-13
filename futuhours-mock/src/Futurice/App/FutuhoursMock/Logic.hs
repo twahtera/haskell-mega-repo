@@ -41,7 +41,6 @@ import Data.Time.Locale.Compat (defaultTimeLocale)
 import Data.Time.Calendar (diffDays, addDays, toGregorian, fromGregorian)
 import Data.Maybe (fromJust)
 import Servant
-import Control.Monad.Trans.Except (ExceptT (..))
 import qualified PlanMill as PM
 import qualified Data.Map.Strict as Map
 

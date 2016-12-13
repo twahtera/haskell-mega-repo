@@ -1,11 +1,9 @@
 module Futurice.App.FutuhoursMock.Config (
     Config(..),
-    getConfig,
     ) where
 
 import Futurice.Prelude
 import Prelude ()
-
 import Futurice.EnvConfig
 
 data Config = Config
@@ -13,8 +11,5 @@ data Config = Config
     }
     deriving (Show)
 
-instance HasPort Config where
-    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
-
-instance GetConfig Config where
-    getConfig = Config <$> parseDefaultPort "FUTUHOURSMOCK"
+instance Configure Config where
+    configure = Config <$> envVar "FUTUHOURSMOCK"

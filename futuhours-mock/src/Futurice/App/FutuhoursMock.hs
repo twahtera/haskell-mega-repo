@@ -37,7 +37,8 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverDescription     .~ "Is it real?"
     & serverApp futuhoursApi .~ server
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC2))
+    & serverEnvPfx          .~ "HOURSMOCK"
   where
-    makeCtx :: Config -> DynMapCache -> IO Ctx
-    makeCtx Config {..} _ = do
+    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx Config {..} _ _ = do
         pure Ctx
