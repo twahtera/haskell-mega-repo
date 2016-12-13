@@ -70,7 +70,7 @@ userEndpoint _ctx = do
         , _userProfilePicture="https://raw.githubusercontent.com/futurice/spiceprogram/gh-pages/assets/img/logo/chilicorn_no_text-128.png"
         }
 
-parseDayFormat x = (parseTimeOrError False defaultTimeLocale "%Y-%m-%d" (unpack x) :: UTCTime)
+parseDayFormat x = utctDay $ (parseTimeOrError False defaultTimeLocale "%Y-%m-%d" (unpack x) :: UTCTime)
 parseMonthFormat x = (parseTimeOrError False defaultTimeLocale "%Y-%m" (unpack x) :: UTCTime)
 
 hoursEndpoint
@@ -86,8 +86,8 @@ hoursEndpoint _ctx sd ed = do
   let endDate = case ed of
                   Just x -> Just $ parseDayFormat x
                   Nothing -> Nothing
-  let duration = diffDays (utctDay $ fromJust endDate) (utctDay $ fromJust startDate)
-  let days = daysFD duration $ utctDay (fromJust startDate)
+  let duration = diffDays (fromJust endDate) (fromJust startDate)
+  let days = daysFD duration $ (fromJust startDate)
   months <- liftIO $ genMonths days
   projects <- liftIO $ fillProjects
   return $ HoursResponse { _hoursResponseProjects=projects
@@ -149,7 +149,7 @@ fillProjects = do
       now <- getCurrentTime
       hrs <- randomRIO (1, 7) :: IO Int
       let t'' = case (fromMaybe Nothing $ t ^? taskLatestEntry) of
-                  Just x -> Just $ x { _latestEntryDate = Just now
+                  Just x -> Just $ x { _latestEntryDate = Just (utctDay now)
                                      , _latestEntryHours = Just $ (fromIntegral hrs)*0.5 }
                   Nothing -> Nothing
       hrsRemaining <- case (_projectId p /= _projectId internalProject && _projectId p /= _projectId absenceProject) of
@@ -239,7 +239,7 @@ entryDeleteEndpoint _ctx _id req = do
           { _euTaskId=PM.Ident 1
           , _euProjectId=PM.Ident 1
           , _euDescription="test"
-          , _euDate=now
+          , _euDate=utctDay now
           , _euHours=7.5
           , _euClosed=Nothing
           }

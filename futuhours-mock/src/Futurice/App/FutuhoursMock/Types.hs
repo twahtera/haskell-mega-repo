@@ -72,7 +72,7 @@ data Task = Task
   , _taskName :: !Text
   , _taskAbsence :: !Bool
   , _taskClosed :: !Bool
-  , _taskLatestEntry :: Maybe LatestEntry
+  , _taskLatestEntry :: !(Maybe LatestEntry)
   , _taskHoursRemaining :: !(Maybe Float) -- TODO: better type
   } deriving (Eq, Show, Typeable, Generic)
 -- LatestEntry: Hours UI feature. Previous Entry used as default values when marking new hours.
@@ -100,8 +100,8 @@ data Entry = Entry
 -- perhaps a lens getter for an Entry?
 data LatestEntry = LatestEntry
   { _latestEntryDescription :: !Text
-  , _latestEntryDate :: Maybe UTCTime
-  , _latestEntryHours :: Maybe Float
+  , _latestEntryDate :: !(Maybe Day)
+  , _latestEntryHours :: !(Maybe Float)
   } deriving (Eq, Show, Typeable, Generic)
 
 mkLatestEntry desc = Just LatestEntry
@@ -115,9 +115,9 @@ data EntryUpdate = EntryUpdate
   { _euTaskId :: PM.TaskId
   , _euProjectId :: PM.ProjectId
   , _euDescription :: !Text
-  , _euDate :: !UTCTime
+  , _euDate :: !Day
   , _euHours :: !Float
-  , _euClosed :: Maybe Bool
+  , _euClosed :: !(Maybe Bool)
   } deriving (Eq, Show, Typeable, Generic)
 
 data EntryUpdateResponse = EntryUpdateResponse
