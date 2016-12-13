@@ -19,10 +19,10 @@ import Futurice.App.Spice.Config
 import Futurice.App.Spice.Logic
 import Futurice.App.Spice.Server.API
 
-type Ctx = (DynMapCache, Manager, Config)
+type Ctx = (DynMapCache, Logger, Manager, Config)
 
 serveSpiceStats :: Ctx -> ExceptT ServantErr IO Stats
-serveSpiceStats (cache, mgr, cfg) = lift $ cachedIO cache 600 () $ do
+serveSpiceStats (cache, logger, mgr, cfg) = lift $ cachedIO logger cache 600 () $ do
     msgs <- fetchMessagesLoop (cfgFdOrg cfg) (cfgFdFlow cfg) (cfgFdAuth cfg) mgr
     spiceStats mgr msgs (cfgGhAuth cfg)
 
@@ -40,6 +40,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx            .~ "SPICESTATS"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
-    makeCtx cfg _ cache = do
+    makeCtx cfg logger cache = do
         mgr <- newManager tlsManagerSettings
-        return (cache, mgr, cfg)
+        return (cache, logger, mgr, cfg)

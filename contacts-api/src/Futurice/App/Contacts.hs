@@ -62,7 +62,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         let getContacts = runIntegrations cfg contacts
 
         -- Action returning the contact list
-        let action = cachedIO cache 3600 () getContacts
+        let action = cachedIO logger cache 3600 () getContacts
 
         -- Periodically try to fetch new data
         _ <- spawnPeriocron (Options logger 300)

@@ -4,14 +4,14 @@ import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent       (threadDelay)
 import Control.Concurrent.Async (async, wait)
-import Control.Concurrent.STM   (TVar, atomically, modifyTVar, newTVarIO,
-                                 readTVarIO)
+import Control.Concurrent.STM
+       (TVar, atomically, modifyTVar, newTVarIO, readTVarIO)
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Servant.Cache.Class           as Cache
-import qualified Servant.Cache.Internal.DynMap as DynMap
+import qualified Futurice.Cache  as Cache
+import qualified Futurice.DynMap as DynMap
 
 main :: IO ()
 main = defaultMain tests
@@ -48,8 +48,8 @@ coldStartBroken = do
     assertBool ("Should over 13 (close to 26): " ++ show value) (value > 13)
 
 coldStartFixed :: IO ()
-coldStartFixed = do
-    value <- coldStart Cache.cachedIO
+coldStartFixed = withStderrLogger $ \logger -> do
+    value <- coldStart $ Cache.cachedIO logger
     assertBool ("Less then three: " ++ show value) (value < 3)
 
 dynmapExample :: IO ()

@@ -41,6 +41,6 @@ tests:
     source-dirs: test
     ghc-options: -threaded
     dependencies:
-      - servant-cache
+      - dynmap-cache
       - tasty
       - tasty-hunit

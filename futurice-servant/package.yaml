@@ -26,6 +26,7 @@ library:
     - base                  >=4.7   && <4.10
     - aeson
     - base-compat
+    - dynmap-cache
     - ekg
     - env-config
     - exceptions
@@ -38,7 +39,6 @@ library:
     - lens
     - log-logentries
     - servant ==0.9.*
-    - servant-cache
     - servant-cassava
     - servant-lucid
     - servant-server
