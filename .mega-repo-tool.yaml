@@ -10,6 +10,8 @@ apps:
     executable: futuhours-api-server
   planmill-proxy:
     executable: planmill-proxy-server
+  github-proxy:
+    executable: github-proxy-server
   proxy-app:
     executable: proxy-app-server
   reports-app:

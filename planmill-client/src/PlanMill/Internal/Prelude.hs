@@ -10,6 +10,8 @@ module PlanMill.Internal.Prelude (
     typeMismatch,
     -- * binary-tagged
     HasSemanticVersion, HasStructuralInfo(..), sopStructuralInfo,
+    -- * intervals
+    Interval, (...), inf, sup,
     -- * Time related
     ZonedTime, UTCTime(..),
     Aeson.getU, Aeson.getZ, dayFromZ, zonedTimeDay,
@@ -25,11 +27,12 @@ import Futurice.Time
 import Data.Aeson.Compat
        (FromJSON (..), ToJSON (..), Value (..), object, withObject, withText,
        (.!=), (.:), (.:?), (.=))
-import Data.Aeson.Types      (typeMismatch)
+import Data.Aeson.Types          (typeMismatch)
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo (..), sopStructuralInfo)
-import Data.Time             (ZonedTime, zonedTimeToLocalTime)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
+import Data.Time                 (ZonedTime, zonedTimeToLocalTime)
+import Data.Time.Clock.POSIX     (utcTimeToPOSIXSeconds)
+import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
 
 import qualified Data.Aeson.Extra   as Aeson
 import qualified Data.Text.Encoding as TE

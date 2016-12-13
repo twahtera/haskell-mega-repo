@@ -10,11 +10,8 @@ import PlanMill.Internal.Prelude
 
 import Control.Arrow        ((&&&))
 import Control.Monad.Http   (HttpT, evalHttpT)
-import Control.Monad.Logger (LogLevel (..), LogSource, LoggingT, filterLogger)
-import Control.Monad.Reader (ReaderT (..))
-import Data.Maybe           (isJust)
 import Data.Yaml            (decodeFileEither)
-import System.Environment   (getArgs, lookupEnv)
+import System.Environment   (getArgs)
 import System.IO            (hPutStrLn, stderr)
 
 import qualified Data.HashMap.Strict as HM
@@ -147,19 +144,14 @@ instance FromJSON Cfg' where
 -------------------------------------------------------------------------------
 
 main'' :: Cfg -> String -> IO ()
-main'' cfg script = do
-    debug <- isJust <$> lookupEnv "DEBUG"
+main'' cfg script = withStderrLogger $ \logger -> do
     action & id
         . evalHttpT
-        . runStderrLoggingT
-        . filterLogger (logPredicate debug)
+        . runLogT "planmill-cli" logger
         . flip runReaderT cfg
         . runCachingT
   where
-    logPredicate :: Bool -> LogSource -> LogLevel -> Bool
-    logPredicate debug _ level = debug || level > LevelDebug
-
-    action :: CachingT (ReaderT Cfg (LoggingT (HttpT IO))) ()
+    action :: CachingT (ReaderT Cfg (LogT (HttpT IO))) ()
     action = case script of
         "dump" -> do dump <- getDump
                      liftIO $ printDumpStats dump

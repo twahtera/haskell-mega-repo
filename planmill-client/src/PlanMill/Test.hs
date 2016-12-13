@@ -13,7 +13,6 @@ module PlanMill.Test (
 import PlanMill.Internal.Prelude
 
 import Control.Monad.Http   (evalHttpT)
-import Control.Monad.Reader (runReaderT)
 import Control.Monad.CryptoRandom.Extra (MonadInitHashDRBG (..),
                                          evalCRandTThrow)
 
@@ -36,5 +35,6 @@ evalPlanMillIO
     -> IO a
 evalPlanMillIO cfg planmill = do
     g <- mkHashDRBG
-    evalHttpT $ runStderrLoggingT $ flip runReaderT cfg $ flip evalCRandTThrow g $
-        evalPlanMill planmill
+    withStderrLogger $ \logger ->
+        evalHttpT $ runLogT "evalPlanMillIO" logger $ flip runReaderT cfg $ flip evalCRandTThrow g $
+            evalPlanMill planmill

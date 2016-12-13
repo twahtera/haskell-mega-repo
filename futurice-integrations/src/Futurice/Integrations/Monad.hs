@@ -1,5 +1,7 @@
-{-# LANGUAGE TypeFamilies    #-}
-{-# LANGUAGE TemplateHaskell, MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UndecidableInstances  #-}
 module Futurice.Integrations.Monad (
     Integrations,
     Env,
@@ -7,20 +9,23 @@ module Futurice.Integrations.Monad (
     IntegrationsConfig (..),
     ) where
 
-import Futurice.Prelude
 import Prelude ()
-
-import Control.Monad.PlanMill    (MonadPlanMillConstraint (..))
+import Futurice.Prelude
+import Control.Monad.PlanMill     (MonadPlanMillConstraint (..))
 import Data.Constraint
-import Futurice.Constraint.Unit1 (Unit1)
+import Futurice.Constraint.Unit1  (Unit1)
+import Futurice.Has               (FlipIn)
+import Network.HTTP.Client        (Manager, Request)
+import PlanMill.Queries.Haxl      (initDataSourceBatch)
 
-import           Control.Monad.Trans.Reader (ReaderT, runReaderT)
+import qualified Chat.Flowdock.REST           as FD
+import qualified Flowdock.Haxl                as FD.Haxl
 import qualified FUM
 import qualified FUM.Haxl
-import qualified Haxl.Core                  as H
-import           Network.HTTP.Client        (Manager, Request)
-import           PlanMill.Queries.Haxl      (initDataSourceBatch)
-import qualified PlanMill.Types.Query       as Q
+import qualified Futurice.GitHub              as GH
+import qualified Futurice.Integrations.GitHub as GH
+import qualified Haxl.Core                    as H
+import qualified PlanMill.Types.Query         as Q
 
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Common
@@ -28,6 +33,8 @@ import Futurice.Integrations.Common
 -- | Opaque environment, exported for haddock
 data Env = Env
     { _envFumEmployeeListName :: !FUM.ListName
+    , _envFlowdockOrgName     :: !(FD.ParamName FD.Organisation)
+    , _envGithubOrgName       :: !(GH.Name GH.Organization)
     , _envNow                 :: !UTCTime
     }
 
@@ -37,6 +44,7 @@ newtype Integrations a = Integr { unIntegr :: ReaderT Env (H.GenHaxl ()) a }
 
 data IntegrationsConfig = MkIntegrationsConfig
     { integrCfgManager                  :: !Manager
+    , integrCfgLogger                   :: !Logger
     , integrCfgNow                      :: !UTCTime
     -- Planmill
     , integrCfgPlanmillProxyBaseRequest :: !Request
@@ -44,6 +52,12 @@ data IntegrationsConfig = MkIntegrationsConfig
     , integrCfgFumAuthToken             :: !FUM.AuthToken
     , integrCfgFumBaseUrl               :: !FUM.BaseUrl
     , integrCfgFumEmployeeListName      :: !FUM.ListName
+    -- GitHub
+    , integrCfgGithubProxyBaseRequest   :: !Request
+    , integrCfgGithubOrgName            :: !(GH.Name GH.Organization)
+    -- Flowdock
+    , integrCfgFlowdockToken            :: !FD.AuthToken
+    , integrCfgFlowdockOrgName          :: !(FD.ParamName FD.Organisation)
     }
 
 runIntegrations :: IntegrationsConfig -> Integrations a -> IO a
@@ -51,19 +65,26 @@ runIntegrations cfg (Integr m) = do
     let env = Env
             { _envFumEmployeeListName = integrCfgFumEmployeeListName cfg
             , _envNow                 = integrCfgNow cfg
+            , _envFlowdockOrgName     = integrCfgFlowdockOrgName cfg
+            , _envGithubOrgName       = integrCfgGithubOrgName cfg
             }
     let haxl = runReaderT m env
     let stateStore
-            = H.stateSet (initDataSourceBatch mgr planmillReq)
+            = H.stateSet (initDataSourceBatch lgr mgr planmillBaseReq)
             $ H.stateSet (FUM.Haxl.initDataSource' mgr fumToken fumBaseUrl)
+            $ H.stateSet (FD.Haxl.initDataSource' mgr fdToken)
+            $ H.stateSet (GH.initDataSource lgr mgr githubBaseReq)
             $ H.stateEmpty
     haxlEnv <- H.initEnv stateStore ()
     H.runHaxl haxlEnv haxl
   where
-    mgr         = integrCfgManager cfg
-    planmillReq = integrCfgPlanmillProxyBaseRequest cfg
-    fumToken    = integrCfgFumAuthToken cfg
-    fumBaseUrl  = integrCfgFumBaseUrl cfg
+    mgr             = integrCfgManager cfg
+    lgr             = integrCfgLogger cfg
+    planmillBaseReq = integrCfgPlanmillProxyBaseRequest cfg
+    fumToken        = integrCfgFumAuthToken cfg
+    fumBaseUrl      = integrCfgFumBaseUrl cfg
+    fdToken         = integrCfgFlowdockToken cfg
+    githubBaseReq   = integrCfgGithubProxyBaseRequest cfg
 
 -------------------------------------------------------------------------------
 -- Instances
@@ -103,6 +124,22 @@ instance MonadPlanMillQuery Integrations where
 instance MonadFUM Integrations where
     fumAction = Integr . lift . FUM.Haxl.request
 
+instance MonadFlowdock Integrations where
+    flowdockOrganisationReq = Integr . lift . FD.Haxl.organisation
+
+-------------------------------------------------------------------------------
+-- MonadGitHub
+-------------------------------------------------------------------------------
+
+instance MonadGitHub Integrations where
+    type MonadGitHubC Integrations = FlipIn GH.GHTypes
+    githubReq req = case (showDict, typeableDict) of
+        (Dict, Dict) -> Integr (lift $ H.dataFetch $ GH.GHR tag req)
+      where
+        tag = GH.mkTag
+        showDict     = GH.tagDict (Proxy :: Proxy Show) tag
+        typeableDict = GH.tagDict (Proxy :: Proxy Typeable) tag
+
 -------------------------------------------------------------------------------
 -- Has* instances
 -------------------------------------------------------------------------------
@@ -113,3 +150,9 @@ instance MonadReader Env Integrations where
 
 instance HasFUMEmployeeListName Env where
     fumEmployeeListName = envFumEmployeeListName
+
+instance HasFlowdockOrgName Env where
+    flowdockOrganisationName = envFlowdockOrgName
+
+instance HasGithubOrgName Env where
+    githubOrganisationName = envGithubOrgName

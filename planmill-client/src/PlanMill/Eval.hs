@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 module PlanMill.Eval (evalPlanMill) where
 
 import PlanMill.Internal.Prelude
@@ -23,6 +22,7 @@ import qualified Data.Map               as Map
 import qualified Data.Text              as T
 import qualified Data.Text.Encoding     as TE
 import qualified Data.Vector            as V
+import qualified Log
 
 -- PlanMill import
 import PlanMill.Auth    (Auth (..), getAuth)
@@ -31,14 +31,13 @@ import PlanMill.Types
 
 evalPlanMill
     :: forall m env a.
-        ( MonadHttp m, MonadThrow m, MonadTime m, MonadLogger m
+        ( MonadHttp m, MonadThrow m, MonadTime m, MonadLog m
         , MonadReader env m, HasPlanMillBaseUrl env, HasCredentials env
         , MonadCRandom' m
-        , Applicative m
         , FromJSON a
         )
     => PlanMill a -> m a
-evalPlanMill pm = do
+evalPlanMill pm = Log.localDomain "evalPlanMill" $ do
     baseReq <- mkBaseReq pm
     let url = BS8.unpack (path baseReq <> queryString baseReq)
     let emptyError = DecodeError url "empty input"
@@ -58,27 +57,28 @@ evalPlanMill pm = do
         let baseUrl = getPlanMillBaseUrl cfg
         parseRequest $ baseUrl <> fromUrlParts (requestUrlParts planmill)
 
-    singleReq :: forall b. FromJSON b
-              => Request
-              -> QueryString
-              -> m b           -- ^ Action to return in case of empty response
-              -> m b
+    singleReq
+        :: forall b. FromJSON b
+        => Request
+        -> QueryString
+        -> m b           -- ^ Action to return in case of empty response
+        -> m b
     singleReq req qs d = do
         -- We need to generate auth (nonce) at each req
         auth <- getAuth
-        let req' = setQueryString' qs (req `withAuthHeader` auth)
+        let req' = setQueryString' qs (addHeader (authHeader auth) req)
         let url = BS8.unpack (path req') <> BS8.unpack (queryString req')
-        $(logInfo) $ T.pack $ "Request: " <> url
+        logTrace_ $ T.pack $ "request: " <> url
         res <- httpLbs req'
-        $(logDebug) $ "response status: " <> textShow (responseStatus res)
+        logTrace_ $ "response status: " <> textShow (responseStatus res)
         if isn't _Empty (responseBody res)
-            then do
-                $(logDebug) $ "response body: " <> TE.decodeUtf8 (responseBody res ^. strict)
+            then
+                -- logTrace_ $ "response body: " <> TE.decodeUtf8 (responseBody res ^. strict)
                 if statusIsSuccessful (responseStatus res)
                     then parseResult url $ responseBody res
                     else throwM $ parseError url $ responseBody res
             else do
-                $(logDebug) "empty response"
+                logTrace_ "empty response"
                 d
 
     setQueryString' :: QueryString -> Request -> Request
@@ -103,10 +103,10 @@ evalPlanMill pm = do
     --
     -- We actually need the type equality constraint
     -- to use vector's length
-    pagedReq :: forall b b'.
-                (b ~ V.Vector b', FromJSON b)
-             => Request -> QueryString
-             -> m b
+    pagedReq
+        :: forall b b'. (b ~ V.Vector b', FromJSON b)
+        => Request -> QueryString
+        -> m b
     pagedReq req qs = go mempty
       where
         go :: V.Vector b' -> m b
@@ -122,8 +122,10 @@ evalPlanMill pm = do
                 then pure (acc <> res)
                 else go (acc <> V.take rowCount res)
 
+        -- The PlanMill documentation doesn't specify the maximum rows we
+        -- can ask for, so we empirically found this limit works
         rowCount :: Int
-        rowCount = 100
+        rowCount = 1000
 
 authHeader :: Auth -> Header
 authHeader (Auth (Ident uid) (Nonce nonce) ts sig) = ("x-PlanMill-Auth",
@@ -132,11 +134,7 @@ authHeader (Auth (Ident uid) (Nonce nonce) ts sig) = ("x-PlanMill-Auth",
     "timestamp:" <> bsShow (utcTimeToInteger ts) <> ";" <>
     "signature:" <> Base64.encode sig)
 
-withAuthHeader :: Request -> Auth -> Request
-withAuthHeader req auth =
-    req { requestHeaders = authHeader auth : requestHeaders req
-        }
-
 addHeader :: Header -> Request -> Request
 addHeader header req = req
-    { requestHeaders = header : requestHeaders req }
+    { requestHeaders = header : requestHeaders req
+    }

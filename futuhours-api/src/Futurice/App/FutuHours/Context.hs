@@ -8,10 +8,9 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.FutuHours.Context where
 
+import Prelude ()
 import Futurice.Prelude
-
 import Control.Concurrent.STM     (TVar)
-import Control.Monad.Logger       (LogLevel (..), LoggingT, filterLogger)
 import Data.Dependent.Map         (DMap)
 import Data.Pool                  (Pool)
 import Database.PostgreSQL.Simple (Connection)
@@ -27,20 +26,12 @@ data Ctx = Ctx
     , ctxPostgresPool       :: !(Pool Connection)
     , ctxPlanmillUserLookup :: !(TVar PlanmillUserLookupTable)
     , ctxPrecalcEndpoints   :: !(DMap EndpointTag AVar)
-    , ctxLogLevel           :: !LogLevel
+    , ctxLogger             :: !Logger
     }
-
-runFutuhoursLoggingT
-    :: (MonadIO m, HasLogLevel env)
-    => env -> LoggingT m a -> m a
-runFutuhoursLoggingT env l =
-    runStderrLoggingT $ filterLogger p l
-  where
-    p _ level = level >= (env ^. logLevel)
 
 type HasDevelopment r = Has r Development
 type HasPlanmillCfg r = Has r Cfg
-type HasLogLevel    r = Has r LogLevel
+type HasLogger      r = Has r Logger
 
 development :: HasDevelopment r => Lens' r Development
 development = field
@@ -48,12 +39,12 @@ development = field
 planmillCfg :: HasPlanmillCfg r => Lens' r Cfg
 planmillCfg = field
 
-logLevel :: HasLogLevel r => Lens' r LogLevel
-logLevel = field
+logger :: HasLogger r => Lens' r Logger
+logger = field
 
 instance Has Ctx Development where
     field = lens ctxDevelopment $ \c x -> c { ctxDevelopment = x }
 instance Has Ctx Cfg where
     field = lens ctxPlanmillCfg $ \c x -> c { ctxPlanmillCfg = x }
-instance Has Ctx LogLevel where
-    field = lens ctxLogLevel $ \c x -> c { ctxLogLevel = x }
+instance Has Ctx Logger where
+    field = lens ctxLogger $ \c x -> c { ctxLogger = x }

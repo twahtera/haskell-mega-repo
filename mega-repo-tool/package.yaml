@@ -27,20 +27,23 @@ library:
     - crypto-api
     - entropy
     - exceptions
-    - foldl
     - futurice-prelude
     - http-client
     - http-client-tls
     - lens
+    - machines           >= 0.6.1
+    - machines-directory >= 0.2.1.0 # for directoryWalk'
     - optparse-applicative
     - process
     - regex-applicative
     - regex-applicative-text
+    - semigroups
     - tagged
+    - tdigest
+    - temporary
     - text
     - time
     - transformers
-    - turtle >=1.2.8 && <1.3
     - unordered-containers
     - vector
     - yaml

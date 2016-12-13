@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
 -- | A @haxl@ datasource based on 'Query'
@@ -10,6 +11,7 @@
 module PlanMill.Queries.Haxl (
     initDataSourceSimpleIO,
     initDataSourceBatch,
+    maxBatchSize,
     PlanmillBatchError (..),
     ) where
 
@@ -21,13 +23,12 @@ import PlanMill.Types.Cfg   (Cfg)
 import PlanMill.Types.Query
 
 -- For initDataSourceSimpleIO
-import Control.Monad.Logger             (LogLevel, filterLogger)
 import Control.Monad.CryptoRandom.Extra
        (MonadInitHashDRBG (..), evalCRandTThrow)
-import Control.Monad.Http               (evalHttpT)
-import Control.Monad.Reader             (runReaderT)
+import Control.Monad.Http               (runHttpT)
 import Data.Constraint                  (Dict (..))
 import PlanMill.Eval                    (evalPlanMill)
+import Numeric.Interval.NonEmpty        (clamp)
 
 -- For initDataSourceBatch
 import           Control.Concurrent.Async (async, waitCatch)
@@ -36,8 +37,9 @@ import qualified Data.Binary.Tagged       as Binary
 import           Data.GADT.Compare        (GEq (..))
 import           Data.Type.Equality       ((:~:) (..))
 import qualified Network.HTTP.Client      as HTTP
+import qualified Network.HTTP.Client.TLS  as HTTP
 
-instance Show1 Query where show1 = show
+instance Haxl.Core.Show1 Query where show1 = show
 
 instance StateKey Query where
     data State Query = QueryFunction ([BlockedFetch Query] -> PerformFetch)
@@ -51,22 +53,27 @@ instance DataSource u Query where
 -- | This is a simple query function.
 --
 -- It's smart enough to reuse http/random-gen for blocked fetches
-initDataSourceSimpleIO :: LogLevel -> Cfg -> State Query
-initDataSourceSimpleIO loglevel cfg = QueryFunction $ \blockedFetches -> SyncFetch $ do
-    g <- mkHashDRBG
-    perform g $ for_ blockedFetches $ \(BlockedFetch q v) ->
+--
+-- /TODO/ take 'HTTP.Manager' as a param
+initDataSourceSimpleIO :: Logger -> Cfg -> State Query
+initDataSourceSimpleIO lgr cfg = QueryFunction $ \blockedFetches -> SyncFetch $ do
+    prng <- mkHashDRBG
+    manager <- HTTP.newManager HTTP.tlsManagerSettings
+        -- 5 min timeout
+        { HTTP.managerResponseTimeout = HTTP.responseTimeoutMicro $ 300 * 1000000
+        }
+
+    perform manager prng $ for_ blockedFetches $ \(BlockedFetch q v) ->
         case queryDict (Proxy :: Proxy FromJSON) q of
             Dict -> do
                 res <- evalPlanMill $ queryToRequest q
                 liftIO $ putSuccess v res
   where
-    perform g
-        = evalHttpT
-        . runStderrLoggingT
-        . filterLogger logPred
+    perform mgr prng
+        = flip runHttpT mgr
+        . runLogT "planmill-simple" lgr
         . flip runReaderT cfg
-        . flip evalCRandTThrow g
-    logPred _ = (>= loglevel)
+        . flip evalCRandTThrow prng
 
 -- | This is batched query function.
 --
@@ -77,10 +84,11 @@ initDataSourceSimpleIO loglevel cfg = QueryFunction $ \blockedFetches -> SyncFet
 --
 -- See @servant-binary-tagged@.
 initDataSourceBatch
-    :: HTTP.Manager  -- ^ Manager
-    -> HTTP.Request  -- ^ Base request
+    :: Logger
+    -> HTTP.Manager  -- ^ Manager
+    -> HTTP.Request   -- ^ Base request
     -> State Query
-initDataSourceBatch mgr req = QueryFunction queryFunction
+initDataSourceBatch lgr mgr req = QueryFunction queryFunction
   where
     req' = req
         { HTTP.requestHeaders
@@ -93,30 +101,50 @@ initDataSourceBatch mgr req = QueryFunction queryFunction
 
     queryFunction :: [BlockedFetch Query] -> PerformFetch
     queryFunction blockedFetches = AsyncFetch $ \inner -> do
+        -- We execute queries in batches
+        let batchSize = clamp (32 ... maxBatchSize) $ 1 + length blockedFetches `div` 4
+        let blockedFetchesChunks = chunksOf batchSize blockedFetches
         -- TODO: write own logging lib, we don't like monad-logger that much
         -- startTime <- currentTime
-        a <- async $ do
-            res  <- HTTP.httpLbs req'' mgr
-            -- Use for debugging:
-            -- print (() <$ res)
-            -- print (BSL.take 1000 $ HTTP.responseBody res)
-            -- print (last $ BSL.toChunks $ HTTP.responseBody res)
-            -- print (BSL.length $ HTTP.responseBody res)
-            let x = Binary.taggedDecode (HTTP.responseBody res) :: [Either Text SomeResponse]
-            evaluate $!! x
+        --
+        asyncs <- for blockedFetchesChunks
+            $ \bf -> fmap (bf,) . async
+            $ runLogT "planmill-haxl" lgr $ do
+                logTrace "requesting" (Aeson.toJSON $ map extractQuery bf)
+                liftIO $ do
+                    res <- HTTP.httpLbs (mkRequest bf) mgr
+                    -- Use for debugging:
+                    -- print (() <$ res)
+                    -- print (BSL.take 1000 $ HTTP.responseBody res)
+                    -- print (last $ BSL.toChunks $ HTTP.responseBody res)
+                    -- print (BSL.length $ HTTP.responseBody res)
+                    let x = Binary.taggedDecode (HTTP.responseBody res) :: [Either Text SomeResponse]
+
+                    -- return blocked fetches as well.
+                    evaluate $!! x
+
+        -- Allow inner block to perform
         inner
-        res <- waitCatch a
+
+        -- wait under list and pair
+        results <- (traverse . traverse) waitCatch asyncs
+
         -- endTime <- currentTime
         -- print (startTime, endTime)
-        case res of
-            Left exc -> for_ blockedFetches $ \(BlockedFetch _ v) -> do
+
+        -- Put results
+        for_ results $ \res -> case res of
+            (bf, Left exc) -> for_ bf $ \(BlockedFetch _ v) -> do
                 putFailure' v exc
-            Right res' ->
-                putResults blockedFetches res'
+            (bf, Right res') ->
+                putResults bf res'
 
       where
-        reqBody = Aeson.encode $ extractQuery <$> blockedFetches
-        req'' = req' { HTTP.requestBody = HTTP.RequestBodyLBS reqBody }
+        mkRequest bf = req'
+            { HTTP.requestBody
+                = HTTP.RequestBodyLBS $ Aeson.encode
+                $ extractQuery <$> bf
+            }
 
     extractQuery :: BlockedFetch Query -> SomeQuery
     extractQuery (BlockedFetch q _) = SomeQuery q
@@ -142,6 +170,12 @@ initDataSourceBatch mgr req = QueryFunction queryFunction
     coerceResponse q (MkSomeResponse q' r) = case geq q q' of
         Just Refl -> pure r
         Nothing   -> throwM (PlanmillBatchError "Unmatching response")
+
+-- | Maximum haxl request batch sie
+--
+-- For now it's 128.
+maxBatchSize :: Int
+maxBatchSize = 128
 
 putFailure' :: Exception e => ResultVar a -> e -> IO ()
 putFailure' v = putFailure v . SomeException

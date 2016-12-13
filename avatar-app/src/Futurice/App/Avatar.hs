@@ -7,18 +7,16 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Avatar (defaultMain) where
 
-import Futurice.Prelude
 import Prelude ()
-
+import Futurice.Prelude
 import Codec.Picture              (DynamicImage)
-import Control.Monad.Trans.Except (ExceptT (..), throwE)
 import Futurice.Servant
 import Servant
 import System.IO                  (hPutStrLn, stderr)
 
-import qualified Data.ByteString.Lazy     as LBS
-import qualified Data.Text                as T
-import qualified Data.Text.Encoding       as TE
+import qualified Data.ByteString.Lazy as LBS
+import qualified Data.Text            as T
+import qualified Data.Text.Encoding   as TE
 
 import Network.HTTP.Client
        (Manager, httpLbs, newManager, parseUrlThrow, responseBody)
@@ -40,7 +38,7 @@ mkAvatar
     -> Bool        -- ^ greyscale
     -> ExceptT ServantErr IO DynamicImage'
 mkAvatar _ Nothing _ _ =
-    throwE $ ServantErr 400 errMsg (fromString errMsg) []
+    throwError $ ServantErr 400 errMsg (fromString errMsg) []
   where
     errMsg = "'url' query parameter is required"
 mkAvatar (cache, mgr) (Just url) msize grey = ExceptT . fmap (first f) $ do
@@ -74,8 +72,9 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverDescription   .~ "Serve smaller versions of your favourite images"
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
     & serverApp avatarApi .~ server
+    & serverEnvPfx        .~ "AVATAR"
   where
-    makeCtx :: Config -> DynMapCache -> IO Ctx
-    makeCtx _cfg cache = do
+    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx _cfg _logger cache = do
         mgr <- newManager tlsManagerSettings
         return (cache, mgr)

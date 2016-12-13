@@ -12,20 +12,27 @@ ghc-options: -Wall
 
 dependencies:
   - base >= 4.7 && <4.10
+  - aeson
   - aeson-compat
   - clay
   - containers
+  - crypto-api
+  - DRBG
   - env-config
   - fum-client
   - futurice-foundation
   - futurice-prelude
   - futurice-servant
+  - generics-sop
   - lens
   - lucid
+  - postgresql-simple
   - QuickCheck
+  - resource-pool
   - servant
   - servant-lucid
   - servant-server
+  - stm
   - swagger2
   - text
   - time
@@ -48,3 +55,21 @@ executables:
     ghc-options: -Wall -threaded
     dependencies:
       - checklist-app 
+
+  checklist-import:
+    main: Import.hs
+    source-dirs: import
+    ghc-options: -Wall -threaded
+    dependencies:
+      - checklist-app 
+      - transformers
+      - yaml
+
+tests:
+  unit-tests:
+    main: Tests.hs
+    source-dirs: tests/
+    dependencies:
+      - tasty
+      - tasty-quickcheck
+      - checklist-app

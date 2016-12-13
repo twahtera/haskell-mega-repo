@@ -43,12 +43,12 @@ instance (Monad m, MonadIO m) => MonadInitHashDRBG m where
 --
 -- > evalCRandTThrow m g = evalCRandT m g >>= either pure throwM
 evalCRandTThrow
-    :: (Applicative m, MonadThrow m)
+    :: MonadThrow m
      => CRandT g GenError m a -> g -> m a
 evalCRandTThrow m g = evalCRandT m g >>= either throwM pure
 
 -- | Helper around 'runCRandT'.
 runCRandTThrow
-    :: (Applicative m, MonadThrow m)
+    :: MonadThrow m
     => CRandT g GenError m a -> g -> m (a, g)
 runCRandTThrow m g = runCRandT m g >>= either throwM pure

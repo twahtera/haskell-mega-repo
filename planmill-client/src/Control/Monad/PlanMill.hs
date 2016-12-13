@@ -29,7 +29,6 @@ import PlanMill.Internal.Prelude
 import Prelude ()
 
 import Control.Monad.Http               (MonadHttp)
-import Control.Monad.Reader             (ReaderT (..))
 import Data.Constraint                  (Constraint, Dict (..), type (:-)(..), (\\))
 import Futurice.Constraint.ForallSymbol (ForallFSymbol (..))
 
@@ -54,6 +53,7 @@ class
     ( Monad m
     -- Unfortunately we have to write all of those down
     , MonadPlanMillC m Absence
+    , MonadPlanMillC m Account
     , MonadPlanMillC m Assignment
     , MonadPlanMillC m Me
     , MonadPlanMillC m Meta
@@ -120,8 +120,7 @@ instance Monad m
 -------------------------------------------------------------------------------
 
 instance
-    ( MonadIO m, MonadHttp m, MonadThrow m, MonadTime m, MonadLogger m
-    , Applicative m
+    ( MonadIO m, MonadHttp m, MonadThrow m, MonadTime m, MonadLog m
     , HasPlanMillBaseUrl env, HasCredentials env
     )
   => MonadPlanMill (ReaderT env m) where
@@ -130,7 +129,7 @@ instance
         liftIO $ evalPlanMillIO cfg planmill
 
 instance
-    ( MonadIO m, MonadHttp m, MonadThrow m, MonadTime m, MonadLogger m
+    ( MonadIO m, MonadHttp m, MonadThrow m, MonadTime m, MonadLog m
     , Applicative m
     , HasPlanMillBaseUrl env, HasCredentials env
     )

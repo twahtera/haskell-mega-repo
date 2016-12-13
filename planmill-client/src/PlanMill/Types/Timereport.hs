@@ -61,23 +61,23 @@ instance HasStructuralInfo Timereport where structuralInfo = sopStructuralInfo
 instance HasSemanticVersion Timereport
 
 instance FromJSON Timereport where
-    parseJSON = withObject "Timereport" $ \obj ->
-        Timereport <$> obj .: "id"
-                   <*> obj .: "task"
-                   <*> obj .: "amount"
-                   <*> obj .: "billableStatus"
-                   <*> obj .:? "billingComment"
-                   <*> (getMaybeNumberText <$$> obj .:? "comment")
-                   <*> obj .:? "dutyType"
-                   <*> (dayFromZ <$> obj .: "finish")
-                   <*> obj .: "overtimeAmount"
-                   <*> obj .: "overtimeComment"
-                   <*> obj .: "person"
-                   <*> obj .: "project"
-                   <*> (dayFromZ <$> obj .: "start")
-                   <*> obj .: "status"
-                   <*> obj .: "travelAmount"
-                   <*> obj .: "travelComment"
+    parseJSON = withObject "Timereport" $ \obj -> Timereport
+        <$> obj .: "id"
+        <*> obj .: "task"
+        <*> obj .: "amount"
+        <*> obj .: "billableStatus"
+        <*> obj .:? "billingComment"
+        <*> (getMaybeNumberText <$$> obj .:? "comment")
+        <*> obj .:? "dutyType"
+        <*> (dayFromZ <$> obj .: "finish")
+        <*> obj .: "overtimeAmount"
+        <*> obj .: "overtimeComment"
+        <*> obj .: "person"
+        <*> obj .: "project"
+        <*> (dayFromZ <$> obj .: "start")
+        <*> obj .: "status"
+        <*> obj .: "travelAmount"
+        <*> obj .: "travelComment"
 
 -- | Type used to create new timereports
 --

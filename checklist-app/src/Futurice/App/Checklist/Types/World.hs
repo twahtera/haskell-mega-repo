@@ -2,6 +2,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Checklist.Types.World (
     World,
+    emptyWorld,
     mkWorld,
     AuthCheck,
     -- * Lenses
@@ -15,11 +16,10 @@ module Futurice.App.Checklist.Types.World (
     ) where
 
 -- import Futurice.Generics
-import Futurice.IdMap   (IdMap)
-import Futurice.Prelude
 import Prelude ()
-
-import Control.Lens (contains, filtered, ifiltered, (%~))
+import Futurice.Prelude
+import Control.Lens     (contains, filtered, ifiltered, (%~))
+import Futurice.IdMap   (IdMap)
 
 import qualified Data.Map        as Map
 import qualified Data.Set        as Set
@@ -49,6 +49,9 @@ data World = World
     }
 
 makeLenses ''World
+
+emptyWorld :: World
+emptyWorld = mkWorld mempty mempty mempty mempty (const Nothing)
 
 -- | Create world from employees, tasks, checklists, and items.
 --

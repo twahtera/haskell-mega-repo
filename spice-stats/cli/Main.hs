@@ -23,8 +23,8 @@ printStats s = do
     putDoc $ text "Hours reported" <+> pretty (sumOf (folded . contrHours) butions) <> linebreak
 
 main :: IO ()
-main = do
-    cfg <- getConfig
+main = withStderrLogger $ \logger -> do
+    cfg <- getConfig logger "SPICESTATS"
     mgr <- newManager tlsManagerSettings
     msgs <- fetchMessagesLoop (cfgFdOrg cfg) (cfgFdFlow cfg) (cfgFdAuth cfg) mgr
     s <- spiceStats mgr msgs (cfgGhAuth cfg)

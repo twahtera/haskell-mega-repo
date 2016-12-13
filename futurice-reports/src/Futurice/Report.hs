@@ -41,7 +41,6 @@ import Control.Monad.Trans.Identity (IdentityT (..))
 import Data.Aeson.Compat
        (FromJSON (..), ToJSON (..), object, withObject, (.:), (.=))
 import Data.Constraint              (Constraint)
-import Data.Functor.Identity        (Identity (..))
 import Data.Swagger                 (ToSchema (..))
 import Data.Type.Equality
 import Futurice.Lucid.Foundation

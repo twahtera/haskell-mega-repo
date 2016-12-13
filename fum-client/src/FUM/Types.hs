@@ -8,14 +8,16 @@ module FUM.Types where
 
 import Prelude ()
 import Futurice.Prelude
-
+import Control.Lens      (Getter, to)
 import Data.Aeson.Compat
 import Data.Aeson.Types
        (FromJSONKey (..), ToJSONKey (..), fromJSONKeyCoerce, toJSONKeyText)
 import Data.Swagger      (ToSchema)
 
-import qualified Data.Csv          as Csv
-import qualified Data.Maybe.Strict as S
+import qualified Data.Csv                             as Csv
+import qualified Data.Maybe.Strict                    as S
+import qualified Database.PostgreSQL.Simple.FromField as Postgres
+import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 
 -------------------------------------------------------------------------------
 -- Authentication token
@@ -107,6 +109,15 @@ instance FromJSONKey UserName where
 instance Csv.ToField UserName where
     toField = Csv.toField . _getUserName
 
+instance Postgres.ToField UserName where
+    toField = Postgres.toField . _getUserName
+
+instance Postgres.FromField UserName where
+    fromField f mdata = UserName <$> Postgres.fromField f mdata
+
+instance IsString UserName where
+    fromString = UserName . fromString
+
 -------------------------------------------------------------------------------
 -- List name
 -------------------------------------------------------------------------------
@@ -149,19 +160,21 @@ instance FromJSON UserStatus where
 -------------------------------------------------------------------------------
 
 data User = User
-    { _userName     :: !UserName
-    , _userFirst    :: !Text
-    , _userLast     :: !Text
-    , _userTitle    :: !(S.Maybe Text)
-    , _userGithub   :: !(S.Maybe Text)
-    , _userFlowdock :: !(S.Maybe Int)
-    , _userEmail    :: !(S.Maybe Text) -- can be empty?
-    , _userPhone1   :: !(S.Maybe Text)
-    , _userPhone2   :: !(S.Maybe Text)
-    , _userStatus   :: !UserStatus
-    , _userImageUrl :: !(S.Maybe Text)
-    , _userThumbUrl :: !(S.Maybe Text)
-    , _userBadgeUrl :: !(S.Maybe Text)
+    { _userName       :: !UserName
+    , _userFirst      :: !Text
+    , _userLast       :: !Text
+    , _userTitle      :: !(S.Maybe Text)
+    , _userGithub     :: !(S.Maybe Text)
+    , _userFlowdock   :: !(S.Maybe Int)
+    , _userEmail      :: !(S.Maybe Text) -- can be empty?
+    , _userPhone1     :: !(S.Maybe Text)
+    , _userPhone2     :: !(S.Maybe Text)
+    , _userStatus     :: !UserStatus
+    , _userImageUrl   :: !(S.Maybe Text)
+    , _userThumbUrl   :: !(S.Maybe Text)
+    , _userBadgeUrl   :: !(S.Maybe Text)
+    , _userId         :: !Int
+    , _userSupervisor :: !(S.Maybe Int)
     }
     deriving (Eq, Ord, Show, Read, Typeable, Generic)
 
@@ -184,6 +197,11 @@ instance FromJSON User where
         <*> v .: "portrait_full_url"
         <*> v .: "portrait_thumb_url"
         <*> v .: "portrait_badge_url"
+        <*> v .: "id"
+        <*> v .:?? "supervisor"
+
+userFullName :: Getter User Text
+userFullName = to $ \u -> u ^. userFirst <> " " <> u ^. userLast
 
 -------------------------------------------------------------------------------
 -- Utilities for aeson

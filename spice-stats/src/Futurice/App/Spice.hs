@@ -10,7 +10,6 @@ module Futurice.App.Spice (defaultMain) where
 import Futurice.Prelude
 import Prelude          ()
 
-import Control.Monad.Trans.Except (ExceptT (..))
 import Network.HTTP.Client        (Manager, newManager)
 import Network.HTTP.Client.TLS    (tlsManagerSettings)
 import Servant
@@ -38,8 +37,9 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverDescription       .~ "Open source contribution stats"
     & serverColour            .~ (Proxy :: Proxy ('FutuAccent 'AF3 'AC2))
     & serverApp spiceStatsApi .~ server
+    & serverEnvPfx            .~ "SPICESTATS"
   where
-    makeCtx :: Config -> DynMapCache -> IO Ctx
-    makeCtx cfg cache = do
+    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx cfg _ cache = do
         mgr <- newManager tlsManagerSettings
         return (cache, mgr, cfg)

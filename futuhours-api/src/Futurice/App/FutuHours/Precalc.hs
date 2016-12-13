@@ -1,21 +1,19 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE TemplateHaskell     #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
 -- | Module for precalculated values.
 module Futurice.App.FutuHours.Precalc where
 
 import Futurice.Prelude
 
-import Control.Monad.Trans.Except (ExceptT)
-import Futurice.AVar              (readAVarIO, writeAVarIO)
+import Futurice.AVar      (readAVarIO, writeAVarIO)
 import Generics.SOP
 import Generics.SOP.Curry
-import Servant                    (ServantErr, err500)
+import Servant            (ServantErr, err500)
 
 import qualified Data.Dependent.Map as DMap
 
@@ -57,15 +55,15 @@ servantEndpoint de ctx = hCurry endpoint
   where
     endpoint :: NP I xs -> ExceptT ServantErr IO r
     endpoint xs
-        | xs == defEndDefaultParams de = runFutuhoursLoggingT ctx $ do
+        | xs == defEndDefaultParams de = runLogT "precalc" (ctxLogger ctx) $ do
             l <- liftIO $ lookupEndpoint ctx (defEndTag de)
             case l of
                 -- Shouldn't happen
                 Nothing -> do
-                    $(logWarn) $ "non-cached endpoint: " <> (textShow $ defEndTag de)
+                    logAttention_ $ "non-cached endpoint: " <> (textShow $ defEndTag de)
                     throwM $ err500
                 Just r  -> do
-                    $(logInfo) $ "cached endpoint: " <> (textShow $ defEndTag de)
+                    logAttention_ $ "cached endpoint: " <> (textShow $ defEndTag de)
                     return r
         | otherwise = do
             p <- defEndParseParams de xs

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -8,15 +9,15 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
+#endif
 module Futurice.App.Contacts.Logic (
     contacts,
-    ContactsM,
     ) where
 
+import Prelude ()
 import Futurice.Prelude
-import Prelude          ()
-
-import Data.Maybe            (mapMaybe)
 import Data.RFC5051          (compareUnicode)
 import Futurice.Integrations
 
@@ -26,10 +27,11 @@ import qualified Data.Text           as T
 import qualified Data.Vector         as V
 
 -- Data definition
-import qualified Chat.Flowdock.REST          as FD
-import qualified Chat.Flowdock.REST.Internal as FD
+import qualified Chat.Flowdock.REST as FD
 import qualified FUM
-import qualified GitHub                      as GH
+import qualified GitHub             as GH
+import qualified PlanMill           as PM
+import qualified PlanMill.Queries   as PMQ
 
 -- Contacts modules
 import Futurice.App.Contacts.Types
@@ -38,43 +40,37 @@ import Futurice.App.Contacts.Types.Tri (lessSure)
 compareUnicodeText :: Text -> Text -> Ordering
 compareUnicodeText = compareUnicode `on` T.unpack
 
--- | Constraint for 'contacts'
-type ContactsM env m =
-    ( MonadReader env m
-    , HasFUMEmployeeListName env
-    , HasFlowdockOrgName env
-    , HasGithubOrgName env
-    , MonadGitHub m, MonadFUM m, MonadFlowdock m
-    , MonadFUMC m (Vector FUM.User)
-    , MonadGitHubC m (Vector GH.SimpleUser)
-    , MonadGitHubC m GH.User
-    )
-
 -- | Get contacts data
 contacts
-    :: ContactsM env m
+    :: ( MonadFlowdock m, MonadGitHub m, MonadFUM m, MonadPlanMillQuery m
+       , MonadReader env m
+       , HasGithubOrgName env, HasFUMEmployeeListName env, HasFlowdockOrgName env
+       )
     => m [Contact Text]
 contacts = contacts'
     <$> fumEmployeeList
     <*> githubDetailedMembers
     <*> flowdockOrganisation
+    <*> fumPlanmillTeamMap
 
 -- | The pure, data mangling part of 'contacts'
 contacts'
     :: Vector FUM.User
     -> Vector GH.User
     -> FD.Organisation
+    -> HashMap FUM.UserName (Maybe Text)
     -> [Contact Text]
-contacts' users githubMembers flowdockOrg =
+contacts' users githubMembers flowdockOrg teamMap =
     let users' = filter ((==FUM.StatusActive) . view FUM.userStatus) $ V.toList users
-        res = map userToContact users'
-        res' = addGithubInfo githubMembers res
-        res'' = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) res'
-    in sortBy (compareUnicodeText `on` contactName) res''
+        res0 = map userToContact users'
+        res1 = addGithubInfo githubMembers res0
+        res2 = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) res1
+        res3 = addPlanmillInfo teamMap res2
+    in sortBy (compareUnicodeText `on` contactName) res3
 
 userToContact :: FUM.User -> Contact Text
 userToContact FUM.User{..} = Contact
-    { contactLogin    = FUM._getUserName _userName
+    { contactLogin    = _userName
     , contactFirst    = _userFirst
     , contactName     = _userFirst <> " " <> _userLast
     , contactEmail    = S.fromMaybe defaultEmail _userEmail
@@ -84,6 +80,7 @@ userToContact FUM.User{..} = Contact
     , contactImage    = S.fromMaybe noImage _userImageUrl
     , contactFlowdock = S.maybe Unknown (Sure . (\uid -> ContactFD uid "-" noImage)) _userFlowdock
     , contactGithub   = S.maybe Unknown (Sure . flip ContactGH noImage) _userGithub
+    , contactTeam     = Nothing
     }
   where
     noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
@@ -91,14 +88,24 @@ userToContact FUM.User{..} = Contact
 
 githubDetailedMembers
     :: ( MonadGitHub m
-       , MonadGitHubC m (Vector GH.SimpleUser)
-       , MonadGitHubC m GH.User
        , MonadReader env m, HasGithubOrgName env
        )
     => m (Vector GH.User)
 githubDetailedMembers = do
     githubMembers <- githubOrganisationMembers
     traverse (githubReq . GH.userInfoForR . GH.simpleUserLogin) githubMembers
+
+fumPlanmillTeamMap
+    :: forall m env.
+       ( MonadPlanMillQuery m, MonadFUM m
+       , MonadReader env m, HasFUMEmployeeListName env
+       )
+    => m (HashMap FUM.UserName (Maybe Text))
+fumPlanmillTeamMap = fumPlanmillMap >>= traverse f
+  where
+    f :: PM.User -> m (Maybe Text)
+    f u = PM.tName <$$> traverse PMQ.team (PM.uTeam u)
+
 
 addGithubInfo
     :: (Functor f, Foldable g)
@@ -181,3 +188,15 @@ addFlowdockInfo us = fmap add
         f u = ContactFD (fromInteger $ FD.getIdentifier $ u ^. FD.userId)
                         (u ^. FD.userNick)
                         (u ^. FD.userAvatar)
+
+addPlanmillInfo
+    :: Functor f
+    => HashMap FUM.UserName (Maybe Text)
+    -> f (Contact a)
+    -> f (Contact a)
+addPlanmillInfo teamMap = fmap f
+  where
+    f :: Contact a -> Contact a
+    f c = c
+        { contactTeam = join $ HM.lookup (contactLogin c) teamMap
+        }

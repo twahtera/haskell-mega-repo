@@ -24,15 +24,20 @@ library:
   source-dirs: src
   dependencies:
     - base                  >=4.7   && <4.10
+    - aeson
     - base-compat
+    - ekg
     - env-config
+    - exceptions
     - fum-client
     - futulogo
     - futurice-prelude
     - ghc-prim
     - gitrev >=1.2.0
+    - http-types
     - lens
-    - servant ==0.9
+    - log-logentries
+    - servant ==0.9.*
     - servant-cache
     - servant-cassava
     - servant-lucid
@@ -45,4 +50,5 @@ library:
     - text
     - wai
     - wai-extra
+    - wai-middleware-metrics
     - warp

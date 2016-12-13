@@ -1,72 +1,39 @@
-{-# LANGUAGE OverloadedStrings  #-}
 module Futurice.App.MegaRepoTool.Scripts (
     dotScript,
     packdepsScript,
-    statsScript,
     ) where
 
-import Futurice.Prelude hiding (foldMap, fold)
 import Prelude ()
-
-import Control.Foldl (foldMap)
-import Turtle hiding ((<>))
-
-import qualified Data.Text as T
-
-find' :: (Text -> Bool) -> Turtle.FilePath -> Shell Turtle.FilePath
-find' p path = mfilter p' $ lsif predicate path
-  where
-    p' = p . format fp
-    predicate = pure . (/= ".stack-work")
+import Futurice.Prelude
+import Control.Monad            ((>=>))
+import Data.List                (isSuffixOf)
+import Data.Machine
+import System.Directory.Machine (directoryWalk', files)
+import System.Process           (callProcess, readProcess)
 
 -- |
 -- @
 -- packdeps "**/*.cabal"
 -- @
-packdepsScript :: Shell Text
-packdepsScript
-    = inshell "xargs packdeps"
-    $ format fp <$> find' predicate "."
+packdepsScript :: IO ()
+packdepsScript = do
+    args   <- runT $ source ["."] ~> directoryWalk' dirPredicate ~> files ~> filtered filePredicate
+    callProcess "packdeps" args
   where
-    predicate :: Text -> Bool
-    predicate path = not (".stack-work" `T.isInfixOf` path) && ".cabal" `T.isSuffixOf` path
+    dirPredicate d = not . any ($ d) $
+        [ isSuffixOf ".git"
+        , isSuffixOf ".stack-work"
+        , isSuffixOf ".stack-work-dev"
+        -- build-in-docker.sh artifacts
+        , isSuffixOf ".stack-root"
+        , isSuffixOf ".stack-work-docker"
+        ]
 
-dotScript :: Shell Text
-dotScript
-    = inshell "dot -Tpng -o deps.png"
-    $ inshell "tred"
-    $ inshell "stack dot"
-    $ mempty
+    filePredicate = isSuffixOf ".cabal"
 
--- | TODO: collect other stats as well
-statsScript :: Shell Text
-statsScript =
-    textShow <$> fold allLines (foldMap lineStats id)
+dotScript :: IO ()
+dotScript = () <$ pipe ""
   where
-    allLines :: Shell Text
-    allLines = do
-        files <- find' predicate "."
-        input files
-    predicate :: Text -> Bool
-    predicate path = not (".stack-work" `T.isInfixOf` path) && ".hs" `T.isSuffixOf` path
-
-data Stats = Stats
-    { _statsLines :: !Int
-    , _statsNELines :: !Int
-    }
-    deriving Show
-
-instance Semigroup Stats where
-    Stats ax ay <> Stats bx by = Stats
-        (ax + bx)
-        (ay + by)
-
-instance Monoid Stats where
-    mempty = Stats 0 0
-    mappend = (<>)
-
-lineStats :: Text -> Stats
-lineStats t = Stats 1 ne
-  where
-    ne | isn't _Empty t = 1
-       | otherwise      = 0
+    pipe = readProcess "stack" ["dot"]
+        >=> readProcess "tred" []
+        >=> readProcess "dot" ["-Tpng", "-o", "deps.png" ]

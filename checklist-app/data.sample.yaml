@@ -1,0 +1,26 @@
+checklists:
+  new-employee:
+    name: "New Employee"
+    tasks:
+    - name: Email lists
+      role: IT
+    - name: Mobile phone ordered
+      role: IT
+    - name: Computer ordered
+      role: IT
+    - id: futu-employee-mail
+  leaving-employee:
+    name: "Leaving employee"
+    tasks:
+    - name: Remove email lists
+      role: IT
+    - name: Computer returned
+      role: IT
+    - name: Mbbile phone returned
+      role: IT
+    - id: futu-employee-mail
+
+tasks:
+  futu-employee-mail:
+    name: Send FutuEmployee mail
+    role: HR

@@ -17,14 +17,14 @@ import Futurice.App.FutuHours.DecayCache      (populateData,
 import Futurice.App.FutuHours.PlanMillUserIds (planMillUserIds)
 
 populateTimeReports :: IO ()
-populateTimeReports = do
-    Config{..} <- getConfig
+populateTimeReports = withStderrLogger $ \logger -> do
+    Config{..} <- getConfig logger "FUTUHOURSAPI"
     let pmCfg = PM.Cfg
             { PM.cfgUserId  = cfgPlanmillAdminUser
             , PM.cfgApiKey  = cfgPlanmillSignature
             , PM.cfgBaseUrl = cfgPlanmillUrl
             }
-    let ctx' = I cfgDevelopment :* I pmCfg :* I cfgLogLevel :* Nil
+    let ctx' = I cfgDevelopment :* I pmCfg :* I logger :* Nil
 
     bracket (Postgres.connect cfgPostgresConnInfo) Postgres.close $ \conn -> do
         planmillUserLookup <- planMillUserIds ctx' conn cfgFumToken cfgFumBaseurl cfgFumList
@@ -36,14 +36,14 @@ populateTimeReports = do
             populateData timereportsCacheable conn pmUid ts
 
 updateTimeReports :: IO ()
-updateTimeReports = do
-    Config{..} <- getConfig
+updateTimeReports = withStderrLogger $ \logger -> do
+    Config{..} <- getConfig logger "FUTUHOURSAPI"
     let pmCfg = PM.Cfg
             { PM.cfgUserId  = cfgPlanmillAdminUser
             , PM.cfgApiKey  = cfgPlanmillSignature
             , PM.cfgBaseUrl = cfgPlanmillUrl
             }
-    let ctx' = I cfgDevelopment :* I pmCfg :* I cfgLogLevel :* Nil
+    let ctx' = I cfgDevelopment :* I pmCfg :* I logger :* Nil
 
     bracket (Postgres.connect cfgPostgresConnInfo) Postgres.close $ \conn -> do
         planmillUserLookup <- planMillUserIds ctx' conn cfgFumToken cfgFumBaseurl cfgFumList

@@ -2,10 +2,10 @@ module Futurice.App.Contacts.Config (
     Config(..),
     ) where
 
+import Prelude ()
 import Futurice.Prelude
-import Prelude          ()
-
 import Futurice.EnvConfig
+import Network.HTTP.Client (Request, responseTimeout, responseTimeoutMicro)
 
 import qualified Chat.Flowdock.REST as FD
 import qualified FUM
@@ -16,27 +16,25 @@ data Config = Config
     { cfgFumAuth     :: !FUM.AuthToken     -- ^ FUM auth token
     , cfgFumBaseUrl  :: !FUM.BaseUrl       -- ^ FUM base url
     , cfgFumUserList :: !FUM.ListName      -- ^ FUM user list
-    , cfgGhAuth      :: !GH.Auth           -- ^ Github auth information
+    , cfgGhBaseReq   :: !Request           -- ^ github-proxy baseurl
     , cfgGhOrg       :: !(GH.Name GH.Organization)
       -- ^ Github organisation
     , cfgFdAuth      :: !FD.AuthToken      -- ^ Flowdock token
     , cfgFdOrg       :: !(FD.ParamName FD.Organisation)
       -- ^ Flowdock organisation
-    , cfgPort        :: !Int
-      -- ^ Port to listen from, default is 'defaultPort'.
+    , cfgPmBaseReq   :: !Request
     }
     deriving (Show)
 
-instance HasPort Config where
-    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
-
-instance GetConfig Config where
-    getConfig = Config
-        <$> parseEnvVar "FUM_AUTH_TOKEN"
-        <*> parseEnvVar "FUM_BASE_URL"
-        <*> parseEnvVar "FUM_USER_LIST"
-        <*> parseEnvVar "GH_AUTH_TOKEN"
-        <*> parseEnvVar "GH_ORGANISATION"
-        <*> parseEnvVar "FD_AUTH_TOKEN"
-        <*> parseEnvVar "FD_ORGANISATION"
-        <*> parseDefaultPort "CONTACTS"
+instance Configure Config where
+    configure = Config
+        <$> envVar "FUM_AUTH_TOKEN"
+        <*> envVar "FUM_BASE_URL"
+        <*> envVar "FUM_USER_LIST"
+        <*> (f <$> envVar "GITHUBPROXY_HAXLURL")
+        <*> envVar "GH_ORGANISATION"
+        <*> envVar "FD_AUTH_TOKEN"
+        <*> envVar "FD_ORGANISATION"
+        <*> (f <$> envVar "PLANMILLPROXY_HAXLURL")
+      where
+        f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }

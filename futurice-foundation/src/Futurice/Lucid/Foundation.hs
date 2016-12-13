@@ -41,7 +41,6 @@ import Futurice.Prelude
 import Clay                   (Css, render)
 import Control.Monad.Morph    (hoist)
 import Data.FileEmbed         (embedStringFile)
-import Data.Functor.Identity  (runIdentity)
 import Futurice.JavaScript
 import Futurice.JavaScript.TH
 import Futurice.Servant

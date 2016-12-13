@@ -5,19 +5,16 @@
 {-# LANGUAGE TypeOperators     #-}
 module Main (main) where
 
-import Futurice.Prelude
 import Prelude ()
-
+import Futurice.Prelude
 import Codec.Picture       (Image, PixelRGBA8)
-import Control.Lens        (iso)
 import Futurice.Colour
-import Futurice.EnvConfig  (GetConfig (..), HasPort (..))
+import Futurice.EnvConfig  (Configure (..))
 import Futurice.Logo
 import Futurice.Servant
 import Lucid               hiding (for_)
 import Servant
 import Servant.JuicyPixels (PNG)
-import System.Environment  (lookupEnv)
 
 type IconAPI = "icon" :> Capture "colour" Colour :> Get '[PNG] (Image PixelRGBA8)
 
@@ -31,8 +28,11 @@ api = Proxy
 iconEndpoint :: Proxy IconAPI
 iconEndpoint = Proxy
 
-newtype Config = Config { getPort :: Int }
+data Config = Config
 type Ctx = DynMapCache
+
+instance Configure Config where
+    configure = pure Config
 
 server :: Ctx -> Server API
 server cache = pure IndexPage :<|> liftIO . makeLogo'
@@ -45,15 +45,10 @@ main = futuriceServerMain makeCtx $ emptyServerConfig
     & serverDescription .~ "Futurice favicons"
     & serverColour      .~ (Proxy :: Proxy 'FutuBlack)
     & serverApp api     .~ server
+    & serverEnvPfx      .~ "FAVICON"
   where
-    makeCtx :: Config -> DynMapCache -> IO Ctx
-    makeCtx _cfg = return
-
-instance GetConfig Config where
-   getConfig = Config . fromMaybe 8000 . (>>= readMaybe) <$> lookupEnv "PORT"
-
-instance HasPort Config where
-    port = iso getPort Config
+    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx _cfg _logger = return
 
 -------------------------------------------------------------------------------
 -- IndexPage

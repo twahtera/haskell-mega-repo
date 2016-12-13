@@ -2,25 +2,27 @@ module Futurice.App.Proxy.Config (
     Config(..),
     ) where
 
-import Futurice.Prelude
 import Prelude ()
-
+import Futurice.Prelude
 import Database.PostgreSQL.Simple (ConnectInfo)
 import Futurice.EnvConfig
 
+import qualified FUM
+
 data Config = Config
-    { cfgPort                 :: !Int
-    , cfgPostgresConnInfo     :: !ConnectInfo
-    , cfgFutuhoursBaseurl     :: !String
+    { cfgPostgresConnInfo     :: !ConnectInfo
+    , cfgReportsAppBaseurl    :: !String
     , cfgPlanmillProxyBaseurl :: !String
+    , cfgGithubProxyBaseurl   :: !String
+    , cfgFumBaseurl           :: !String
+    , cfgFumAuthToken         :: !FUM.AuthToken
     }
 
-instance HasPort Config where
-    port = lens cfgPort $ \cfg p -> cfg { cfgPort = p }
-
-instance GetConfig Config where
-    getConfig = Config
-        <$> parseDefaultPort "PROXYAPP"
-        <*> getConnectInfo
-        <*> parseEnvVar "FUTUHOURSAPI_BASEURL"
-        <*> parseEnvVar "PLANMILLPROXY_BASEURL"
+instance Configure Config where
+    configure = Config
+        <$> envConnectInfo
+        <*> envVar "REPORTSAPP_BASEURL"
+        <*> envVar "PLANMILLPROXY_BASEURL"
+        <*> envVar "GITHUBPROXY_BASEURL"
+        <*> envVar "FUM_BASEURL"
+        <*> envVar "FUM_TOKEN"

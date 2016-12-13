@@ -31,7 +31,7 @@ deriving instance Show (FumRequest a)
 deriving instance Typeable FumRequest
 deriving instance Eq (FumRequest a)
 
-instance Show1 FumRequest where show1 = show
+instance Haxl.Core.Show1 FumRequest where show1 = show
 
 instance Hashable (FumRequest a) where
     hashWithSalt salt (FumRequest req) =

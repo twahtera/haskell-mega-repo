@@ -3,9 +3,10 @@
 {-# LANGUAGE TemplateHaskell   #-}
 -- | Common integrations requests.
 module Futurice.Integrations.Common (
-    -- * Time
-    currentDay,
+    -- * Date
+    beginningOfCurrMonth,
     beginningOfPrevMonth,
+    beginningOfPrev2Month,
     -- * FUM
     fumEmployeeList,
     flowdockOrganisation,
@@ -19,14 +20,13 @@ module Futurice.Integrations.Common (
     HasGithubOrgName(..),
     ) where
 
+import Prelude ()
+import Futurice.Prelude
+import Data.Time
+       (addGregorianMonthsClip, fromGregorian, toGregorian)
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Types
-import Futurice.Prelude
-import Prelude ()
-
-import Data.Maybe                  (catMaybes)
-import Data.Time                   (fromGregorian, toGregorian)
-import Text.Regex.Applicative.Text (anySym, match)
+import Text.Regex.Applicative.Text   (anySym, match)
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Set            as Set
@@ -46,14 +46,31 @@ class HasFlowdockOrgName a where
 class HasGithubOrgName a where
     githubOrganisationName :: Lens' a (GH.Name GH.Organization)
 
-beginningOfPrevMonth :: Day -> Day
-beginningOfPrevMonth = fromGregorian' . f. toGregorian
+-- |
+--
+-- >>> beginningOfCurrMonth $(mkDay "2016-11-12")
+-- 2016-11-01
+beginningOfCurrMonth :: Day -> Day
+beginningOfCurrMonth = fromGregorian' . f. toGregorian
   where
-    f (y, 1, _) = (y - 1, 12, 1)
-    f (y, m, _) = (y, m - 1, 1)
+    f (y, m, _) = (y, m, 1)
 
     fromGregorian' :: (Integer, Int, Int) -> Day
     fromGregorian' (y, m, d) = fromGregorian y m d
+
+-- |
+--
+-- >>> beginningOfPrevMonth $(mkDay "2016-11-12")
+-- 2016-10-01
+beginningOfPrevMonth :: Day -> Day
+beginningOfPrevMonth = addGregorianMonthsClip (-1) . beginningOfCurrMonth
+
+-- |
+--
+-- >>> beginningOfPrev2Month $(mkDay "2016-11-12")
+-- 2016-09-01
+beginningOfPrev2Month :: Day -> Day
+beginningOfPrev2Month = addGregorianMonthsClip (-2) . beginningOfCurrMonth
 
 -- | Get list of active employees from FUM.
 fumEmployeeList
@@ -94,10 +111,8 @@ fumPlanmillMap
        , MonadReader env m, HasFUMEmployeeListName env
        )
     => m (HashMap FUM.UserName PM.User)
-fumPlanmillMap = do
-    fum <- fumEmployeeList
-    pm <- PMQ.users
-    return $ combine fum pm
+fumPlanmillMap =
+    combine <$> fumEmployeeList <*> PMQ.users
   where
     combine :: Vector FUM.User-> Vector PM.User -> HashMap FUM.UserName PM.User
     combine fum pm = HM.fromList $ catMaybes $ map extract $ toList pm

@@ -31,18 +31,25 @@ library
   ghc-options: -Wall
   build-depends:
       base                  >=4.7   && <4.10
+    , aeson
+    , async
+    , binary-tagged
     , bytestring
     , cassava
     , constraints
     , containers
     , flowdock-rest
     , fum-client
+    , futurice-github
     , futurice-prelude
     , futurice-reports
+    , generics-sop
     , github
     , haxl
     , haxl-fxtra
     , http-client
+    , http-client-tls
+    , intervals
     , lens
     , lucid
     , monad-logger
@@ -59,6 +66,7 @@ library
       Futurice.Integrations
       Futurice.Integrations.Classes
       Futurice.Integrations.Common
+      Futurice.Integrations.GitHub
       Futurice.Integrations.Monad
       Futurice.Integrations.Types
   default-language: Haskell2010

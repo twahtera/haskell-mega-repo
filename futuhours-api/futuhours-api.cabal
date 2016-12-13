@@ -43,6 +43,7 @@ library
     , blaze-html
     , bytestring
     , cassava
+    , constraints
     , containers
     , dependent-map
     , dependent-sum
@@ -50,7 +51,6 @@ library
     , ekg
     , ekg-core
     , env-config
-    , constraints
     , exceptions
     , fum-client
     , futulogo
@@ -58,6 +58,7 @@ library
     , futurice-integrations
     , futurice-prelude
     , futurice-reports
+    , futurice-servant
     , generics-sop
     , generics-sop-lens
     , hashable
@@ -89,7 +90,6 @@ library
     , resource-pool
     , semigroups
     , servant
-    , servant-blaze
     , servant-cache
     , servant-cassava
     , servant-docs
@@ -115,7 +115,6 @@ library
       Data.BinaryFromJSON
       Data.Time.Fxtra
       Database.PostgreSQL.Simple.Fxtra
-      Distribution.Server.Framework.Cron
       Futurice.App.FutuHours
       Futurice.App.FutuHours.API
       Futurice.App.FutuHours.Config
@@ -128,13 +127,11 @@ library
       Futurice.App.FutuHours.PlanmillDataSource
       Futurice.App.FutuHours.PlanMillUserIds
       Futurice.App.FutuHours.Precalc
-      Futurice.App.FutuHours.Reports.MissingHours
       Futurice.App.FutuHours.Timereports
       Futurice.App.FutuHours.Tools
       Futurice.App.FutuHours.Types
       Futurice.ExpFit
       Generics.SOP.Curry
-      Servant.Futurice
   default-language: Haskell2010
 
 executable futuhours-api-server

@@ -29,6 +29,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverDescription  .~ "Futurice theme guidelines"
     & serverColour       .~ (Proxy :: Proxy 'FutuGreen)
     & serverApp themeApi .~ server
+    & serverEnvPfx       .~ "THEMEAPP"
   where
-    makeCtx :: Config -> DynMapCache -> IO ()
-    makeCtx _ _ = pure ()
+    makeCtx :: Config -> Logger -> DynMapCache -> IO ()
+    makeCtx _ _ _ = pure ()

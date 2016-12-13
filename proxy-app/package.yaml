@@ -25,7 +25,8 @@ library:
     - bytestring
     - cassava
     - env-config
-    - futuhours-api
+    - fum-client
+    - futurice-github
     - futurice-prelude
     - futurice-servant
     - http-client
@@ -34,16 +35,17 @@ library:
     - markdown
     - planmill-client
     - postgresql-simple
+    - reflection
+    - reports-app
     - resource-pool
     - semigroups
     - servant
-    - servant-blaze
+    - servant-binary-tagged
     - servant-cassava
     - servant-client >= 0.9
     - servant-lucid
     - servant-server
     - servant-swagger
-    - servant-binary-tagged
     - stm
     - swagger2
     - tagged
@@ -53,7 +55,7 @@ library:
     - unordered-containers
     - vector
     - wai
-    - wai-extra
+    - wai-extra >=3.0.19 # basicAuth'
     - warp
 
 executables:

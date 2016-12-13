@@ -1,6 +1,7 @@
 {-# LANGUAGE ConstraintKinds   #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 module Main (main) where
@@ -9,12 +10,9 @@ import Prelude ()
 import Futurice.Prelude
 
 import Control.Monad.Http                      (evalHttpT)
-import Control.Monad.Logger
-       (LogLevel (..), LogSource, filterLogger)
-import Control.Monad.Reader                    (runReaderT)
 import Data.Constraint
-import Futurice.Constraint.Unit1
 import Data.Maybe                              (isJust)
+import Futurice.Constraint.Unit1
 import System.Environment                      (getArgs, lookupEnv)
 import System.IO                               (hPutStrLn, stderr)
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty
@@ -24,9 +22,9 @@ import qualified Data.Vector as V
 import qualified Haxl.Core   as H
 
 import           PlanMill
-import qualified PlanMill.Types.Query  as Q
 import qualified PlanMill.Queries      as Q
 import           PlanMill.Queries.Haxl
+import qualified PlanMill.Types.Query  as Q
 
 main :: IO ()
 main = do
@@ -110,17 +108,13 @@ script6 = do
     putPretty p
 
 integration :: Bool -> Cfg -> IO ()
-integration debug cfg = id
-    $ evalHttpT
-    $ runStderrLoggingT
-    $ filterLogger logPredicate
+integration _debug cfg = withStderrLogger $ \logger ->
+      evalHttpT
+    $ runLogT "planmill-integrations" logger
     $ flip runReaderT cfg $ sequence_
         [ script1, script2, script3
         , script4, script5, script6
         ]
-  where
-    logPredicate :: LogSource -> LogLevel -> Bool
-    logPredicate _ level = debug || level > LevelDebug
 
 -------------------------------------------------------------------------------
 -- Haxl example
@@ -153,8 +147,8 @@ instance MonadPlanMillQuery H where
         showDict     = Q.queryDict (Proxy :: Proxy Show)     q
 
 runH :: Cfg -> H a -> IO a
-runH cfg (H haxl) = do
-    let stateStore = H.stateSet (initDataSourceSimpleIO LevelDebug cfg) H.stateEmpty
+runH cfg (H haxl) = withStderrLogger $ \logger ->  do
+    let stateStore = H.stateSet (initDataSourceSimpleIO logger cfg) H.stateEmpty
     env <- H.initEnv stateStore ()
     H.runHaxl env haxl
 

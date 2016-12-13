@@ -1,38 +1,44 @@
+{-# LANGUAGE CPP          #-}
 {-# LANGUAGE TypeFamilies #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# OPTIONS_GHC -freduction-depth=0 #-}
+#endif
 module Main (main) where
 
-import Futurice.Prelude
 import Prelude ()
+import Futurice.Prelude
+import Control.Monad.PlanMill
+       (MonadPlanMillConstraint (..), MonadPlanMillQuery (..))
+import Data.Constraint
+import Futurice.Constraint.Unit1 (Unit1)
+import Futurice.EnvConfig
+import Network.HTTP.Client
+       (Manager, Request, applyBasicAuth, newManager, parseUrlThrow)
+import Network.HTTP.Client.TLS   (tlsManagerSettings)
+import PlanMill.Queries.Haxl     (initDataSourceBatch)
 
-import           Control.Monad.PlanMill
-                 (MonadPlanMillConstraint (..), MonadPlanMillQuery (..))
-import           Data.Constraint
-import           Futurice.Constraint.Unit1               (Unit1)
-import           Futurice.EnvConfig                      (parseEnvVar)
-import qualified Haxl.Core                               as H
-import           Network.HTTP.Client
-                 (Manager, Request, newManager, parseUrlThrow, applyBasicAuth)
-import           Network.HTTP.Client.TLS                 (tlsManagerSettings)
-import qualified PlanMill                                as PM
-import qualified PlanMill.Queries                        as Q
-import           PlanMill.Queries.Haxl                   (initDataSourceBatch)
-import qualified PlanMill.Types.Query                    as Q
-import           Text.PrettyPrint.ANSI.Leijen.AnsiPretty
-                 (AnsiPretty (..), linebreak, putDoc)
+import Text.PrettyPrint.ANSI.Leijen.AnsiPretty
+       (AnsiPretty (..), linebreak, putDoc)
+
+import qualified Haxl.Core            as H
+import qualified PlanMill             as PM
+import qualified PlanMill.Queries     as Q
+import qualified PlanMill.Types.Query as Q
 
 main :: IO ()
-main = do
+main = withStderrLogger $ \logger -> do
     -- config
-    baseUrl <- parseEnvVar "PLANMILLPROXY_CLI_ENDPOINT"
-    authUser <- parseEnvVar "PLANMILLPROXY_CLI_HTTPUSER"
-    authPass <- parseEnvVar "PLANMILLPROXY_CLI_HTTPPASS"
+    (baseUrl, authUser, authPass) <- getConfig' logger "PLANMILLPROXY" $ (,,)
+        <$> envVar "ENDPOINT"
+        <*> envVar "HTTPUSER"
+        <*> envVar "HTTPPASS"
     -- assemble
     baseReq <- parseUrlThrow baseUrl
     let baseReq' = applyBasicAuth authUser authPass baseReq
     -- http manager
     manager <- newManager tlsManagerSettings
     -- execute
-    result <- runH manager baseReq' script0
+    result <- runH manager logger baseReq' script0
     -- print
     putDoc . (<> linebreak) . ansiPretty $ result
 
@@ -69,8 +75,8 @@ instance MonadPlanMillQuery H where
         typeableDict = Q.queryDict (Proxy :: Proxy Typeable) q
         showDict     = Q.queryDict (Proxy :: Proxy Show)     q
 
-runH :: Manager -> Request -> H a -> IO a
-runH mgr req (H haxl) = do
-    let stateStore = H.stateSet (initDataSourceBatch mgr req) H.stateEmpty
+runH :: Manager -> Logger -> Request -> H a -> IO a
+runH mgr lgr req (H haxl) = do
+    let stateStore = H.stateSet (initDataSourceBatch lgr mgr req) H.stateEmpty
     env <- H.initEnv stateStore ()
     H.runHaxl env haxl

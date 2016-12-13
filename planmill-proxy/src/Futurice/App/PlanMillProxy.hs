@@ -37,9 +37,10 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
     & serverMiddleware    .~ liftFuturiceMiddleware logStdoutDev
     & serverApp planmillProxyApi .~ server
+    & serverEnvPfx        .~ "PLANMILLPROXY"
   where
-    makeCtx :: Config -> DynMapCache -> IO Ctx
-    makeCtx (Config cfg connectionInfo logLevel _) cache = do
+    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx (Config cfg connectionInfo) logger cache = do
         postgresPool <- createPool
             (Postgres.connect connectionInfo)
             Postgres.close
@@ -48,7 +49,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                 { ctxCache        = cache
                 , ctxPlanmillCfg  = cfg
                 , ctxPostgresPool = postgresPool
-                , ctxLogLevel     = logLevel
+                , ctxLogger       = logger
                 }
         let jobs =
                 -- See every 5 minutes, if there's something to update in cache
@@ -80,6 +81,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                 ]
 
         -- Spawn periocron, polling each minute
-        _ <- spawnPeriocron (Options runStderrLoggingT 60) jobs
+        _ <- spawnPeriocron (Options logger 60) jobs
 
         pure ctx

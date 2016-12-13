@@ -33,7 +33,7 @@ deriving instance Show (GithubRequest a)
 deriving instance Typeable GithubRequest
 deriving instance Eq a => Eq (GithubRequest a)
 
-instance Show1 GithubRequest where show1 = show
+instance Haxl.Core.Show1 GithubRequest where show1 = show
 
 instance Hashable (GithubRequest a) where
   hashWithSalt salt (GithubRequest gh) = hashWithSalt salt gh

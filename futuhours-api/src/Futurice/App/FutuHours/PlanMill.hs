@@ -21,7 +21,7 @@ import qualified Futurice.App.FutuHours.PlanmillDataSource      as PlanmillDataS
 
 runHaxl
     :: forall a env.
-       ( HasDevelopment env, HasPlanmillCfg env, HasLogLevel env
+       ( HasDevelopment env, HasPlanmillCfg env, HasLogger env
        )
     => env
     -> Connection
