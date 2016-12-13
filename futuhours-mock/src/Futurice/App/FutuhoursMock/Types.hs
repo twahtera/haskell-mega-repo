@@ -48,9 +48,7 @@ module Futurice.App.FutuhoursMock.Types (
 import Prelude ()
 import Futurice.Prelude
 
-import Data.Fixed                (Centi)
 import Data.Map (Map)
-import Data.Time (UTCTime, diffUTCTime, getCurrentTime)
 import Futurice.Generics
 import Futurice.Time
 
@@ -79,8 +77,9 @@ data Task = Task
 -- HoursRemaining: Task.taskTargetEffort - (totalHoursUsedByAssignedPersonnel)
 -- NOTE: Golang backend LatestEntry is Entry with a Date
 
-mkTask id name = Task {
-                    _taskId=PM.Ident id
+mkTask :: Word64 -> Text -> Task
+mkTask _id name = Task {
+                    _taskId=PM.Ident _id
                   , _taskName=name
                   , _taskAbsence=False
                   , _taskClosed=False
@@ -104,6 +103,7 @@ data LatestEntry = LatestEntry
   , _latestEntryHours :: !(Maybe Float)
   } deriving (Eq, Show, Typeable, Generic)
 
+mkLatestEntry :: Text -> Maybe LatestEntry
 mkLatestEntry desc = Just LatestEntry
                         { _latestEntryDescription=desc
                         , _latestEntryDate=Nothing
@@ -143,6 +143,7 @@ data HoursDay = HoursDay
   , _dayClosed :: !Bool -- TODO: Maybe Bool
   } deriving (Eq, Show, Typeable, Generic)
 
+mkHoursDay :: HoursDay
 mkHoursDay = HoursDay
               { _dayHolidayName=Nothing
               , _dayHours=0.0

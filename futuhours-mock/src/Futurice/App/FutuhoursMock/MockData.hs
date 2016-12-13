@@ -19,6 +19,7 @@ import Futurice.Prelude
 import Prelude ()
 import qualified PlanMill as PM
 
+internalProject :: Project
 internalProject = Project
       { _projectId=PM.Ident 1
       , _projectName="Internal Work" 
@@ -29,6 +30,7 @@ internalProject = Project
       , _projectClosed=False
       }
 
+absenceProject :: Project
 absenceProject = Project
       { _projectId=PM.Ident 4
       , _projectName="Absences" 
@@ -40,6 +42,7 @@ absenceProject = Project
       , _projectClosed=False
       }
 
+customerProject :: Project
 customerProject = Project
     { _projectId=PM.Ident 2
     , _projectName="Actual customer work" 
@@ -50,6 +53,7 @@ customerProject = Project
     , _projectClosed=False
     }
 
+inactiveProject :: Project
 inactiveProject = Project
     { _projectId=PM.Ident 3
     , _projectName="Not active project" 
@@ -60,12 +64,14 @@ inactiveProject = Project
     , _projectClosed=True
     }
 
+projects :: [Project]
 projects = [
       internalProject
     , absenceProject
     , customerProject
     , inactiveProject]
 
+days :: [HoursDay]
 days = [
      mkHoursDay 
        { _dayHours=5
