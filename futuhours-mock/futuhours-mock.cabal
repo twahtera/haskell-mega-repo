@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.1.
+-- This file has been generated from package.yaml by hpack version 0.15.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -33,7 +33,6 @@ library
     , aeson
     , aeson-compat
     , base-compat
-    , containers
     , env-config
     , futurice-foundation
     , futurice-prelude
@@ -44,27 +43,28 @@ library
     , lucid
     , planmill-client
     , postgresql-simple
-    , pretty-show
     , QuickCheck
     , resource-pool
-    , random
     , servant
     , servant-lucid
     , servant-server
-    , stm
     , swagger2
-    , text
     , time
+    , vector
+    , pretty-show
+    , random
+    , stm
+    , text
     , time-locale-compat
     , transformers
-    , vector
+    , containers
   exposed-modules:
       Futurice.App.FutuhoursMock
       Futurice.App.FutuhoursMock.API
       Futurice.App.FutuhoursMock.Config
       Futurice.App.FutuhoursMock.Logic
-      Futurice.App.FutuhoursMock.Types
       Futurice.App.FutuhoursMock.MockData
+      Futurice.App.FutuhoursMock.Types
   default-language: Haskell2010
 
 executable futuhours-mock-server

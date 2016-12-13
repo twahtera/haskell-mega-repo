@@ -43,14 +43,50 @@ module Futurice.App.FutuhoursMock.Types (
     hoursMonthUpdateDays,
     HoursUpdateResponse (..),
     hoursUpdateResponseMonths,
+    taskAbsence,
+    taskClosed,
+    taskHoursRemaining,
+    latestEntryDate,
+    latestEntryHours,
+    entryClosed,
+    entryDescription,
+    entryHours,
+    entryProjectId,
+    entryTaskId,
+    euClosed,
+    euDate,
+    euDescription,
+    euHours,
+    euProjectId,
+    euTaskId,
+    eurUser,
+    userBalance,
+    userFirstName,
+    userHolidaysLeft,
+    userLastName,
+    userProfilePicture,
+    userUtilizationRate,
+    dayClosed,
+    dayEntries,
+    dayHolidayName,
+    dayHours,
+    monthDays,
+    monthHours,
+    monthUtilizationRate,
+    hoursDayUpdateHolidayName,
+    hoursMonthUpdateHours,
+    hoursMonthUpdateUtilizationRate,
+    hoursResponseDefaultWorkHours,
+    hoursResponseMonths,
+    hoursResponseProjects,
+    hoursUpdateResponseDefaultWorkHours,
+    hoursUpdateResponseProjects,
     ) where
 
 import Prelude ()
 import Futurice.Prelude
 
-import Data.Map (Map)
 import Futurice.Generics
-import Futurice.Time
 
 import qualified PlanMill as PM
 

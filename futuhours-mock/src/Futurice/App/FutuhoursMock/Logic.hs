@@ -29,30 +29,27 @@ import Futurice.App.FutuhoursMock.Types
 import Futurice.Prelude
 import Prelude ()
 
-import Control.Concurrent.STM
 import Data.IORef
 import Data.Vector.Lens (vector)
 import Data.Text (pack, unpack)
 import Futurice.App.FutuhoursMock.MockData
 import System.Random (getStdRandom, randomR, randomRIO)
 import Test.QuickCheck (arbitrary, sample')
-import Data.Time (UTCTime, diffUTCTime, getCurrentTime)
+import Data.Time (getCurrentTime)
 import Data.Time.Format (parseTimeOrError, formatTime)
 import Data.Time.Locale.Compat (defaultTimeLocale)
-import Data.Time.Calendar (diffDays, addDays, showGregorian, toGregorian, fromGregorian)
+import Data.Time.Calendar (diffDays, addDays, toGregorian, fromGregorian)
 import Data.Maybe (fromJust)
-import Futurice.Servant
 import Servant
-import Control.Monad.Trans.Except (ExceptT (..), throwE)
-import System.IO                  (hPutStrLn, stderr)
+import Control.Monad.Trans.Except (ExceptT (..))
 import qualified PlanMill as PM
 import qualified Data.Map.Strict as Map
 
 
 projectEndpoint :: Ctx -> IO (Vector Project)
 projectEndpoint _ctx = do
-    projects <- sample' arbitrary
-    pure $ projects ^. vector
+    p <- sample' arbitrary
+    pure $ p ^. vector
 
 userEndpoint :: Ctx -> IO (User)
 userEndpoint _ctx = do
@@ -70,8 +67,11 @@ userEndpoint _ctx = do
         , _userProfilePicture="https://raw.githubusercontent.com/futurice/spiceprogram/gh-pages/assets/img/logo/chilicorn_no_text-128.png"
         }
 
+parseDayFormat :: Text -> Day
 parseDayFormat x = utctDay $ (parseTimeOrError False defaultTimeLocale "%Y-%m-%d" (unpack x) :: UTCTime)
-parseMonthFormat x = (parseTimeOrError False defaultTimeLocale "%Y-%m" (unpack x) :: UTCTime)
+
+parseMonthFormat :: Text -> Day
+parseMonthFormat x = utctDay $ (parseTimeOrError False defaultTimeLocale "%Y-%m" (unpack x) :: UTCTime)
 
 hoursEndpoint
   :: Ctx
@@ -87,10 +87,10 @@ hoursEndpoint _ctx sd ed = do
                   Just x -> Just $ parseDayFormat x
                   Nothing -> Nothing
   let duration = diffDays (fromJust endDate) (fromJust startDate)
-  let days = daysFD duration $ (fromJust startDate)
-  months <- liftIO $ genMonths days
-  projects <- liftIO $ fillProjects
-  return $ HoursResponse { _hoursResponseProjects=projects
+  let d = daysFD duration $ (fromJust startDate)
+  months <- liftIO $ genMonths d
+  p <- liftIO $ fillProjects
+  return $ HoursResponse { _hoursResponseProjects=p
                          , _hoursResponseMonths=months
                          , _hoursResponseDefaultWorkHours=7.5
                          }
@@ -163,11 +163,11 @@ fillProjects = do
 
 mkEntryEndPoint :: EntryUpdate -> IO EntryUpdateResponse
 mkEntryEndPoint req = do
-  projects <- liftIO $ fillProjects
+  p <- liftIO $ fillProjects
   let date = _euDate req
-  userBalance <- liftIO $ getStdRandom (randomR (-10, 40))
-  userHolidaysLeft <- liftIO $ randomRIO (0, 24)
-  userUtilizationRate <- liftIO $ getStdRandom (randomR (0,100))
+  usrB <- liftIO $ getStdRandom (randomR (-10, 40))
+  usrHL <- liftIO $ randomRIO (0, 24)
+  usrUTZ <- liftIO $ getStdRandom (randomR (0,100))
   newEntryId <- liftIO $ getStdRandom (randomR (0, 100))
   let md = HoursDayUpdate
             { _hoursDayUpdateHolidayName=Nothing
@@ -181,24 +181,24 @@ mkEntryEndPoint req = do
                           , _entryClosed=fromMaybe False (_euClosed req) -- TODO: is Maybe open or closed?
                           }
             }
-  let days = Map.fromList [(pack $ formatTime defaultTimeLocale "%Y-%m-%d" date, [md])]
+  let d = Map.fromList [(pack $ formatTime defaultTimeLocale "%Y-%m-%d" date, [md])]
   let mm = HoursMonthUpdate
             { _hoursMonthUpdateHours=75
             , _hoursMonthUpdateUtilizationRate=70
-            , _hoursMonthUpdateDays=days}
+            , _hoursMonthUpdateDays=d}
   let months = Map.fromList [(pack $ formatTime defaultTimeLocale "%Y-%m" date, [mm])]
 
   let userResponse = User
                       { _userFirstName="Test"
                       , _userLastName="User"
-                      , _userBalance=userBalance
-                      , _userHolidaysLeft=userHolidaysLeft
-                      , _userUtilizationRate=userUtilizationRate
+                      , _userBalance=usrB
+                      , _userHolidaysLeft=usrHL
+                      , _userUtilizationRate=usrUTZ
                       , _userProfilePicture="https://raw.githubusercontent.com/futurice/spiceprogram/gh-pages/assets/img/logo/chilicorn_no_text-128.png"
                       }
   let hoursResponse = HoursUpdateResponse
                          { _hoursUpdateResponseDefaultWorkHours=7.5
-                         , _hoursUpdateResponseProjects=projects
+                         , _hoursUpdateResponseProjects=p
                          , _hoursUpdateResponseMonths=months }
 
   pure $ EntryUpdateResponse
@@ -232,7 +232,7 @@ entryDeleteEndpoint
   -> Int
   -> EntryUpdate
   -> ExceptT ServantErr IO EntryUpdateResponse
-entryDeleteEndpoint _ctx _id req = do
+entryDeleteEndpoint _ctx _id _ = do
   -- DELETE /entry/#id
   now <- liftIO getCurrentTime
   let dummyReq = EntryUpdate
