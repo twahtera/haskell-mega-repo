@@ -74,19 +74,13 @@ parseMonthFormat x = utctDay $ (parseTimeOrError False defaultTimeLocale "%Y-%m"
 
 hoursEndpoint
   :: Ctx
-  -> Maybe Text
-  -> Maybe Text
+  -> Maybe Day
+  -> Maybe Day
   -> ExceptT ServantErr IO HoursResponse
 hoursEndpoint _ctx sd ed = do
   -- GET /hours
-  let startDate = case sd of
-                    Just x -> Just $ parseDayFormat x
-                    Nothing -> Nothing
-  let endDate = case ed of
-                  Just x -> Just $ parseDayFormat x
-                  Nothing -> Nothing
-  let duration = diffDays (fromJust endDate) (fromJust startDate)
-  let d = daysFD duration $ (fromJust startDate)
+  let duration = diffDays (fromJust sd) (fromJust ed)
+  let d = daysFD duration $ (fromJust sd)
   months <- liftIO $ genMonths d
   p <- liftIO $ fillProjects
   return $ HoursResponse { _hoursResponseProjects=p
@@ -204,35 +198,35 @@ mkEntryEndPoint req = do
           { _eurUser=userResponse
           , _eurHours=hoursResponse }
 
+-- | @POST /entry@
 entryEndpoint
   :: Ctx
   -> EntryUpdate
   -> ExceptT ServantErr IO EntryUpdateResponse
 entryEndpoint _ctx req = do
-  -- POST /entry
   res <- liftIO $ (mkEntryEndPoint req)
   return res
 
+-- | @PUT /entry/#id@
 entryIdEndpoint
   :: Ctx
   -> Int
   -> EntryUpdate
   -> ExceptT ServantErr IO EntryUpdateResponse
 entryIdEndpoint _ctx _id req = do
-  -- PUT /entry/#id
   res <- liftIO $ (mkEntryEndPoint req)
   let res' = res & eurHours . hoursUpdateResponseMonths . traverse . traverse
                    . hoursMonthUpdateDays . traverse . traverse
                    . hoursDayUpdateEntry . traverse . entryId .~ PM.Ident 1
   return res'
 
+-- | @DELETE /entry/#id@
 entryDeleteEndpoint
   :: Ctx
   -> Int
   -> EntryUpdate
   -> ExceptT ServantErr IO EntryUpdateResponse
 entryDeleteEndpoint _ctx _id _ = do
-  -- DELETE /entry/#id
   now <- liftIO getCurrentTime
   let dummyReq = EntryUpdate
           { _euTaskId=PM.Ident 1

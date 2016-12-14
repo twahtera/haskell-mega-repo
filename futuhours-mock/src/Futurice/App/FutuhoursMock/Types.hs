@@ -165,7 +165,7 @@ data EntryUpdateResponse = EntryUpdateResponse
 data User = User
   { _userFirstName :: !Text
   , _userLastName :: !Text
-  , _userBalance :: !Float
+  , _userBalance :: !Float -- @TODO NDT 'Hours Centi
   , _userHolidaysLeft :: !Int
   , _userUtilizationRate :: !Float
   , _userProfilePicture :: !Text

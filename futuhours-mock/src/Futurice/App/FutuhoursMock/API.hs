@@ -13,17 +13,19 @@ import Prelude ()
 import Futurice.App.FutuhoursMock.Types
 import Servant
 
-type FutuhoursAPI = Get '[JSON] Text
-    :<|> "api" :> "v1" :>
+type FutuhoursV1API =
       ( "projects" :> Get '[JSON] (Vector Project)
         :<|> "user" :> Get '[JSON] (User) -- TODO: should return logged-in User information
-        :<|> "hours" :> QueryParam "start-date" Text
-                     :> QueryParam "end-date" Text
+        :<|> "hours" :> QueryParam "start-date" Day
+                     :> QueryParam "end-date" Day
                      :> Get '[JSON] (HoursResponse)
         :<|> "entry" :> ReqBody '[JSON] EntryUpdate :> Post '[JSON] (EntryUpdateResponse)
         :<|> "entry" :> Capture "id" Int :> ReqBody '[JSON] EntryUpdate :> Put '[JSON] (EntryUpdateResponse)
         :<|> "entry" :> Capture "id" Int :> ReqBody '[JSON] EntryUpdate :> Delete '[JSON] (EntryUpdateResponse)
       )
+
+type FutuhoursAPI = Get '[JSON] Text
+    :<|> "api" :> "v1" :> FutuhoursV1API
 
 futuhoursApi :: Proxy FutuhoursAPI
 futuhoursApi = Proxy

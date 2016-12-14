@@ -14,7 +14,6 @@ import Prelude ()
 import Futurice.Servant
 import Servant
 
--- Contacts modules
 import Futurice.App.FutuhoursMock.API
 import Futurice.App.FutuhoursMock.Config (Config (..))
 import Futurice.App.FutuhoursMock.Logic  (projectEndpoint, userEndpoint,
@@ -37,8 +36,8 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverDescription     .~ "Is it real?"
     & serverApp futuhoursApi .~ server
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC2))
-    & serverEnvPfx          .~ "HOURSMOCK"
+    & serverEnvPfx          .~ "FUTUHOURSMOCK"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
-    makeCtx Config {..} _ _ = do
+    makeCtx _ _ _ = do
         pure Ctx
