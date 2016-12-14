@@ -75,6 +75,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx        .~ "AVATAR"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
-    makeCtx cfg _logger cache = do
+    makeCtx _cfg _logger cache = do
         mgr <- newManager tlsManagerSettings
         return (cache, mgr)
