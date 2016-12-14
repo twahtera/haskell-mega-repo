@@ -33,6 +33,7 @@ library:
     - containers
     - dependent-map
     - dependent-sum
+    - dynmap-cache
     - either
     - ekg
     - ekg-core
@@ -76,7 +77,6 @@ library:
     - resource-pool
     - semigroups
     - servant
-    - servant-cache
     - servant-cassava
     - servant-docs
     - servant-lucid

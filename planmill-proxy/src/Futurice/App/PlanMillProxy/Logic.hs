@@ -545,10 +545,11 @@ fetchFromPlanMill :: Ctx -> Query a -> LIO a
 fetchFromPlanMill ctx q = case typeableDict of
     Dict -> liftIO
         -- TODO: add cache cleanup
-        $ genCachedIO RequestNew cache (10 * 60) q
+        $ genCachedIO RequestNew logger cache (10 * 60) q
         $ runH lgr cfg $ planmillQuery q
   where
     typeableDict = queryDict (Proxy :: Proxy Typeable) q
+    logger       = ctxLogger ctx
     cache        = ctxCache ctx
     cfg          = ctxPlanmillCfg ctx
     lgr          = ctxLogger ctx

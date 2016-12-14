@@ -6,6 +6,7 @@ packages:
 - base64-bytestring-type/
 - checklist-app/
 - contacts-api/
+- dynmap-cache/
 - env-config/
 - favicon-app/
 - flowdock-cli/
@@ -35,7 +36,6 @@ packages:
 - proxy-mgmt-app/
 - reports-app/
 - servant-binary-tagged/
-- servant-cache/
 - servant-status/
 - spice-stats/
 - tdigest/

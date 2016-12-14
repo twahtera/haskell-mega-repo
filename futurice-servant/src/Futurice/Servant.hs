@@ -64,6 +64,8 @@ import Control.Monad.Catch                  (fromException, handleAll)
 import Data.Char                            (isAlpha)
 import Data.Swagger                         hiding (port)
 import Development.GitRev                   (gitCommitDate, gitHash)
+import Futurice.Cache
+       (CachePolicy (..), DynMapCache, cachedIO, genCachedIO)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
 import Futurice.EnvConfig                   (Configure, getConfigWithPorts)
@@ -74,8 +76,6 @@ import Network.Wai
 import Network.Wai.Metrics                  (metrics, registerWaiMetrics)
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import Servant
-import Servant.Cache.Class
-       (CachePolicy (..), DynMapCache, cachedIO, genCachedIO)
 import Servant.CSV.Cassava                  (CSV)
 import Servant.Futurice.Favicon             (FutuFaviconAPI, serveFutuFavicon)
 import Servant.Futurice.Status              hiding (info)
@@ -85,13 +85,13 @@ import Servant.Swagger
 import Servant.Swagger.UI
 import System.Remote.Monitoring             (forkServer, serverMetricStore)
 
-import qualified Data.Aeson                    as Aeson
-import qualified Data.Text                     as T
-import qualified Data.Text.Encoding            as TE
+import qualified Data.Aeson               as Aeson
+import qualified Data.Text                as T
+import qualified Data.Text.Encoding       as TE
 import qualified FUM
-import qualified Network.HTTP.Types            as H
-import qualified Network.Wai.Handler.Warp      as Warp
-import qualified Servant.Cache.Internal.DynMap as DynMap
+import qualified Futurice.DynMap          as DynMap
+import qualified Network.HTTP.Types       as H
+import qualified Network.Wai.Handler.Warp as Warp
 
 type FuturiceAPI api colour =
     FutuFaviconAPI colour

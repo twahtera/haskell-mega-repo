@@ -75,7 +75,7 @@ test-suite unit-tests
     , transformers-base
     , list-t
     , futurice-prelude
-    , servant-cache
+    , dynmap-cache
     , tasty
     , tasty-hunit
   default-language: Haskell2010

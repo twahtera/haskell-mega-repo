@@ -27,7 +27,7 @@ import Futurice.App.Avatar.API
 import Futurice.App.Avatar.Config (Config (..))
 import Futurice.App.Avatar.Logic  (avatar)
 
-type Ctx = (DynMapCache, Manager)
+type Ctx = (Logger, DynMapCache, Manager)
 
 type DynamicImage' = Headers '[Header "Cache-Control" Text] DynamicImage
 
@@ -41,7 +41,7 @@ mkAvatar _ Nothing _ _ =
     throwError $ ServantErr 400 errMsg (fromString errMsg) []
   where
     errMsg = "'url' query parameter is required"
-mkAvatar (cache, mgr) (Just url) msize grey = ExceptT . fmap (first f) $ do
+mkAvatar (logger, cache, mgr) (Just url) msize grey = ExceptT . fmap (first f) $ do
     hPutStrLn stderr $ mconcat
         [ "fetching ", T.unpack url
         , " size: ", show msize
@@ -49,9 +49,9 @@ mkAvatar (cache, mgr) (Just url) msize grey = ExceptT . fmap (first f) $ do
         ]
     req <- parseUrlThrow (T.unpack url)
     -- XXX: The cache will eventually fill if service is abused
-    res <- cachedIO cache 3600 url $ httpLbs req mgr
+    res <- cachedIO logger cache 3600 url $ httpLbs req mgr
     (fmap . fmap) (addHeader "public, max-age=3600")
-        . cachedIO cache 3600 (url, size, grey)
+        . cachedIO logger cache 3600 (url, size, grey)
         . pure . avatar size grey . responseBody
         $ res
   where
@@ -75,6 +75,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx        .~ "AVATAR"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
-    makeCtx _cfg _logger cache = do
+    makeCtx _cfg logger cache = do
         mgr <- newManager tlsManagerSettings
-        return (cache, mgr)
+        return (logger, cache, mgr)

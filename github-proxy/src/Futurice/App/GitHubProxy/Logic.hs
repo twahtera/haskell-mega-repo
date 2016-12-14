@@ -133,7 +133,7 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
         => Postgres.Connection -> ReqTag a -> Request 'RA a -> LIO (Either Text a)
     fetch'' conn tag req = do
         res <- liftIO $ tryDeep $ runLogT' ctx $ do
-            x <- fetchFromGitHub (ctxCache ctx) (ctxGitHubAuth ctx) tag req
+            x <- fetchFromGitHub (ctxLogger ctx) (ctxCache ctx) (ctxGitHubAuth ctx) tag req
             storeInPostgres conn tag req x
             pure $! x
         -- liftIO $ print (res ^? _Left, q)
@@ -179,7 +179,7 @@ updateCache ctx = runLIO ctx $ \conn -> do
       :: (Binary a, HasStructuralInfo a, HasSemanticVersion a)
       => Postgres.Connection -> ReqTag a -> Request 'RA a -> LIO (Either SomeException ())
     fetch' conn tag req = liftIO $ tryDeep $ runLogT' ctx $ do
-        x <- fetchFromGitHub (ctxCache ctx) (ctxGitHubAuth ctx) tag req
+        x <- fetchFromGitHub (ctxLogger ctx) (ctxCache ctx) (ctxGitHubAuth ctx) tag req
         storeInPostgres conn tag req x
 
     -- Fetch queries which are old enough, and viewed at least once
@@ -229,11 +229,11 @@ storeInPostgres conn tag req x = do
 -------------------------------------------------------------------------------
 
 -- | Run query on real planmill backend.
-fetchFromGitHub :: DynMapCache -> Auth -> ReqTag a -> Request 'RA a -> LIO a
-fetchFromGitHub cache auth tag req = case (typeableDict, eqDict) of
+fetchFromGitHub :: Logger -> DynMapCache -> Auth -> ReqTag a -> Request 'RA a -> LIO a
+fetchFromGitHub logger cache auth tag req = case (typeableDict, eqDict) of
     (Dict, Dict) -> liftIO
         -- TODO: add cache cleanup
-        $ genCachedIO RequestNew cache (10 * 60) req
+        $ genCachedIO RequestNew logger cache (10 * 60) req
         $ runH auth $ githubReq req
   where
     typeableDict = tagDict (Proxy :: Proxy Typeable) tag
