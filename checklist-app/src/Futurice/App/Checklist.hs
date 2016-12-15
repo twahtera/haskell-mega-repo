@@ -34,8 +34,7 @@ import qualified FUM                        (UserName (..))
 server :: Ctx -> Server ChecklistAPI
 server ctx = indexPageImpl ctx
     :<|> tasksPageImpl ctx
-    -- todo
-    :<|> (\_ -> pure . checklistPage undefined)
+    :<|> checklistPageImpl ctx
     :<|> taskPageImpl ctx
     :<|> employeePageImpl ctx
 
@@ -94,6 +93,20 @@ taskPageImpl ctx fu tid = withAuthUser ctx fu impl
         Just task -> do
             today <- currentDay
             pure $ taskPage world today userInfo task
+
+checklistPageImpl
+    :: (MonadIO m, MonadTime m)
+    => Ctx
+    -> Maybe FUM.UserName
+    -> Identifier Checklist
+    -> m (HtmlPage "checklist")
+checklistPageImpl ctx fu cid = withAuthUser ctx fu impl
+  where
+    impl world userInfo = case world ^? worldLists . ix cid of
+        Nothing        -> pure notFoundPage
+        Just checklist -> do
+            today <- currentDay
+            pure $ checklistPage world today userInfo checklist
 
 employeePageImpl
     :: (MonadIO m)
