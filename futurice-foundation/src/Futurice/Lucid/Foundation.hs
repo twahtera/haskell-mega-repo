@@ -79,8 +79,8 @@ forWith_ sep xs f = foldr g (pure ()) xs
 -- Grid
 -------------------------------------------------------------------------------
 
-row_ :: Monad m => HtmlT m () -> HtmlT m ()
-row_ = div_ [class_ "row"]
+row_ :: Term arg result => arg -> result
+row_ = termWith "div" [ class_ "row" ]
 
 large_ :: Monad m => Int -> HtmlT m () -> HtmlT m ()
 large_ n = div_ [class_ $ fromString $ "columns large-" ++ show n ]
