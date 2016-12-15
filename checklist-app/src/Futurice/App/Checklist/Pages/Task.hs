@@ -13,7 +13,6 @@ import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
 import qualified Data.Map       as Map
-import qualified FUM            (UserName (..))
 import qualified Futurice.IdMap as IdMap
 
 -- |
@@ -23,8 +22,8 @@ import qualified Futurice.IdMap as IdMap
 -- * 'Task' is in the 'World'.
 taskPage
     :: World
-    -> Day                                   -- ^ today
-    -> (FUM.UserName, TaskRole, Location)    -- ^ logged in user
+    -> Day         -- ^ today
+    -> AuthUser    -- ^ logged in user
     -> Task
     -> HtmlPage "task"
 taskPage world today authUser task = page_ (view nameText task <> " - Checklist") pageParams $ do
@@ -34,22 +33,25 @@ taskPage world today authUser task = page_ (view nameText task <> " - Checklist"
     header (task ^. nameText) []
 
     -- Edit
-    row_ $ large_ 12 $ form_ $ do
+    row_ [ id_ "futu-task-edit" ] $ large_ 12 $ do
         row_ $ large_ 12 $
             label_ $ do
                 "Name"
-                input_ [ type_ "text", value_ $ (task ^. nameText) ]
+                let v = task ^. nameText
+                -- TODO: change id to futu-id
+                input_ [ id_ "futu-task-name", type_ "text", data_ "futu-value" v, value_ v ]
         row_ $ large_ 12 $
             label_ $ do
                 "Role"
-                select_ [] $ for_ [ minBound .. maxBound ] $ \role ->
+                let v = task ^. taskRole . re _TaskRole
+                select_ [ id_ "futu-task-role", data_ "futu-value" v ] $ for_ [ minBound .. maxBound ] $ \role ->
                     optionSelected_ (role == task ^. taskRole)
                         [ value_ $ role ^. re _TaskRole ]
                         $ toHtml $ roleToText role
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
-            button_ [ class_ "button success" ] $ "Save"
-            button_ [ class_ "button" ] $ "Reset"
+            button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Save"
+            button_ [ class_ "button", data_ "futu-action" "reset" ] $ "Reset"
 
     -- Employees
     row_ $ large_ 12 $ table_ $ do
