@@ -1,14 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Checklist.Clay where
 
-import Clay
-import Futurice.Lucid.Foundation (PageParams, defPageParams, pageCss)
-import Futurice.Prelude          hiding ((&), (**))
 import Prelude ()
+import Futurice.Prelude          hiding ((&), (**))
+import Clay
+import Futurice.Lucid.Foundation
+       (PageParams, defPageParams, embedJS, menrvaJS, pageCss, pageJs)
+
+import qualified Control.Lens as L
 
 pageParams :: PageParams
-pageParams = 
-    (pageCss .~ [css]) defPageParams
+pageParams = defPageParams
+    L.& pageCss .~ [ css ]
+    L.& pageJs  .~ [ menrvaJS, $(embedJS "checklist.js") ]
 
 css :: Css
 css = do
