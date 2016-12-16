@@ -20,6 +20,7 @@ module Futurice.App.Checklist.Command (
 
 import Prelude ()
 import Futurice.Prelude
+import Control.Lens      (set, (%~))
 import Data.Aeson.Compat (object, withObject, (.!=), (.:), (.:?), (.=))
 import Data.Swagger      (NamedSchema (..))
 import Futurice.Generics
@@ -121,7 +122,13 @@ applyCommand cmd world = case cmd of
         world & worldTasks . at tid ?~ Task tid n mempty role
     CmdAddTask cid tid app ->
         world & worldLists . ix cid . checklistTasks . at tid ?~ app
-    _ -> world
+    CmdRenameChecklist cid n ->
+        world & worldLists . ix cid . checklistName .~ n
+    CmdEditTask tid (TaskEdit mn mr) -> world & worldTasks . ix tid %~ update
+      where
+        update task = task
+            & maybe id (set taskName) mn
+            & maybe id (set taskRole) mr
 
 transactCommand
     :: (MonadLog m, MonadIO m)
