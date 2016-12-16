@@ -33,7 +33,7 @@ taskPage world today authUser task = page_ (view nameText task <> " - Checklist"
     header (task ^. nameText) []
 
     -- Edit
-    row_ [ id_ "futu-task-edit" ] $ large_ 12 $ do
+    row_ [ id_ "futu-task-edit", data_ "futu-task-id" $ task ^. identifierText ] $ large_ 12 $ do
         row_ $ large_ 12 $
             label_ $ do
                 "Name"
