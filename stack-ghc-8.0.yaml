@@ -1,4 +1,4 @@
-resolver: nightly-2016-11-24
+resolver: nightly-2016-12-07
 packages:
 - ansi-pretty/
 - avar/
@@ -49,7 +49,9 @@ packages:
   extra-dep: true
 extra-deps:
 - folds-0.7.1
+- binary-tagged-0.1.4.2
+- generics-sop-0.2.3.0
 - haxl-0.4.0.2
-- log-base-0.7
 - monad-http-0.2.0.0
+- time-parsers-0.1.2.0
 flags: {}

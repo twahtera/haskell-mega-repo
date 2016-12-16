@@ -25,20 +25,21 @@ module Futurice.App.Reports.PowerAbsences (
 import Prelude ()
 import Futurice.Prelude
 import Data.Fixed                (Centi)
-import Data.Time                 (addDays, diffDays)
+import Data.Time                 (diffDays)
 import Data.Tuple                (swap)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Report.Columns
 import Futurice.Time
-import Numeric.Interval.NonEmpty ((...), (==?))
+import Numeric.Interval.NonEmpty ((...))
 
-import qualified Data.HashMap.Strict as HM
-import qualified Data.Map.Strict     as Map
-import qualified Data.Vector         as V
+import qualified Data.HashMap.Strict       as HM
+import qualified Data.Map.Strict           as Map
+import qualified Data.Vector               as V
 import qualified FUM
-import qualified PlanMill            as PM
-import qualified PlanMill.Queries    as PMQ
+import qualified Numeric.Interval.NonEmpty as I
+import qualified PlanMill                  as PM
+import qualified PlanMill.Queries          as PMQ
 
 -------------------------------------------------------------------------------
 -- Data
@@ -91,37 +92,31 @@ instance ToColumns PowerAbsence where
 -- Report
 -------------------------------------------------------------------------------
 
-type PowerAbsenceReport = Report
-    "Power: absences"
-    ReportGenerated
-    (Vector PowerAbsence)
+type PowerAbsenceReport = Vector PowerAbsence
 
 -------------------------------------------------------------------------------
 -- Logic
 -------------------------------------------------------------------------------
 
--- /TODO:/ group consecutive absences with no capacity in between
 powerAbsenceReport
     :: forall m env.
         ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m
         , MonadReader env m, HasFUMEmployeeListName env
         )
-    => m PowerAbsenceReport
-powerAbsenceReport = do
-    now   <- currentTime
-    today <- currentDay
-    -- TODO: write date (not time!) handling lib
-    let startDay = addDays (-365) $ beginningOfPrevMonth today
-    let endDay   = addDays 365 today
+    => Maybe Month
+    -> m PowerAbsenceReport
+powerAbsenceReport mmonth = do
+    month <- maybe currentMonth pure mmonth
+    let startDay = firstDayOfMonth month
+    let endDay   = lastDayOfMonth month
     let interval = startDay ... endDay
     -- Users
     fpm <- fumPlanmillMap
     -- Fetch all absences, on purpose
     as0 <- PMQ.absences
     -- Take intervals which overlap our interval of the interest
-    let as1 = V.filter (\ab -> PM.absenceInterval ab ==? interval) as0
-    as2 <- traverse (powerAbsence fpm) as1
-    pure $ Report (ReportGenerated now) as2
+    let as1 = V.filter (\ab -> PM.absenceStart ab `I.elem` interval) as0
+    traverse (powerAbsence fpm) as1
 
 powerAbsence
     :: MonadPlanMillQuery m

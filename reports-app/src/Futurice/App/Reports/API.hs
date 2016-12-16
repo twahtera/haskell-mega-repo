@@ -37,8 +37,6 @@ type Reports =
     , R "github-users"   GithubUsersReport
     , R "missing-hours"  MissingHoursReport
     , R "balances"       BalanceReport
-    , R "power-users"    PowerUserReport
-    , R "power-absences" PowerAbsenceReport
     , R "hours-by-task" TimereportsByTaskReport
     ]
 
@@ -66,6 +64,9 @@ type family FoldReportsAPI rs :: * where
         FoldReportsAPI rs
 
 type ReportsAPI = FoldReportsAPI Reports
+    -- Additional non-reports
+    :<|> "power" :> "users" :> Get '[JSON] PowerUserReport
+    :<|> "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport
 
 reportsApi :: Proxy ReportsAPI
 reportsApi = Proxy
