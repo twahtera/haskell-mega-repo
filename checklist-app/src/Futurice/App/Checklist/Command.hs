@@ -21,6 +21,7 @@ module Futurice.App.Checklist.Command (
 import Prelude ()
 import Futurice.Prelude
 import Data.Aeson.Compat (object, withObject, (.!=), (.:), (.:?), (.=))
+import Data.Swagger      (NamedSchema (..))
 import Futurice.Generics
 import Futurice.IsMaybe
 
@@ -227,6 +228,10 @@ instance SOP.All (SOP.Compose FromJSON f) '[Identifier Checklist, Identifier Tas
                 <*> obj .: "tid"
                 <*> obj .:? "appliance" .!= TaskApplianceAll
             _ -> fail $ "Invalid Command tag " ++ cmd ^. unpacked
+
+-- TODO
+instance ToSchema (Command p) where
+    declareNamedSchema _ = pure $ NamedSchema (Just "Command") mempty
 
 instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task]
     => Postgres.ToField (Command f)

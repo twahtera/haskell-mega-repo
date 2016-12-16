@@ -37,6 +37,7 @@ server ctx = indexPageImpl ctx
     :<|> checklistPageImpl ctx
     :<|> taskPageImpl ctx
     :<|> employeePageImpl ctx
+    :<|> commandImpl ctx
 
 -------------------------------------------------------------------------------
 -- Endpoint wrappers
@@ -121,6 +122,19 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
         Just employee -> employeePage world userInfo employee
 
 -------------------------------------------------------------------------------
+-- Command implementation
+-------------------------------------------------------------------------------
+
+commandImpl
+    :: (MonadIO m)
+    => Ctx
+    -> Maybe FUM.UserName
+    -> Command Proxy
+    -> m Text
+commandImpl ctx fu _cmd = withAuthUser' "forbidden" ctx fu $ \_world _userInfo -> do
+    pure "foobar"
+
+-------------------------------------------------------------------------------
 -- Auth
 -------------------------------------------------------------------------------
 
@@ -130,10 +144,18 @@ withAuthUser
     => Ctx -> Maybe FUM.UserName
     -> (World -> AuthUser -> m (HtmlPage a))
     -> m (HtmlPage a)
-withAuthUser ctx fu f = do
+withAuthUser = withAuthUser' forbiddedPage
+
+withAuthUser'
+    :: MonadIO m
+    => a                           -- ^ Response to unauthenticated users
+    -> Ctx -> Maybe FUM.UserName
+    -> (World -> AuthUser -> m a)
+    -> m a
+withAuthUser' def ctx fu f = do
     world <- liftIO $ readTVarIO $ ctxWorld ctx
     case userInfo world of
-        Nothing        -> pure forbiddedPage
+        Nothing        -> pure def
         Just userInfo' -> f world userInfo'
   where
     userInfo :: World -> Maybe (FUM.UserName, TaskRole, Location)

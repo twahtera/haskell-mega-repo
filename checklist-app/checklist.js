@@ -57,7 +57,8 @@ document.addEventListener("DOMContentLoaded", function () {
   function cmdEditTask(taskId, edit) {
     console.info("cmdEditTask", taskId, edit);
     return command({
-      cmd: "task-edit",
+      cmd: "edit-task",
+      tid:  taskId,
       edit: edit,
     });
   }
