@@ -29,6 +29,7 @@ module Futurice.App.Checklist.Types (
     Identifier(..),
     identifierToText,
     HasIdentifier (..),
+    identifierText,
     Name (..),
     HasName (..),
     -- * Lenses

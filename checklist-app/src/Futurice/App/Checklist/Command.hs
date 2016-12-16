@@ -20,7 +20,9 @@ module Futurice.App.Checklist.Command (
 
 import Prelude ()
 import Futurice.Prelude
+import Control.Lens      (set, (%~))
 import Data.Aeson.Compat (object, withObject, (.!=), (.:), (.:?), (.=))
+import Data.Swagger      (NamedSchema (..))
 import Futurice.Generics
 import Futurice.IsMaybe
 
@@ -120,7 +122,13 @@ applyCommand cmd world = case cmd of
         world & worldTasks . at tid ?~ Task tid n mempty role
     CmdAddTask cid tid app ->
         world & worldLists . ix cid . checklistTasks . at tid ?~ app
-    _ -> world
+    CmdRenameChecklist cid n ->
+        world & worldLists . ix cid . checklistName .~ n
+    CmdEditTask tid (TaskEdit mn mr) -> world & worldTasks . ix tid %~ update
+      where
+        update task = task
+            & maybe id (set taskName) mn
+            & maybe id (set taskRole) mr
 
 transactCommand
     :: (MonadLog m, MonadIO m)
@@ -227,6 +235,10 @@ instance SOP.All (SOP.Compose FromJSON f) '[Identifier Checklist, Identifier Tas
                 <*> obj .: "tid"
                 <*> obj .:? "appliance" .!= TaskApplianceAll
             _ -> fail $ "Invalid Command tag " ++ cmd ^. unpacked
+
+-- TODO
+instance ToSchema (Command p) where
+    declareNamedSchema _ = pure $ NamedSchema (Just "Command") mempty
 
 instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task]
     => Postgres.ToField (Command f)

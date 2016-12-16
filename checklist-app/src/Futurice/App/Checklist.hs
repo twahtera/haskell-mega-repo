@@ -5,6 +5,7 @@ module Futurice.App.Checklist (defaultMain) where
 
 import Prelude ()
 import Futurice.Prelude
+import Control.Arrow             ((&&&))
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
@@ -37,6 +38,7 @@ server ctx = indexPageImpl ctx
     :<|> checklistPageImpl ctx
     :<|> taskPageImpl ctx
     :<|> employeePageImpl ctx
+    :<|> commandImpl ctx
 
 -------------------------------------------------------------------------------
 -- Endpoint wrappers
@@ -121,6 +123,35 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
         Just employee -> employeePage world userInfo employee
 
 -------------------------------------------------------------------------------
+-- Command implementation
+-------------------------------------------------------------------------------
+
+commandImpl
+    :: MonadIO m
+    => Ctx
+    -> Maybe FUM.UserName
+    -> Command Proxy
+    -> m Text
+commandImpl ctx fu cmd =
+    withAuthUser' "forbidden" ctx fu $ \_world (fumUsername, _, _) ->
+    liftIO $ runLogT "command" (ctxLogger ctx) $ do
+        (res, cmd') <- instantiatedCmd
+        ctxApplyCmd fumUsername cmd' ctx
+        pure res
+  where
+    instantiatedCmd = case cmd of
+        -- tasks
+        CmdEditTask tid e        -> mk "ok" $ CmdEditTask tid e
+        CmdAddTask cid tid app   -> mk "ok" $ CmdAddTask cid tid app
+        CmdRenameChecklist tid n -> mk "ok" $ CmdRenameChecklist tid n
+        -- creation tasks
+        CmdCreateChecklist Proxy n -> create $ \cid -> CmdCreateChecklist cid n
+        CmdCreateTask Proxy e      -> create $ \tid -> CmdCreateTask tid e
+
+    mk a b = pure (a, b)
+    create f = (view identifierText &&& f . Identity) . Identifier <$> ctxGetCRandom ctx
+
+-------------------------------------------------------------------------------
 -- Auth
 -------------------------------------------------------------------------------
 
@@ -130,10 +161,18 @@ withAuthUser
     => Ctx -> Maybe FUM.UserName
     -> (World -> AuthUser -> m (HtmlPage a))
     -> m (HtmlPage a)
-withAuthUser ctx fu f = do
+withAuthUser = withAuthUser' forbiddedPage
+
+withAuthUser'
+    :: MonadIO m
+    => a                           -- ^ Response to unauthenticated users
+    -> Ctx -> Maybe FUM.UserName
+    -> (World -> AuthUser -> m a)
+    -> m a
+withAuthUser' def ctx fu f = do
     world <- liftIO $ readTVarIO $ ctxWorld ctx
     case userInfo world of
-        Nothing        -> pure forbiddedPage
+        Nothing        -> pure def
         Just userInfo' -> f world userInfo'
   where
     userInfo :: World -> Maybe (FUM.UserName, TaskRole, Location)
@@ -154,8 +193,8 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     mockCredentials = (FUM.UserName "phadej", TaskRoleIT, LocHelsinki)
 
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
-    makeCtx cfg _logger _cache = do
-        ctx <- newCtx (cfgPostgresConnInfo cfg) emptyWorld
+    makeCtx cfg logger _cache = do
+        ctx <- newCtx logger (cfgPostgresConnInfo cfg) emptyWorld
         cmds <- withResource (ctxPostgres ctx) $ \conn ->
             Postgres.fromOnly <$$> Postgres.query_ conn "SELECT cmddata FROM checklist2.commands ORDER BY cid;"
         let world0 = foldl' (flip applyCommand) emptyWorld cmds

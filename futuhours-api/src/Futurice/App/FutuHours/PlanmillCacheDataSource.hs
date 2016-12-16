@@ -17,13 +17,13 @@ module Futurice.App.FutuHours.PlanmillCacheDataSource
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Concurrent.Async         (async, wait)
-import Control.Monad.Catch              (handle)
-import Control.Monad.CryptoRandom.Extra (CRandT, GenError, HashDRBG,
-                                         evalCRandTThrow, mkHashDRBG)
-import Control.Monad.Http               (HttpT, evalHttpT)
-import Data.Binary.Tagged               (taggedDecodeOrFail, taggedEncode)
-import Data.BinaryFromJSON              (BinaryFromJSON)
+import Control.Concurrent.Async (async, wait)
+import Control.Monad.Catch      (handle)
+import Control.Monad.Http       (HttpT, evalHttpT)
+import Data.Binary.Tagged       (taggedDecodeOrFail, taggedEncode)
+import Data.BinaryFromJSON      (BinaryFromJSON)
+import Futurice.CryptoRandom
+       (CRandT, CryptoGenError, CryptoGen, evalCRandTThrow, mkCryptoGen)
 import Futurice.Has
 import Haxl.Core
 import Haxl.Typed
@@ -34,8 +34,8 @@ import qualified Database.PostgreSQL.Simple.Fxtra as Postgres
 
 import Futurice.App.FutuHours.Context
 
-import qualified PlanMill             as PM
-import qualified PlanMill.Eval        as PM
+import qualified PlanMill      as PM
+import qualified PlanMill.Eval as PM
 
 import Futurice.App.FutuHours.PlanMillCache
 
@@ -84,7 +84,7 @@ instance In' PlanmillCacheRequest r => MonadPlanMillCached (GenTyHaxl r u) where
 -- Fetching
 -------------------------------------------------------------------------------
 
-type M = CRandT HashDRBG GenError :$ ReaderT PM.Cfg :$ LogT :$ HttpT IO
+type M = CRandT CryptoGen CryptoGenError :$ ReaderT PM.Cfg :$ LogT :$ HttpT IO
 
 -- | TODO: implement local cache
 instance DataSource u PlanmillCacheRequest where
@@ -95,7 +95,7 @@ instance DataSource u PlanmillCacheRequest where
             wait a
       where
         action = do
-            g <- mkHashDRBG
+            g <- mkCryptoGen
             evalHttpT
                 . runLogT "planmill-cached-data-source" lgr
                 . flip runReaderT cfg

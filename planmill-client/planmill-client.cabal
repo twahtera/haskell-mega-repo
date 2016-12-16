@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.1.
+-- This file has been generated from package.yaml by hpack version 0.15.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -52,7 +52,6 @@ library
     , deepseq
     , dependent-sum
     , DRBG
-    , entropy
     , exceptions
     , futurice-prelude
     , generics-sop
@@ -88,7 +87,6 @@ library
   if impl(ghc < 8.0)
     ghc-options: -fcontext-stack=40
   exposed-modules:
-      Control.Monad.CryptoRandom.Extra
       Control.Monad.PlanMill
       PlanMill
       PlanMill.Auth
@@ -160,7 +158,6 @@ executable planmill-client
     , deepseq
     , dependent-sum
     , DRBG
-    , entropy
     , exceptions
     , futurice-prelude
     , generics-sop
@@ -234,7 +231,6 @@ test-suite integration
     , deepseq
     , dependent-sum
     , DRBG
-    , entropy
     , exceptions
     , futurice-prelude
     , generics-sop
@@ -301,7 +297,6 @@ test-suite test
     , deepseq
     , dependent-sum
     , DRBG
-    , entropy
     , exceptions
     , futurice-prelude
     , generics-sop

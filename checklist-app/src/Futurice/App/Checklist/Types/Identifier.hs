@@ -7,10 +7,12 @@ module Futurice.App.Checklist.Types.Identifier (
     identifierToText,
     Entity(..),
     HasIdentifier (..),
+    identifierText,
     ) where
 
 import Prelude ()
 import Futurice.Prelude
+import Control.Lens      (Getter, to)
 import Data.Swagger
        (SwaggerType (SwaggerString), ToParamSchema (..), format, type_)
 import Futurice.Generics
@@ -56,6 +58,9 @@ instance FromJSON (Identifier a) where
 -- | TODO: evaluate if we really need this
 class Entity ident => HasIdentifier entity ident | entity -> ident where
     identifier :: Lens' entity (Identifier ident)
+
+identifierText :: HasIdentifier entity ident => Getter entity Text
+identifierText = identifier . to identifierToText
 
 instance Entity e => HasIdentifier (Identifier e) e where
     identifier = id

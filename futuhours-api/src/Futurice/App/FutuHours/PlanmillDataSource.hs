@@ -19,9 +19,9 @@ import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.Async         (async, wait)
 import Control.Monad.Catch              (handle)
-import Control.Monad.CryptoRandom.Extra
-       (CRandT, GenError, HashDRBG, evalCRandTThrow, mkHashDRBG)
 import Control.Monad.Http               (HttpT, evalHttpT)
+import Futurice.CryptoRandom
+       (CRandT, CryptoGenError, CryptoGen, evalCRandTThrow, mkCryptoGen)
 import Data.Binary.Tagged               (taggedDecodeOrFail, taggedEncode)
 import Data.BinaryFromJSON              (BinaryFromJSON)
 import Data.Constraint                  (Dict (..), type (:-)(..))
@@ -84,7 +84,7 @@ instance In' PlanmillRequest r => PM.MonadPlanMill (GenTyHaxl r u) where
 -- Fetching
 -------------------------------------------------------------------------------
 
-type M = CRandT HashDRBG GenError :$ ReaderT PM.Cfg :$ LogT :$ HttpT IO
+type M = CRandT CryptoGen CryptoGenError :$ ReaderT PM.Cfg :$ LogT :$ HttpT IO
 
 -- | Postgres cache key, i.e. path
 newtype Key = Key { getKey :: Text }
@@ -139,7 +139,7 @@ instance DataSource u PlanmillRequest where
             -- Ask all at once from DB
             cache <- makeCacheLookup <$> Postgres.query conn selectQuery (Postgres.Only . Postgres.In $ pKey <$> blockedFetches')
             -- Make rg
-            g <- mkHashDRBG
+            g <- mkCryptoGen
             -- Go thru each request individual, using postgres results
             evalHttpT
                 . runLogT "planmill-data-source" lgr
