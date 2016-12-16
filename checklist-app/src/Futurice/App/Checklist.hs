@@ -5,6 +5,7 @@ module Futurice.App.Checklist (defaultMain) where
 
 import Prelude ()
 import Futurice.Prelude
+import Control.Arrow             ((&&&))
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
@@ -126,13 +127,29 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
 -------------------------------------------------------------------------------
 
 commandImpl
-    :: (MonadIO m)
+    :: MonadIO m
     => Ctx
     -> Maybe FUM.UserName
     -> Command Proxy
     -> m Text
-commandImpl ctx fu _cmd = withAuthUser' "forbidden" ctx fu $ \_world _userInfo -> do
-    pure "foobar"
+commandImpl ctx fu cmd =
+    withAuthUser' "forbidden" ctx fu $ \_world (fumUsername, _, _) ->
+    liftIO $ runLogT "command" (ctxLogger ctx) $ do
+        (res, cmd') <- instantiatedCmd
+        ctxApplyCmd fumUsername cmd' ctx
+        pure res
+  where
+    instantiatedCmd = case cmd of
+        -- tasks
+        CmdEditTask tid e        -> mk "ok" $ CmdEditTask tid e
+        CmdAddTask cid tid app   -> mk "ok" $ CmdAddTask cid tid app
+        CmdRenameChecklist tid n -> mk "ok" $ CmdRenameChecklist tid n
+        -- creation tasks
+        CmdCreateChecklist Proxy n -> create $ \cid -> CmdCreateChecklist cid n
+        CmdCreateTask Proxy e      -> create $ \tid -> CmdCreateTask tid e
+
+    mk a b = pure (a, b)
+    create f = (view identifierText &&& f . Identity) . Identifier <$> ctxGetCRandom ctx
 
 -------------------------------------------------------------------------------
 -- Auth
@@ -176,8 +193,8 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     mockCredentials = (FUM.UserName "phadej", TaskRoleIT, LocHelsinki)
 
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
-    makeCtx cfg _logger _cache = do
-        ctx <- newCtx (cfgPostgresConnInfo cfg) emptyWorld
+    makeCtx cfg logger _cache = do
+        ctx <- newCtx logger (cfgPostgresConnInfo cfg) emptyWorld
         cmds <- withResource (ctxPostgres ctx) $ \conn ->
             Postgres.fromOnly <$$> Postgres.query_ conn "SELECT cmddata FROM checklist2.commands ORDER BY cid;"
         let world0 = foldl' (flip applyCommand) emptyWorld cmds

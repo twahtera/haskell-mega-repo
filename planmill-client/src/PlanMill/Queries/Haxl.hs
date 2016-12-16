@@ -23,12 +23,11 @@ import PlanMill.Types.Cfg   (Cfg)
 import PlanMill.Types.Query
 
 -- For initDataSourceSimpleIO
-import Control.Monad.CryptoRandom.Extra
-       (MonadInitHashDRBG (..), evalCRandTThrow)
-import Control.Monad.Http               (runHttpT)
-import Data.Constraint                  (Dict (..))
-import PlanMill.Eval                    (evalPlanMill)
-import Numeric.Interval.NonEmpty        (clamp)
+import Control.Monad.Http        (runHttpT)
+import Data.Constraint           (Dict (..))
+import Futurice.CryptoRandom     (evalCRandTThrow', mkCryptoGen)
+import Numeric.Interval.NonEmpty (clamp)
+import PlanMill.Eval             (evalPlanMill)
 
 -- For initDataSourceBatch
 import           Control.Concurrent.Async (async, waitCatch)
@@ -57,7 +56,7 @@ instance DataSource u Query where
 -- /TODO/ take 'HTTP.Manager' as a param
 initDataSourceSimpleIO :: Logger -> Cfg -> State Query
 initDataSourceSimpleIO lgr cfg = QueryFunction $ \blockedFetches -> SyncFetch $ do
-    prng <- mkHashDRBG
+    prng <- mkCryptoGen
     manager <- HTTP.newManager HTTP.tlsManagerSettings
         -- 5 min timeout
         { HTTP.managerResponseTimeout = HTTP.responseTimeoutMicro $ 300 * 1000000
@@ -73,7 +72,7 @@ initDataSourceSimpleIO lgr cfg = QueryFunction $ \blockedFetches -> SyncFetch $ 
         = flip runHttpT mgr
         . runLogT "planmill-simple" lgr
         . flip runReaderT cfg
-        . flip evalCRandTThrow prng
+        . evalCRandTThrow' prng
 
 -- | This is batched query function.
 --

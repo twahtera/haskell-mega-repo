@@ -43,7 +43,6 @@ dependencies:
   - deepseq
   - dependent-sum
   - DRBG
-  - entropy
   - exceptions
   - futurice-prelude
   - generics-sop

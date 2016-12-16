@@ -1,5 +1,5 @@
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE OverloadedStrings #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
 -- License   : BSD3
@@ -10,15 +10,14 @@ module PlanMill.Test (
     evalPlanMillIO,
     ) where
 
+import Prelude ()
+import Futurice.Prelude
 import PlanMill.Internal.Prelude
-
-import Control.Monad.Http   (evalHttpT)
-import Control.Monad.CryptoRandom.Extra (MonadInitHashDRBG (..),
-                                         evalCRandTThrow)
-
-import PlanMill.Types.Cfg     (Cfg)
-import PlanMill.Types.Request (PlanMill)
-import PlanMill.Eval (evalPlanMill)
+import Control.Monad.Http        (evalHttpT)
+import Futurice.CryptoRandom     (evalCRandTThrow', mkCryptoGen)
+import PlanMill.Eval             (evalPlanMill)
+import PlanMill.Types.Cfg        (Cfg)
+import PlanMill.Types.Request    (PlanMill)
 
 -- | Evaluate single PlanMill request
 --
@@ -34,7 +33,10 @@ evalPlanMillIO
     -> PlanMill a  -- ^ PlanMill request
     -> IO a
 evalPlanMillIO cfg planmill = do
-    g <- mkHashDRBG
+    g <- mkCryptoGen
     withStderrLogger $ \logger ->
-        evalHttpT $ runLogT "evalPlanMillIO" logger $ flip runReaderT cfg $ flip evalCRandTThrow g $
-            evalPlanMill planmill
+        evalHttpT $
+        runLogT "evalPlanMillIO" logger $
+        flip runReaderT cfg $
+        evalCRandTThrow' g $
+        evalPlanMill planmill

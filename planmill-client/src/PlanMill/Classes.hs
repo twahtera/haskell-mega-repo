@@ -1,6 +1,3 @@
-{-# LANGUAGE CPP              #-}
-{-# LANGUAGE ConstraintKinds  #-}
-{-# LANGUAGE FlexibleContexts #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
 -- License   : BSD3
@@ -12,17 +9,15 @@ module PlanMill.Classes (
     HasPlanMillBaseUrl(..),
     MonadCRandom(..),
     MonadCRandom',
-    CRandT(..),
+    CRandT,
     evalCRandT,
     MonadTime(..),
     askCfg,
     ) where
 
 import PlanMill.Internal.Prelude
-
-import Control.Monad.CryptoRandom
-       (CRandT (..), GenError, MonadCRandom (..), evalCRandT)
-
+import Futurice.CryptoRandom
+       (CRandT, MonadCRandom (..), MonadCRandom', evalCRandT)
 import PlanMill.Types
 
 -- | User operating with API
@@ -42,8 +37,9 @@ instance HasPlanMillBaseUrl Cfg where
     getPlanMillBaseUrl = cfgBaseUrl
 
 -- | Ask for'Cfg'
-askCfg :: (MonadReader env m, HasPlanMillBaseUrl env, HasCredentials env)
-       => m Cfg
+askCfg
+    :: (MonadReader env m, HasPlanMillBaseUrl env, HasCredentials env)
+    => m Cfg
 askCfg = do
     env <- ask
     return Cfg
@@ -51,9 +47,3 @@ askCfg = do
         , cfgApiKey  = getApiKey env
         , cfgBaseUrl = getPlanMillBaseUrl env
         }
-
-#if MIN_VERSION_base(4,8,0)
-type MonadCRandom' m = MonadCRandom GenError m
-#else
-type MonadCRandom' m = (Applicative m, MonadCRandom GenError m)
-#endif
