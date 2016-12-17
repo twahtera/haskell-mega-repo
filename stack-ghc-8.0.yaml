@@ -13,7 +13,7 @@ packages:
 - flowdock-rest/
 - fum-client/
 #- futucli/
-- futuhours-mock/
+- futuhours-api/
 - futulogo/
 - futurice-foundation/
 - futurice-github/
