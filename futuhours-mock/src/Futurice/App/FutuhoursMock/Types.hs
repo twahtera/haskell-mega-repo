@@ -5,87 +5,15 @@
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-module Futurice.App.FutuhoursMock.Types (
-    -- * Project
-    Project (..),
-    projectId,
-    projectName,
-    projectClosed,
-    projectTasks,
-    -- * Task
-    Task (..),
-    taskName,
-    taskLatestEntry,
-    taskId,
-    mkTask,
-    -- * Entry
-    Entry (..),
-    entryId,
-    EntryUpdate (..),
-    EntryUpdateResponse (..),
-    eurHours,
-    LatestEntry (..),
-    latestEntryDescription,
-    mkLatestEntry,
-    -- * User
-    User (..),
-    -- * Ctx
-    Ctx (..),
-    -- * Hours
-    HoursDay (..),
-    defaultHoursDay,
-    HoursMonth (..),
-    HoursResponse (..),
-    HoursDayUpdate (..),
-    hoursDayUpdateHours,
-    hoursDayUpdateEntry,
-    HoursMonthUpdate (..),
-    hoursMonthUpdateDays,
-    HoursUpdateResponse (..),
-    hoursUpdateResponseMonths,
-    taskAbsence,
-    taskClosed,
-    taskHoursRemaining,
-    latestEntryDate,
-    latestEntryHours,
-    entryClosed,
-    entryDescription,
-    entryHours,
-    entryProjectId,
-    entryTaskId,
-    euClosed,
-    euDate,
-    euDescription,
-    euHours,
-    euProjectId,
-    euTaskId,
-    eurUser,
-    userBalance,
-    userFirstName,
-    userHolidaysLeft,
-    userLastName,
-    userProfilePicture,
-    userUtilizationRate,
-    dayClosed,
-    dayEntries,
-    dayHolidayName,
-    dayHours,
-    monthDays,
-    monthHours,
-    monthUtilizationRate,
-    hoursDayUpdateHolidayName,
-    hoursMonthUpdateHours,
-    hoursMonthUpdateUtilizationRate,
-    hoursResponseDefaultWorkHours,
-    hoursResponseMonths,
-    hoursResponseProjects,
-    hoursUpdateResponseDefaultWorkHours,
-    hoursUpdateResponseProjects,
-    ) where
+
+-- |
+-- HoursRemaining: Task.taskTargetEffort - (totalHoursUsedByAssignedPersonnel)
+--
+-- /NOTE:/ Golang backend LatestEntry is Entry with a Date
+module Futurice.App.FutuhoursMock.Types where
 
 import Prelude ()
 import Futurice.Prelude
-
 import Futurice.Generics
 
 import qualified PlanMill as PM
@@ -99,125 +27,142 @@ data Project = Project
     , _projectName   :: !Text
     , _projectTasks  :: [Task]
     , _projectClosed :: !Bool
-    } deriving (Eq, Show, Typeable, Generic)
+    }
+  deriving (Eq, Show, Typeable, Generic)
 
 data Task = Task
-  { _taskId :: PM.TaskId
-  , _taskName :: !Text
-  , _taskAbsence :: !Bool
-  , _taskClosed :: !Bool
-  , _taskLatestEntry :: !(Maybe LatestEntry)
-  , _taskHoursRemaining :: !(Maybe Float) -- TODO: better type
-  } deriving (Eq, Show, Typeable, Generic)
--- LatestEntry: Hours UI feature. Previous Entry used as default values when marking new hours.
--- HoursRemaining: Task.taskTargetEffort - (totalHoursUsedByAssignedPersonnel)
--- NOTE: Golang backend LatestEntry is Entry with a Date
+    { _taskId             :: PM.TaskId
+    , _taskName           :: !Text
+    , _taskAbsence        :: !Bool
+    , _taskClosed         :: !Bool
+    , _taskLatestEntry    :: !(Maybe LatestEntry)
+    , _taskHoursRemaining :: !(Maybe Float) -- TODO: better type
+    }
+  deriving (Eq, Show, Typeable, Generic)
 
-mkTask :: Word64 -> Text -> Task
-mkTask _id name = Task {
-                    _taskId=PM.Ident _id
-                  , _taskName=name
-                  , _taskAbsence=False
-                  , _taskClosed=False
-                  , _taskLatestEntry=Nothing
-                  , _taskHoursRemaining=Nothing}
+mkTask :: PM.TaskId -> Text -> Task
+mkTask i name = Task
+    { _taskId             = i
+    , _taskName           = name
+    , _taskAbsence        = False
+    , _taskClosed         = False
+    , _taskLatestEntry    = Nothing
+    , _taskHoursRemaining = Nothing
+    }
 
 -- Entries for a specific Day
 data Entry = Entry
-  { _entryId :: PM.TimereportId
-  , _entryProjectId :: PM.ProjectId
-  , _entryTaskId :: PM.TaskId
-  , _entryDescription :: !Text
-  , _entryClosed :: !Bool
-  , _entryHours :: !Float
-  } deriving (Eq, Show, Typeable, Generic)
+    { _entryId          :: PM.TimereportId
+    , _entryProjectId   :: PM.ProjectId
+    , _entryTaskId      :: PM.TaskId
+    , _entryDescription :: !Text
+    , _entryClosed      :: !Bool
+    , _entryHours       :: !Float
+    }
+  deriving (Eq, Show, Typeable, Generic)
 
--- perhaps a lens getter for an Entry?
+-- TODO: perhaps a lens getter for an Entry?
+
+-- | Hours UI feature. Previous Entry used as default values when marking new hours.
 data LatestEntry = LatestEntry
-  { _latestEntryDescription :: !Text
-  , _latestEntryDate :: !(Maybe Day)
-  , _latestEntryHours :: !(Maybe Float)
-  } deriving (Eq, Show, Typeable, Generic)
+    { _latestEntryDescription :: !Text
+    , _latestEntryDate        :: !(Maybe Day)
+    , _latestEntryHours       :: !(Maybe Float)
+    }
+  deriving (Eq, Show, Typeable, Generic)
 
-mkLatestEntry :: Text -> Maybe LatestEntry
-mkLatestEntry desc = Just LatestEntry
-                        { _latestEntryDescription=desc
-                        , _latestEntryDate=Nothing
-                        , _latestEntryHours=Nothing
-                        }
+mkLatestEntry :: Text -> LatestEntry
+mkLatestEntry desc = LatestEntry
+    { _latestEntryDescription=desc
+    , _latestEntryDate=Nothing
+    , _latestEntryHours=Nothing
+    }
 
--- When frontend sends closed entry to be updated, API doesn't do anything, just respond ok
+-- | When frontend sends closed entry to be updated, API doesn't do anything, just respond ok
 data EntryUpdate = EntryUpdate
-  { _euTaskId :: PM.TaskId
-  , _euProjectId :: PM.ProjectId
-  , _euDescription :: !Text
-  , _euDate :: !Day
-  , _euHours :: !Float
-  , _euClosed :: !(Maybe Bool)
-  } deriving (Eq, Show, Typeable, Generic)
+    { _euTaskId      :: PM.TaskId
+    , _euProjectId   :: PM.ProjectId
+    , _euDescription :: !Text
+    , _euDate        :: !Day
+    , _euHours       :: !Float
+    , _euClosed      :: !(Maybe Bool)
+    }
+  deriving (Eq, Show, Typeable, Generic)
 
 data EntryUpdateResponse = EntryUpdateResponse
-  { _eurUser :: !User
-  , _eurHours :: !HoursUpdateResponse
-  } deriving (Eq, Show, Typeable, Generic)
+    { _eurUser  :: !User
+    , _eurHours :: !HoursUpdateResponse
+    }
+  deriving (Eq, Show, Typeable, Generic)
 
--- Golang: UserResponse
+-- | Golang: UserResponse
 data User = User
-  { _userFirstName :: !Text
-  , _userLastName :: !Text
-  , _userBalance :: !Float -- @TODO NDT 'Hours Centi
-  , _userHolidaysLeft :: !Int
-  , _userUtilizationRate :: !Float
-  , _userProfilePicture :: !Text
-  } deriving (Eq, Show, Typeable, Generic)
+    { _userFirstName       :: !Text
+    , _userLastName        :: !Text
+    , _userBalance         :: !Float -- ^ TODO NDT 'Hours Centi
+    , _userHolidaysLeft    :: !Int
+    , _userUtilizationRate :: !Float
+    , _userProfilePicture  :: !Text
+    }
+  deriving (Eq, Show, Typeable, Generic)
 
--- filling HolidayName marks Day as a Holiday
+-- |
+--
+-- /Note:/ filling HolidayName marks Day as a Holiday
+--
+-- TODO: is it UI feature?
 data HoursDay = HoursDay
-  { _dayHolidayName :: !(Maybe Text)
-  , _dayHours :: !Float
-  , _dayEntries :: ![Entry]
-  , _dayClosed :: !Bool -- TODO: Maybe Bool
-  } deriving (Eq, Show, Typeable, Generic)
+    { _dayHolidayName :: !(Maybe Text)
+    , _dayHours       :: !Float
+    , _dayEntries     :: ![Entry]
+    , _dayClosed      :: !Bool -- ^ TODO: Maybe Bool, why maybe?
+    }
+  deriving (Eq, Show, Typeable, Generic)
 
 defaultHoursDay :: HoursDay
 defaultHoursDay = HoursDay
-              { _dayHolidayName=Nothing
-              , _dayHours=0.0
-              , _dayEntries=[]
-              , _dayClosed=False
-              }
+    { _dayHolidayName = Nothing
+    , _dayHours       = 0.0
+    , _dayEntries     = []
+    , _dayClosed      = False
+    }
 
 -- HoursDayUpdate is HoursDay with dayClosed::Maybe Bool AND *singular* dayEntries :: !Entry
 -- Keep different types now; perhaps refactor UI to lessen Backend types in Future *shrug*
 data HoursDayUpdate = HoursDayUpdate
-  { _hoursDayUpdateHolidayName :: !(Maybe Text)
-  , _hoursDayUpdateHours :: !Float
-  , _hoursDayUpdateEntry :: !(Maybe Entry)
-  } deriving (Eq, Show, Typeable, Generic)
+    { _hoursDayUpdateHolidayName :: !(Maybe Text)
+    , _hoursDayUpdateHours       :: !Float
+    , _hoursDayUpdateEntry       :: !(Maybe Entry)
+    }
+  deriving (Eq, Show, Typeable, Generic)
 
 data HoursMonth = HoursMonth
-  { _monthHours :: !Float
-  , _monthUtilizationRate :: !Float
-  , _monthDays :: Map Text HoursDay
-  } deriving (Eq, Show, Typeable, Generic)
+    { _monthHours           :: !Float
+    , _monthUtilizationRate :: !Float
+    , _monthDays            :: Map Text HoursDay
+    }
+  deriving (Eq, Show, Typeable, Generic)
 
 data HoursMonthUpdate = HoursMonthUpdate
-  { _hoursMonthUpdateHours :: !Float
-  , _hoursMonthUpdateUtilizationRate :: !Float
-  , _hoursMonthUpdateDays :: Map Text [HoursDayUpdate]
-  } deriving (Eq, Show, Typeable, Generic)
+    { _hoursMonthUpdateHours           :: !Float
+    , _hoursMonthUpdateUtilizationRate :: !Float
+    , _hoursMonthUpdateDays            :: Map Text [HoursDayUpdate]
+    }
+  deriving (Eq, Show, Typeable, Generic)
 
 data HoursResponse = HoursResponse
-  { _hoursResponseDefaultWorkHours :: !Float
-  , _hoursResponseProjects :: ![Project]
-  , _hoursResponseMonths :: Map Text HoursMonth
-  } deriving (Eq, Show, Typeable, Generic)
+    { _hoursResponseDefaultWorkHours :: !Float
+    , _hoursResponseProjects         :: ![Project]
+    , _hoursResponseMonths           :: Map Text HoursMonth
+    }
+  deriving (Eq, Show, Typeable, Generic)
 
 data HoursUpdateResponse = HoursUpdateResponse
-  { _hoursUpdateResponseDefaultWorkHours :: !Float
-  , _hoursUpdateResponseProjects :: ![Project]
-  , _hoursUpdateResponseMonths :: Map Text [HoursMonthUpdate]
-  } deriving (Eq, Show, Typeable, Generic)
+    { _hoursUpdateResponseDefaultWorkHours :: !Float
+    , _hoursUpdateResponseProjects         :: ![Project]
+    , _hoursUpdateResponseMonths           :: Map Text [HoursMonthUpdate]
+    }
+  deriving (Eq, Show, Typeable, Generic)
 
 makeLenses ''Project
 deriveGeneric ''Project
@@ -367,4 +312,5 @@ instance ToSchema HoursUpdateResponse where declareNamedSchema = sopDeclareNamed
 -- Context
 -------------------------------------------------------------------------------
 
+-- | /TODO/: move to own module
 data Ctx = Ctx
