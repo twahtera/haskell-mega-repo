@@ -33,7 +33,7 @@ module Futurice.App.FutuhoursMock.Types (
     Ctx (..),
     -- * Hours
     HoursDay (..),
-    mkHoursDay,
+    defaultHoursDay,
     HoursMonth (..),
     HoursResponse (..),
     HoursDayUpdate (..),
@@ -179,8 +179,8 @@ data HoursDay = HoursDay
   , _dayClosed :: !Bool -- TODO: Maybe Bool
   } deriving (Eq, Show, Typeable, Generic)
 
-mkHoursDay :: HoursDay
-mkHoursDay = HoursDay
+defaultHoursDay :: HoursDay
+defaultHoursDay = HoursDay
               { _dayHolidayName=Nothing
               , _dayHours=0.0
               , _dayEntries=[]
