@@ -29,7 +29,7 @@ library
       src
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   build-depends:
-      base
+      base >= 4.8 && < 4.10
     , aeson
     , aeson-compat
     , env-config
@@ -40,6 +40,7 @@ library
     , generics-sop
     , lens
     , lucid
+    , mtl
     , planmill-client
     , postgresql-simple
     , QuickCheck

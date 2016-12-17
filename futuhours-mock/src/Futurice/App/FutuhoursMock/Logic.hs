@@ -26,8 +26,10 @@ module Futurice.App.FutuhoursMock.Logic (
     ) where
 
 import Prelude ()
-import Control.Lens (forOf)
 import Futurice.Prelude
+import Control.Lens                        (Traversal', forOf)
+import Control.Monad.State.Strict
+       (MonadState (..), evalStateT, modify')
 import Data.Maybe                          (fromJust)
 import Data.Text                           (pack, unpack)
 import Data.Time                           (defaultTimeLocale)
@@ -38,14 +40,11 @@ import Data.Vector.Lens                    (vector)
 import Futurice.App.FutuhoursMock.MockData
 import Futurice.App.FutuhoursMock.Types
 import Servant
-import System.Random                       (getStdRandom, randomR, randomRIO)
+import System.Random                       (randomRIO)
 import Test.QuickCheck                     (arbitrary, sample')
 
 import qualified Data.Map.Strict as Map
 import qualified PlanMill        as PM
-
--- TODO: remove
-import Data.IORef
 
 projectEndpoint :: Ctx -> IO (Vector Project)
 projectEndpoint _ctx = do
@@ -56,9 +55,9 @@ projectEndpoint _ctx = do
 userEndpoint :: Ctx -> IO (User)
 userEndpoint _ctx = do
     -- TODO: how to generate unique values per request?
-    _userBalance <- getStdRandom (randomR (-10,40)) :: IO Float
+    _userBalance <- randomRIO (-10,40) :: IO Float
     _userHolidaysLeft <- randomRIO (0, 24)
-    _userUtilizationRate <- getStdRandom (randomR (0,100)) :: IO Float
+    _userUtilizationRate <- randomRIO (0,100) :: IO Float
     pure $ User
         { _userFirstName      = "Test"
         , _userLastName       = "User"
@@ -100,44 +99,34 @@ monthForDay x = formatTime defaultTimeLocale "%Y-%m" x
 dayInMonth :: String -> Day -> Bool
 dayInMonth m d = m == formatTime defaultTimeLocale "%Y-%m" d
 
-type Counter = Int -> IO Int
+plusOne :: MonadState Int m => m Int
+plusOne = do
+    val <- get
+    modify' (+1)
+    pure val
 
-makeCounter :: IO Counter
-makeCounter = do
-    r <- newIORef 0
-    return $ \i -> do
-        modifyIORef' r (+i)
-        readIORef r
+mkGo :: MonadState Int m => m HoursDay
+mkGo = do
+    newval <- plusOne
+    pure $ days !! mod newval (length days)
 
-plusOne :: Counter -> IO Int
-plusOne cnt = do
-    val <- cnt 1
-    pure $ val
-
-mkGo :: Counter -> IO (HoursDay)
-mkGo cnt = do
-    newval <- plusOne cnt
-    pure $ days !! mod (newval) (length days)
-
-genMonths :: [Day] -> IO (Map.Map Text HoursMonth)
-genMonths ds = do
-    cnt <- makeCounter
-    ms <- for ds $ \mm -> do
+genMonths :: forall m. MonadIO m => [Day] -> m (Map.Map Text HoursMonth)
+genMonths ds = flip evalStateT 1 $ fmap Map.fromList $ do
+    for ds $ \mm -> do
         let m     = monthForDay mm
-        let days' = [(d, mkGo cnt) | d<-ds, dayInMonth m d]
-        hrs <- randomRIO (0, 150) :: IO Int
-        utz <- getStdRandom (randomR (0,100)) :: IO Float
-        days'' <- for days' $ \(d', d) -> do
+        let days' = [ d | d <- ds, dayInMonth m d ]
+        hrs <- liftIO $ randomRIO (0, 150)
+        utz <- liftIO $ randomRIO (0, 100)
+        days'' <- for days' $ \d' -> do
             let (ym',mm',_) = toGregorian mm
             let (_,_,dd')   = toGregorian d'
-            fsd <- d
-            pure $ (pack $ show $ fromGregorian ym' mm' dd', fsd)
+            fsd <- mkGo
+            pure $ (textShow $ fromGregorian ym' mm' dd', fsd)
         pure $ (,) (pack m) $ HoursMonth
-            { _monthHours           = (fromIntegral hrs)*0.5
+            { _monthHours           = hrs * 0.5
             , _monthUtilizationRate = utz
             , _monthDays            = Map.fromList days''
             }
-    pure $ Map.fromList ms
 
 -- | /TODO/: we should use 'MonadRandom', not 'MonadIO'.
 fillProjects :: forall m. (MonadTime m, MonadIO m) => m [Project]
@@ -164,36 +153,36 @@ mkEntryEndPoint :: (MonadTime m, MonadIO m) => EntryUpdate -> m EntryUpdateRespo
 mkEntryEndPoint req = do
     ps <- fillProjects
     let date = _euDate req
-    usrB <- liftIO $ getStdRandom (randomR (-10, 40))
+    usrB <- liftIO $ randomRIO (-10, 40)
     usrHL <- liftIO $ randomRIO (0, 24)
-    usrUTZ <- liftIO $ getStdRandom (randomR (0,100))
-    newEntryId <- liftIO $ getStdRandom (randomR (0, 100))
+    usrUTZ <- liftIO $ randomRIO (0,100)
+    newEntryId <- liftIO $ randomRIO (0, 100)
     let md = HoursDayUpdate
-              { _hoursDayUpdateHolidayName=Nothing
-              , _hoursDayUpdateHours=_euHours req
-              , _hoursDayUpdateEntry=Just Entry
-                            { _entryId=PM.Ident newEntryId
-                            , _entryProjectId=_euProjectId req
-                            , _entryTaskId=_euTaskId req
-                            , _entryDescription=_euDescription req
-                            , _entryHours=_euHours req
-                            , _entryClosed=fromMaybe False (_euClosed req) -- TODO: is Maybe open or closed?
-                            }
-              }
+            { _hoursDayUpdateHolidayName = Nothing
+            , _hoursDayUpdateHours       = _euHours req
+            , _hoursDayUpdateEntry       = Just Entry
+                { _entryId          = PM.Ident newEntryId
+                , _entryProjectId   = _euProjectId req
+                , _entryTaskId      = _euTaskId req
+                , _entryDescription = _euDescription req
+                , _entryHours       = _euHours req
+                , _entryClosed      = fromMaybe False (_euClosed req) -- TODO: is Maybe open or closed?
+                }
+            }
     let d = Map.fromList [(pack $ formatTime defaultTimeLocale "%Y-%m-%d" date, [md])]
     let mm = HoursMonthUpdate
               { _hoursMonthUpdateHours=75
-              , _hoursMonthUpdateUtilizationRate=70
-              , _hoursMonthUpdateDays=d}
+            , _hoursMonthUpdateUtilizationRate=70
+            , _hoursMonthUpdateDays=d}
     let months = Map.fromList [(pack $ formatTime defaultTimeLocale "%Y-%m" date, [mm])]
     let userResponse = User
-                        { _userFirstName="Test"
-                        , _userLastName="User"
-                        , _userBalance=usrB
-                        , _userHolidaysLeft=usrHL
-                        , _userUtilizationRate=usrUTZ
-                        , _userProfilePicture="https://raw.githubusercontent.com/futurice/spiceprogram/gh-pages/assets/img/logo/chilicorn_no_text-128.png"
-                        }
+            { _userFirstName="Test"
+            , _userLastName="User"
+            , _userBalance=usrB
+            , _userHolidaysLeft=usrHL
+            , _userUtilizationRate=usrUTZ
+            , _userProfilePicture="https://raw.githubusercontent.com/futurice/spiceprogram/gh-pages/assets/img/logo/chilicorn_no_text-128.png"
+            }
     let hoursResponse = HoursUpdateResponse
             { _hoursUpdateResponseDefaultWorkHours = 7.5
             , _hoursUpdateResponseProjects         = ps
@@ -219,13 +208,12 @@ entryIdEndpoint
   -> EntryUpdate
   -> ExceptT ServantErr IO EntryUpdateResponse
 entryIdEndpoint _ctx _id req = do
-  res <- liftIO $ mkEntryEndPoint req
-  -- Set every entryId to 1.
-  let res' = res
-          & eurHours . hoursUpdateResponseMonths . traverse . traverse
-          . hoursMonthUpdateDays . traverse . traverse
-          . hoursDayUpdateEntry . traverse . entryId .~ PM.Ident 1
-  return res'
+    res <- liftIO $ mkEntryEndPoint req
+    -- Set every entryId to 1.
+    let res' = res
+            & eurHoursDayUpdates
+            . hoursDayUpdateEntry . traverse . entryId .~ PM.Ident 1
+    return res'
 
 -- | @DELETE /entry/#id@
 entryDeleteEndpoint
@@ -244,10 +232,12 @@ entryDeleteEndpoint _ctx _id _ = do
             , _euClosed      = Nothing
             }
     res <- liftIO $ mkEntryEndPoint dummyReq
-    let travel =
-            eurHours . hoursUpdateResponseMonths . traverse . traverse
-            . hoursMonthUpdateDays . traverse . traverse
     let res' = res
-            & travel . hoursDayUpdateHours .~ 0
-            & travel . hoursDayUpdateEntry .~ Nothing
+            & eurHoursDayUpdates . hoursDayUpdateHours .~ 0
+            & eurHoursDayUpdates . hoursDayUpdateEntry .~ Nothing
     return res'
+
+eurHoursDayUpdates :: Traversal' EntryUpdateResponse HoursDayUpdate
+eurHoursDayUpdates
+    = eurHours . hoursUpdateResponseMonths . traverse . traverse
+    . hoursMonthUpdateDays . traverse . traverse
