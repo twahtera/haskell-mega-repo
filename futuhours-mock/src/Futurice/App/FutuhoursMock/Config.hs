@@ -2,8 +2,8 @@ module Futurice.App.FutuhoursMock.Config (
     Config(..),
     ) where
 
-import Futurice.Prelude
 import Prelude ()
+import Futurice.Prelude
 import Futurice.EnvConfig
 
 data Config = Config
