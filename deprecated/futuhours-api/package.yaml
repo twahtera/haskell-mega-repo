@@ -35,6 +35,7 @@ library:
     - dependent-sum
     - dynmap-cache
     - either
+    - fum-client
     - ekg
     - ekg-core
     - env-config

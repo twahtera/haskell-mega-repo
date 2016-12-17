@@ -26,6 +26,7 @@ library:
     - aeson
     - aeson-compat
     - env-config
+    - fum-client
     - futurice-foundation
     - futurice-prelude
     - futurice-reports
