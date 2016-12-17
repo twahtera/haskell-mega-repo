@@ -52,10 +52,18 @@ library:
 
 
 executables:
-  futuhours-mock-server:
+  futuhours-api-server:
     ghc-options: -threaded
     main: Main.hs
     source-dirs: srv
+    dependencies:
+      - base
+      - futuhours-api
+
+  futuhours-mock-server:
+    ghc-options: -threaded
+    main: Main.hs
+    source-dirs: mock
     dependencies:
       - base
       - futuhours-api

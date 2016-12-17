@@ -6,7 +6,7 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-module Futurice.App.FutuhoursMock (defaultMain) where
+module Futurice.App.FutuhoursApi (defaultMain) where
 
 import Prelude ()
 import Futurice.Prelude
@@ -14,14 +14,14 @@ import Futurice.Servant
 import Servant
 
 import Futurice.App.FutuhoursApi.API
-import Futurice.App.FutuhoursApi.Types
-import Futurice.App.FutuhoursMock.Config (Config (..))
-import Futurice.App.FutuhoursMock.Logic
+import Futurice.App.FutuhoursApi.Config (Config (..))
+import Futurice.App.FutuhoursApi.Logic
        (entryDeleteEndpoint, entryEndpoint, entryIdEndpoint, hoursEndpoint,
        projectEndpoint, userEndpoint)
+import Futurice.App.FutuhoursApi.Types
 
 server :: Ctx -> Server FutuhoursAPI
-server ctx = pure "This is futuhours mock api"
+server ctx = pure "This is futuhours api"
     :<|> liftIO (projectEndpoint ctx)
     :<|> liftIO (userEndpoint ctx)
     :<|> hoursEndpoint ctx
@@ -31,11 +31,11 @@ server ctx = pure "This is futuhours mock api"
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
-    & serverName            .~ "Futuhours MOCK api"
-    & serverDescription     .~ "Is it real?"
+    & serverName            .~ "Futuhours API"
+    & serverDescription     .~ "Here we mark hours"
     & serverApp futuhoursApi .~ server
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC2))
-    & serverEnvPfx          .~ "FUTUHOURSMOCK"
+    & serverEnvPfx          .~ "FUTUHOURSAPI"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
     makeCtx _ _ _ = do

@@ -7,16 +7,8 @@ module Futurice.App.FutuhoursMock.Logic (
     userEndpoint,
     hoursEndpoint,
     entryEndpoint,
-    mkEntryEndPoint,
     entryIdEndpoint,
     entryDeleteEndpoint,
-    fillProjects,
-    parseDayFormat,
-    parseMonthFormat,
-    daysFD,
-    monthForDay,
-    dayInMonth,
-    genMonths,
     ) where
 
 import Prelude ()
@@ -25,14 +17,14 @@ import Control.Lens                        (Traversal', forOf)
 import Control.Monad.State.Strict
        (MonadState (..), evalStateT, modify')
 import Data.Maybe                          (fromJust)
-import Data.Text                           (pack, unpack)
+import Data.Text                           (pack)
 import Data.Time                           (defaultTimeLocale)
 import Data.Time.Calendar
        (addDays, diffDays, fromGregorian, toGregorian)
-import Data.Time.Format                    (formatTime, parseTimeOrError)
+import Data.Time.Format                    (formatTime)
 import Data.Vector.Lens                    (vector)
+import Futurice.App.FutuhoursApi.Types
 import Futurice.App.FutuhoursMock.MockData
-import Futurice.App.FutuhoursMock.Types
 import Servant
 import System.Random                       (randomRIO)
 import Test.QuickCheck                     (arbitrary, sample')
@@ -46,7 +38,7 @@ projectEndpoint _ctx = do
     pure $ p ^. vector
 
 -- | @GET /user@
-userEndpoint :: Ctx -> IO (User)
+userEndpoint :: Ctx -> IO User
 userEndpoint _ctx = do
     -- TODO: how to generate unique values per request?
     _userBalance <- randomRIO (-10,40) :: IO Float
@@ -58,14 +50,6 @@ userEndpoint _ctx = do
         , _userProfilePicture = "https://raw.githubusercontent.com/futurice/spiceprogram/gh-pages/assets/img/logo/chilicorn_no_text-128.png"
         , ..
         }
-
--- TODO: remove
-parseDayFormat :: Text -> Day
-parseDayFormat x = utctDay $ (parseTimeOrError False defaultTimeLocale "%Y-%m-%d" (unpack x) :: UTCTime)
-
--- TODO: remove
-parseMonthFormat :: Text -> Day
-parseMonthFormat x = utctDay $ (parseTimeOrError False defaultTimeLocale "%Y-%m" (unpack x) :: UTCTime)
 
 -- | @GET /hours@
 hoursEndpoint

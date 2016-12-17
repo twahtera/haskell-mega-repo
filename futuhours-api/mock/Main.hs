@@ -1,4 +1,4 @@
 module Main (main) where
-import Futurice.App.FutuhoursApi
+import Futurice.App.FutuhoursMock
 main :: IO ()
 main = defaultMain

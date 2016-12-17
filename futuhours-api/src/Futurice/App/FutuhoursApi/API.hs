@@ -5,11 +5,11 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-module Futurice.App.FutuhoursMock.API where
+module Futurice.App.FutuhoursApi.API where
 
 import Prelude ()
 import Futurice.Prelude
-import Futurice.App.FutuhoursMock.Types
+import Futurice.App.FutuhoursApi.Types
 import Servant
 
 type FutuhoursV1API =
