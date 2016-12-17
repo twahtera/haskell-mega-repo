@@ -35,9 +35,8 @@ import Data.Text (pack, unpack)
 import Futurice.App.FutuhoursMock.MockData
 import System.Random (getStdRandom, randomR, randomRIO)
 import Test.QuickCheck (arbitrary, sample')
-import Data.Time (getCurrentTime)
+import Data.Time (getCurrentTime, defaultTimeLocale)
 import Data.Time.Format (parseTimeOrError, formatTime)
-import Data.Time.Locale.Compat (defaultTimeLocale)
 import Data.Time.Calendar (diffDays, addDays, toGregorian, fromGregorian)
 import Data.Maybe (fromJust)
 import Servant

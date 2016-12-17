@@ -32,7 +32,6 @@ library
       base
     , aeson
     , aeson-compat
-    , base-compat
     , env-config
     , futurice-foundation
     , futurice-prelude
@@ -51,11 +50,9 @@ library
     , swagger2
     , time
     , vector
-    , pretty-show
     , random
     , stm
     , text
-    , time-locale-compat
     , transformers
     , containers
   exposed-modules:
