@@ -26,10 +26,11 @@ module Futurice.App.FutuhoursMock.Logic (
     ) where
 
 import Prelude ()
+import Control.Lens (forOf)
 import Futurice.Prelude
 import Data.Maybe                          (fromJust)
 import Data.Text                           (pack, unpack)
-import Data.Time                           (defaultTimeLocale, getCurrentTime)
+import Data.Time                           (defaultTimeLocale)
 import Data.Time.Calendar
        (addDays, diffDays, fromGregorian, toGregorian)
 import Data.Time.Format                    (formatTime, parseTimeOrError)
@@ -121,7 +122,7 @@ mkGo cnt = do
 genMonths :: [Day] -> IO (Map.Map Text HoursMonth)
 genMonths ds = do
     cnt <- makeCounter
-    ms <- flip traverse ds $ \mm -> do
+    ms <- for ds $ \mm -> do
         let m     = monthForDay mm
         let days' = [(d, mkGo cnt) | d<-ds, dayInMonth m d]
         hrs <- randomRIO (0, 150) :: IO Int
@@ -138,68 +139,69 @@ genMonths ds = do
             }
     pure $ Map.fromList ms
 
-fillProjects :: IO [Project]
-fillProjects = do
-    ps' <- flip traverse projects $ \p -> do
-        ts' <- flip traverse (p ^.. projectTasks . traverse) $ \t -> do
-            now <- getCurrentTime
-            hrs <- randomRIO (1, 7) :: IO Int
-            let t'' = case (fromMaybe Nothing $ t ^? taskLatestEntry) of
-                        Just x -> Just $ x { _latestEntryDate = Just (utctDay now)
-                                           , _latestEntryHours = Just $ (fromIntegral hrs)*0.5 }
-                        Nothing -> Nothing
-            hrsRemaining <- case (_projectId p /= _projectId internalProject && _projectId p /= _projectId absenceProject) of
-                                True -> do
-                                  x <- randomRIO (-10, 20) :: IO Float
-                                  pure $ Just x
-                                False -> pure $ Nothing
-            pure $ t { _taskLatestEntry=t'', _taskHoursRemaining=hrsRemaining }
-        pure $ p { _projectTasks=ts'}
-    pure ps'
-
-mkEntryEndPoint :: EntryUpdate -> IO EntryUpdateResponse
-mkEntryEndPoint req = do
-  p <- liftIO $ fillProjects
-  let date = _euDate req
-  usrB <- liftIO $ getStdRandom (randomR (-10, 40))
-  usrHL <- liftIO $ randomRIO (0, 24)
-  usrUTZ <- liftIO $ getStdRandom (randomR (0,100))
-  newEntryId <- liftIO $ getStdRandom (randomR (0, 100))
-  let md = HoursDayUpdate
-            { _hoursDayUpdateHolidayName=Nothing
-            , _hoursDayUpdateHours=_euHours req
-            , _hoursDayUpdateEntry=Just Entry
-                          { _entryId=PM.Ident newEntryId
-                          , _entryProjectId=_euProjectId req
-                          , _entryTaskId=_euTaskId req
-                          , _entryDescription=_euDescription req
-                          , _entryHours=_euHours req
-                          , _entryClosed=fromMaybe False (_euClosed req) -- TODO: is Maybe open or closed?
-                          }
+-- | /TODO/: we should use 'MonadRandom', not 'MonadIO'.
+fillProjects :: forall m. (MonadTime m, MonadIO m) => m [Project]
+fillProjects = for projects $ \p -> do
+    forOf (projectTasks . traverse) p $ \t -> do
+        tle <- for (t ^? taskLatestEntry . _Just) $ \x -> do
+            today <- currentDay
+            hrs <- liftIO $ randomRIO (1, 7) :: m Int
+            pure $ x
+                { _latestEntryDate  = Just today
+                , _latestEntryHours = Just $ fromIntegral hrs * 0.5
+                }
+        hrsRemaining <- case _projectId p /= _projectId internalProject && _projectId p /= _projectId absenceProject of
+            True -> do
+                x <- liftIO $ randomRIO (-10, 20) :: m Float
+                pure $ Just x
+            False -> pure $ Nothing
+        pure $ t
+            { _taskLatestEntry    = tle
+            , _taskHoursRemaining = hrsRemaining
             }
-  let d = Map.fromList [(pack $ formatTime defaultTimeLocale "%Y-%m-%d" date, [md])]
-  let mm = HoursMonthUpdate
-            { _hoursMonthUpdateHours=75
-            , _hoursMonthUpdateUtilizationRate=70
-            , _hoursMonthUpdateDays=d}
-  let months = Map.fromList [(pack $ formatTime defaultTimeLocale "%Y-%m" date, [mm])]
 
-  let userResponse = User
-                      { _userFirstName="Test"
-                      , _userLastName="User"
-                      , _userBalance=usrB
-                      , _userHolidaysLeft=usrHL
-                      , _userUtilizationRate=usrUTZ
-                      , _userProfilePicture="https://raw.githubusercontent.com/futurice/spiceprogram/gh-pages/assets/img/logo/chilicorn_no_text-128.png"
-                      }
-  let hoursResponse = HoursUpdateResponse
-                         { _hoursUpdateResponseDefaultWorkHours=7.5
-                         , _hoursUpdateResponseProjects=p
-                         , _hoursUpdateResponseMonths=months }
-
-  pure $ EntryUpdateResponse
-          { _eurUser=userResponse
-          , _eurHours=hoursResponse }
+mkEntryEndPoint :: (MonadTime m, MonadIO m) => EntryUpdate -> m EntryUpdateResponse
+mkEntryEndPoint req = do
+    ps <- fillProjects
+    let date = _euDate req
+    usrB <- liftIO $ getStdRandom (randomR (-10, 40))
+    usrHL <- liftIO $ randomRIO (0, 24)
+    usrUTZ <- liftIO $ getStdRandom (randomR (0,100))
+    newEntryId <- liftIO $ getStdRandom (randomR (0, 100))
+    let md = HoursDayUpdate
+              { _hoursDayUpdateHolidayName=Nothing
+              , _hoursDayUpdateHours=_euHours req
+              , _hoursDayUpdateEntry=Just Entry
+                            { _entryId=PM.Ident newEntryId
+                            , _entryProjectId=_euProjectId req
+                            , _entryTaskId=_euTaskId req
+                            , _entryDescription=_euDescription req
+                            , _entryHours=_euHours req
+                            , _entryClosed=fromMaybe False (_euClosed req) -- TODO: is Maybe open or closed?
+                            }
+              }
+    let d = Map.fromList [(pack $ formatTime defaultTimeLocale "%Y-%m-%d" date, [md])]
+    let mm = HoursMonthUpdate
+              { _hoursMonthUpdateHours=75
+              , _hoursMonthUpdateUtilizationRate=70
+              , _hoursMonthUpdateDays=d}
+    let months = Map.fromList [(pack $ formatTime defaultTimeLocale "%Y-%m" date, [mm])]
+    let userResponse = User
+                        { _userFirstName="Test"
+                        , _userLastName="User"
+                        , _userBalance=usrB
+                        , _userHolidaysLeft=usrHL
+                        , _userUtilizationRate=usrUTZ
+                        , _userProfilePicture="https://raw.githubusercontent.com/futurice/spiceprogram/gh-pages/assets/img/logo/chilicorn_no_text-128.png"
+                        }
+    let hoursResponse = HoursUpdateResponse
+            { _hoursUpdateResponseDefaultWorkHours = 7.5
+            , _hoursUpdateResponseProjects         = ps
+            , _hoursUpdateResponseMonths           = months }
+    pure $ EntryUpdateResponse
+        { _eurUser=userResponse
+        , _eurHours=hoursResponse
+        }
 
 -- | @POST /entry@
 entryEndpoint
@@ -232,7 +234,7 @@ entryDeleteEndpoint
     -> EntryUpdate
     -> ExceptT ServantErr IO EntryUpdateResponse
 entryDeleteEndpoint _ctx _id _ = do
-    now <- liftIO getCurrentTime
+    now <- currentTime
     let dummyReq = EntryUpdate
             { _euTaskId      = PM.Ident 1
             , _euProjectId   = PM.Ident 1
