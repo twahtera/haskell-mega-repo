@@ -8,20 +8,19 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.FutuhoursMock (defaultMain) where
 
-import Futurice.Prelude
 import Prelude ()
-
+import Futurice.Prelude
 import Futurice.Servant
 import Servant
 
 import Futurice.App.FutuhoursMock.API
 import Futurice.App.FutuhoursMock.Config (Config (..))
-import Futurice.App.FutuhoursMock.Logic  (projectEndpoint, userEndpoint,
-                                         hoursEndpoint, entryEndpoint,
-                                         entryIdEndpoint, entryDeleteEndpoint)
+import Futurice.App.FutuhoursMock.Logic
+       (entryDeleteEndpoint, entryEndpoint, entryIdEndpoint, hoursEndpoint,
+       projectEndpoint, userEndpoint)
 import Futurice.App.FutuhoursMock.Types
 
-server :: Ctx -> Server FutuhoursAPI 
+server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours mock api"
     :<|> liftIO (projectEndpoint ctx)
     :<|> liftIO (userEndpoint ctx)
