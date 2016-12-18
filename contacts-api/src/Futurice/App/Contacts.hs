@@ -45,17 +45,17 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                 , integrCfgLogger                   = logger
                 , integrCfgNow                      = now
                 -- Planmill
-                , integrCfgPlanmillProxyBaseRequest = cfgPmBaseReq
+                , integrCfgPlanmillProxyBaseRequest = I cfgPmBaseReq
                 -- FUM
-                , integrCfgFumAuthToken             = cfgFumAuth
-                , integrCfgFumBaseUrl               = cfgFumBaseUrl
-                , integrCfgFumEmployeeListName      = cfgFumUserList
+                , integrCfgFumAuthToken             = I cfgFumAuth
+                , integrCfgFumBaseUrl               = I cfgFumBaseUrl
+                , integrCfgFumEmployeeListName      = I cfgFumUserList
                 -- GitHub
-                , integrCfgGithubProxyBaseRequest   = cfgGhBaseReq
-                , integrCfgGithubOrgName            = cfgGhOrg
+                , integrCfgGithubProxyBaseRequest   = I cfgGhBaseReq
+                , integrCfgGithubOrgName            = I cfgGhOrg
                 -- Flowdock
-                , integrCfgFlowdockToken            = cfgFdAuth
-                , integrCfgFlowdockOrgName          = cfgFdOrg
+                , integrCfgFlowdockToken            = I cfgFdAuth
+                , integrCfgFlowdockOrgName          = I cfgFdOrg
                 }
 
         -- Contacts action

@@ -30,6 +30,7 @@ library:
     - futurice-prelude
     - futurice-reports
     - generics-sop
+    - generics-sop-lens
     - github
     - haxl
     - haxl-fxtra
