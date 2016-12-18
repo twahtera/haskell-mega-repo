@@ -61,10 +61,12 @@ library
       Futurice.App.FutuhoursApi
       Futurice.App.FutuhoursApi.API
       Futurice.App.FutuhoursApi.Config
+      Futurice.App.FutuhoursApi.Ctx
       Futurice.App.FutuhoursApi.Logic
       Futurice.App.FutuhoursApi.Types
       Futurice.App.FutuhoursMock
       Futurice.App.FutuhoursMock.Config
+      Futurice.App.FutuhoursMock.Ctx
       Futurice.App.FutuhoursMock.Logic
       Futurice.App.FutuhoursMock.MockData
   default-language: Haskell2010

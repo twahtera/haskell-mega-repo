@@ -15,10 +15,10 @@ import Servant
 
 import Futurice.App.FutuhoursApi.API
 import Futurice.App.FutuhoursApi.Config (Config (..))
+import Futurice.App.FutuhoursApi.Ctx
 import Futurice.App.FutuhoursApi.Logic
        (entryDeleteEndpoint, entryEndpoint, entryIdEndpoint, hoursEndpoint,
        projectEndpoint, userEndpoint)
-import Futurice.App.FutuhoursApi.Types
 
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours api"

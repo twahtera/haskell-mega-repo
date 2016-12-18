@@ -14,8 +14,8 @@ import Futurice.Servant
 import Servant
 
 import Futurice.App.FutuhoursApi.API
-import Futurice.App.FutuhoursApi.Types
 import Futurice.App.FutuhoursMock.Config (Config (..))
+import Futurice.App.FutuhoursMock.Ctx
 import Futurice.App.FutuhoursMock.Logic
        (entryDeleteEndpoint, entryEndpoint, entryIdEndpoint, hoursEndpoint,
        projectEndpoint, userEndpoint)
