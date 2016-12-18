@@ -1,6 +1,8 @@
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 module Futurice.Integrations.Monad (
     Integrations,
@@ -11,12 +13,13 @@ module Futurice.Integrations.Monad (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Monad.PlanMill     (MonadPlanMillConstraint (..))
+import Control.Monad.PlanMill    (MonadPlanMillConstraint (..))
 import Data.Constraint
-import Futurice.Constraint.Unit1  (Unit1)
-import Futurice.Has               (FlipIn)
-import Network.HTTP.Client        (Manager, Request)
-import PlanMill.Queries.Haxl      (initDataSourceBatch)
+import Futurice.Constraint.Unit1 (Unit1)
+import Futurice.Has              (FlipIn)
+import Generics.SOP.Lens         (uni)
+import Network.HTTP.Client       (Manager, Request)
+import PlanMill.Queries.Haxl     (initDataSourceBatch)
 
 import qualified Chat.Flowdock.REST           as FD
 import qualified Flowdock.Haxl                as FD.Haxl
@@ -31,36 +34,49 @@ import Futurice.Integrations.Classes
 import Futurice.Integrations.Common
 
 -- | Opaque environment, exported for haddock
-data Env = Env
-    { _envFumEmployeeListName :: !FUM.ListName
-    , _envFlowdockOrgName     :: !(FD.ParamName FD.Organisation)
-    , _envGithubOrgName       :: !(GH.Name GH.Organization)
+--
+-- Currently no PlanMill environment.
+data Env fum gh fd = Env
+    { _envFumEmployeeListName :: !(fum :$ FUM.ListName)
+    , _envFlowdockOrgName     :: !(fd :$ FD.ParamName FD.Organisation)
+    , _envGithubOrgName       :: !(gh :$ GH.Name GH.Organization)
     , _envNow                 :: !UTCTime
     }
 
 makeLenses ''Env
 
-newtype Integrations a = Integr { unIntegr :: ReaderT Env (H.GenHaxl ()) a }
+-- | Integrations monad
+--
+-- type parameters indicate whether that integration is enabled:
+-- 'I' yes, 'Proxy' no
+--
+newtype Integrations (pm :: * -> *) (fum :: * -> *) (gh :: * -> *) (fd :: * -> *) a
+    = Integr { unIntegr :: ReaderT (Env fum gh fd) (H.GenHaxl ()) a }
 
-data IntegrationsConfig = MkIntegrationsConfig
+data IntegrationsConfig pm fum gh fd = MkIntegrationsConfig
     { integrCfgManager                  :: !Manager
     , integrCfgLogger                   :: !Logger
+    -- Time
     , integrCfgNow                      :: !UTCTime
     -- Planmill
-    , integrCfgPlanmillProxyBaseRequest :: !Request
+    , integrCfgPlanmillProxyBaseRequest :: !(pm Request)
     -- FUM
-    , integrCfgFumAuthToken             :: !FUM.AuthToken
-    , integrCfgFumBaseUrl               :: !FUM.BaseUrl
-    , integrCfgFumEmployeeListName      :: !FUM.ListName
+    , integrCfgFumAuthToken             :: !(fum FUM.AuthToken)
+    , integrCfgFumBaseUrl               :: !(fum FUM.BaseUrl)
+    , integrCfgFumEmployeeListName      :: !(fum FUM.ListName)
     -- GitHub
-    , integrCfgGithubProxyBaseRequest   :: !Request
-    , integrCfgGithubOrgName            :: !(GH.Name GH.Organization)
+    , integrCfgGithubProxyBaseRequest   :: !(gh Request)
+    , integrCfgGithubOrgName            :: !(gh :$ GH.Name GH.Organization)
     -- Flowdock
-    , integrCfgFlowdockToken            :: !FD.AuthToken
-    , integrCfgFlowdockOrgName          :: !(FD.ParamName FD.Organisation)
+    , integrCfgFlowdockToken            :: !(fd FD.AuthToken)
+    , integrCfgFlowdockOrgName          :: !(fd :$ FD.ParamName FD.Organisation)
     }
 
-runIntegrations :: IntegrationsConfig -> Integrations a -> IO a
+runIntegrations
+    :: (SFunctorI pm, SFunctorI fum, SFunctorI gh, SFunctorI fd)
+    => IntegrationsConfig pm fum gh fd
+    -> Integrations pm fum gh fd a
+    -> IO a
 runIntegrations cfg (Integr m) = do
     let env = Env
             { _envFumEmployeeListName = integrCfgFumEmployeeListName cfg
@@ -70,35 +86,59 @@ runIntegrations cfg (Integr m) = do
             }
     let haxl = runReaderT m env
     let stateStore
-            = H.stateSet (initDataSourceBatch lgr mgr planmillBaseReq)
-            $ H.stateSet (FUM.Haxl.initDataSource' mgr fumToken fumBaseUrl)
-            $ H.stateSet (FD.Haxl.initDataSource' mgr fdToken)
-            $ H.stateSet (GH.initDataSource lgr mgr githubBaseReq)
+            = pmStateSet
+            . fumStateSet
+            . fdStateSet
+            . ghStateSet
             $ H.stateEmpty
     haxlEnv <- H.initEnv stateStore ()
     H.runHaxl haxlEnv haxl
   where
-    mgr             = integrCfgManager cfg
-    lgr             = integrCfgLogger cfg
-    planmillBaseReq = integrCfgPlanmillProxyBaseRequest cfg
-    fumToken        = integrCfgFumAuthToken cfg
-    fumBaseUrl      = integrCfgFumBaseUrl cfg
-    fdToken         = integrCfgFlowdockToken cfg
-    githubBaseReq   = integrCfgGithubProxyBaseRequest cfg
+    mgr         = integrCfgManager cfg
+    lgr         = integrCfgLogger cfg
+    fumStateSet = extractSEndo $ fmap H.stateSet $ FUM.Haxl.initDataSource' mgr
+        <$> integrCfgFumAuthToken cfg
+        <*> integrCfgFumBaseUrl cfg
+    pmStateSet  = extractSEndo $ fmap H.stateSet $ initDataSourceBatch lgr mgr
+        <$> integrCfgPlanmillProxyBaseRequest cfg
+    fdStateSet  = extractSEndo $ fmap H.stateSet $ FD.Haxl.initDataSource' mgr
+        <$> integrCfgFlowdockToken cfg
+    ghStateSet  = extractSEndo $ fmap H.stateSet $ GH.initDataSource lgr mgr
+        <$> integrCfgGithubProxyBaseRequest cfg
+
+-------------------------------------------------------------------------------S
+-- Functor singletons
+-------------------------------------------------------------------------------
+
+data SFunctor f where
+    SI :: SFunctor I
+    SP :: SFunctor Proxy
+
+class Applicative f => SFunctorI f     where sfunctor :: SFunctor f
+instance               SFunctorI I     where sfunctor = SI
+instance               SFunctorI Proxy where sfunctor = SP
+
+extractSEndo :: SFunctorI f => f (a -> a) -> a -> a
+extractSEndo = extractSFunctor id
+
+extractSFunctor :: forall f a. SFunctorI f => a -> f a -> a
+extractSFunctor def f = case sfunctor :: SFunctor f of
+    SP -> def
+    SI -> f ^. uni
 
 -------------------------------------------------------------------------------
 -- Instances
 -------------------------------------------------------------------------------
 
-instance Functor Integrations where
+instance Functor (Integrations pm fum gh fd) where
     fmap f (Integr x) = Integr (fmap f x)
 
-instance Applicative Integrations where
+instance Applicative (Integrations pm fum gh fd)  where
     pure = Integr . pure
     Integr f <*> Integr x = Integr (f <*> x)
     Integr f  *> Integr x = Integr (f  *> x)
 
-instance Monad Integrations where
+instance Monad (Integrations pm fum gh fd) where
     return = pure
     (>>) = (*>)
     Integr f >>= k = Integr $ f >>= unIntegr . k
@@ -107,32 +147,32 @@ instance Monad Integrations where
 -- Monad* instances
 -------------------------------------------------------------------------------
 
-instance MonadTime Integrations where
+instance MonadTime (Integrations pm fum gh fd) where
     currentTime = view envNow
 
-instance MonadPlanMillConstraint Integrations where
-    type MonadPlanMillC Integrations = Unit1
+instance pm ~ I => MonadPlanMillConstraint (Integrations pm fum gh fd) where
+    type MonadPlanMillC (Integrations pm fum gh fd) = Unit1
     entailMonadPlanMillCVector _ _ = Sub Dict
 
-instance MonadPlanMillQuery Integrations where
+instance pm ~ I => MonadPlanMillQuery (Integrations pm fum gh fd) where
     planmillQuery q = case (showDict, typeableDict) of
         (Dict, Dict) -> Integr (lift $ H.dataFetch q)
       where
         typeableDict = Q.queryDict (Proxy :: Proxy Typeable) q
         showDict     = Q.queryDict (Proxy :: Proxy Show)     q
 
-instance MonadFUM Integrations where
+instance fum ~ I  => MonadFUM (Integrations pm fum gh fd) where
     fumAction = Integr . lift . FUM.Haxl.request
 
-instance MonadFlowdock Integrations where
+instance fd ~ I => MonadFlowdock (Integrations pm fum gh fd) where
     flowdockOrganisationReq = Integr . lift . FD.Haxl.organisation
 
 -------------------------------------------------------------------------------
 -- MonadGitHub
 -------------------------------------------------------------------------------
 
-instance MonadGitHub Integrations where
-    type MonadGitHubC Integrations = FlipIn GH.GHTypes
+instance gh ~ I => MonadGitHub (Integrations pm fum gh fd) where
+    type MonadGitHubC (Integrations pm fum gh fd) = FlipIn GH.GHTypes
     githubReq req = case (showDict, typeableDict) of
         (Dict, Dict) -> Integr (lift $ H.dataFetch $ GH.GHR tag req)
       where
@@ -144,15 +184,15 @@ instance MonadGitHub Integrations where
 -- Has* instances
 -------------------------------------------------------------------------------
 
-instance MonadReader Env Integrations where
+instance MonadReader (Env fum gh fd) (Integrations pm fum gh fd) where
     ask = Integr ask
     local f = Integr . local f . unIntegr
 
-instance HasFUMEmployeeListName Env where
-    fumEmployeeListName = envFumEmployeeListName
+instance fum ~ I => HasFUMEmployeeListName (Env fum gh fd) where
+    fumEmployeeListName = envFumEmployeeListName . uni
 
-instance HasFlowdockOrgName Env where
-    flowdockOrganisationName = envFlowdockOrgName
+instance fd ~ I => HasFlowdockOrgName (Env fum gh fd) where
+    flowdockOrganisationName = envFlowdockOrgName . uni
 
-instance HasGithubOrgName Env where
-    githubOrganisationName = envGithubOrgName
+instance (gh ~ I) => HasGithubOrgName (Env fum gh fd) where
+    githubOrganisationName = envGithubOrgName . uni

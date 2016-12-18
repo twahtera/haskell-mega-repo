@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -186,23 +187,23 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
       where
         name = "Updating report " <> symbolVal (Proxy :: Proxy (RName r))
 
-ctxToIntegrationsConfig :: UTCTime -> Ctx -> IntegrationsConfig
-ctxToIntegrationsConfig now (_cache, mgr, lgr, cfg) = MkIntegrationsConfig
+ctxToIntegrationsConfig :: UTCTime -> Ctx -> IntegrationsConfig I I I I
+ctxToIntegrationsConfig now (_cache, mgr, lgr, Config {..}) = MkIntegrationsConfig
     { integrCfgManager                  = mgr
     , integrCfgNow                      = now
     , integrCfgLogger                   = lgr
     -- Planmill
-    , integrCfgPlanmillProxyBaseRequest = cfgPlanmillProxyBaseRequest cfg
+    , integrCfgPlanmillProxyBaseRequest = I cfgPlanmillProxyBaseRequest
     -- FUM
-    , integrCfgFumAuthToken             = cfgFumAuth cfg
-    , integrCfgFumBaseUrl               = cfgFumBaseUrl cfg
-    , integrCfgFumEmployeeListName      = cfgFumUserList cfg
+    , integrCfgFumAuthToken             = I cfgFumAuth
+    , integrCfgFumBaseUrl               = I cfgFumBaseUrl
+    , integrCfgFumEmployeeListName      = I cfgFumUserList
     -- GitHub
-    , integrCfgGithubProxyBaseRequest   = cfgGithubProxyBaseRequest cfg
-    , integrCfgGithubOrgName            = cfgGhOrg cfg
+    , integrCfgGithubProxyBaseRequest   = I cfgGithubProxyBaseRequest
+    , integrCfgGithubOrgName            = I cfgGhOrg
     -- Flowdock
-    , integrCfgFlowdockToken            = cfgFlowdockAuthToken cfg
-    , integrCfgFlowdockOrgName          = cfgFlowdockOrgName cfg
+    , integrCfgFlowdockToken            = I cfgFlowdockAuthToken
+    , integrCfgFlowdockOrgName          = I cfgFlowdockOrgName
     }
 
 -------------------------------------------------------------------------------
