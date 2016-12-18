@@ -22,8 +22,8 @@ import Futurice.App.FutuhoursApi.Types
 
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours api"
-    :<|> liftIO (projectEndpoint ctx)
-    :<|> liftIO (userEndpoint ctx)
+    :<|> projectEndpoint ctx
+    :<|> userEndpoint ctx
     :<|> hoursEndpoint ctx
     :<|> entryEndpoint ctx
     :<|> entryIdEndpoint ctx

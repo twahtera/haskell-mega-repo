@@ -9,16 +9,18 @@ module Futurice.App.FutuhoursApi.API where
 
 import Prelude ()
 import Futurice.Prelude
-import Futurice.App.FutuhoursApi.Types
+import Futurice.Servant (SSOUser)
 import Servant
 
+import Futurice.App.FutuhoursApi.Types
+
 type FutuhoursV1API =
-    "projects" :> Get '[JSON] (Vector Project)
-    :<|> "user" :> Get '[JSON] User -- TODO: should return logged-in User information
-    :<|> "hours" :> QueryParam "start-date" Day :> QueryParam "end-date" Day :> Get '[JSON] (HoursResponse)
-    :<|> "entry" :> ReqBody '[JSON] EntryUpdate :> Post '[JSON] EntryUpdateResponse
-    :<|> "entry" :> Capture "id" Int :> ReqBody '[JSON] EntryUpdate :> Put '[JSON] EntryUpdateResponse
-    :<|> "entry" :> Capture "id" Int :> ReqBody '[JSON] EntryUpdate :> Delete '[JSON] EntryUpdateResponse
+    "projects" :> SSOUser :> Get '[JSON] (Vector Project)
+    :<|> "user" :> SSOUser :> Get '[JSON] User -- TODO: should return logged-in User information
+    :<|> "hours" :> SSOUser :> QueryParam "start-date" Day :> QueryParam "end-date" Day :> Get '[JSON] (HoursResponse)
+    :<|> "entry" :> SSOUser :> ReqBody '[JSON] EntryUpdate :> Post '[JSON] EntryUpdateResponse
+    :<|> "entry" :> SSOUser :> Capture "id" Int :> ReqBody '[JSON] EntryUpdate :> Put '[JSON] EntryUpdateResponse
+    :<|> "entry" :> SSOUser :> Capture "id" Int :> ReqBody '[JSON] EntryUpdate :> Delete '[JSON] EntryUpdateResponse
 
 type FutuhoursAPI = Get '[JSON] Text
     :<|> "api" :> "v1" :> FutuhoursV1API

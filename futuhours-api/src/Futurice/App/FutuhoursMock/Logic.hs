@@ -30,16 +30,23 @@ import System.Random                       (randomRIO)
 import Test.QuickCheck                     (arbitrary, sample')
 
 import qualified Data.Map.Strict as Map
+import qualified FUM
 import qualified PlanMill        as PM
 
-projectEndpoint :: Ctx -> IO (Vector Project)
-projectEndpoint _ctx = do
+projectEndpoint
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> ExceptT ServantErr IO (Vector Project)
+projectEndpoint _ctx _fumUser = liftIO $ do
     p <- sample' arbitrary
     pure $ p ^. vector
 
 -- | @GET /user@
-userEndpoint :: Ctx -> IO User
-userEndpoint _ctx = do
+userEndpoint
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> ExceptT ServantErr IO User
+userEndpoint _ctx _fumUser = liftIO $ do
     -- TODO: how to generate unique values per request?
     _userBalance <- randomRIO (-10,40) :: IO Float
     _userHolidaysLeft <- randomRIO (0, 24)
@@ -54,10 +61,11 @@ userEndpoint _ctx = do
 -- | @GET /hours@
 hoursEndpoint
     :: Ctx
+    -> Maybe FUM.UserName
     -> Maybe Day
     -> Maybe Day
     -> ExceptT ServantErr IO HoursResponse
-hoursEndpoint _ctx sd ed = do
+hoursEndpoint _ctx _fumUser sd ed = do
     let duration = diffDays (fromJust sd) (fromJust ed)
     let d = daysFD duration $ (fromJust sd)
     months <- liftIO $ genMonths d
@@ -173,19 +181,21 @@ mkEntryEndPoint req = do
 -- | @POST /entry@
 entryEndpoint
     :: Ctx
+    -> Maybe FUM.UserName
     -> EntryUpdate
     -> ExceptT ServantErr IO EntryUpdateResponse
-entryEndpoint _ctx req = do
+entryEndpoint _ctx _fumUser req = do
     res <- liftIO $ mkEntryEndPoint req
     return res
 
 -- | @PUT /entry/#id@
 entryIdEndpoint
-  :: Ctx
-  -> Int
-  -> EntryUpdate
-  -> ExceptT ServantErr IO EntryUpdateResponse
-entryIdEndpoint _ctx _id req = do
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> Int
+    -> EntryUpdate
+    -> ExceptT ServantErr IO EntryUpdateResponse
+entryIdEndpoint _ctx _fumUser _id req = do
     res <- liftIO $ mkEntryEndPoint req
     -- Set every entryId to 1.
     let res' = res
@@ -196,10 +206,11 @@ entryIdEndpoint _ctx _id req = do
 -- | @DELETE /entry/#id@
 entryDeleteEndpoint
     :: Ctx
+    -> Maybe FUM.UserName
     -> Int
     -> EntryUpdate
     -> ExceptT ServantErr IO EntryUpdateResponse
-entryDeleteEndpoint _ctx _id _ = do
+entryDeleteEndpoint _ctx _fumUser _id _eu = do
     now <- currentTime
     let dummyReq = EntryUpdate
             { _euTaskId      = PM.Ident 1
