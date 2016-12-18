@@ -35,10 +35,13 @@ library
     , env-config
     , fum-client
     , futurice-foundation
+    , futurice-integrations
     , futurice-prelude
     , futurice-reports
     , futurice-servant
     , generics-sop
+    , http-client
+    , http-client-tls
     , lens
     , lucid
     , mtl

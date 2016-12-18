@@ -10,7 +10,11 @@ module Futurice.App.FutuhoursApi (defaultMain) where
 
 import Prelude ()
 import Futurice.Prelude
+import Control.Concurrent.STM (newTVarIO)
+import Futurice.Integrations
 import Futurice.Servant
+import Network.HTTP.Client     (Manager, newManager)
+import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Servant
 
 import Futurice.App.FutuhoursApi.API
@@ -38,5 +42,35 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx          .~ "FUTUHOURSAPI"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
-    makeCtx _ _ _ = do
-        pure Ctx
+    makeCtx config logger _cache = do
+        now <- currentTime
+        mgr <- newManager tlsManagerSettings
+        let integrConfig = makeIntegrationsConfig now logger mgr config
+        pmLookupMap <- runIntegrations integrConfig fumPlanmillMap
+        pmLookupMapT <- newTVarIO pmLookupMap
+        pure $ Ctx
+            { ctxPlanmillUserLookup = pmLookupMapT
+            }
+
+makeIntegrationsConfig
+    :: UTCTime -> Logger -> Manager -> Config
+    -> IntegrationsConfig I I Proxy Proxy
+makeIntegrationsConfig now lgr mgr Config {..} = MkIntegrationsConfig
+    { integrCfgManager                  = mgr
+    , integrCfgNow                      = now
+    , integrCfgLogger                   = lgr
+    -- Planmill
+    , integrCfgPlanmillProxyBaseRequest = I cfgPlanmillProxyReq
+    -- FUM
+    , integrCfgFumAuthToken             = I cfgFumToken
+    , integrCfgFumBaseUrl               = I cfgFumBaseurl
+    , integrCfgFumEmployeeListName      = I cfgFumList
+    -- GitHub
+    , integrCfgGithubProxyBaseRequest   = Proxy
+    , integrCfgGithubOrgName            = Proxy
+    -- Flowdock
+    , integrCfgFlowdockToken            = Proxy
+    , integrCfgFlowdockOrgName          = Proxy
+    }
+
+

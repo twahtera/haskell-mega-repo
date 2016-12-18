@@ -75,7 +75,8 @@ data IntegrationsConfig pm fum gh fd = MkIntegrationsConfig
 runIntegrations
     :: (SFunctorI pm, SFunctorI fum, SFunctorI gh, SFunctorI fd)
     => IntegrationsConfig pm fum gh fd
-    -> Integrations pm fum gh fd a -> IO a
+    -> Integrations pm fum gh fd a
+    -> IO a
 runIntegrations cfg (Integr m) = do
     let env = Env
             { _envFumEmployeeListName = integrCfgFumEmployeeListName cfg
@@ -86,9 +87,9 @@ runIntegrations cfg (Integr m) = do
     let haxl = runReaderT m env
     let stateStore
             = pmStateSet
-            $ fumStateSet
-            $ fdStateSet
-            $ ghStateSet
+            . fumStateSet
+            . fdStateSet
+            . ghStateSet
             $ H.stateEmpty
     haxlEnv <- H.initEnv stateStore ()
     H.runHaxl haxlEnv haxl
