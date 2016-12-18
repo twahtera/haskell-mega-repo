@@ -74,6 +74,8 @@ statsMachine
         -- build-in-docker.sh artifacts
         , isSuffixOf ".stack-root"
         , isSuffixOf ".stack-work-docker"
+        -- some code we just have around
+        , isSuffixOf "deprecated"
         ]
 
     filePredicate f = isSuffixOf ".hs" f
