@@ -306,11 +306,3 @@ instance Arbitrary HoursUpdateResponse where
 instance ToJSON HoursUpdateResponse where toJSON = sopToJSON
 instance FromJSON HoursUpdateResponse where parseJSON = sopParseJSON
 instance ToSchema HoursUpdateResponse where declareNamedSchema = sopDeclareNamedSchema
-
-
--------------------------------------------------------------------------------
--- Context
--------------------------------------------------------------------------------
-
--- | /TODO/: move to own module
-data Ctx = Ctx

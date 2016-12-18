@@ -11,6 +11,7 @@ import Prelude ()
 import Futurice.Prelude
 import Servant          (ServantErr)
 
+import Futurice.App.FutuhoursApi.Ctx
 import Futurice.App.FutuhoursApi.Types
 
 import qualified FUM

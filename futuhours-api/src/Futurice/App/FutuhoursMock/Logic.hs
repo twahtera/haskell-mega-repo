@@ -13,21 +13,22 @@ module Futurice.App.FutuhoursMock.Logic (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens                        (Traversal', forOf)
-import Control.Monad.State.Strict
-       (MonadState (..), evalStateT, modify')
-import Data.Maybe                          (fromJust)
-import Data.Text                           (pack)
-import Data.Time                           (defaultTimeLocale)
+import Control.Lens               (Traversal', forOf)
+import Control.Monad.State.Strict (MonadState (..), evalStateT, modify')
+import Data.Maybe                 (fromJust)
+import Data.Text                  (pack)
+import Data.Time                  (defaultTimeLocale)
 import Data.Time.Calendar
        (addDays, diffDays, fromGregorian, toGregorian)
-import Data.Time.Format                    (formatTime)
-import Data.Vector.Lens                    (vector)
-import Futurice.App.FutuhoursApi.Types
-import Futurice.App.FutuhoursMock.MockData
+import Data.Time.Format           (formatTime)
+import Data.Vector.Lens           (vector)
 import Servant
-import System.Random                       (randomRIO)
-import Test.QuickCheck                     (arbitrary, sample')
+import System.Random              (randomRIO)
+import Test.QuickCheck            (arbitrary, sample')
+
+import Futurice.App.FutuhoursApi.Types
+import Futurice.App.FutuhoursMock.Ctx
+import Futurice.App.FutuhoursMock.MockData
 
 import qualified Data.Map.Strict as Map
 import qualified FUM
