@@ -1,0 +1,116 @@
+name: futuhours-api
+version: "0"
+synopsis: Futuhours API
+description: New and fancy
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/futuhours-api
+category: Web
+tested-with: GHC==7.8.4, GHC==7.10.3
+extra-source-files:
+- README.md
+
+ghc-options: -Wall
+
+library:
+  source-dirs: src
+  dependencies:
+    - base                  >=4.7   && <4.10
+    - ad
+    - aeson
+    - aeson-compat
+    - aeson-extra
+    - async
+    - avar
+    - base-compat
+    - binary
+    - binary-tagged
+    - blaze-html
+    - bytestring
+    - cassava
+    - constraints
+    - containers
+    - dependent-map
+    - dependent-sum
+    - dynmap-cache
+    - either
+    - fum-client
+    - ekg
+    - ekg-core
+    - env-config
+    - exceptions
+    - fum-client
+    - futulogo
+    - futurice-foundation
+    - futurice-integrations
+    - futurice-prelude
+    - futurice-reports
+    - futurice-servant
+    - generics-sop
+    - generics-sop-lens
+    - hashable
+    - haxl
+    - haxl-fxtra
+    - haxl-typed
+    - http-client
+    - http-client-tls
+    - intervals
+    - lattices
+    - lens
+    - linear
+    - lucid
+    - markdown
+    - monad-http
+    - monad-logger
+    - MonadRandom
+    - mtl
+    - operational
+    - parsec
+    - periocron
+    - planmill-client
+    - postgresql-simple
+    - postgresql-simple-url
+    - QuickCheck
+    - quickcheck-instances
+    - reflection
+    - regex-applicative-text
+    - resource-pool
+    - semigroups
+    - servant
+    - servant-cassava
+    - servant-docs
+    - servant-lucid
+    - servant-server
+    - servant-status
+    - servant-swagger
+    - servant-swagger-ui
+    - stm
+    - swagger2
+    - text
+    - time
+    - time-parsers
+    - transformers
+    - tz
+    - unordered-containers
+    - vector
+    - wai
+    - wai-cors
+    - wai-middleware-metrics
+    - warp
+  default-extensions:
+    - DeriveDataTypeable
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveGeneric
+    - DeriveTraversable
+    - ScopedTypeVariables
+
+executables:
+  futuhours-api-server:
+    ghc-options: -threaded
+    main: Main.hs
+    source-dirs: srv
+    dependencies:
+      - base
+      - futuhours-api

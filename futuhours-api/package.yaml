@@ -1,115 +1,70 @@
 name: futuhours-api
 version: "0"
 synopsis: Futuhours API
-description: New and fancy
-author: Oleg Grenrus <oleg.grenrus@iki.fi>
+description: "Futuhours API: Actual server and mock"
+author: Oleg Grenrus <oleg.grenrus@iki.fi>, Jussi Vaihia <jussi.vaihia@futurice.com>
 maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
 license: BSD3
-github: futurice/futuhours-api
+github: futurice/haskell-mega-repo
 category: Web
-tested-with: GHC==7.8.4, GHC==7.10.3
+tested-with: GHC==7.10.3, GHC==8.0.1
 extra-source-files:
 - README.md
 
-ghc-options: -Wall
+default-extensions:
+  - DeriveDataTypeable
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveGeneric
+  - DeriveTraversable
+  - ScopedTypeVariables
 
 library:
   source-dirs: src
   dependencies:
-    - base                  >=4.7   && <4.10
-    - ad
+    - base >= 4.8 && < 4.10
     - aeson
     - aeson-compat
-    - aeson-extra
-    - async
-    - avar
-    - base-compat
-    - binary
-    - binary-tagged
-    - blaze-html
-    - bytestring
-    - cassava
-    - constraints
-    - containers
-    - dependent-map
-    - dependent-sum
-    - dynmap-cache
-    - either
-    - ekg
-    - ekg-core
     - env-config
-    - exceptions
     - fum-client
-    - futulogo
     - futurice-foundation
-    - futurice-integrations
     - futurice-prelude
     - futurice-reports
     - futurice-servant
     - generics-sop
-    - generics-sop-lens
-    - hashable
-    - haxl
-    - haxl-fxtra
-    - haxl-typed
-    - http-client
-    - http-client-tls
-    - intervals
-    - lattices
     - lens
-    - linear
     - lucid
-    - markdown
-    - monad-http
-    - monad-logger
-    - MonadRandom
     - mtl
-    - operational
-    - parsec
-    - periocron
     - planmill-client
     - postgresql-simple
-    - postgresql-simple-url
     - QuickCheck
-    - quickcheck-instances
-    - reflection
-    - regex-applicative-text
     - resource-pool
-    - semigroups
     - servant
-    - servant-cassava
-    - servant-docs
     - servant-lucid
     - servant-server
-    - servant-status
-    - servant-swagger
-    - servant-swagger-ui
-    - stm
     - swagger2
-    - text
     - time
-    - time-parsers
-    - transformers
-    - tz
-    - unordered-containers
     - vector
-    - wai
-    - wai-cors
-    - wai-middleware-metrics
-    - warp
-  default-extensions:
-    - DeriveDataTypeable
-    - DeriveFoldable
-    - DeriveFunctor
-    - DeriveGeneric
-    - DeriveTraversable
-    - ScopedTypeVariables
+    - random
+    - stm
+    - text
+    - transformers
+    - containers
+
 
 executables:
   futuhours-api-server:
     ghc-options: -threaded
     main: Main.hs
     source-dirs: srv
+    dependencies:
+      - base
+      - futuhours-api
+
+  futuhours-mock-server:
+    ghc-options: -threaded
+    main: Main.hs
+    source-dirs: mock
     dependencies:
       - base
       - futuhours-api

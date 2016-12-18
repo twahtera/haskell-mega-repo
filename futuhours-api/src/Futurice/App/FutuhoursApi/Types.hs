@@ -10,7 +10,7 @@
 -- HoursRemaining: Task.taskTargetEffort - (totalHoursUsedByAssignedPersonnel)
 --
 -- /NOTE:/ Golang backend LatestEntry is Entry with a Date
-module Futurice.App.FutuhoursMock.Types where
+module Futurice.App.FutuhoursApi.Types where
 
 import Prelude ()
 import Futurice.Prelude

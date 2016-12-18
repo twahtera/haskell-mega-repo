@@ -11,7 +11,7 @@ import Prelude ()
 import Futurice.Prelude
 import Control.Lens     (Getter, to)
 
-import Futurice.App.FutuhoursMock.Types
+import Futurice.App.FutuhoursApi.Types
 
 import qualified PlanMill as PM
 
