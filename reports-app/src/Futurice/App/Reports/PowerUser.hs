@@ -57,10 +57,7 @@ instance ToJSON PowerUser where
 -- Report
 -------------------------------------------------------------------------------
 
-type PowerUserReport = Report
-    "Power: users listing"
-    ReportGenerated
-    (Vector PowerUser)
+type PowerUserReport = Vector PowerUser
 
 -------------------------------------------------------------------------------
 -- Logic
@@ -73,10 +70,8 @@ powerUserReport
         )
     => m PowerUserReport
 powerUserReport = do
-    now <- currentTime
     fpm <- fumPlanmillMap
-    fpm' <- toVectorOf folded <$> itraverse powerUser fpm
-    pure $ Report (ReportGenerated now) fpm'
+    toVectorOf folded <$> itraverse powerUser fpm
 
 powerUser :: MonadPlanMillQuery m => FUM.UserName -> PM.User -> m PowerUser
 powerUser fumLogin u = do
