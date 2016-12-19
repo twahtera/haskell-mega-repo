@@ -31,7 +31,7 @@ library:
     - env-config
     - exceptions
     - fum-client
-    - futulogo
+    - futurice-logo
     - futurice-prelude
     - ghc-prim
     - gitrev >=1.2.0

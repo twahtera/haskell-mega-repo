@@ -4,7 +4,6 @@ import Prelude ()
 import Futurice.Prelude
 import Data.Pool                  (Pool)
 import Database.PostgreSQL.Simple (Connection)
-import Network.HTTP.Client        (Manager)
 import Servant.Client             (BaseUrl)
 import Servant.Proxy              (HasHttpManager (..))
 

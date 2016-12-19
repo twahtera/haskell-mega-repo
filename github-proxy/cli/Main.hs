@@ -10,13 +10,11 @@ module Main (main) where
 import Prelude ()
 import Futurice.Prelude
 import Data.Constraint
-import Futurice.EnvConfig            (getConfig', envVar)
+import Futurice.EnvConfig            (envVar, getConfig')
 import Futurice.Has                  (FlipIn)
 import Futurice.Integrations.Classes (MonadGitHub (..))
 import Futurice.Integrations.GitHub  (GHR (..), initDataSource)
-import Network.HTTP.Client
-       (Manager, Request, applyBasicAuth, newManager, parseUrlThrow)
-import Network.HTTP.Client.TLS       (tlsManagerSettings)
+import Network.HTTP.Client           (Request, applyBasicAuth, parseUrlThrow)
 
 import qualified Futurice.GitHub as GH
 import qualified Haxl.Core       as H

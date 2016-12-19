@@ -1,4 +1,4 @@
-resolver: nightly-2016-11-24
+resolver: nightly-2016-12-07
 packages:
 - ansi-pretty/
 - avar/
@@ -14,16 +14,15 @@ packages:
 - fum-client/
 #- futucli/
 - futuhours-api/
-- futulogo/
 - futurice-foundation/
 - futurice-github/
 - futurice-integrations/
+- futurice-logo/
 - futurice-prelude/
 - futurice-reports/
 - futurice-servant/
 - github-proxy/
 - haxl-fxtra/
-- haxl-typed/
 - log-logentries
 - mega-repo-tool/
 - monad-http/
@@ -50,6 +49,6 @@ packages:
 extra-deps:
 - folds-0.7.1
 - haxl-0.4.0.2
-- log-base-0.7
 - monad-http-0.2.0.0
+- time-parsers-0.1.2.0
 flags: {}

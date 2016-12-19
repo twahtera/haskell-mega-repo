@@ -27,7 +27,6 @@ library:
     - bytestring
     - either
     - env-config
-    - futulogo
     - futurice-prelude
     - futurice-servant
     - http-client

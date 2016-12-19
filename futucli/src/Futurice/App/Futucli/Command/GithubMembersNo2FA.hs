@@ -3,9 +3,7 @@ module Futurice.App.Futucli.Command.GithubMembersNo2FA (githubMembersNo2FA) wher
 
 import Futurice.Prelude
 
-import Network.HTTP.Client     (Manager, newManager)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
-import System.IO               (stderr)
+import System.IO (stderr)
 
 import qualified Data.Text.IO as T
 import qualified Data.Vector  as V

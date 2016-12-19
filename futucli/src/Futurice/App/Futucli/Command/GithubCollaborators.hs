@@ -7,10 +7,8 @@ module Futurice.App.Futucli.Command.GithubCollaborators (githubCollaborators) wh
 
 import Futurice.Prelude
 
-import GHC.Exts                (Constraint)
-import Network.HTTP.Client     (Manager, newManager)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
-import System.IO               (stderr)
+import GHC.Exts  (Constraint)
+import System.IO (stderr)
 
 import qualified Data.Binary                 as B
 import qualified Data.ByteString.Base64.Lazy as Base64L

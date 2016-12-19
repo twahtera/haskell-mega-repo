@@ -1,12 +1,9 @@
 module Main (main, contrSubject, repoDescription, repoLanguage, repoOwner, repoName, repoStarsCount, statsGithubRepos) where
 
-import Futurice.Prelude
 import Prelude ()
-
-import Control.Lens            (sumOf)
-import Futurice.EnvConfig      (getConfig)
-import Network.HTTP.Client     (newManager)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
+import Futurice.Prelude
+import Control.Lens       (sumOf)
+import Futurice.EnvConfig (getConfig)
 
 import Futurice.App.Spice.Config
 import Futurice.App.Spice.Logic

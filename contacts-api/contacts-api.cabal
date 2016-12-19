@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.1.
+-- This file has been generated from package.yaml by hpack version 0.15.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -51,7 +51,6 @@ library
     , filepath
     , flowdock-rest >=0.2
     , fum-client
-    , futulogo
     , futurice-integrations
     , futurice-prelude
     , futurice-servant
@@ -59,7 +58,6 @@ library
     , hashable
     , haxl
     , haxl-fxtra
-    , haxl-typed
     , http-client           >=0.4.30 && <0.6
     , http-client-tls       >=0.2.2 && <0.4
     , http-types

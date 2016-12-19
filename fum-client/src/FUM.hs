@@ -22,7 +22,6 @@ import Prelude          ()
 
 import Control.Monad.Http   (runHttpT)
 import Data.Aeson           (FromJSON)
-import Network.HTTP.Client  (Manager)
 
 import Control.Monad.FUM
 import FUM.Request

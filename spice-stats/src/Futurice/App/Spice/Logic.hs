@@ -20,7 +20,6 @@ import Prelude ()
 
 import Control.Lens        (Fold, Traversal', failing, folding, to)
 import Data.Char           (isAlphaNum, isDigit, isSpace)
-import Network.HTTP.Client (Manager)
 
 import Text.Regex.Applicative.Text (RE', psym, sym)
 

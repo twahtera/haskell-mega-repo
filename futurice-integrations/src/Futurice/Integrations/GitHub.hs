@@ -19,10 +19,8 @@ import qualified Futurice.GitHub     as GH
 import qualified Haxl.Core           as H
 import qualified Network.HTTP.Client as HTTP
 
-import Network.HTTP.Client (Manager, Request)
-
 -- | Init Haxl data source.
-initDataSource :: Logger -> Manager -> Request -> H.State GHR
+initDataSource :: Logger -> Manager -> HTTP.Request -> H.State GHR
 initDataSource = GHState
 
 -- | Haxl github request.
@@ -40,7 +38,7 @@ instance Show (GHR a) where
 instance H.Show1 GHR where show1 = show
 
 instance H.StateKey GHR where
-    data State GHR = GHState !Logger !Manager !Request
+    data State GHR = GHState !Logger !Manager !HTTP.Request
 
 instance H.DataSourceName GHR where
     dataSourceName _ = "GitHub.Request"

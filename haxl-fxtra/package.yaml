@@ -8,7 +8,7 @@ maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
 license: BSD3
 github: futurice/haskell-haxl-fxtra
 category: Web
-tested-with: GHC==7.8.4, GHC==7.10.2
+tested-with: GHC==7.10.3, GHC==8.0.1
 extra-source-files:
 - README.md
 
@@ -16,23 +16,22 @@ ghc-options: -Wall
 
 dependencies:
   - base                  >=4.7      && <4.10
+  - aeson
+  - bifunctors
+  - bytestring
+  - exceptions
+  - flowdock-rest         >=0.2.0.0
+  - fum-client
+  - futurice-prelude
+  - github
+  - hashable
   - haxl
   - http-client
   - http-client-tls
-  - text
-  - hashable
   - parallel-io
-  - github
-  - fum-client
-  - futurice-prelude
-  - flowdock-rest         >=0.2.0.0
-  - bytestring
-  - exceptions
-  - vector
-  - bifunctors
   - tagged
-  - haxl-typed
-  - aeson
+  - text
+  - vector
 
 library:
   source-dirs: src

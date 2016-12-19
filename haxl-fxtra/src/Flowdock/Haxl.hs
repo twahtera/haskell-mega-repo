@@ -15,10 +15,7 @@ module Flowdock.Haxl (
     ) where
 
 import Futurice.Prelude
-
 import Haxl.Core
-import Network.HTTP.Client     (Manager, newManager)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
 
 import qualified Chat.Flowdock.REST    as FD
 import qualified Chat.Flowdock.REST.IO as FDIO

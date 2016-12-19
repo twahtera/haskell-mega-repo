@@ -4,11 +4,9 @@ module Futurice.App.Futucli.Command.GithubOldRepos (githubOldRepos) where
 
 import Futurice.Prelude
 
-import Algebra.Lattice         ((\/))
-import Data.Time               (diffUTCTime, getCurrentTime)
-import Network.HTTP.Client     (Manager, newManager)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
-import System.IO               (stderr)
+import Algebra.Lattice ((\/))
+import Data.Time       (diffUTCTime, getCurrentTime)
+import System.IO       (stderr)
 
 import GitHub
        (Auth (..), Commit, Name, Organization, Repo (..), RepoPublicity (..),

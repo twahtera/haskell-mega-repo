@@ -12,9 +12,7 @@ import Control.Monad.PlanMill
 import Data.Constraint
 import Futurice.Constraint.Unit1 (Unit1)
 import Futurice.EnvConfig
-import Network.HTTP.Client
-       (Manager, Request, applyBasicAuth, newManager, parseUrlThrow)
-import Network.HTTP.Client.TLS   (tlsManagerSettings)
+import Network.HTTP.Client       (Request, applyBasicAuth, parseUrlThrow)
 import PlanMill.Queries.Haxl     (initDataSourceBatch)
 
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty

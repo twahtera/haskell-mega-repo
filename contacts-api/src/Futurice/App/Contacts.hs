@@ -13,8 +13,6 @@ import Futurice.Prelude
 import Futurice.Integrations
 import Futurice.Periocron
 import Futurice.Servant
-import Network.HTTP.Client     (newManager)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Servant
 
 -- Contacts modules

@@ -1,15 +1,13 @@
-{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Futucli.Command.GithubMembersNoTeam (githubMembersNoTeam) where
 
 import Futurice.Prelude
 
-import Network.HTTP.Client     (Manager, newManager)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
-import System.IO               (stderr)
+import System.IO (stderr)
 
+import qualified Data.Set     as Set
 import qualified Data.Text.IO as T
 import qualified Data.Vector  as V
-import qualified Data.Set as Set
 
 import qualified GitHub as GH
 
