@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.1.
+-- This file has been generated from package.yaml by hpack version 0.15.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -13,7 +13,7 @@ author:         Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
 license:        BSD3
 license-file:   LICENSE
-tested-with:    GHC==7.8.4, GHC==7.10.2
+tested-with:    GHC==7.10.3, GHC==8.0.1
 build-type:     Simple
 cabal-version:  >= 1.10
 
@@ -31,33 +31,27 @@ library
   ghc-options: -Wall
   build-depends:
       base                  >=4.7      && <4.10
+    , aeson
+    , bifunctors
+    , bytestring
+    , exceptions
+    , flowdock-rest         >=0.2.0.0
+    , fum-client
+    , futurice-prelude
+    , github
+    , hashable
     , haxl
     , http-client
     , http-client-tls
-    , text
-    , hashable
     , parallel-io
-    , github
-    , fum-client
-    , futurice-prelude
-    , flowdock-rest         >=0.2.0.0
-    , bytestring
-    , exceptions
-    , vector
-    , bifunctors
     , tagged
-    , haxl-typed
-    , aeson
+    , text
+    , vector
   exposed-modules:
       Flowdock.Haxl
-      Flowdock.TyHaxl
       FUM.Haxl
-      FUM.TyHaxl
       Github.Haxl
-      Github.TyHaxl
       Haxl.Extra.HttpDataSource
       Haxl.Extra.IODataSource
       Haxl.Extra.LogDataSource
-      Haxl.Typed.HttpDataSource
-      Haxl.Typed.LogDataSource
   default-language: Haskell2010

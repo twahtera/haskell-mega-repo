@@ -24,7 +24,6 @@ packages:
 - futurice-servant/
 - github-proxy/
 - haxl-fxtra/
-- haxl-typed/
 - log-logentries
 - mega-repo-tool/
 - monad-http/
