@@ -20,9 +20,7 @@ import qualified Data.ByteString.Lazy as LBS
 
 import           Haxl.Core
 import qualified Haxl.Extra.IODataSource as IODS
-import           Network.HTTP.Client     (Manager, httpLbs, newManager,
-                                          parseUrlThrow, responseBody)
-import           Network.HTTP.Client.TLS (tlsManagerSettings)
+import           Network.HTTP.Client     (httpLbs, parseUrlThrow, responseBody)
 
 newtype HttpTag = HttpTag String
     deriving (Eq, Show, Generic, Typeable)

@@ -4,17 +4,16 @@ module Futurice.App.MegaRepoTool.Command.ListSnapshotDependencies (
     listSnapshotDependencies
     ) where
 
-import Futurice.Prelude
 import Prelude ()
+import Futurice.Prelude
 
-import Data.Aeson.Compat       (FromJSON (..), decode, withObject, (.:))
-import Data.Aeson.Extra        (getSingObject)
-import Data.Char               (isSpace)
-import Data.Yaml               (decodeFileEither)
+import Data.Aeson.Compat   (FromJSON (..), decode, withObject, (.:))
+import Data.Aeson.Extra    (getSingObject)
+import Data.Char           (isSpace)
+import Data.Yaml           (decodeFileEither)
 import Network.HTTP.Client
-       (httpLbs, newManager, parseUrlThrow, requestHeaders, responseBody)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
-import System.Process          (readProcess)
+       (httpLbs, parseUrlThrow, requestHeaders, responseBody)
+import System.Process      (readProcess)
 
 import qualified Data.Set     as Set
 import qualified Data.Text.IO as T

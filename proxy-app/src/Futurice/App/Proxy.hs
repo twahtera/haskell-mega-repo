@@ -20,8 +20,6 @@ import Data.Pool                       (createPool, withResource)
 import Data.Reflection                 (Given (..), give)
 import Data.Text.Encoding              (decodeLatin1)
 import Futurice.Servant
-import Network.HTTP.Client             (newManager)
-import Network.HTTP.Client.TLS         (tlsManagerSettings)
 import Network.Wai                     (Request, rawPathInfo)
 import Network.Wai.Middleware.HttpAuth (basicAuth')
 import Servant

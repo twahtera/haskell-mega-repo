@@ -22,7 +22,6 @@ module Servant.Proxy (
 import Prelude ()
 import Futurice.Prelude
 import Control.Lens               (LensLike')
-import Network.HTTP.Client        (Manager)
 import Servant
 import Servant.Client
 

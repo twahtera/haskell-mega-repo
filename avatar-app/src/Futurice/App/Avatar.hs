@@ -9,18 +9,15 @@ module Futurice.App.Avatar (defaultMain) where
 
 import Prelude ()
 import Futurice.Prelude
-import Codec.Picture              (DynamicImage)
+import Codec.Picture       (DynamicImage)
 import Futurice.Servant
+import Network.HTTP.Client (httpLbs, parseUrlThrow, responseBody)
 import Servant
-import System.IO                  (hPutStrLn, stderr)
+import System.IO           (hPutStrLn, stderr)
 
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text            as T
 import qualified Data.Text.Encoding   as TE
-
-import Network.HTTP.Client
-       (Manager, httpLbs, newManager, parseUrlThrow, responseBody)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
 
 -- Avatar modules
 import Futurice.App.Avatar.API

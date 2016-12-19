@@ -22,9 +22,7 @@ import Futurice.Periocron
 import Futurice.Servant
 import Generics.SOP              (hcmap, hcollapse)
 import GHC.TypeLits              (symbolVal)
-import Network.HTTP.Client
-       (Manager, httpLbs, newManager, parseUrlThrow, responseBody)
-import Network.HTTP.Client.TLS   (tlsManagerSettings)
+import Network.HTTP.Client       (httpLbs, parseUrlThrow, responseBody)
 import Numeric.Interval.NonEmpty ((...))
 import Servant
 

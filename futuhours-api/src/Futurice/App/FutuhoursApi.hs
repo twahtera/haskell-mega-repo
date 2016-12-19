@@ -13,8 +13,6 @@ import Futurice.Prelude
 import Control.Concurrent.STM (newTVarIO)
 import Futurice.Integrations
 import Futurice.Servant
-import Network.HTTP.Client     (Manager, newManager)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Servant
 
 import Futurice.App.FutuhoursApi.API

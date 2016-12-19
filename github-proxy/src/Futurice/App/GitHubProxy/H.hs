@@ -14,8 +14,6 @@ import Control.Monad.Operational     (Program, interpretWithMonad, singleton)
 import Futurice.Constraint.Unit1     (Unit1)
 import Futurice.Integrations.Classes (MonadGitHub (..))
 import GitHub.Auth                   (Auth)
-import Network.HTTP.Client           (Manager, newManager)
-import Network.HTTP.Client.TLS       (tlsManagerSettings)
 
 import qualified GitHub as GH
 

@@ -17,10 +17,8 @@ module FUM.Haxl (
 
 import Futurice.Prelude
 
-import Data.Aeson              (FromJSON)
+import Data.Aeson (FromJSON)
 import Haxl.Core
-import Network.HTTP.Client     (Manager, newManager)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
 
 import qualified FUM
 

@@ -18,7 +18,7 @@ import Data.Constraint
 import Futurice.Constraint.Unit1 (Unit1)
 import Futurice.Has              (FlipIn)
 import Generics.SOP.Lens         (uni)
-import Network.HTTP.Client       (Manager, Request)
+import Network.HTTP.Client       (Request)
 import PlanMill.Queries.Haxl     (initDataSourceBatch)
 
 import qualified Chat.Flowdock.REST           as FD
