@@ -29,7 +29,6 @@ dependencies:
   - exceptions
   - filepath
   - flowdock-rest
-  - futulogo
   - futurice-prelude
   - futurice-servant
   - github

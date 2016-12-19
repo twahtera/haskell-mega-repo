@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.1.
+-- This file has been generated from package.yaml by hpack version 0.15.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -43,7 +43,6 @@ library
     , exceptions
     , filepath
     , flowdock-rest
-    , futulogo
     , futurice-prelude
     , futurice-servant
     , github
@@ -102,7 +101,6 @@ executable spice-stats
     , exceptions
     , filepath
     , flowdock-rest
-    , futulogo
     , futurice-prelude
     , futurice-servant
     , github
@@ -156,7 +154,6 @@ executable spice-stats-server
     , exceptions
     , filepath
     , flowdock-rest
-    , futulogo
     , futurice-prelude
     , futurice-servant
     , github
