@@ -63,7 +63,7 @@ newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
 -- uses both @key@ and @value@ TypeRep's as key to non-typed map.
 
 serveIssues :: Ctx -> IO IssueReport
-serveIssues ctx@(_, mgr, _, cfg) = cachedIO' ctx $ do
+serveIssues ctx@(_, mgr, _, cfg) = cachedIO' ctx () $ do
     repos' <- repos mgr (cfgReposUrl cfg)
     now <- currentTime
     runIntegrations
@@ -71,28 +71,28 @@ serveIssues ctx@(_, mgr, _, cfg) = cachedIO' ctx $ do
         (issueReport repos')
 
 serveFumGitHubReport :: Ctx -> IO FumGitHubReport
-serveFumGitHubReport ctx = cachedIO' ctx $ do
+serveFumGitHubReport ctx = cachedIO' ctx () $ do
     now <- currentTime
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
         fumGithubReport
 
 serveGithubUsersReport :: Ctx -> IO GithubUsersReport
-serveGithubUsersReport ctx = cachedIO' ctx $ do
+serveGithubUsersReport ctx = cachedIO' ctx () $ do
     now <- currentTime
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
         githubUsersReport
 
 serveFumFlowdockReport :: Ctx -> IO FumFlowdockReport
-serveFumFlowdockReport ctx = cachedIO' ctx $ do
+serveFumFlowdockReport ctx = cachedIO' ctx () $ do
     now <- currentTime
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
         fumFlowdockReport
 
 serveMissingHoursReport :: Ctx -> IO MissingHoursReport
-serveMissingHoursReport ctx = cachedIO' ctx $ do
+serveMissingHoursReport ctx = cachedIO' ctx () $ do
     now <- currentTime
     day <- currentDay
     -- TODO: end date to the last friday
@@ -102,7 +102,7 @@ serveMissingHoursReport ctx = cachedIO' ctx $ do
         (missingHoursReport interval)
 
 serveBalancesReport :: Ctx -> IO BalanceReport
-serveBalancesReport ctx = cachedIO' ctx $ do
+serveBalancesReport ctx = cachedIO' ctx () $ do
     now <- currentTime
     day <- currentDay
     let interval = beginningOfPrevMonth day ... day
@@ -111,28 +111,28 @@ serveBalancesReport ctx = cachedIO' ctx $ do
         (balanceReport interval)
 
 servePowerUsersReport :: Ctx -> IO PowerUserReport
-servePowerUsersReport ctx = cachedIO' ctx $ do
+servePowerUsersReport ctx = cachedIO' ctx () $ do
     now <- currentTime
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
         powerUserReport
 
-servePowerAbsencesReport :: Ctx -> IO PowerAbsenceReport
-servePowerAbsencesReport ctx = cachedIO' ctx $ do
+servePowerAbsencesReport :: Ctx -> Maybe Month -> IO PowerAbsenceReport
+servePowerAbsencesReport ctx mmonth = cachedIO' ctx mmonth $ do
     now <- currentTime
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
-        powerAbsenceReport
+        $ powerAbsenceReport mmonth
 
 serveTimereportsByTaskReport :: Ctx -> IO TimereportsByTaskReport
-serveTimereportsByTaskReport ctx = cachedIO' ctx $ do
+serveTimereportsByTaskReport ctx = cachedIO' ctx () $ do
     now <- currentTime
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
         timereportsByTaskReport
 
-cachedIO' :: Typeable v => Ctx -> IO v -> IO v
-cachedIO' (cache, _, logger, _) action = cachedIO logger cache 600 () action
+cachedIO' :: (Eq k, Hashable k, Typeable k, Typeable v) => Ctx -> k -> IO v -> IO v
+cachedIO' (cache, _, logger, _) = cachedIO logger cache 600
 
 -- All report endpoints
 -- this is used for api 'server' and pericron
@@ -144,8 +144,6 @@ reports =
     ReportEndpoint serveGithubUsersReport :*
     ReportEndpoint serveMissingHoursReport :*
     ReportEndpoint serveBalancesReport :*
-    ReportEndpoint servePowerUsersReport :*
-    ReportEndpoint servePowerAbsencesReport :*
     ReportEndpoint serveTimereportsByTaskReport :*
     Nil
 
@@ -158,6 +156,8 @@ makeServer ctx (ReportEndpoint r :* rs) =
 -- | API server
 server :: Ctx -> Server ReportsAPI
 server ctx = makeServer ctx reports
+    :<|> liftIO (servePowerUsersReport ctx)
+    :<|> liftIO . servePowerAbsencesReport ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
