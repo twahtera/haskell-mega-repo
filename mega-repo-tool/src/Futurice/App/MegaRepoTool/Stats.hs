@@ -14,6 +14,7 @@ import Data.Maybe               (fromJust)
 import Data.Semigroup           (Max (..))
 import Data.Semigroup.Generic   (gmappend, gmempty)
 import Data.TDigest             (TDigest, quantile, singleton)
+import Futurice.Monoid          (Average (..))
 import System.Directory.Machine (directoryWalk', files)
 import Text.Printf              (printf)
 
@@ -97,21 +98,3 @@ stats = do
     putStrLn $ "line count 95%:  " ++ printf "%2.2f" (fromJust $ quantile 0.95 td)
     putStrLn $ "line count 98%:  " ++ printf "%2.2f" (fromJust $ quantile 0.98 td)
     putStrLn $ "max lines:       " ++ show (getMax lmax)
-
--------------------------------------------------------------------------------
--- Average
--------------------------------------------------------------------------------
-
--- | Numerically stable average.
-data Average a = Average { _samples :: !a, getAverage :: !a }
-  deriving (Eq, Show)
-
-instance Fractional a => Semigroup (Average a) where
-    Average n x <> Average n' x' = Average m y
-      where
-        m = n + n'
-        y = (n * x + n' * x') / m
-
-instance Fractional a => Monoid (Average a) where
-    mempty = Average 0 0
-    mappend = (<>)
