@@ -22,7 +22,9 @@ data Author = Author
 makeLenses ''Author
 deriveGeneric ''Author
 instance AnsiPretty Author
-instance ToJSON Author where toJSON = sopToJSON
+instance ToJSON Author where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance ToSchema Author where declareNamedSchema = sopDeclareNamedSchema
 
 data Contribution = Contribution
@@ -36,7 +38,9 @@ data Contribution = Contribution
 makeLenses ''Contribution
 deriveGeneric ''Contribution
 instance AnsiPretty Contribution
-instance ToJSON Contribution where toJSON = sopToJSON
+instance ToJSON Contribution where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance ToSchema Contribution where declareNamedSchema = sopDeclareNamedSchema
 
 data SpiceRepo = SpiceRepo
@@ -51,7 +55,9 @@ data SpiceRepo = SpiceRepo
 makeLenses ''SpiceRepo
 deriveGeneric ''SpiceRepo
 instance AnsiPretty SpiceRepo
-instance ToJSON SpiceRepo where toJSON = sopToJSON
+instance ToJSON SpiceRepo where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance ToSchema SpiceRepo where declareNamedSchema = sopDeclareNamedSchema
 
 data Stats = Stats
@@ -64,5 +70,7 @@ data Stats = Stats
 makeLenses ''Stats
 deriveGeneric ''Stats
 instance AnsiPretty Stats
-instance ToJSON Stats where toJSON = sopToJSON
+instance ToJSON Stats where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance ToSchema Stats where declareNamedSchema = sopDeclareNamedSchema
