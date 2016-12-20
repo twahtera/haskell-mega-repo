@@ -13,7 +13,6 @@ packages:
 - flowdock-grep/
 - flowdock-rest/
 - fum-client/
-- futucli/
 - futuhours-api/
 - futurice-foundation/
 - futurice-github/
