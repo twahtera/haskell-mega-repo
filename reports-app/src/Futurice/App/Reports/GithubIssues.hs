@@ -65,7 +65,9 @@ instance ReportValue GitHubRepo where
          repoLink = ownerLink <> "/" <> r'
 
 instance NFData GitHubRepo
-instance ToJSON GitHubRepo where toJSON = sopToJSON
+instance ToJSON GitHubRepo where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance ToSchema GitHubRepo where declareNamedSchema = sopDeclareNamedSchema
 
 

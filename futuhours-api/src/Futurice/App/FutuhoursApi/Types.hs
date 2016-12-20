@@ -309,7 +309,9 @@ instance Arbitrary Project where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance ToJSON Project where toJSON = sopToJSON
+instance ToJSON Project where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance FromJSON Project where parseJSON = sopParseJSON
 instance ToSchema Project where declareNamedSchema = sopDeclareNamedSchema
 
@@ -317,7 +319,9 @@ instance Arbitrary Task where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance ToJSON Task where toJSON = sopToJSON
+instance ToJSON Task where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance FromJSON Task where parseJSON = sopParseJSON
 instance ToSchema Task where declareNamedSchema = sopDeclareNamedSchema
 
@@ -325,7 +329,9 @@ instance Arbitrary LatestEntry where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance ToJSON LatestEntry where toJSON = sopToJSON
+instance ToJSON LatestEntry where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance FromJSON LatestEntry where parseJSON = sopParseJSON
 instance ToSchema LatestEntry where declareNamedSchema = sopDeclareNamedSchema
 
@@ -333,7 +339,9 @@ instance Arbitrary Entry where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance ToJSON Entry where toJSON = sopToJSON
+instance ToJSON Entry where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance FromJSON Entry where parseJSON = sopParseJSON
 instance ToSchema Entry where declareNamedSchema = sopDeclareNamedSchema
 
@@ -341,7 +349,9 @@ instance Arbitrary EntryUpdate where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance ToJSON EntryUpdate where toJSON = sopToJSON
+instance ToJSON EntryUpdate where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance FromJSON EntryUpdate where parseJSON = sopParseJSON
 instance ToSchema EntryUpdate where declareNamedSchema = sopDeclareNamedSchema
 
@@ -349,7 +359,9 @@ instance Arbitrary EntryUpdateResponse where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance ToJSON EntryUpdateResponse where toJSON = sopToJSON
+instance ToJSON EntryUpdateResponse where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance FromJSON EntryUpdateResponse where parseJSON = sopParseJSON
 instance ToSchema EntryUpdateResponse where declareNamedSchema = sopDeclareNamedSchema
 
@@ -357,7 +369,9 @@ instance Arbitrary User where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance ToJSON User where toJSON = sopToJSON
+instance ToJSON User where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance FromJSON User where parseJSON = sopParseJSON
 instance ToSchema User where declareNamedSchema = sopDeclareNamedSchema
 
@@ -365,7 +379,9 @@ instance Arbitrary HoursDay where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance ToJSON HoursDay where toJSON = sopToJSON
+instance ToJSON HoursDay where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance FromJSON HoursDay where parseJSON = sopParseJSON
 instance ToSchema HoursDay where declareNamedSchema = sopDeclareNamedSchema
 
@@ -373,7 +389,9 @@ instance Arbitrary HoursDayUpdate where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance ToJSON HoursDayUpdate where toJSON = sopToJSON
+instance ToJSON HoursDayUpdate where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance FromJSON HoursDayUpdate where parseJSON = sopParseJSON
 instance ToSchema HoursDayUpdate where declareNamedSchema = sopDeclareNamedSchema
 
@@ -381,7 +399,9 @@ instance Arbitrary HoursMonth where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance ToJSON HoursMonth where toJSON = sopToJSON
+instance ToJSON HoursMonth where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance FromJSON HoursMonth where parseJSON = sopParseJSON
 instance ToSchema HoursMonth where declareNamedSchema = sopDeclareNamedSchema
 
@@ -389,7 +409,9 @@ instance Arbitrary HoursMonthUpdate where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance ToJSON HoursMonthUpdate where toJSON = sopToJSON
+instance ToJSON HoursMonthUpdate where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance FromJSON HoursMonthUpdate where parseJSON = sopParseJSON
 instance ToSchema HoursMonthUpdate where declareNamedSchema = sopDeclareNamedSchema
 
@@ -397,7 +419,9 @@ instance Arbitrary HoursResponse where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance ToJSON HoursResponse where toJSON = sopToJSON
+instance ToJSON HoursResponse where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance FromJSON HoursResponse where parseJSON = sopParseJSON
 instance ToSchema HoursResponse where declareNamedSchema = sopDeclareNamedSchema
 
@@ -405,6 +429,8 @@ instance Arbitrary HoursUpdateResponse where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance ToJSON HoursUpdateResponse where toJSON = sopToJSON
+instance ToJSON HoursUpdateResponse where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance FromJSON HoursUpdateResponse where parseJSON = sopParseJSON
 instance ToSchema HoursUpdateResponse where declareNamedSchema = sopDeclareNamedSchema

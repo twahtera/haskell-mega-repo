@@ -53,7 +53,9 @@ deriveGeneric ''MissingHour
 
 instance NFData MissingHour
 
-instance ToJSON MissingHour where toJSON = sopToJSON
+instance ToJSON MissingHour where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 instance FromJSON MissingHour where parseJSON = sopParseJSON
 instance ToSchema MissingHour where declareNamedSchema = sopDeclareNamedSchema
 
