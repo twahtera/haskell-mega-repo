@@ -2,7 +2,7 @@
 {-# LANGUAGE RankNTypes        #-}
 module Futurice.App.FutuhoursMock.MockData (
     projects,
-    days,
+    entries,
     internalProject,
     absenceProject,
     ) where
@@ -85,117 +85,76 @@ inactiveProject = Project
 projects :: [Project]
 projects = [internalProject, absenceProject, customerProject, inactiveProject]
 
-days :: [HoursDay]
-days =
-    [ defaultHoursDay
-        { _dayHours = 5
-        , _dayEntries =
-            [ Entry
-                { _entryId = PM.Ident 1
-                , _entryProjectId = internalProject ^. projectId
-                , _entryTaskId =
-                    fromMaybe
-                        (PM.Ident 1)
-                        (internalProject ^? projectTasks . traverse . taskId)
-                , _entryDescription = "Internal work"
-                , _entryHours = 5
-                , _entryClosed = False
-                }
-            ]
+entries :: [Entry]
+entries =
+    [ Entry
+        { _entryId          = PM.Ident 1
+        , _entryDay         = ModifiedJulianDay 0
+        , _entryProjectId   = internalProject ^. projectId
+        , _entryTaskId      = internalProject ^. projectFirstTaskId (PM.Ident 1)
+        , _entryDescription = "Internal work"
+        , _entryHours       = 5
+        , _entryClosed      = False
+        , _entryBillable    = EntryTypeNotBillable
         }
-    , defaultHoursDay
-        { _dayHolidayName = Just "Public holiday"
+    , Entry
+        { _entryId          = PM.Ident 2
+        , _entryDay         = ModifiedJulianDay 0
+        , _entryProjectId   = absenceProject ^. projectId
+        , _entryTaskId      = absenceProject ^. projectFirstTaskId (PM.Ident 2)
+        , _entryDescription = absenceProject ^. projectLatestDescription
+        , _entryHours       = 7.5
+        , _entryClosed      = False
+        , _entryBillable    = EntryTypeOther
         }
-    , defaultHoursDay
-    , defaultHoursDay
-    , defaultHoursDay
-        { _dayClosed = True
+    , Entry
+        { _entryId          = PM.Ident 13
+        , _entryDay         = ModifiedJulianDay 0
+        , _entryProjectId   = customerProject ^. projectId
+        , _entryTaskId      = customerProject ^. projectFirstTaskId (PM.Ident 13)
+        , _entryDescription = customerProject ^. projectLatestDescription
+        , _entryHours       = 10
+        , _entryClosed      = False
+        , _entryBillable    = EntryTypeBillable
         }
-    , defaultHoursDay
-        { _dayHours = 7.5
-        , _dayEntries =
-            [ Entry
-                { _entryId          = PM.Ident 2
-                , _entryProjectId   = absenceProject ^. projectId
-                , _entryTaskId      = absenceProject ^. projectFirstTaskId (PM.Ident 2)
-                , _entryDescription = absenceProject ^. projectLatestDescription
-                , _entryHours       = 7.5
-                , _entryClosed      = False
-                }
-            ]
+    , Entry
+        { _entryId          = PM.Ident 4
+        , _entryDay         = ModifiedJulianDay 0
+        , _entryProjectId   = absenceProject ^. projectId
+        , _entryTaskId      = absenceProject ^. projectFirstTaskId (PM.Ident 4)
+        , _entryDescription = absenceProject ^. projectLatestDescription
+        , _entryHours       = 2.5
+        , _entryClosed      = False
+        , _entryBillable    = EntryTypeOther
         }
-    , defaultHoursDay
-        { _dayHours   = 7.5
-        , _dayClosed  = True
-        , _dayEntries =
-            [ Entry
-                { _entryId          = PM.Ident 3
-                , _entryProjectId   = absenceProject ^. projectId
-                , _entryTaskId      = absenceProject ^. projectFirstTaskId (PM.Ident 3)
-                , _entryDescription = absenceProject ^. projectLatestDescription
-                , _entryHours       = 7.5
-                , _entryClosed      = False
-                }
-            ]
+    , Entry
+        { _entryId          = PM.Ident 5
+        , _entryDay         = ModifiedJulianDay 0
+        , _entryProjectId   = customerProject ^. projectId
+        , _entryTaskId      = fromMaybe (PM.Ident 5) $ customerProject ^? projectTasks . traverse .  taskId
+        , _entryDescription = "Customer work"
+        , _entryHours       = 5.0
+        , _entryClosed      = False
+        , _entryBillable    = EntryTypeBillable
         }
-    , defaultHoursDay
-        { _dayHours = 10
-        , _dayEntries =
-            [ Entry
-              { _entryId          = PM.Ident 13
-              , _entryProjectId   = customerProject ^. projectId
-              , _entryTaskId      = customerProject ^. projectFirstTaskId (PM.Ident 13)
-              , _entryDescription = customerProject ^. projectLatestDescription
-              , _entryHours       = 10
-              , _entryClosed      = False
-              }
-            ]
+    , Entry
+        { _entryId          = PM.Ident 6
+        , _entryDay         = ModifiedJulianDay 0
+        , _entryProjectId   = inactiveProject ^. projectId
+        , _entryTaskId      = inactiveProject ^. projectFirstTaskId (PM.Ident 6)
+        , _entryDescription = inactiveProject ^. projectLatestDescription
+        , _entryHours       = 9.0
+        , _entryClosed      = True
+        , _entryBillable    = EntryTypeBillable
         }
-    , defaultHoursDay
-        { _dayHours = 7.5
-        , _dayEntries =
-            [ Entry
-                { _entryId          = PM.Ident 4
-                , _entryProjectId   = absenceProject ^. projectId
-                , _entryTaskId      = absenceProject ^. projectFirstTaskId (PM.Ident 4)
-                , _entryDescription = absenceProject ^. projectLatestDescription
-                , _entryHours       = 2.5
-                , _entryClosed      = False
-                }
-            , Entry
-                { _entryId          = PM.Ident 5
-                , _entryProjectId   = customerProject ^. projectId
-                , _entryTaskId      = fromMaybe (PM.Ident 5) $ customerProject ^? projectTasks . traverse .  taskId
-                , _entryDescription = "Customer work"
-                , _entryHours       = 5.0
-                , _entryClosed      = False
-                }
-            ]
-        }
-    , defaultHoursDay
-        { _dayHours = 9.0
-        , _dayEntries =
-            [ Entry
-                { _entryId          = PM.Ident 6
-                , _entryProjectId   = inactiveProject ^. projectId
-                , _entryTaskId      = inactiveProject ^. projectFirstTaskId (PM.Ident 6)
-                , _entryDescription = inactiveProject ^. projectLatestDescription
-                , _entryHours       = 9.0
-                , _entryClosed      = True
-                }
-            ]
-        }
-    , defaultHoursDay
-        { _dayHours = 7.5
-        , _dayEntries =
-            [ Entry
-                { _entryId          = PM.Ident 7
-                , _entryProjectId   = inactiveProject ^. projectId
-                , _entryTaskId      = inactiveProject ^. projectFirstTaskId (PM.Ident 7)
-                , _entryDescription = inactiveProject ^. projectLatestDescription
-                , _entryHours       = 7.5
-                , _entryClosed      = True
-                }
-            ]
+    , Entry
+        { _entryId          = PM.Ident 7
+        , _entryDay         = ModifiedJulianDay 0
+        , _entryProjectId   = inactiveProject ^. projectId
+        , _entryTaskId      = inactiveProject ^. projectFirstTaskId (PM.Ident 7)
+        , _entryDescription = inactiveProject ^. projectLatestDescription
+        , _entryHours       = 7.5
+        , _entryClosed      = True
+        , _entryBillable    = EntryTypeBillable
         }
     ]

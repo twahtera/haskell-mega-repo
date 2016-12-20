@@ -13,18 +13,11 @@ module Futurice.App.FutuhoursMock.Logic (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens               (Traversal', forOf)
-import Control.Monad.State.Strict (MonadState (..), evalStateT, modify')
-import Data.Maybe                 (fromJust)
-import Data.Text                  (pack)
-import Data.Time                  (defaultTimeLocale)
-import Data.Time.Calendar
-       (addDays, diffDays, fromGregorian, toGregorian)
-import Data.Time.Format           (formatTime)
-import Data.Vector.Lens           (vector)
+import Control.Lens        (Traversal', forOf)
+import Data.Vector.Lens    (vector)
+import Futurice.Time.Month (dayToMonth)
 import Servant
-import System.Random              (randomRIO)
-import Test.QuickCheck            (arbitrary, sample')
+import System.Random       (randomRIO)
 
 import Futurice.App.FutuhoursApi.Types
 import Futurice.App.FutuhoursMock.Ctx
@@ -33,13 +26,14 @@ import Futurice.App.FutuhoursMock.MockData
 import qualified Data.Map.Strict as Map
 import qualified FUM
 import qualified PlanMill        as PM
+import qualified Test.QuickCheck as QC
 
 projectEndpoint
     :: Ctx
     -> Maybe FUM.UserName
     -> ExceptT ServantErr IO (Vector Project)
 projectEndpoint _ctx _fumUser = liftIO $ do
-    p <- sample' arbitrary
+    p <- QC.sample' QC.arbitrary
     pure $ p ^. vector
 
 -- | @GET /user@
@@ -66,10 +60,8 @@ hoursEndpoint
     -> Maybe Day
     -> Maybe Day
     -> ExceptT ServantErr IO HoursResponse
-hoursEndpoint _ctx _fumUser sd ed = do
-    let duration = diffDays (fromJust sd) (fromJust ed)
-    let d = daysFD duration $ (fromJust sd)
-    months <- liftIO $ genMonths d
+hoursEndpoint _ctx _fumUser (Just sd) (Just ed) = do
+    months <- liftIO $ fmap last $ QC.sample' $ genMonths [ sd .. ed ]
     p <- liftIO $ fillProjects
     return $ HoursResponse
         { _hoursResponseProjects         = p
@@ -77,43 +69,24 @@ hoursEndpoint _ctx _fumUser sd ed = do
         , _hoursResponseDefaultWorkHours = 7.5
         }
 
-daysFD :: Integer -> Day -> [Day]
-daysFD duration start = [addDays i start | i <- [0..duration]]
+-- start or end days not set
+hoursEndpoint _ _ _ _ = throwError err400
 
-monthForDay :: Day -> String
-monthForDay x = formatTime defaultTimeLocale "%Y-%m" x
+-- Generate a HoursDay for each day, and then group them into maps
+genMonths :: [Day] -> QC.Gen (Map.Map Month HoursMonth)
+genMonths ds = do
+    -- generate entry for each day
+    es <- for ds $ \d -> do
+        -- 0-3 entries per day, with one most frequent.
+        n <- QC.frequency [(1, pure 0), (1, pure 2), (1, pure 3), (10, pure 1) ]
+        es <- QC.vectorOf n (QC.elements entries)
 
-dayInMonth :: String -> Day -> Bool
-dayInMonth m d = m == formatTime defaultTimeLocale "%Y-%m" d
+        -- mock days doesn't have day set
+        pure $ es & traverse . entryDay .~ d
 
-plusOne :: MonadState Int m => m Int
-plusOne = do
-    val <- get
-    modify' (+1)
-    pure val
+    -- | TODO: there is no holiday map
+    pure $ mkHoursMonth mempty $ concat es
 
-mkGo :: MonadState Int m => m HoursDay
-mkGo = do
-    newval <- plusOne
-    pure $ days !! mod newval (length days)
-
-genMonths :: forall m. MonadIO m => [Day] -> m (Map.Map Text HoursMonth)
-genMonths ds = flip evalStateT 1 $ fmap Map.fromList $ do
-    for ds $ \mm -> do
-        let m     = monthForDay mm
-        let days' = [ d | d <- ds, dayInMonth m d ]
-        hrs <- liftIO $ randomRIO (0, 150)
-        utz <- liftIO $ randomRIO (0, 100)
-        days'' <- for days' $ \d' -> do
-            let (ym',mm',_) = toGregorian mm
-            let (_,_,dd')   = toGregorian d'
-            fsd <- mkGo
-            pure $ (textShow $ fromGregorian ym' mm' dd', fsd)
-        pure $ (,) (pack m) $ HoursMonth
-            { _monthHours           = hrs * 0.5
-            , _monthUtilizationRate = utz
-            , _monthDays            = Map.fromList days''
-            }
 
 -- | /TODO/: we should use 'MonadRandom', not 'MonadIO'.
 fillProjects :: forall m. (MonadTime m, MonadIO m) => m [Project]
@@ -149,19 +122,21 @@ mkEntryEndPoint req = do
             , _hoursDayUpdateHours       = _euHours req
             , _hoursDayUpdateEntry       = Just Entry
                 { _entryId          = PM.Ident newEntryId
+                , _entryDay         = ModifiedJulianDay 0 -- wrong
                 , _entryProjectId   = _euProjectId req
                 , _entryTaskId      = _euTaskId req
                 , _entryDescription = _euDescription req
                 , _entryHours       = _euHours req
                 , _entryClosed      = fromMaybe False (_euClosed req) -- TODO: is Maybe open or closed?
+                , _entryBillable    = EntryTypeBillable -- wrong
                 }
             }
-    let d = Map.fromList [(pack $ formatTime defaultTimeLocale "%Y-%m-%d" date, [md])]
+    let d = Map.fromList [(date, [md])]
     let mm = HoursMonthUpdate
               { _hoursMonthUpdateHours=75
             , _hoursMonthUpdateUtilizationRate=70
             , _hoursMonthUpdateDays=d}
-    let months = Map.fromList [(pack $ formatTime defaultTimeLocale "%Y-%m" date, [mm])]
+    let months = Map.fromList [(dayToMonth date, [mm])]
     let userResponse = User
             { _userFirstName="Test"
             , _userLastName="User"

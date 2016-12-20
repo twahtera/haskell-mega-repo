@@ -14,8 +14,15 @@ module Futurice.App.FutuhoursApi.Types where
 
 import Prelude ()
 import Futurice.Prelude
+import Control.Lens        (Getter, andOf, foldOf, imap, sumOf, to)
+import Data.Aeson          (Value (..), withText)
+import Data.Swagger        (NamedSchema (..))
 import Futurice.Generics
+import Futurice.Monoid     (Average (..))
+import Futurice.Time.Month (dayToMonth)
+import Test.QuickCheck     (arbitraryBoundedEnum)
 
+import qualified Data.Map as Map
 import qualified PlanMill as PM
 
 -------------------------------------------------------------------------------
@@ -50,16 +57,31 @@ mkTask i name = Task
     , _taskHoursRemaining = Nothing
     }
 
+-- | Entry may be billable, not billable, or not-countable (i.e. absences)
+data EntryType
+    = EntryTypeBillable
+    | EntryTypeNotBillable
+    | EntryTypeOther
+  deriving (Eq, Ord, Show, Enum, Bounded, Typeable, Generic)
+
 -- Entries for a specific Day
 data Entry = Entry
-    { _entryId          :: PM.TimereportId
-    , _entryProjectId   :: PM.ProjectId
-    , _entryTaskId      :: PM.TaskId
+    { _entryId          :: !PM.TimereportId
+    , _entryProjectId   :: !PM.ProjectId
+    , _entryTaskId      :: !PM.TaskId
+    , _entryDay         :: !Day
     , _entryDescription :: !Text
     , _entryClosed      :: !Bool
     , _entryHours       :: !Float
+    , _entryBillable    :: !EntryType
     }
   deriving (Eq, Show, Typeable, Generic)
+
+entryUtilizationAvg :: Getter Entry (Maybe (Average Float))
+entryUtilizationAvg = to $ \entry -> case _entryBillable entry of
+    EntryTypeBillable    -> Just $ Average (_entryHours entry) 100
+    EntryTypeNotBillable -> Just $ Average (_entryHours entry) 0
+    EntryTypeOther       -> Nothing
 
 -- TODO: perhaps a lens getter for an Entry?
 
@@ -79,6 +101,8 @@ mkLatestEntry desc = LatestEntry
     }
 
 -- | When frontend sends closed entry to be updated, API doesn't do anything, just respond ok
+--
+-- /TODO:/ is this *new* entry, probably we don't need closed field at all?
 data EntryUpdate = EntryUpdate
     { _euTaskId      :: PM.TaskId
     , _euProjectId   :: PM.ProjectId
@@ -136,33 +160,38 @@ data HoursDayUpdate = HoursDayUpdate
     }
   deriving (Eq, Show, Typeable, Generic)
 
+-- | TODO: add a '_samples' of Utilisation rate weighted average.
 data HoursMonth = HoursMonth
     { _monthHours           :: !Float
     , _monthUtilizationRate :: !Float
-    , _monthDays            :: Map Text HoursDay
+    , _monthDays            :: Map Day HoursDay -- ^ invariant days of the same month
     }
   deriving (Eq, Show, Typeable, Generic)
 
 data HoursMonthUpdate = HoursMonthUpdate
     { _hoursMonthUpdateHours           :: !Float
     , _hoursMonthUpdateUtilizationRate :: !Float
-    , _hoursMonthUpdateDays            :: Map Text [HoursDayUpdate]
+    , _hoursMonthUpdateDays            :: Map Day [HoursDayUpdate] -- TODO: check invariant on JSON unserialisation
     }
   deriving (Eq, Show, Typeable, Generic)
 
 data HoursResponse = HoursResponse
     { _hoursResponseDefaultWorkHours :: !Float
     , _hoursResponseProjects         :: ![Project]
-    , _hoursResponseMonths           :: Map Text HoursMonth
+    , _hoursResponseMonths           :: Map Month HoursMonth -- invariant contents: 'HoursMonth' contains days of key-month
     }
   deriving (Eq, Show, Typeable, Generic)
 
 data HoursUpdateResponse = HoursUpdateResponse
     { _hoursUpdateResponseDefaultWorkHours :: !Float
     , _hoursUpdateResponseProjects         :: ![Project]
-    , _hoursUpdateResponseMonths           :: Map Text [HoursMonthUpdate]
+    , _hoursUpdateResponseMonths           :: Map Month [HoursMonthUpdate] -- TODO: check invariant on JSON unserialisation
     }
   deriving (Eq, Show, Typeable, Generic)
+
+-------------------------------------------------------------------------------
+-- Generics and Lenses
+-------------------------------------------------------------------------------
 
 makeLenses ''Project
 deriveGeneric ''Project
@@ -202,6 +231,79 @@ deriveGeneric ''HoursResponse
 
 makeLenses ''HoursUpdateResponse
 deriveGeneric ''HoursUpdateResponse
+
+-------------------------------------------------------------------------------
+-- Smart constructors
+-------------------------------------------------------------------------------
+
+-- here because we want to use lenses.
+
+-- | Smart constructor.
+mkHoursMonth
+    :: Map Day Text  -- ^ Holiday names
+    -> [Entry]
+    -> Map Month HoursMonth
+mkHoursMonth holidays entries =
+    let entriesByDay :: Map Day [Entry]
+        entriesByDay = Map.fromListWith (++)
+            [ (_entryDay e, [e]) | e <- entries ]
+
+        entriesByMonth :: Map Month (Map Day [Entry])
+        entriesByMonth = Map.fromListWith (Map.unionWith (++))
+            [ (dayToMonth d, Map.singleton d es)
+            | (d, es) <- Map.toList entriesByDay
+            ]
+
+    in mkHoursMonth' <$> entriesByMonth
+  where
+    mkHoursMonth' :: Map Day [Entry] -> HoursMonth
+    mkHoursMonth' mm = HoursMonth
+        { _monthHours           = sumOf (folded . folded . entryHours) mm
+        , _monthUtilizationRate = utz
+        , _monthDays            = imap mkHoursDay mm
+        }
+      where
+        Average _hours utz = foldOf
+            (folded . folded . entryUtilizationAvg . folded)
+            mm
+
+    -- Invariant: all entries are on the first day
+    mkHoursDay :: Day -> [Entry] -> HoursDay
+    mkHoursDay d es = HoursDay
+        { _dayHolidayName = holidays ^? ix d
+        , _dayHours       = sumOf (folded . entryHours) es
+        , _dayEntries     = es
+        , _dayClosed      = andOf (folded . entryClosed) es
+          -- day is closed if every entry in it is closed
+        }
+
+-------------------------------------------------------------------------------
+-- Instances
+-------------------------------------------------------------------------------
+
+instance Arbitrary EntryType where
+    arbitrary = arbitraryBoundedEnum
+    shrink EntryTypeBillable = []
+    shrink et                = [ EntryTypeBillable .. pred et ]
+
+entryTypeText :: EntryType -> Text
+entryTypeText EntryTypeBillable    = "billable"
+entryTypeText EntryTypeNotBillable = "non-billable"
+entryTypeText EntryTypeOther       = "other"
+
+instance ToJSON EntryType where
+    toJSON = String . entryTypeText
+
+instance FromJSON EntryType where
+    parseJSON = withText "EntryType" $ \t -> maybe
+        (fail $ "Invalid entry type: " <> t ^. unpacked)
+        pure
+        (lookup t m)
+      where
+        m = [ (entryTypeText et, et) | et <- [ minBound .. maxBound ] ]
+
+instance ToSchema EntryType where
+    declareNamedSchema _ = pure $ NamedSchema (Just "EntryType") mempty
 
 instance Arbitrary Project where
     arbitrary = sopArbitrary
