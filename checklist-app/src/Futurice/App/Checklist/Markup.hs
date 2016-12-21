@@ -64,7 +64,7 @@ navigation (fu, viewerRole, _viewerLocation) = do
                 "Hello "
                 toHtml $ fu ^. FUM.getUserName
                 ", you are "
-                roleHtml (Nothing :: Maybe Checklist) viewerRole
+                toHtml $ viewerRole ^. re _TaskRole
 
 header
     :: Monad m
