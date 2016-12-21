@@ -37,6 +37,6 @@ instance SColour c => MimeRender PNG (FutuFavicon c) where
     mimeRender _ _ = encodePng (makeLogo c)
       where c = untag (scolour :: Tagged c Colour)
 
-serveFutuFavicon :: SColour c => Server (FutuFaviconAPI c)
+serveFutuFavicon :: Server (FutuFaviconAPI c)
 serveFutuFavicon = pure FutuFavicon
 

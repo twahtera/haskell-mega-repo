@@ -31,7 +31,7 @@ import PlanMill.Types
 
 evalPlanMill
     :: forall m env a.
-        ( MonadHttp m, MonadThrow m, MonadTime m, MonadLog m
+        ( MonadHttp m, MonadThrow m, MonadLog m -- MonadTime m implied by MonadLog
         , MonadReader env m, HasPlanMillBaseUrl env, HasCredentials env
         , MonadCRandom' m
         , FromJSON a

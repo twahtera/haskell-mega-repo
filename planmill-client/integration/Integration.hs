@@ -97,7 +97,7 @@ script5 = do
     putPretty trs
     putPretty cc
 
-script6 :: (MonadPlanMill m, MonadIO m, MonadThrow m) => m ()
+script6 :: (MonadPlanMill m, MonadIO m) => m ()
 script6 = do
     me' <- planmillAction me
     u <- planmillAction $ user $ me' ^. identifier

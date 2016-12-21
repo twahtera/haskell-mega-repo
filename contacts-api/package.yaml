@@ -11,12 +11,14 @@ tested-with: GHC==7.8.4, GHC==7.10.2
 extra-source-files:
 - README.md
 
-ghc-options: -Wall  -fcontext-stack=30
+ghc-options: -Wall
 
-flags:
-  aeson-compat:
-    manual: True
-    default: True
+when:
+  condition: impl(ghc >= 8.0)
+  then:
+    ghc-options: -freduction-depth=30
+  else:
+    ghc-options: -fcontext-stack=30
 
 default-extensions:
   - DeriveDataTypeable
@@ -31,6 +33,7 @@ library:
   dependencies:
     - base                  >=4.7   && <4.10
     - aeson                 >=1.0   && <1.1
+    - aeson-compat
     - base-compat
     - bifunctors
     - binary-orphans
@@ -82,14 +85,6 @@ library:
     - unordered-containers
     - vector                >=0.10  && <0.12
     - wai
-
-  when:
-    - condition: flag(aeson-compat)
-      dependencies:
-      - aeson-compat >=0.3.0.0 && <0.4
-    - condition: "!flag(aeson-compat)"
-      dependencies:
-      - aeson-extra  >=0.2.2.0 && <0.3
 
 executables:
   contacts-server:

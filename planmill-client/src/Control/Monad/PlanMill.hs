@@ -28,7 +28,6 @@ module Control.Monad.PlanMill (
 import PlanMill.Internal.Prelude
 import Prelude ()
 
-import Control.Monad.Http               (MonadHttp)
 import Data.Constraint                  (Constraint, Dict (..), type (:-)(..), (\\))
 import Futurice.Constraint.ForallSymbol (ForallFSymbol (..))
 
@@ -119,19 +118,14 @@ instance Monad m
 -- Simple instance for "IO"
 -------------------------------------------------------------------------------
 
-instance
-    ( MonadIO m, MonadHttp m, MonadThrow m, MonadTime m, MonadLog m
-    , HasPlanMillBaseUrl env, HasCredentials env
-    )
-  => MonadPlanMill (ReaderT env m) where
+instance (MonadIO m, HasPlanMillBaseUrl env, HasCredentials env)
+    => MonadPlanMill (ReaderT env m)
+  where
     planmillAction planmill = do
         cfg <- askCfg
         liftIO $ evalPlanMillIO cfg planmill
 
-instance
-    ( MonadIO m, MonadHttp m, MonadThrow m, MonadTime m, MonadLog m
-    , Applicative m
-    , HasPlanMillBaseUrl env, HasCredentials env
-    )
-  => MonadPlanMillQuery (ReaderT env m) where
+instance (MonadIO m , HasPlanMillBaseUrl env, HasCredentials env)
+    => MonadPlanMillQuery (ReaderT env m)
+  where
     planmillQuery = planmillAction . queryToRequest

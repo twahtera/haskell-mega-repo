@@ -84,7 +84,7 @@ genMonths ds = do
         -- mock days doesn't have day set
         pure $ es & traverse . entryDay .~ d
 
-    -- | TODO: there is no holiday map
+    -- TODO: there is no holiday map
     pure $ mkHoursMonth mempty $ concat es
 
 

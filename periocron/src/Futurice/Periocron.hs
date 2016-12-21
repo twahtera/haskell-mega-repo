@@ -18,8 +18,7 @@ import Futurice.Prelude
 
 import Control.Concurrent               (ThreadId, forkIO, threadDelay)
 import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, modify')
-import Data.Time
-       (addUTCTime, diffUTCTime, getCurrentTime)
+import Data.Time                        (addUTCTime, diffUTCTime)
 
 -------------------------------------------------------------------------------
 -- Worker
@@ -32,7 +31,7 @@ data Options = Options
 
 spawnPeriocron :: Options -> [(Job, Intervals)] -> IO ThreadId
 spawnPeriocron options defs = do
-    now <- getCurrentTime
+    now <- currentTime
     let jobs :: [(UTCTime, Job)]
         jobs = map (first (flip addUTCTime now)) $ mergeDefs defs
     forkIO $ workerLoop options jobs
@@ -43,10 +42,11 @@ workerLoop options
     . flip evalStateT 0
     . iterateM go
   where
-    go :: (Applicative m, MonadLog m, MonadTime m, MonadIO m)
+    -- N.B. MonadTime is implied by MonadLog
+    go :: (Applicative m, MonadLog m, MonadIO m)
         => [(UTCTime, Job)] -> StateT Int m [(UTCTime, Job)]
     go jobs = do
-        now <- liftIO $ getCurrentTime
+        now <- currentTime
         let (todo, rest) = span ((< now) . fst) jobs
 
         logLocalDomain "worker-loop" $ logInfo_ $
@@ -63,7 +63,7 @@ workerLoop options
         pure rest
 
     executeJob
-        :: (Applicative m, MonadLog m, MonadTime m, MonadIO m)
+        :: (Applicative m, MonadLog m, MonadIO m)
         => Job -> StateT Int m ()
     executeJob (Job label action) = do
         -- jobid

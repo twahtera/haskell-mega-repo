@@ -117,6 +117,9 @@ type FumGitHubReport = Report
 
 -- | *TODO:* move to @futurice-integrations@ package
 
+{-
+TODO: fum links 
+
 class HasFUMPublicURL env where
     fumPublicUrl :: Lens' env Text
 
@@ -125,6 +128,7 @@ instance HasFUMPublicURL FumGithubReportParams where
       where
         t (FumGithubReportParams _ x) = x
         f (FumGithubReportParams y _) = FumGithubReportParams y
+-}
 
 -------------------------------------------------------------------------------
 -- Logic

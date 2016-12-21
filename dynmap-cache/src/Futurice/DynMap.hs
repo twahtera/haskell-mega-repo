@@ -41,7 +41,7 @@ data SubDynMap fk fv =
 newIO :: IO (DynMap fk fv)
 newIO = DynMap <$> SMap.newIO
 
-lookup :: forall k v fk fv. (Typeable k, Eq (fk k), Hashable (fk k), Typeable v)
+lookup :: forall k v fk fv. (Typeable k, Typeable v)
        => fk k -> Proxy v -> DynMap fk fv -> STM (Maybe (fv v))
 lookup key _ (DynMap dmap) = do
     l <- SMap.lookup tr dmap

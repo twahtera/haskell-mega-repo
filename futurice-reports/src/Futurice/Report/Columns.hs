@@ -88,7 +88,7 @@ instance (ToJSON a, ToJSON params, IsMaybe a, IsMaybe params)
     toJSON = sopToJSON
     toEncoding = sopToEncoding
 
-instance (FromJSON a, FromJSON params, KnownSymbol name, IsMaybe a, IsMaybe params)
+instance (FromJSON a, FromJSON params, IsMaybe a, IsMaybe params)
     => FromJSON (Report name params a)
   where
     parseJSON = sopParseJSON
@@ -279,8 +279,7 @@ class ToColumns a where
 
     columnNames :: Proxy a -> NP (K Text) (Columns a)
     default columnNames
-        :: ( xs ~ Columns a
-           , '[xs] ~ SOP.Code a
+        :: ( '[xs] ~ SOP.Code a
            , SOP.HasDatatypeInfo a
            , SListI xs
            )
