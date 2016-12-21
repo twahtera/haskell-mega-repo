@@ -28,9 +28,36 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
     header (checklist ^. nameText <> " - checklist") []
 
     -- Edit
+    row_ [ id_ "futu-task-edit", data_ "futu-checklist-id" $ checklist ^. identifierText ] $ large_ 12 $ do
+        row_ $ large_ 12 $
+            label_ $ do
+                "Name"
+                let v = checklist ^. nameText
+                -- TODO: change id to futu-id
+                input_ [ id_ "futu-checklist-name", type_ "text", data_ "futu-value" v, value_ v ]
+
+        row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
+            button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Save"
+            button_ [ class_ "button", data_ "futu-action" "reset" ] $ "Reset"
 
     -- Add Task
     subheader_ "Add task"
+    row_ [ id_ "futu-add-task", data_ "futu-checklist-id" $ checklist ^. identifierText ] $ large_ 12 $ do
+        row_ $ large_ 12 $
+            label_ $ do
+                "Task"
+                select_ [ id_ "futu-task-id" ] $ for_ allTasks $ \task ->
+                    option_
+                        [ value_ $ task ^. identifierText ]
+                        $ task ^. nameHtml
+
+        row_ $ large_ 12 $
+            label_ $ do
+                "Appliance"
+                input_ [ id_ "futu_appliance", type_ "text", value_ "*" ]
+
+        row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
+            button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Add"
 
     -- Tasks
     subheader_ "Tasks"
@@ -80,8 +107,9 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
 
 
   where
-    tasks0 = world ^.. worldTasks . folded
-    tasks2 = maybe id (filter . checklistPredicate) mlist tasks0
+    allTasks = world ^.. worldTasks . folded
+
+    tasks2 = maybe id (filter . checklistPredicate) mlist allTasks
     tasks' = tasks2
 
     mlist = Just checklist
