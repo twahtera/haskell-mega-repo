@@ -7,7 +7,6 @@ import Futurice.Prelude
 import Control.Lens              (filtered, foldMapOf, has, re, to)
 import Futurice.Lucid.Foundation
 
-import Futurice.App.Checklist.Clay
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
@@ -32,9 +31,7 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
         checklistPredicate cl task = flip has world $
             worldLists . ix (cl ^. identifier) . checklistTasks . ix (task ^. identifier)
 
-    in page_ "Checklist - Tasks" pageParams $ do
-        navigation authUser
-
+    in checklistPage_ "Tasks" authUser $ do
         -- Title
         header "Tasks"
             [ (^. re _TaskRole) <$> mrole

@@ -6,7 +6,6 @@ import Prelude ()
 import Futurice.Prelude
 import Futurice.Lucid.Foundation
 
-import Futurice.App.Checklist.Clay
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
@@ -21,8 +20,16 @@ checklistPage
     -> AuthUser    -- ^ logged in user
     -> Checklist
     -> HtmlPage "checklist"
-checklistPage _ _ authUser checklist = page_ (view nameText checklist <> " - Checklist") pageParams $ do
-    navigation authUser
+checklistPage _ _ authUser checklist = checklistPage_ (view nameText checklist <> " - checklist") authUser $ do
+    header (checklist ^. nameText <> " - checklist") []
 
-    -- Title
-    header (checklist ^. nameText) []
+    -- Edit
+
+    -- Add Task
+    subheader_ "Add task"
+    
+    -- Tasks
+    subheader_ "Tasks"
+    
+    -- Employees
+    subheader_ "Employees"

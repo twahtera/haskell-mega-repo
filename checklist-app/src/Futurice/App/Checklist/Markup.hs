@@ -3,8 +3,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Markup (
     -- * Structure
-    navigation,
+    checklistPage_,
     header,
+    subheader_,
     -- * Link attributes
     indexPageHref,
     tasksPageHref,
@@ -38,6 +39,7 @@ import Servant.Utils.Links (URI (..), safeLink)
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Types
 import Futurice.Lucid.Foundation
+import Futurice.App.Checklist.Clay (pageParams)
 
 import qualified Data.Text as T
 import qualified Data.UUID as UUID
@@ -46,6 +48,12 @@ import qualified FUM
 -------------------------------------------------------------------------------
 -- Navigation
 -------------------------------------------------------------------------------
+
+checklistPage_ :: Text -> AuthUser -> Html () -> HtmlPage sym
+checklistPage_ title authUser body =
+    page_ (title <> " - Checklist²" ) pageParams $ do
+        navigation authUser
+        body
 
 -- http://foundation.zurb.com/sites/docs/top-bar.html
 navigation :: Monad m => AuthUser -> HtmlT m ()
@@ -77,6 +85,12 @@ header title titleParts' = row_ $ large_ 12 $ header_ $ h1_ $ toHtml $
         else T.intercalate " - " titleParts
   where
     titleParts = catMaybes titleParts'
+
+subheader_
+    :: Monad m
+    => Text
+    -> HtmlT m ()
+subheader_ title = row_ $ large_ 12 $ h2_ $ toHtml title
 
 -------------------------------------------------------------------------------
 -- Name helpers
