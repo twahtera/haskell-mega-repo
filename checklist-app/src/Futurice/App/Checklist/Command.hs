@@ -95,6 +95,12 @@ data Command f
     | CmdEditTask (Identifier Task) (TaskEdit Maybe)
     | CmdAddTask (Identifier Checklist) (Identifier Task) TaskAppliance
 
+-- CmdCreateEmployee
+-- CmdEditEmployee
+-- CmdEditTaskAppliance
+-- CmdToggleTask
+-- CmdArchiveEmployee
+
 deriveGeneric ''Command
 
 traverseCommand
