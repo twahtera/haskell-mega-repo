@@ -9,7 +9,6 @@ import Control.Lens              (filtered, has, ifoldMapOf, only, re, to)
 import Data.Time                 (addDays, diffDays)
 import Futurice.Lucid.Foundation
 
-import Futurice.App.Checklist.Clay
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
@@ -32,9 +31,7 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
         taskPredicate task employee = flip has world $
             worldTaskItems . ix (employee ^. identifier) . ix (task ^. identifier)
 
-    in page_ "Checklist" pageParams $ do
-        navigation authUser
-
+    in checklistPage_ "Employees" authUser $ do
         -- Title
         header "Active employees"
             [ (^. re _Location) <$> mloc

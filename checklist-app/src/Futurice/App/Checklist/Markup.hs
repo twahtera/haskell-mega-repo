@@ -3,14 +3,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Markup (
     -- * Structure
-    navigation,
+    checklistPage_,
     header,
+    subheader_,
     -- * Link attributes
     indexPageHref,
     tasksPageHref,
-    employeePageHref,
+    createTaskPageHref,
     checklistPageHref,
     taskPageHref,
+    employeePageHref,
     -- * Links
     employeeLink,
     checklistLink,
@@ -37,6 +39,7 @@ import Servant.Utils.Links (URI (..), safeLink)
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Types
 import Futurice.Lucid.Foundation
+import Futurice.App.Checklist.Clay (pageParams)
 
 import qualified Data.Text as T
 import qualified Data.UUID as UUID
@@ -45,6 +48,12 @@ import qualified FUM
 -------------------------------------------------------------------------------
 -- Navigation
 -------------------------------------------------------------------------------
+
+checklistPage_ :: Text -> AuthUser -> Html () -> HtmlPage sym
+checklistPage_ title authUser body =
+    page_ (title <> " - Checklist²" ) pageParams $ do
+        navigation authUser
+        body
 
 -- http://foundation.zurb.com/sites/docs/top-bar.html
 navigation :: Monad m => AuthUser -> HtmlT m ()
@@ -57,13 +66,13 @@ navigation (fu, viewerRole, _viewerLocation) = do
             li_ $ a_ [ indexPageHref Nothing (Nothing :: Maybe Checklist) (Nothing :: Maybe Task) ] "Employees"
             li_ $ a_ [ href_ "#"] "Checklists"
             li_ $ a_ [ tasksPageHref Nothing (Nothing :: Maybe Checklist) ] "Tasks"
-            li_ $ a_ [ href_ "#" ] "Reminder lists"
+            li_ $ a_ [ createTaskPageHref ] "Create Task"
         div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
             li_ [ class_ "menu-text" ] $ do
                 "Hello "
                 toHtml $ fu ^. FUM.getUserName
                 ", you are "
-                roleHtml (Nothing :: Maybe Checklist) viewerRole
+                toHtml $ viewerRole ^. re _TaskRole
 
 header
     :: Monad m
@@ -76,6 +85,12 @@ header title titleParts' = row_ $ large_ 12 $ header_ $ h1_ $ toHtml $
         else T.intercalate " - " titleParts
   where
     titleParts = catMaybes titleParts'
+
+subheader_
+    :: Monad m
+    => Text
+    -> HtmlT m ()
+subheader_ title = row_ $ large_ 12 $ h2_ $ toHtml title
 
 -------------------------------------------------------------------------------
 -- Name helpers
@@ -105,6 +120,10 @@ tasksPageHref
 tasksPageHref mrole mlist =
     href_ $ uriText $ safeLink checklistApi tasksPageEndpoint mrole
         (mlist ^? _Just . identifier)
+
+createTaskPageHref :: Attribute
+createTaskPageHref =
+    href_ $ uriText $ safeLink checklistApi createTaskPageEndpoint
 
 taskPageHref
     :: (HasIdentifier t Task)

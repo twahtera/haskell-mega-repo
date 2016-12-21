@@ -17,8 +17,9 @@ import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Pages.Checklist
+import Futurice.App.Checklist.Pages.CreateTask
 import Futurice.App.Checklist.Pages.Employee
-import Futurice.App.Checklist.Pages.Error     (forbiddedPage, notFoundPage)
+import Futurice.App.Checklist.Pages.Error      (forbiddedPage, notFoundPage)
 import Futurice.App.Checklist.Pages.Index
 import Futurice.App.Checklist.Pages.Task
 import Futurice.App.Checklist.Pages.Tasks
@@ -36,6 +37,7 @@ server :: Ctx -> Server ChecklistAPI
 server ctx = indexPageImpl ctx
     :<|> tasksPageImpl ctx
     :<|> checklistPageImpl ctx
+    :<|> createTaskPageImpl ctx
     :<|> taskPageImpl ctx
     :<|> employeePageImpl ctx
     :<|> commandImpl ctx
@@ -81,6 +83,15 @@ tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
         checklist = do
             cid' <- cid
             world ^? worldLists . ix cid'
+
+createTaskPageImpl
+    :: (MonadIO m)
+    => Ctx
+    -> Maybe FUM.UserName
+    -> m (HtmlPage "create-task")
+createTaskPageImpl ctx fu = withAuthUser ctx fu impl
+  where
+    impl world userInfo = pure $ createTaskPage world userInfo
 
 taskPageImpl
     :: (MonadIO m, MonadTime m)

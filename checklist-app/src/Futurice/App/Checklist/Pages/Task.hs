@@ -8,7 +8,6 @@ import Control.Lens              (re)
 import Data.Time                 (diffDays)
 import Futurice.Lucid.Foundation
 
-import Futurice.App.Checklist.Clay
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
@@ -26,11 +25,9 @@ taskPage
     -> AuthUser    -- ^ logged in user
     -> Task
     -> HtmlPage "task"
-taskPage world today authUser task = page_ (view nameText task <> " - Checklist") pageParams $ do
-    navigation authUser
-
+taskPage world today authUser task = checklistPage_ (view nameText task <> " - task") authUser $ do
     -- Title
-    header (task ^. nameText) []
+    header (task ^. nameText <> " -  task") []
 
     -- Edit
     row_ [ id_ "futu-task-edit", data_ "futu-task-id" $ task ^. identifierText ] $ large_ 12 $ do
@@ -54,6 +51,7 @@ taskPage world today authUser task = page_ (view nameText task <> " - Checklist"
             button_ [ class_ "button", data_ "futu-action" "reset" ] $ "Reset"
 
     -- Employees
+    subheader_ "Employees"
     row_ $ large_ 12 $ table_ $ do
         thead_ $ tr_ $ do
             th_ [title_ "Status"]                      "S"
