@@ -8,9 +8,10 @@ module Futurice.App.Checklist.Markup (
     -- * Link attributes
     indexPageHref,
     tasksPageHref,
-    employeePageHref,
+    createTaskPageHref,
     checklistPageHref,
     taskPageHref,
+    employeePageHref,
     -- * Links
     employeeLink,
     checklistLink,
@@ -57,7 +58,7 @@ navigation (fu, viewerRole, _viewerLocation) = do
             li_ $ a_ [ indexPageHref Nothing (Nothing :: Maybe Checklist) (Nothing :: Maybe Task) ] "Employees"
             li_ $ a_ [ href_ "#"] "Checklists"
             li_ $ a_ [ tasksPageHref Nothing (Nothing :: Maybe Checklist) ] "Tasks"
-            li_ $ a_ [ href_ "#" ] "Reminder lists"
+            li_ $ a_ [ createTaskPageHref ] "Create Task"
         div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
             li_ [ class_ "menu-text" ] $ do
                 "Hello "
@@ -105,6 +106,10 @@ tasksPageHref
 tasksPageHref mrole mlist =
     href_ $ uriText $ safeLink checklistApi tasksPageEndpoint mrole
         (mlist ^? _Just . identifier)
+
+createTaskPageHref :: Attribute
+createTaskPageHref =
+    href_ $ uriText $ safeLink checklistApi createTaskPageEndpoint
 
 taskPageHref
     :: (HasIdentifier t Task)
