@@ -1,11 +1,15 @@
 #!/bin/sh
 
 # to install aws:
-# $ virtualenv venv
+# $ apt-get install libpython3.5-dev
+# $ virtualenv --python=python3.5 venv
 # $ . ./venv/bin/activate
 # $ pip install awscli
 
-. env-postgres-osx.sh
+if [ `uname` = "Darwin"]; then
+	. env-postgres-osx.sh
+fi
+
 . venv/bin/activate
 
 set -ex
