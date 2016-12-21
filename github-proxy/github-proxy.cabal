@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.1.
+-- This file has been generated from package.yaml by hpack version 0.15.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -28,7 +28,7 @@ library
   hs-source-dirs:
       src
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -Wall  -fcontext-stack=30
+  ghc-options: -Wall
   build-depends:
       base >=4.7   && <4.10
     , constraints
@@ -64,6 +64,10 @@ library
     , time
     , unordered-containers
     , vector
+  if impl(ghc >= 8.0)
+    ghc-options: -freduction-depth=30
+  else
+    ghc-options: -fcontext-stack=30
   exposed-modules:
       Futurice.App.GitHubProxy
       Futurice.App.GitHubProxy.API
@@ -78,7 +82,7 @@ executable github-proxy-client
   hs-source-dirs:
       cli
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -Wall  -fcontext-stack=30 -threaded
+  ghc-options: -Wall -threaded
   build-depends:
       base >=4.7   && <4.10
     , constraints
@@ -93,6 +97,10 @@ executable github-proxy-client
     , operational
     , time-parsers >=0.1.1.0
     , haxl
+  if impl(ghc >= 8.0)
+    ghc-options: -freduction-depth=30
+  else
+    ghc-options: -fcontext-stack=30
   default-language: Haskell2010
 
 executable github-proxy-server
@@ -100,7 +108,7 @@ executable github-proxy-server
   hs-source-dirs:
       srv
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -Wall  -fcontext-stack=30 -threaded
+  ghc-options: -Wall -threaded
   build-depends:
       base >=4.7   && <4.10
     , constraints
@@ -115,4 +123,8 @@ executable github-proxy-server
     , operational
     , time-parsers >=0.1.1.0
     , github-proxy
+  if impl(ghc >= 8.0)
+    ghc-options: -freduction-depth=30
+  else
+    ghc-options: -fcontext-stack=30
   default-language: Haskell2010

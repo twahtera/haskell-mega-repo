@@ -124,7 +124,7 @@ swaggerDoc t d proxy = toSwagger proxy
 
 -- | Create futurice server
 futuriceServer
-    :: forall api colour. (HasSwagger api, SColour colour)
+    :: forall api colour. (HasSwagger api)
     => Text  -- ^ title
     -> Text  -- ^ description
     -> DynMapCache

@@ -154,8 +154,7 @@ newtype ReportCsvRow m (n :: Peano) = ReportCsvRow
 
 -- | Map over report row contents.
 overReportRow
-    :: Monad m
-    => (IList.IList n (HtmlT m ()) -> IList.IList n' (HtmlT m ()))
+    :: (IList.IList n (HtmlT m ()) -> IList.IList n' (HtmlT m ()))
     -> ReportRow m n -> ReportRow m n'
 overReportRow f (ReportRow cls row) = ReportRow cls . f $ row
 
@@ -389,7 +388,7 @@ instance (KnownSymbol name, ToJSON params, ToJSON a)
         , "data" .= d
         ]
 
-instance (KnownSymbol name, FromJSON params, FromJSON a)
+instance (FromJSON params, FromJSON a) -- TODO: verify name?
     => FromJSON (Report name params a) where
     parseJSON = withObject "report" $ \obj -> Report
         <$> obj .: "params"

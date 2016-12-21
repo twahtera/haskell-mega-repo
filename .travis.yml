@@ -52,7 +52,7 @@ matrix:
         - happy-1.19.5
         - ghc-7.10.3
         - libgmp-dev
-  - env: GHCVER=8.0.1 STACK_YAML=stack-ghc-8.0.yaml
+  - env: GHCVER=8.0.1 STACK_YAML=stack-ghc-8.0.yaml PEDANTIC=YES
     addons:
       apt:
         sources:

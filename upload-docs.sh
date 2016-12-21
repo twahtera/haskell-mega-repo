@@ -6,7 +6,7 @@
 # $ . ./venv/bin/activate
 # $ pip install awscli
 
-if [ `uname` = "Darwin"]; then
+if [ `uname` = "Darwin" ]; then
 	. env-postgres-osx.sh
 fi
 
