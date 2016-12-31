@@ -21,8 +21,9 @@ module Futurice.App.Checklist.Command (
 import Prelude ()
 import Futurice.Prelude
 import Control.Lens      (set, (%~))
-import Data.Aeson.Compat (object, withObject, (.!=), (.:), (.:?), (.=))
 import Data.Swagger      (NamedSchema (..))
+import Futurice.Aeson
+       (FromJSONField1, fromJSONField1, object, withObject, (.!=), (.:), (.:?), (.=))
 import Futurice.Generics
 import Futurice.IsMaybe
 
@@ -218,20 +219,19 @@ instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task]
 
     -- toEncoding
 
-instance SOP.All (SOP.Compose FromJSON f) '[Identifier Checklist, Identifier Task]
-    => FromJSON (Command f)
+instance FromJSONField1 f => FromJSON (Command f)
   where
     parseJSON = withObject "Command" $ \obj -> do
         cmd <- obj .: "cmd" :: Aeson.Parser Text
         case cmd of
             "create-checklist" -> CmdCreateChecklist
-                <$> obj .: "cid"
+                <$> fromJSONField1 obj "cid"
                 <*> obj .: "name"
             "rename-checklist" -> CmdRenameChecklist
                 <$> obj .: "cid"
                 <*> obj .: "name"
             "create-task" -> CmdCreateTask
-                <$> obj .: "tid"
+                <$> fromJSONField1 obj "tid"
                 <*> obj .: "edit"
             "edit-task" -> CmdEditTask
                 <$> obj .: "tid"
@@ -251,9 +251,7 @@ instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task]
   where
     toField = Postgres.toField . Aeson.encode
 
-instance SOP.All (SOP.Compose FromJSON f) '[Identifier Checklist, Identifier Task]
-    => Postgres.FromField (Command f)
-  where
+instance FromJSONField1 f => Postgres.FromField (Command f) where
     fromField f mdata = do
         bs <- Postgres.fromField f mdata
         case Aeson.eitherDecode bs of
