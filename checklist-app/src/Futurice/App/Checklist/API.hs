@@ -17,6 +17,7 @@ import Futurice.App.Checklist.Types
 type ChecklistAPI = IndexPageEndpoint
     -- Collections
     :<|> TasksPageEndpoint
+    :<|> ChecklistsPageEndpoint
     :<|> ChecklistPageEndpoint
     -- New
     :<|> CreateTaskPageEndpoint
@@ -45,6 +46,11 @@ type TasksPageEndpoint =
     QueryParam "role" TaskRole :>
     QueryParam "checklist" (Identifier Checklist) :>
     Get '[HTML] (HtmlPage "tasks")
+
+type ChecklistsPageEndpoint = 
+    "checklists" :>
+    SSOUser :>
+    Get '[HTML] (HtmlPage "checklists")
 
 -------------------------------------------------------------------------------
 -- New
@@ -87,6 +93,9 @@ indexPageEndpoint = Proxy
 
 tasksPageEndpoint :: Proxy TasksPageEndpoint
 tasksPageEndpoint = Proxy
+
+checklistsPageEndpoint :: Proxy ChecklistsPageEndpoint
+checklistsPageEndpoint = Proxy
 
 createTaskPageEndpoint :: Proxy CreateTaskPageEndpoint
 createTaskPageEndpoint = Proxy
