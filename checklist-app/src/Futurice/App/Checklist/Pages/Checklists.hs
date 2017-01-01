@@ -25,5 +25,5 @@ checklistsPage world authUser = checklistPage_ "Checklists" authUser $ do
         tbody_ $ for_ lists' $ \l -> tr_ $ do
             td_ $ checklistLink l
   where
-    -- TODO: sort
-    lists' = world ^.. worldLists . folded
+    lists0 = world ^.. worldLists . folded
+    lists' = sortOn (view name) lists0
