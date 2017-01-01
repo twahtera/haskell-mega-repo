@@ -87,6 +87,7 @@ import System.Remote.Monitoring             (forkServer, serverMetricStore)
 
 import qualified Data.Aeson               as Aeson
 import qualified Data.Text                as T
+import qualified Data.UUID.Types          as UUID
 import qualified Data.Text.Encoding       as TE
 import qualified FUM
 import qualified Futurice.DynMap          as DynMap
@@ -212,27 +213,32 @@ futuriceServerMain makeCtx (SC t d server middleware (I envpfx)) =
         (cfg, p, ekgP, leToken) <- getConfigWithPorts logger (envpfx ^. from packed)
         cache          <- newDynMapCache
 
-        withLogentriesLogger leToken $ \leLogger -> do
-            let logger' = logger <> leLogger
-            ctx            <- makeCtx cfg logger' cache
-            let server'    =  futuriceServer t d cache proxyApi (server ctx)
-                           :: Server (FuturiceAPI api colour)
+        let main' = main cfg p ekgP cache
 
-            store      <- serverMetricStore <$> forkServer "localhost" ekgP
-            waiMetrics <- registerWaiMetrics store
+        if UUID.null leToken
+            then main' logger
+            else withLogentriesLogger leToken $ \leLogger -> main' (logger <> leLogger)
 
-
-            runLogT "futurice-servant" logger' $ do
-                logInfo_ $ "Starting " <> t <> " at port " <> textShow p
-                logInfo_ $ "-          http://localhost:" <> textShow p <> "/"
-                logInfo_ $ "- swagger: http://localhost:" <> textShow p <> "/swagger-ui/"
-                logInfo_ $ "- ekg:     http://localhost:" <> textShow ekgP <> "/"
-
-            Warp.runSettings (settings p logger')
-                $ metrics waiMetrics
-                $ middleware ctx
-                $ serve proxyApi' server'
   where
+    main cfg p ekgP cache logger = do
+        ctx            <- makeCtx cfg logger cache
+        let server'    =  futuriceServer t d cache proxyApi (server ctx)
+                       :: Server (FuturiceAPI api colour)
+
+        store      <- serverMetricStore <$> forkServer "localhost" ekgP
+        waiMetrics <- registerWaiMetrics store
+
+        runLogT "futurice-servant" logger $ do
+            logInfo_ $ "Starting " <> t <> " at port " <> textShow p
+            logInfo_ $ "-          http://localhost:" <> textShow p <> "/"
+            logInfo_ $ "- swagger: http://localhost:" <> textShow p <> "/swagger-ui/"
+            logInfo_ $ "- ekg:     http://localhost:" <> textShow ekgP <> "/"
+
+        Warp.runSettings (settings p logger)
+            $ metrics waiMetrics
+            $ middleware ctx
+            $ serve proxyApi' server'
+
     handler logger e = do
         runLogT "futurice-servant" logger $ logAttention_ $ textShow e
         throwM e
