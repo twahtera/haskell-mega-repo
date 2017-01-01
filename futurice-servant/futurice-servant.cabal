@@ -55,6 +55,7 @@ library
     , stm
     , swagger2
     , text
+    , uuid-types
     , wai
     , wai-extra
     , wai-middleware-metrics

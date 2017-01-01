@@ -17,9 +17,13 @@ import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Pages.Checklist
+import Futurice.App.Checklist.Pages.Checklists
+import Futurice.App.Checklist.Pages.CreateChecklist
+import Futurice.App.Checklist.Pages.CreateEmployee
 import Futurice.App.Checklist.Pages.CreateTask
 import Futurice.App.Checklist.Pages.Employee
-import Futurice.App.Checklist.Pages.Error      (forbiddedPage, notFoundPage)
+import Futurice.App.Checklist.Pages.Error
+       (forbiddedPage, notFoundPage)
 import Futurice.App.Checklist.Pages.Index
 import Futurice.App.Checklist.Pages.Task
 import Futurice.App.Checklist.Pages.Tasks
@@ -36,8 +40,11 @@ import qualified FUM                        (UserName (..))
 server :: Ctx -> Server ChecklistAPI
 server ctx = indexPageImpl ctx
     :<|> tasksPageImpl ctx
-    :<|> checklistPageImpl ctx
+    :<|> checklistsPageImpl ctx
+    :<|> createChecklistPageImpl ctx
     :<|> createTaskPageImpl ctx
+    :<|> createEmployeePageImpl ctx
+    :<|> checklistPageImpl ctx
     :<|> taskPageImpl ctx
     :<|> employeePageImpl ctx
     :<|> commandImpl ctx
@@ -84,6 +91,15 @@ tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
             cid' <- cid
             world ^? worldLists . ix cid'
 
+createChecklistPageImpl
+    :: (MonadIO m)
+    => Ctx
+    -> Maybe FUM.UserName
+    -> m (HtmlPage "create-checklist")
+createChecklistPageImpl ctx fu = withAuthUser ctx fu impl
+  where
+    impl world userInfo = pure $ createChecklistPage world userInfo
+
 createTaskPageImpl
     :: (MonadIO m)
     => Ctx
@@ -92,6 +108,24 @@ createTaskPageImpl
 createTaskPageImpl ctx fu = withAuthUser ctx fu impl
   where
     impl world userInfo = pure $ createTaskPage world userInfo
+
+createEmployeePageImpl
+    :: (MonadIO m)
+    => Ctx
+    -> Maybe FUM.UserName
+    -> m (HtmlPage "create-employee")
+createEmployeePageImpl ctx fu = withAuthUser ctx fu impl
+  where
+    impl world userInfo = pure $ createEmployeePage world userInfo
+
+checklistsPageImpl
+    :: MonadIO m
+    => Ctx
+    -> Maybe FUM.UserName
+    -> m (HtmlPage "checklists")
+checklistsPageImpl ctx fu = withAuthUser ctx fu impl
+  where
+    impl world userInfo = pure $ checklistsPage world userInfo
 
 taskPageImpl
     :: (MonadIO m, MonadTime m)
