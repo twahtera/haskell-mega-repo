@@ -18,12 +18,15 @@ type ChecklistAPI = IndexPageEndpoint
     -- Collections
     :<|> TasksPageEndpoint
     :<|> ChecklistsPageEndpoint
-    :<|> ChecklistPageEndpoint
     -- New
+    :<|> CreateChecklistPageEndpoint
     :<|> CreateTaskPageEndpoint
+    :<|> CreateEmployeePageEndpoint
     -- Items
+    :<|> ChecklistPageEndpoint
     :<|> TaskPageEndpoint
     :<|> EmployeePageEndpoint
+    -- Command
     :<|> "command" :> SSOUser :> ReqBody '[JSON] (Command Proxy) :> Post '[JSON] Text
 
 checklistApi :: Proxy ChecklistAPI
@@ -56,11 +59,23 @@ type ChecklistsPageEndpoint =
 -- New
 -------------------------------------------------------------------------------
 
+type CreateChecklistPageEndpoint =
+    SSOUser :>
+    "checklists" :>
+    "create" :>
+    Get '[HTML] (HtmlPage "create-checklist")
+
 type CreateTaskPageEndpoint =
     SSOUser :>
     "tasks" :>
     "create" :>
     Get '[HTML] (HtmlPage "create-task")
+
+type CreateEmployeePageEndpoint =
+    SSOUser :>
+    "employees" :>
+    "create" :>
+    Get '[HTML] (HtmlPage "create-employee")
 
 -------------------------------------------------------------------------------
 -- Items
@@ -97,8 +112,14 @@ tasksPageEndpoint = Proxy
 checklistsPageEndpoint :: Proxy ChecklistsPageEndpoint
 checklistsPageEndpoint = Proxy
 
+createChecklistPageEndpoint :: Proxy CreateChecklistPageEndpoint
+createChecklistPageEndpoint = Proxy
+
 createTaskPageEndpoint :: Proxy CreateTaskPageEndpoint
 createTaskPageEndpoint = Proxy
+
+createEmployeePageEndpoint :: Proxy CreateEmployeePageEndpoint
+createEmployeePageEndpoint = Proxy
 
 checklistPageEndpoint :: Proxy ChecklistPageEndpoint
 checklistPageEndpoint = Proxy

@@ -10,11 +10,6 @@ import Futurice.Lucid.Foundation
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
--- |
---
--- === Preconditions
---
--- * 'Task' is in the 'World'.
 createTaskPage
     :: World
     -> AuthUser    -- ^ logged in user
