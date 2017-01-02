@@ -8,6 +8,7 @@ module Futurice.App.Checklist.Markup (
     subheader_,
     -- * Futu id
     futuId_,
+    futuForm_,
     -- * Link attributes
     indexPageHref,
     tasksPageHref,
@@ -105,6 +106,9 @@ subheader_ title = row_ $ large_ 12 $ h2_ $ toHtml title
 
 futuId_ :: Text -> Attribute
 futuId_ = data_ "futu-id"
+
+futuForm_ :: Monad m => Text -> [Attribute] -> HtmlT m () -> HtmlT m ()
+futuForm_ i attrs = row_ . large_ 12 . form_ (futuId_ i : attrs)
 
 -------------------------------------------------------------------------------
 -- Name helpers
