@@ -45,7 +45,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
         row_ $ large_ 12 $
             label_ $ do
                 "Task"
-                select_ [ id_ "futu-task-id" ] $ for_ allTasks $ \task ->
+                select_ [ futuId_ "task-id" ] $ for_ allTasks $ \task ->
                     option_
                         [ value_ $ task ^. identifierText ]
                         $ task ^. nameHtml
@@ -53,7 +53,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
         row_ $ large_ 12 $
             label_ $ do
                 "Appliance"
-                input_ [ id_ "futu_appliance", type_ "text", value_ "*" ]
+                input_ [ futuId_ "task-appliance", type_ "text", value_ "*" ]
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Add"

@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
       case "checklist-edit": return checklistEditForm(form);
       case "task-create": return taskCreateForm(form);
       case "task-edit": return taskEditForm(form);
+      case "task-add": return taskAddForm(form);
       default: return unknownForm(form);
     }
   });
@@ -45,20 +46,14 @@ document.addEventListener("DOMContentLoaded", function () {
       resetBtn.disabled = !changed;
     });
 
-    resetBtn.addEventListener("click", function (e) {
+    buttonOnClick(resetBtn, function () {
       nameEl.value = "";
-
-      e.preventDefault();
-      return false;
     });
 
-    submitBtn.addEventListener("click", function (e) {
+    buttonOnClick(submitBtn, function () {
       var name = name$.value();
 
       cmdCreateChecklist(name);
-
-      e.preventDefault();
-      return false;
     });
   }
 
@@ -85,21 +80,15 @@ document.addEventListener("DOMContentLoaded", function () {
       resetBtn.disabled = !changed;
     });
 
-    resetBtn.addEventListener("click", function (e) {
+    buttonOnClick(resetBtn, function () {
       console.info("Checklist edit reset");
       nameEl.value = nameOrig;
-
-      e.preventDefault();
-      return false;
     });
 
-    submitBtn.addEventListener("click", function (e) {
+    buttonOnClick(submitBtn, function () {
       var name = name$.value();
 
       cmdEditChecklist(checklistId, name);
-
-      e.preventDefault();
-      return false;
     });
   }
 
@@ -124,15 +113,12 @@ document.addEventListener("DOMContentLoaded", function () {
       resetBtn.disabled = !changed;
     });
 
-    resetBtn.addEventListener("click", function (e) {
+    buttonOnClick(resetBtn, function () {
       nameEl.value = "";
       roleEl.value = "IT";
-
-      e.preventDefault();
-      return false;
     });
 
-    submitBtn.addEventListener("click", function (e) {
+    buttonOnClick(submitBtn, function () {
       var name = name$.value();
       var role = role$.value();
 
@@ -141,9 +127,6 @@ document.addEventListener("DOMContentLoaded", function () {
       edit.role = role;
 
       cmdCreateTask(edit);
-
-      e.preventDefault();
-      return false;
     });
   }
 
@@ -175,15 +158,12 @@ document.addEventListener("DOMContentLoaded", function () {
       resetBtn.disabled = !changed;
     });
 
-    resetBtn.addEventListener("click", function (e) {
+    buttonOnClick(resetBtn, function () {
       nameEl.value = nameOrig;
       roleEl.value = roleOrig;
-
-      e.preventDefault();
-      return false;
     });
 
-    submitBtn.addEventListener("click", function (e) {
+    buttonOnClick(submitBtn, function () {
       var name = name$.value();
       var role = role$.value();
 
@@ -192,9 +172,27 @@ document.addEventListener("DOMContentLoaded", function () {
       if (role !== nameOrig) edit.role = role;
 
       cmdEditTask(taskId, edit);
+    });
+  }
 
-      e.preventDefault();
-      return false;
+  function taskAddForm(form) {
+    var checklistId = form.dataset.futuChecklistId;
+
+    console.info("Initialising task addition form", checklistId);
+
+    var taskEl = $_("select[data-futu-id=task-id]", form);
+    var applEl = $_("input[data-futu-id=task-appliance]", form);
+
+    var submitBtn = $_("button[data-futu-action=submit]", form);
+
+    var task$ = menrvaInputValue(taskEl);
+    var appl$ = menrvaInputValue(applEl);
+
+    buttonOnClick(submitBtn, function () {
+      var taskId = task$.value();
+      var appl = appl$.value();
+
+      cmdAddTask(checklistId, taskId, appl);
     });
   }
 
@@ -237,6 +235,16 @@ document.addEventListener("DOMContentLoaded", function () {
       cmd: "edit-task",
       tid:  taskId,
       edit: edit,
+    });
+  }
+
+  function cmdAddTask(checklistId, taskId, appliance) {
+    traceCall(cmdAddTask, arguments);
+    return command({
+      cmd: "add-task",
+      cid: checklistId,
+      tid: taskId,
+      appliance: appliance,
     });
   }
 
@@ -316,5 +324,18 @@ document.addEventListener("DOMContentLoaded", function () {
       console.error(msg);
       throw new Error(msg);
     }
+  }
+
+  function traceCall(f, args) {
+    var args = [f.name].concat(_.toArray(args));
+    console.info.apply(console, args);
+  }
+
+  function buttonOnClick(btn, callback) {
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      callback(e);
+      return false;
+    });
   }
 });
