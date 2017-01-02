@@ -84,7 +84,12 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
                 (br_ [])
                 (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l))
                 checklistLink
-            td_ $ button_ [ class_ "button alert" ] $ "Remove"
+            td_ $ button_
+                [ class_ "button alert", futuId_ "task-remove"
+                , data_ "futu-checklist-id" $ checklist ^. identifierText
+                , data_ "futu-task-id" $ task ^. identifierText
+                ]
+                "Remove"
 
     -- Employees
     subheader_ "Employees"

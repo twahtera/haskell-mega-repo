@@ -15,6 +15,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  $$("button[data-futu-id=task-remove]").forEach(taskRemoveBtn);
+
   function unknownForm(form) {
     console.warn("Unknown form", form);
 
@@ -196,6 +198,15 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function taskRemoveBtn(btn) {
+    buttonOnClick(btn, function () {
+      var checklistId = btn.dataset.futuChecklistId;
+      var taskId = btn.dataset.futuTaskId;
+
+      cmdRemoveTask(checklistId, taskId);
+    });
+  }
+
   // Commands
 
   function cmdCreateChecklist(name) {
@@ -245,6 +256,15 @@ document.addEventListener("DOMContentLoaded", function () {
       cid: checklistId,
       tid: taskId,
       appliance: appliance,
+    });
+  }
+
+  function cmdRemoveTask(checklistId, taskId) {
+    traceCall(cmdRemoveTask, arguments);
+    return command({
+      cmd: "remove-task",
+      cid: checklistId,
+      tid: taskId,
     });
   }
 
