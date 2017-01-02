@@ -82,6 +82,10 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
     });
+
+    buttonOnClick(submitBtn, function () {
+      console.error("not implemented");
+    });
   }
 
   function checklistCreateForm(form) {
