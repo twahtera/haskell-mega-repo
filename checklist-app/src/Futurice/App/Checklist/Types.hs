@@ -17,7 +17,6 @@ module Futurice.App.Checklist.Types (
     Employee(..),
     ContractType(..),
     Location(..),
-    FUMLogin(..),
     -- ** Tasks
     Task(..),
     TaskRole(..),
@@ -73,7 +72,9 @@ module Futurice.App.Checklist.Types (
     ) where
 
 import Futurice.App.Checklist.Types.Basic
+import Futurice.App.Checklist.Types.ContractType
 import Futurice.App.Checklist.Types.Identifier
+import Futurice.App.Checklist.Types.Location
 import Futurice.App.Checklist.Types.World
 
 import qualified FUM (UserName)

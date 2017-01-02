@@ -71,8 +71,10 @@ library
       Futurice.App.Checklist.Pages.Tasks
       Futurice.App.Checklist.Types
       Futurice.App.Checklist.Types.Basic
+      Futurice.App.Checklist.Types.ContractType
       Futurice.App.Checklist.Types.Ctx
       Futurice.App.Checklist.Types.Identifier
+      Futurice.App.Checklist.Types.Location
       Futurice.App.Checklist.Types.World
       Futurice.Arbitrary
   default-language: Haskell2010

@@ -193,6 +193,7 @@ commandImpl ctx fu cmd =
         -- creation tasks
         CmdCreateChecklist Proxy n -> create $ \cid -> CmdCreateChecklist cid n
         CmdCreateTask Proxy e      -> create $ \tid -> CmdCreateTask tid e
+        CmdCreateEmployee Proxy c x -> create $ \eid -> CmdCreateEmployee eid c x
 
     mk a b = pure (a, b)
     create f = (view identifierText &&& f . Identity) . Identifier <$> ctxGetCRandom ctx
