@@ -191,8 +191,8 @@ commandImpl ctx fu cmd =
         CmdRemoveTask cid tid     -> mk "ok" $ CmdRemoveTask cid tid
         CmdRenameChecklist tid n  -> mk "ok" $ CmdRenameChecklist tid n
         -- creation tasks
-        CmdCreateChecklist Proxy n -> create $ \cid -> CmdCreateChecklist cid n
-        CmdCreateTask Proxy e      -> create $ \tid -> CmdCreateTask tid e
+        CmdCreateChecklist Proxy n  -> create $ \cid -> CmdCreateChecklist cid n
+        CmdCreateTask Proxy e       -> create $ \tid -> CmdCreateTask tid e
         CmdCreateEmployee Proxy c x -> create $ \eid -> CmdCreateEmployee eid c x
 
     mk a b = pure (a, b)

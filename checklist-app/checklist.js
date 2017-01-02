@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     switch (formId) {
       case "selector": return;
+      case "employee-create": return employeeCreateForm(form);
       case "checklist-create": return checklistCreateForm(form);
       case "checklist-edit": return checklistEditForm(form);
       case "task-create": return taskCreateForm(form);
@@ -27,6 +28,43 @@ document.addEventListener("DOMContentLoaded", function () {
     $$("button", form).forEach(disable);
     $$("input", form).forEach(disable);
     $$("select", form).forEach(disable);
+  }
+
+  function employeeCreateForm(form) {
+    console.info("Initialising employee creation form");
+
+    var submitBtn = $_("button[data-futu-action=submit]", form);
+    var resetBtn = $_("button[data-futu-action=reset]", form);
+
+    var defs = {
+      firstName: { sel: "input[data-futu-id=employee-firstname" },
+    };
+
+    _.forEach(defs, function (def, k) {
+      def.el = $_(def.sel);
+      def.orig = def.el.value;
+      def.signal = menrvaInputValue(def.el);
+    });
+
+    var changed$ = menrva.record(_.mapValues(defs, "signal")).map(function (rec) {
+      var changed = true;
+
+      _.forEach(rec, function (v, k) {
+          changed = changed && v !== defs[k].orig;
+      });
+
+      return changed;
+    });
+
+    changed$.onValue(function (changed) {
+      resetBtn.disabled = !changed;
+    });
+
+    buttonOnClick(resetBtn, function () {
+      _.forEach(defs, function (def) {
+        def.el.value = def.orig;
+      });
+    });
   }
 
   function checklistCreateForm(form) {
