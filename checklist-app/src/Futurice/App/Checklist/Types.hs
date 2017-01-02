@@ -37,6 +37,7 @@ module Futurice.App.Checklist.Types (
     employeePhone, employeeContactEmail, employeeStartingDay, employeeSupervisor, employeeTribe,
     employeeInfo, employeeFUMLogin, employeeHRNumber, employeeChecklist,
     -- ** ContractType
+    _ContractType,
     _ContractTypePermanent, _ContractTypeExternal, _ContractTypeFixedTerm,
     _ContractTypePartTimer, _ContractTypeSummerWorker,
     -- ** Location

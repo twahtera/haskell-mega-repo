@@ -38,19 +38,32 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var defs = {
       firstName: { sel: "input[data-futu-id=employee-firstname" },
+      lastName: { sel: "input[data-futu-id=employee-lastname" },
+      contractType: { sel: "select[data-futu-id=employee-contract-type" },
+      location: { sel: "select[data-futu-id=employee-location" },
+      confirmed: { sel: "input[data-futu-id=employee-confirmed" },
+      startingDay: { sel: "input[data-futu-id=employee-starting-day" },
+      supervisor: { sel: "input[data-futu-id=employee-supervisor" },
+      tribe: { sel: "input[data-futu-id=employee-tribe" },
+      info: { sel: "textarea[data-futu-id=employee-info" },
+      phone: { sel: "input[data-futu-id=employee-phone" },
+      contactEmail: { sel: "input[data-futu-id=employee-contact-email" },
+      fumLogin: { sel: "input[data-futu-id=employee-fum-login" },
+      hrNumber: { sel: "input[data-futu-id=employee-hr-number" },
     };
 
     _.forEach(defs, function (def, k) {
       def.el = $_(def.sel);
-      def.orig = def.el.value;
+      def.checkbox = def.el.type === "checkbox";
+      def.orig = def.checkbox ? def.el.checked : def.el.value;
       def.signal = menrvaInputValue(def.el);
     });
 
     var changed$ = menrva.record(_.mapValues(defs, "signal")).map(function (rec) {
-      var changed = true;
+      var changed = false;
 
       _.forEach(rec, function (v, k) {
-          changed = changed && v !== defs[k].orig;
+          changed = changed || v !== defs[k].orig;
       });
 
       return changed;
@@ -62,7 +75,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     buttonOnClick(resetBtn, function () {
       _.forEach(defs, function (def) {
-        def.el.value = def.orig;
+        if (def.el.type === "checkbox") {
+          def.el.checked = def.orig;
+        } else {
+          def.el.value = def.orig;
+        }
       });
     });
   }
@@ -345,10 +362,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Menrva helpers
   function menrvaInputValue(el) {
+    // if checkbox
+    if (el.type === "checkbox") return menrvaCheckboxValue(el);
+
+    // otherwise use .value
     var value$ = menrva.source(el.value);
     var cb = function () {
       menrva.transaction()
         .set(value$, el.value.trim())
+        .commit();
+    };
+    el.addEventListener("keyup", cb);
+    el.addEventListener("change", cb);
+    return value$;
+  }
+
+  function menrvaCheckboxValue(el) {
+    var value$ = menrva.source(el.checked);
+    var cb = function () {
+      menrva.transaction()
+        .set(value$, el.checked)
         .commit();
     };
     el.addEventListener("keyup", cb);
