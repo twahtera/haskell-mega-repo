@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     switch (formId) {
       case "selector": return;
+      case "checklist-create": return checklistCreateForm(form);
       case "checklist-edit": return checklistEditForm(form);
       case "task-create": return taskCreateForm(form);
       case "task-edit": return taskEditForm(form);
@@ -23,6 +24,42 @@ document.addEventListener("DOMContentLoaded", function () {
     $$("button", form).forEach(disable);
     $$("input", form).forEach(disable);
     $$("select", form).forEach(disable);
+  }
+
+  function checklistCreateForm(form) {
+    console.info("Initialising checklist creation form");
+
+    var nameEl = $_("input[data-futu-id=checklist-name]", form);
+
+    var submitBtn = $_("button[data-futu-action=submit]", form);
+    var resetBtn = $_("button[data-futu-action=reset]", form);
+
+    var name$ = menrvaInputValue(nameEl);
+
+    var changed$ = menrva.combine(name$, function (name) {
+      return name !== "";
+    });
+
+    changed$.onValue(function (changed) {
+      submitBtn.disabled = !changed;
+      resetBtn.disabled = !changed;
+    });
+
+    resetBtn.addEventListener("click", function (e) {
+      nameEl.value = "";
+
+      e.preventDefault();
+      return false;
+    });
+
+    submitBtn.addEventListener("click", function (e) {
+      var name = name$.value();
+
+      cmdCreateChecklist(name);
+
+      e.preventDefault();
+      return false;
+    });
   }
 
   function checklistEditForm(form) {
@@ -162,6 +199,17 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Commands
+
+  function cmdCreateChecklist(name) {
+    console.info("cmdCreateChecklist", name);
+    return command({
+      cmd: "create-checklist",
+      name: name,
+    }).then(function (res) {
+      // TODO: popup
+      console.debug(res);
+    });
+  }
 
   function cmdEditChecklist(checklistId, name) {
     console.info("cmdEditChecklist", checklistId, name);
