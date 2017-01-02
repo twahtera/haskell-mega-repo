@@ -13,6 +13,7 @@ import Data.Aeson.Compat
 import Data.Aeson.Types
        (FromJSONKey (..), ToJSONKey (..), fromJSONKeyCoerce, toJSONKeyText)
 import Data.Swagger      (ToSchema)
+import Test.QuickCheck   (Arbitrary (..), elements)
 
 import qualified Data.Csv                             as Csv
 import qualified Data.Maybe.Strict                    as S
@@ -117,6 +118,13 @@ instance Postgres.FromField UserName where
 
 instance IsString UserName where
     fromString = UserName . fromString
+
+instance Arbitrary UserName where
+    arbitrary = UserName <$> gen
+      where
+        gen        = mk <$> g <*> g <*> g <*> g
+        mk a b c d = [a,b,c,d] ^. packed
+        g          = elements ['a'..'z']
 
 -------------------------------------------------------------------------------
 -- List name
