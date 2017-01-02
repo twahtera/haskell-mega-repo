@@ -18,12 +18,11 @@ createChecklistPage _world authUser = checklistPage_ ("Create checklist") authUs
     header "Create checklist" []
 
     -- Edit
-    row_ [ id_ "futu-checklist-new" ] $ large_ 12 $ do
+    row_ $ large_ 12 $ form_ [ futuId_ "checklist-create" ] $ do
         row_ $ large_ 12 $
             label_ $ do
                 "Name"
-                -- TODO: change id to futu-id
-                input_ [ id_ "futu-checklist-name", type_ "text" ]
+                input_ [ futuId_ "checklist-name", type_ "text" ]
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Create"

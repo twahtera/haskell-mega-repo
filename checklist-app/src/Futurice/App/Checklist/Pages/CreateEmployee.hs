@@ -18,12 +18,11 @@ createEmployeePage _world authUser = checklistPage_ ("Create employee") authUser
     header "Create employee" []
 
     -- Edit
-    row_ [ id_ "futu-employee-new" ] $ large_ 12 $ do
+    row_ $ large_ 12 $ form_ [ futuId_ "employee-create" ] $ do
         row_ $ large_ 12 $
             label_ $ do
                 "First name"
-                -- TODO: change id to futu-id
-                input_ [ id_ "futu-employee-firstname", type_ "text" ]
+                input_ [ futuId_ "employee-firstname", type_ "text" ]
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Create"

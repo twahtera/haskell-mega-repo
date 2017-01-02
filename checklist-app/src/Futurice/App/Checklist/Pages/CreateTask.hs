@@ -19,18 +19,17 @@ createTaskPage _world authUser = checklistPage_ ("Create task") authUser $ do
     header "Create task" []
 
     -- Edit
-    row_ [ id_ "futu-task-new" ] $ large_ 12 $ do
+    row_ $ large_ 12 $ form_ [ futuId_ "task-create" ] $ do
         row_ $ large_ 12 $
             label_ $ do
                 "Name"
-                -- TODO: change id to futu-id
-                input_ [ id_ "futu-task-name", type_ "text" ]
+                input_ [ futuId_ "task-name", type_ "text" ]
         row_ $ large_ 12 $
             label_ $ do
                 "Role"
                 let r = TaskRoleIT
                 let v = r ^. re _TaskRole
-                select_ [ id_ "futu-task-role", data_ "futu-value" v ] $ for_ [ minBound .. maxBound ] $ \role ->
+                select_ [ futuId_ "task-role", data_ "futu-value" v ] $ for_ [ minBound .. maxBound ] $ \role ->
                     optionSelected_ (role == r)
                         [ value_ $ role ^. re _TaskRole ]
                         $ toHtml $ roleToText role

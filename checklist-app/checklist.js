@@ -1,12 +1,69 @@
 document.addEventListener("DOMContentLoaded", function () {
   console.info("Initialising checklist js");
 
-  taskEditForm();
+  $$("form").forEach(function (form) {
+    var formId = form.dataset.futuId;
 
-  function taskEditForm() {
-    var form = $("#futu-task-edit");
-    if (!form) return;
+    switch (formId) {
+      case "selector": return;
+      case "task-create": return taskCreateForm(form);
+      case "task-edit": return taskEditForm(form);
+      default: return unknownForm(form);
+    }
+  });
 
+  function unknownForm(form) {
+    console.warn("Unknown form", form);
+
+    function disable(el) {
+      el.disabled = true;
+    }
+
+    $$("button", form).forEach(disable);
+    $$("input", form).forEach(disable);
+    $$("select", form).forEach(disable);
+  }
+
+  function taskCreateForm(form) {
+    console.info("Initialising task creation form");
+
+    var nameEl = $("input[data-futu-id=task-name]", form);
+    var roleEl = $("select[data-futu-id=task-role]", form);
+
+    var submitBtn = $("button[data-futu-action=submit]", form);
+    var resetBtn = $("button[data-futu-action=reset]", form);
+
+    var name$ = menrvaInputValue(nameEl);
+    var role$ = menrvaInputValue(roleEl);
+
+    var changed$ = menrva.combine(name$, role$, function (name, role) {
+      return name !== "" && role !== "";
+    });
+
+    changed$.onValue(function (changed) {
+      submitBtn.disabled = !changed;
+      resetBtn.disabled = !changed;
+    });
+
+    resetBtn.addEventListener("click", function () {
+      nameEl.value = "";
+      roleEl.value = "IT";
+      return false;
+    });
+
+    submitBtn.addEventListener("click", function () {
+      var name = name$.value();
+      var role = role$.value();
+
+      var edit = {};
+      edit.name = name;
+      edit.role = role;
+
+      cmdCreateTask(edit);
+    });
+  }
+
+  function taskEditForm(form) {
     var taskId = form.dataset.futuTaskId;
 
     console.info("Initialising task editing form: " + taskId);
@@ -53,6 +110,17 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Commands
+
+  function cmdCreateTask(edit) {
+    console.info("cmdCreateTask", edit);
+    return command({
+      cmd: "create-task",
+      edit: edit,
+    }).then(function (res) {
+      // TODO: popup
+      console.debug(res);
+    });
+  }
 
   function cmdEditTask(taskId, edit) {
     console.info("cmdEditTask", taskId, edit);
