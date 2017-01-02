@@ -186,9 +186,10 @@ commandImpl ctx fu cmd =
   where
     instantiatedCmd = case cmd of
         -- tasks
-        CmdEditTask tid e        -> mk "ok" $ CmdEditTask tid e
-        CmdAddTask cid tid app   -> mk "ok" $ CmdAddTask cid tid app
-        CmdRenameChecklist tid n -> mk "ok" $ CmdRenameChecklist tid n
+        CmdEditTask tid e         -> mk "ok" $ CmdEditTask tid e
+        CmdAddTask cid tid app    -> mk "ok" $ CmdAddTask cid tid app
+        CmdRemoveTask cid tid     -> mk "ok" $ CmdRemoveTask cid tid
+        CmdRenameChecklist tid n  -> mk "ok" $ CmdRenameChecklist tid n
         -- creation tasks
         CmdCreateChecklist Proxy n -> create $ \cid -> CmdCreateChecklist cid n
         CmdCreateTask Proxy e      -> create $ \tid -> CmdCreateTask tid e

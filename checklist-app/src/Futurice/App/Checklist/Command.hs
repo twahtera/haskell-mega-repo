@@ -95,11 +95,11 @@ data Command f
     | CmdCreateTask (f :$ Identifier Task) (TaskEdit Identity)
     | CmdEditTask (Identifier Task) (TaskEdit Maybe)
     | CmdAddTask (Identifier Checklist) (Identifier Task) TaskAppliance
+    | CmdRemoveTask (Identifier Checklist) (Identifier Task)
 
 -- CmdCreateEmployee
 -- CmdEditEmployee
 -- CmdEditTaskAppliance
--- CmdToggleTask
 -- CmdArchiveEmployee
 
 deriveGeneric ''Command
@@ -119,6 +119,8 @@ traverseCommand _f (CmdEditTask i e) =
     pure $ CmdEditTask i e
 traverseCommand _f (CmdAddTask c t a) =
     pure $ CmdAddTask c t a
+traverseCommand _f (CmdRemoveTask c t) =
+    pure $ CmdRemoveTask c t
 
 -- todo: in error monad, if e.g. identifier don't exist
 applyCommand :: Command Identity -> World -> World
@@ -129,6 +131,8 @@ applyCommand cmd world = case cmd of
         world & worldTasks . at tid ?~ Task tid n mempty role
     CmdAddTask cid tid app ->
         world & worldLists . ix cid . checklistTasks . at tid ?~ app
+    CmdRemoveTask cid tid ->
+        world & worldLists . ix cid . checklistTasks . at tid .~ Nothing
     CmdRenameChecklist cid n ->
         world & worldLists . ix cid . checklistName .~ n
     CmdEditTask tid (TaskEdit mn mr) -> world & worldTasks . ix tid %~ update
@@ -158,6 +162,8 @@ instance Eq1 f => Eq (Command f) where
         = tid == tid' && te == te'
     CmdAddTask cid tid app == CmdAddTask cid' tid' app'
         = cid == cid' && tid == tid' && app == app'
+    CmdRemoveTask cid tid == CmdRemoveTask cid' tid'
+        = cid == cid' && tid == tid'
 
     -- Otherwise false
     _ == _ = False
@@ -178,6 +184,9 @@ instance Show1 f => Show (Command f) where
     showsPrec d (CmdAddTask c t a) = showsTernaryWith
         showsPrec showsPrec showsPrec
         "CmdAddTask" d c t a
+    showsPrec d (CmdRemoveTask c t) = showsBinaryWith
+        showsPrec showsPrec
+        "CmdRemoveTask" d c t
 
 instance SOP.All (SOP.Compose Arbitrary f) '[Identifier Checklist, Identifier Task]
     => Arbitrary (Command f)
@@ -216,6 +225,11 @@ instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task]
         , "tid"       .= tid
         -- , "appliance" .= app
         ]
+    toJSON (CmdRemoveTask cid tid) = object
+        [ "cmd"       .= ("remove-task" :: Text)
+        , "cid"       .= cid
+        , "tid"       .= tid
+        ]
 
     -- toEncoding
 
@@ -240,6 +254,9 @@ instance FromJSONField1 f => FromJSON (Command f)
                 <$> obj .: "cid"
                 <*> obj .: "tid"
                 <*> obj .:? "appliance" .!= TaskApplianceAll
+            "remove-task" -> CmdRemoveTask
+                <$> obj .: "cid"
+                <*> obj .: "tid"
             _ -> fail $ "Invalid Command tag " ++ cmd ^. unpacked
 
 -- TODO
