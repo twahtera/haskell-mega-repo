@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     switch (formId) {
       case "selector": return;
+      case "checklist-edit": return checklistEditForm(form);
       case "task-create": return taskCreateForm(form);
       case "task-edit": return taskEditForm(form);
       default: return unknownForm(form);
@@ -24,14 +25,55 @@ document.addEventListener("DOMContentLoaded", function () {
     $$("select", form).forEach(disable);
   }
 
+  function checklistEditForm(form) {
+    var checklistId = form.dataset.futuChecklistId;
+
+    console.info("Initialising checklist editing form: " + checklistId);
+
+    var nameEl = $_("input[data-futu-id=checklist-name]", form);
+
+    var nameOrig = nameEl.value;
+
+    var submitBtn = $_("button[data-futu-action=submit]", form);
+    var resetBtn = $_("button[data-futu-action=reset]", form);
+
+    var name$ = menrvaInputValue(nameEl);
+
+    var changed$ = menrva.combine(name$, function (name) {
+      return name !== nameOrig;
+    });
+
+    changed$.onValue(function (changed) {
+      submitBtn.disabled = !changed;
+      resetBtn.disabled = !changed;
+    });
+
+    resetBtn.addEventListener("click", function (e) {
+      console.info("Checklist edit reset");
+      nameEl.value = nameOrig;
+
+      e.preventDefault();
+      return false;
+    });
+
+    submitBtn.addEventListener("click", function (e) {
+      var name = name$.value();
+
+      cmdEditChecklist(checklistId, name);
+
+      e.preventDefault();
+      return false;
+    });
+  }
+
   function taskCreateForm(form) {
     console.info("Initialising task creation form");
 
-    var nameEl = $("input[data-futu-id=task-name]", form);
-    var roleEl = $("select[data-futu-id=task-role]", form);
+    var nameEl = $_("input[data-futu-id=task-name]", form);
+    var roleEl = $_("select[data-futu-id=task-role]", form);
 
-    var submitBtn = $("button[data-futu-action=submit]", form);
-    var resetBtn = $("button[data-futu-action=reset]", form);
+    var submitBtn = $_("button[data-futu-action=submit]", form);
+    var resetBtn = $_("button[data-futu-action=reset]", form);
 
     var name$ = menrvaInputValue(nameEl);
     var role$ = menrvaInputValue(roleEl);
@@ -45,13 +87,15 @@ document.addEventListener("DOMContentLoaded", function () {
       resetBtn.disabled = !changed;
     });
 
-    resetBtn.addEventListener("click", function () {
+    resetBtn.addEventListener("click", function (e) {
       nameEl.value = "";
       roleEl.value = "IT";
+
+      e.preventDefault();
       return false;
     });
 
-    submitBtn.addEventListener("click", function () {
+    submitBtn.addEventListener("click", function (e) {
       var name = name$.value();
       var role = role$.value();
 
@@ -60,6 +104,9 @@ document.addEventListener("DOMContentLoaded", function () {
       edit.role = role;
 
       cmdCreateTask(edit);
+
+      e.preventDefault();
+      return false;
     });
   }
 
@@ -68,11 +115,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.info("Initialising task editing form: " + taskId);
 
-    var nameEl = $("#futu-task-name", form);
-    var roleEl = $("#futu-task-role", form);
+    var nameEl = $_("#futu-task-name", form);
+    var roleEl = $_("#futu-task-role", form);
 
-    var submitBtn = $("button[data-futu-action=submit]", form);
-    var resetBtn = $("button[data-futu-action=reset]", form);
+    var submitBtn = $_("button[data-futu-action=submit]", form);
+    var resetBtn = $_("button[data-futu-action=reset]", form);
 
     // todo: check elements
 
@@ -91,13 +138,15 @@ document.addEventListener("DOMContentLoaded", function () {
       resetBtn.disabled = !changed;
     });
 
-    resetBtn.addEventListener("click", function () {
+    resetBtn.addEventListener("click", function (e) {
       nameEl.value = nameOrig;
       roleEl.value = roleOrig;
+
+      e.preventDefault();
       return false;
     });
 
-    submitBtn.addEventListener("click", function () {
+    submitBtn.addEventListener("click", function (e) {
       var name = name$.value();
       var role = role$.value();
 
@@ -106,10 +155,22 @@ document.addEventListener("DOMContentLoaded", function () {
       if (role !== nameOrig) edit.role = role;
 
       cmdEditTask(taskId, edit);
+
+      e.preventDefault();
+      return false;
     });
   }
 
   // Commands
+
+  function cmdEditChecklist(checklistId, name) {
+    console.info("cmdEditChecklist", checklistId, name);
+    return command({
+      cmd: "rename-checklist",
+      cid: checklistId,
+      name: name,
+    });
+  }
 
   function cmdCreateTask(edit) {
     console.info("cmdCreateTask", edit);
@@ -186,6 +247,14 @@ document.addEventListener("DOMContentLoaded", function () {
   function $(selector, el) {
     el = el || document;
     return el.querySelector(selector, el);
+  }
+
+  // mandatory element
+  function $_(selector, el) {
+    el = el || document;
+    res = el.querySelector(selector, el);
+    assert(res, "Non-existing element for selector: " + selector);
+    return res;
   }
 
   function $$(selector, el) {

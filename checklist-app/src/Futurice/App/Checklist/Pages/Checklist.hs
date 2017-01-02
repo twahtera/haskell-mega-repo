@@ -33,8 +33,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
             label_ $ do
                 "Name"
                 let v = checklist ^. nameText
-                -- TODO: change id to futu-id
-                input_ [ id_ "futu-checklist-name", type_ "text", data_ "futu-value" v, value_ v ]
+                input_ [ futuId_ "checklist-name", type_ "text", value_ v ]
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Save"
