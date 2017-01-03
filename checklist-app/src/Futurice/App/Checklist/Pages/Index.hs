@@ -39,7 +39,7 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
             ]
 
         -- List filtering controls
-        row_ $ form_ [ action_ "/", method_ "get" ] $ do
+        row_ $ form_ [ futuId_ "selector", action_ "/", method_ "get" ] $ do
             largemed_ 3 $ label_ $ do
                 "Location"
                 select_ [ name_ "location"] $ do

@@ -40,7 +40,7 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
             ]
 
         -- List filtering controls
-        row_ $ form_ [ action_ $ "/tasks", method_ "get" ] $ do
+        row_ $ form_ [ futuId_ "selector", action_ $ "/tasks", method_ "get" ] $ do
             largemed_ 3 $ label_ $ do
                 "Role"
                 select_ [ name_ "role"] $ do

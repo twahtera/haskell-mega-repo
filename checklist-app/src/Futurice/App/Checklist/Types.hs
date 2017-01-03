@@ -17,7 +17,6 @@ module Futurice.App.Checklist.Types (
     Employee(..),
     ContractType(..),
     Location(..),
-    FUMLogin(..),
     -- ** Tasks
     Task(..),
     TaskRole(..),
@@ -38,6 +37,7 @@ module Futurice.App.Checklist.Types (
     employeePhone, employeeContactEmail, employeeStartingDay, employeeSupervisor, employeeTribe,
     employeeInfo, employeeFUMLogin, employeeHRNumber, employeeChecklist,
     -- ** ContractType
+    _ContractType,
     _ContractTypePermanent, _ContractTypeExternal, _ContractTypeFixedTerm,
     _ContractTypePartTimer, _ContractTypeSummerWorker,
     -- ** Location
@@ -73,7 +73,9 @@ module Futurice.App.Checklist.Types (
     ) where
 
 import Futurice.App.Checklist.Types.Basic
+import Futurice.App.Checklist.Types.ContractType
 import Futurice.App.Checklist.Types.Identifier
+import Futurice.App.Checklist.Types.Location
 import Futurice.App.Checklist.Types.World
 
 import qualified FUM (UserName)

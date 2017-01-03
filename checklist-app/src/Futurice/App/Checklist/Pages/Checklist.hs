@@ -28,13 +28,12 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
     header (checklist ^. nameText <> " - checklist") []
 
     -- Edit
-    row_ [ id_ "futu-task-edit", data_ "futu-checklist-id" $ checklist ^. identifierText ] $ large_ 12 $ do
+    futuForm_"checklist-edit" [ data_ "futu-checklist-id" $ checklist ^. identifierText ] $ do
         row_ $ large_ 12 $
             label_ $ do
                 "Name"
                 let v = checklist ^. nameText
-                -- TODO: change id to futu-id
-                input_ [ id_ "futu-checklist-name", type_ "text", data_ "futu-value" v, value_ v ]
+                input_ [ futuId_ "checklist-name", type_ "text", value_ v ]
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Save"
@@ -42,11 +41,11 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
 
     -- Add Task
     subheader_ "Add task"
-    row_ [ id_ "futu-add-task", data_ "futu-checklist-id" $ checklist ^. identifierText ] $ large_ 12 $ do
+    futuForm_ "task-add" [ data_ "futu-checklist-id" $ checklist ^. identifierText  ] $ do
         row_ $ large_ 12 $
             label_ $ do
                 "Task"
-                select_ [ id_ "futu-task-id" ] $ for_ allTasks $ \task ->
+                select_ [ futuId_ "task-id" ] $ for_ allTasks $ \task ->
                     option_
                         [ value_ $ task ^. identifierText ]
                         $ task ^. nameHtml
@@ -54,7 +53,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
         row_ $ large_ 12 $
             label_ $ do
                 "Appliance"
-                input_ [ id_ "futu_appliance", type_ "text", value_ "*" ]
+                input_ [ futuId_ "task-appliance", type_ "text", value_ "*" ]
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Add"
@@ -68,6 +67,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
             th_ [ title_ "Role" ]                       "Role"
             th_ [ title_ "Active employees todo/done" ] "Employees"
             th_ [ title_ "Other checklists with the task" ]   "Other checklists"
+            th_ [ title_ "Remove task from the checklist" ] "Remove"
 
 
         tbody_ $ for_ tasks' $ \task -> tr_ $ do
@@ -84,6 +84,12 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
                 (br_ [])
                 (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l))
                 checklistLink
+            td_ $ button_
+                [ class_ "button alert", futuId_ "task-remove"
+                , data_ "futu-checklist-id" $ checklist ^. identifierText
+                , data_ "futu-task-id" $ task ^. identifierText
+                ]
+                "Remove"
 
     -- Employees
     subheader_ "Employees"

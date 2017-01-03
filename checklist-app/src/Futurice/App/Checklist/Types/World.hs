@@ -29,6 +29,7 @@ import qualified Test.QuickCheck as QC
 
 import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.Identifier
+import Futurice.App.Checklist.Types.Location
 
 import qualified FUM
 

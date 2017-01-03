@@ -30,7 +30,7 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
     header (task ^. nameText <> " -  task") []
 
     -- Edit
-    row_ [ id_ "futu-task-edit", data_ "futu-task-id" $ task ^. identifierText ] $ large_ 12 $ do
+    row_ $ large_ 12 $ form_ [ futuId_ "task-edit", data_ "futu-task-id" $ task ^. identifierText ] $ do
         row_ $ large_ 12 $
             label_ $ do
                 "Name"
