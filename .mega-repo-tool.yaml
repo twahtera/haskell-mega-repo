@@ -2,6 +2,8 @@ docker-base-image: futurice/base-images:haskell-lts-6-1
 apps:
   avatar:
     executable: avatar-server
+  checklist2:
+    executable: checklist-app-server
   contacts-api:
     executable: contacts-server
   favicon:
