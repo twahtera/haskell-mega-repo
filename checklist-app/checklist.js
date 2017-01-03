@@ -33,18 +33,16 @@ document.addEventListener("DOMContentLoaded", function () {
   function employeeCreateForm(form) {
     console.info("Initialising employee creation form");
 
-    var submitBtn = $_("button[data-futu-action=submit]", form);
-    var resetBtn = $_("button[data-futu-action=reset]", form);
-
     var defs = {
-      firstName: { sel: "input[data-futu-id=employee-firstname" },
-      lastName: { sel: "input[data-futu-id=employee-lastname" },
+      checklistId: { sel: "select[data-futu-id=employee-checklist" },
+      firstName: { sel: "input[data-futu-id=employee-firstname", check: nonEmptyCheck },
+      lastName: { sel: "input[data-futu-id=employee-lastname", check: nonEmptyCheck },
       contractType: { sel: "select[data-futu-id=employee-contract-type" },
       location: { sel: "select[data-futu-id=employee-location" },
       confirmed: { sel: "input[data-futu-id=employee-confirmed" },
-      startingDay: { sel: "input[data-futu-id=employee-starting-day" },
-      supervisor: { sel: "input[data-futu-id=employee-supervisor" },
-      tribe: { sel: "input[data-futu-id=employee-tribe" },
+      startingDay: { sel: "input[data-futu-id=employee-starting-day", check: dayCheck },
+      supervisor: { sel: "input[data-futu-id=employee-supervisor", check: nonEmptyCheck },
+      tribe: { sel: "input[data-futu-id=employee-tribe", check: nonEmptyCheck },
       info: { sel: "textarea[data-futu-id=employee-info" },
       phone: { sel: "input[data-futu-id=employee-phone" },
       contactEmail: { sel: "input[data-futu-id=employee-contact-email" },
@@ -52,39 +50,16 @@ document.addEventListener("DOMContentLoaded", function () {
       hrNumber: { sel: "input[data-futu-id=employee-hr-number" },
     };
 
-    _.forEach(defs, function (def, k) {
-      def.el = $_(def.sel);
-      def.checkbox = def.el.type === "checkbox";
-      def.orig = def.checkbox ? def.el.checked : def.el.value;
-      def.signal = menrvaInputValue(def.el);
-    });
+    var actions = initialiseFormDefs(defs);
 
-    var changed$ = menrva.record(_.mapValues(defs, "signal")).map(function (rec) {
-      var changed = false;
+    var resetBtn = $_("button[data-futu-action=reset]", form);
+    initaliseResetButton(resetBtn, defs, actions);
 
-      _.forEach(rec, function (v, k) {
-          changed = changed || v !== defs[k].orig;
-      });
-
-      return changed;
-    });
-
-    changed$.onValue(function (changed) {
-      resetBtn.disabled = !changed;
-    });
-
-    buttonOnClick(resetBtn, function () {
-      _.forEach(defs, function (def) {
-        if (def.el.type === "checkbox") {
-          def.el.checked = def.orig;
-        } else {
-          def.el.value = def.orig;
-        }
-      });
-    });
-
-    buttonOnClick(submitBtn, function () {
-      console.error("not implemented");
+    var submitBtn = $_("button[data-futu-action=submit]", form);
+    initialiseSubmitButton(submitBtn, defs, actions, function (values) {
+      var checklistId = values.checklistId;
+      var edit = _.omit(values, "checklistId");
+      console.error("not implemented", checklistId, edit);
     });
   }
 
@@ -364,6 +339,144 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
+  // Form "library"
+
+  function nonEmptyCheck(str) {
+    return str.trim() !== "";
+  }
+
+  function dayCheck(str) {
+    return !!str.match(/^\d{4}-\d\d-\d\d$/);
+  }
+
+  function initialiseFormDefs(defs) {
+    _.forEach(defs, function (def, k) {
+      def.el = $_(def.sel);
+      def.checkbox = def.el.type === "checkbox";
+      def.orig = inputValue(def.el)
+      def.signal = menrvaInputValue(def.el);
+
+      def.changed$ = def.signal.map(function (x) {
+        return x != def.orig;
+      });
+
+      if (def.check) {
+        def.submittable$ = def.signal.map(def.check);
+      } else {
+        def.submittable$ = menrva.source(true);
+      }
+
+      // dirty
+      def.dirty$ = menrva.source(false);
+      def.el.addEventListener("blur", function () {
+        menrva.transaction([def.dirty$, true]).commit();
+      });
+
+      menrva.combine(def.dirty$, def.submittable$, function (dirty, submittable) {
+        return dirty && !submittable;
+      }).onValue(function (errorneous) {
+        if (errorneous) {
+          def.el.parentElement.classList.add("error");
+          def.el.classList.add("error");
+        } else {
+          def.el.parentElement.classList.remove("error");
+          def.el.classList.remove("error");
+        }
+      });
+    });
+
+    function markDirty() {
+      var tr = [];
+      _.forEach(defs, function (def) {
+        tr.push(def.dirty$);
+        tr.push(true);
+      });
+      menrva.transaction(tr).commit();
+    }
+
+    function markClean() {
+      var tr = [];
+      _.forEach(defs, function (def) {
+        tr.push(def.dirty$);
+        tr.push(false);
+      });
+      menrva.transaction(tr).commit();
+    }
+
+    return {
+      markDirty: markDirty,
+      markClean: markClean,
+    };
+  }
+
+  function initaliseResetButton(resetBtn, defs, actions) {
+    // change handling: reset button
+    var changed$ = menrva.record(_.mapValues(defs, "changed$")).map(function (rec) {
+      return _.chain(rec)
+        .values()
+        .some()
+        .value();
+    });
+
+    var dirty$ = menrva.record(_.mapValues(defs, "dirty$")).map(function (rec) {
+      return _.chain(rec)
+        .values()
+        .some()
+        .value();
+    });
+
+    menrvaSome(changed$, dirty$).onValue(function (enabled) {
+      resetBtn.disabled = !enabled;
+    });
+
+    buttonOnClick(resetBtn, function () {
+      actions.markClean();
+      _.forEach(defs, function (def) {
+        // TODO: inputValueSet
+        if (def.el.type === "checkbox") {
+          def.el.checked = def.orig;
+        } else {
+          def.el.value = def.orig;
+        }
+      });
+    });
+  }
+
+  function initialiseSubmitButton(submitBtn, defs, actions, callback) {
+    var submittable$ = menrva.record(_.mapValues(defs, "submittable$")).map(function (rec) {
+      return _.chain(rec)
+        .values()
+        .every()
+        .value();
+    });
+
+    var dirty$ = menrva.record(_.mapValues(defs, "dirty$")).map(function (rec) {
+      return _.chain(rec)
+        .values()
+        .some()
+        .value();
+    });
+
+    submittable$.onValue(function (submittable) {
+      if (submittable) {
+        submitBtn.classList.remove("alert");
+        submitBtn.classList.add("success");
+      } else {
+        submitBtn.classList.add("alert");
+        submitBtn.classList.remove("success");
+      }
+    });
+
+    buttonOnClick(submitBtn, function () {
+      if (submittable$.value()) {
+        var values = _.mapValues(defs, function (def) { return def.signal.value(); });
+        callback(values);
+      } else {
+        actions.markDirty();
+      }
+    });
+  }
+
   // Menrva helpers
   function menrvaInputValue(el) {
     // if checkbox
@@ -373,7 +486,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var value$ = menrva.source(el.value);
     var cb = function () {
       menrva.transaction()
-        .set(value$, el.value.trim())
+        .set(value$, inputValue(el))
         .commit();
     };
     el.addEventListener("keyup", cb);
@@ -391,6 +504,13 @@ document.addEventListener("DOMContentLoaded", function () {
     el.addEventListener("keyup", cb);
     el.addEventListener("change", cb);
     return value$;
+  }
+
+  function menrvaSome() {
+    var signals = _.toArray(arguments);
+    return menrva.sequence(signals).map(function (values) {
+      return _.some(values);
+    });
   }
 
   // Utilities
@@ -412,6 +532,10 @@ document.addEventListener("DOMContentLoaded", function () {
     el = el || document;
     var res = el.querySelectorAll(selector, el);
     return Array.prototype.slice.call(res);
+  }
+
+  function inputValue(el) {
+    return el.type === "checkbox" ? el.checked : el.value.trim();
   }
 
   function assert(cond, msg) {
