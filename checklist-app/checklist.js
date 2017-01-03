@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", function () {
     initialiseSubmitButton(submitBtn, defs, actions, function (values) {
       var checklistId = values.checklistId;
       var edit = _.omit(values, "checklistId");
-      console.error("not implemented", checklistId, edit);
+      cmdCreateEmployee(checklistId, edit);
     });
   }
 
@@ -242,6 +242,18 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Commands
+
+  function cmdCreateEmployee(checklistId, edit) {
+    traceCall(cmdCreateEmployee, arguments);
+    return command({
+      cmd: "create-employee",
+      cid: checklistId,
+      edit: edit,
+    }).then(function (res) {
+      // TODO: popup
+      console.debug(res);
+    });
+  }
 
   function cmdCreateChecklist(name) {
     console.info("cmdCreateChecklist", name);
