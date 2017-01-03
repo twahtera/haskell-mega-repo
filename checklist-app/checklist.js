@@ -260,9 +260,6 @@ document.addEventListener("DOMContentLoaded", function () {
       cmd: "create-employee",
       cid: checklistId,
       edit: edit,
-    }).then(function (res) {
-      // TODO: popup
-      console.debug(res);
     });
   }
 
@@ -271,9 +268,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return command({
       cmd: "create-checklist",
       name: name,
-    }).then(function (res) {
-      // TODO: popup
-      console.debug(res);
     });
   }
 
@@ -291,9 +285,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return command({
       cmd: "create-task",
       edit: edit,
-    }).then(function (res) {
-      // TODO: popup
-      console.debug(res);
     });
   }
 
@@ -369,6 +360,22 @@ document.addEventListener("DOMContentLoaded", function () {
         overlay.overlay.style.display = "";
         */
         throw exc;
+      })
+      .then(function (res) {
+        console.info("command ack", res);
+        switch (res.ack) {
+          case "ok":
+            // do nothing
+            break;
+          case "load":
+            location.pathname = res.url;
+            break;
+          case "error":
+            console.error("Again error", res.reason);
+            break;
+          default:
+            console.error("Unknown ack type");
+        }
       });
   }
 
