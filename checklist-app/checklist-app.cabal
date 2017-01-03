@@ -41,6 +41,7 @@ library
     , generics-sop
     , lens
     , lucid
+    , mtl
     , postgresql-simple
     , QuickCheck
     , resource-pool
@@ -99,6 +100,7 @@ executable checklist-app-server
     , generics-sop
     , lens
     , lucid
+    , mtl
     , postgresql-simple
     , QuickCheck
     , resource-pool
@@ -134,6 +136,7 @@ executable checklist-import
     , generics-sop
     , lens
     , lucid
+    , mtl
     , postgresql-simple
     , QuickCheck
     , resource-pool
@@ -172,6 +175,7 @@ test-suite unit-tests
     , generics-sop
     , lens
     , lucid
+    , mtl
     , postgresql-simple
     , QuickCheck
     , resource-pool
