@@ -76,6 +76,8 @@ library
       Futurice.App.Checklist.Types.Ctx
       Futurice.App.Checklist.Types.Identifier
       Futurice.App.Checklist.Types.Location
+      Futurice.App.Checklist.Types.TaskItem
+      Futurice.App.Checklist.Types.TaskRole
       Futurice.App.Checklist.Types.World
   default-language: Haskell2010
 

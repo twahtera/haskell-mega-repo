@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   $$("button[data-futu-id=task-remove]").forEach(taskRemoveBtn);
+  $$("input[data-futu-id=task-done-checkbox]").forEach(taskToggleCheckbox);
 
   function unknownForm(form) {
     console.warn("Unknown form", form);
@@ -241,6 +242,16 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function taskToggleCheckbox(chk) {
+    var employeeId = chk.dataset.futuEmployee;
+    var taskId = chk.dataset.futuTask;
+    chk.addEventListener("change", function () {
+      var done = chk.checked;
+
+      cmdTaskDoneToggle(employeeId, taskId, done);
+    });
+  }
+
   // Commands
 
   function cmdCreateEmployee(checklistId, edit) {
@@ -311,6 +322,16 @@ document.addEventListener("DOMContentLoaded", function () {
       cmd: "remove-task",
       cid: checklistId,
       tid: taskId,
+    });
+  }
+
+  function cmdTaskDoneToggle(employeeId, taskId, done) {
+    traceCall(cmdTaskDoneToggle, arguments);
+    return command({
+      cmd: "task-item-toggle",
+      eid: employeeId,
+      tid: taskId,
+      done: done ? "done" : "todo",
     });
   }
 

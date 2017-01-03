@@ -32,7 +32,7 @@ createTaskPage _world authUser = checklistPage_ ("Create task") authUser $ do
                 select_ [ futuId_ "task-role", data_ "futu-value" v ] $ for_ [ minBound .. maxBound ] $ \role ->
                     optionSelected_ (role == r)
                         [ value_ $ role ^. re _TaskRole ]
-                        $ toHtml $ roleToText role
+                        $ toHtml $ role ^. re _TaskRole
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Create"
