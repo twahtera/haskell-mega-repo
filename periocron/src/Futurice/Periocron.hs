@@ -14,10 +14,11 @@ module Futurice.Periocron (
     shifted,
     ) where
 
+import Prelude ()
 import Futurice.Prelude
-
+import Control.Lens ((<%=))
 import Control.Concurrent               (ThreadId, forkIO, threadDelay)
-import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, modify')
+import Control.Monad.Trans.State.Strict (StateT, evalStateT)
 import Data.Time                        (addUTCTime, diffUTCTime)
 
 -------------------------------------------------------------------------------
@@ -67,8 +68,8 @@ workerLoop options
         => Job -> StateT Int m ()
     executeJob (Job label action) = do
         -- jobid
-        jobId <- textShow <$> get
-        modify' (+1)
+        jobId' <- id <%= (+1)
+        let jobId = textShow jobId'
         logLocalDomain ("job-" <> jobId) $ do
             -- execute job
             logInfo_ $ "Executing '" <> label <> "'"
