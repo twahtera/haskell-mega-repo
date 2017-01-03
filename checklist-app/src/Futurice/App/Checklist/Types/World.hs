@@ -30,6 +30,8 @@ import qualified Test.QuickCheck as QC
 import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.Location
+import Futurice.App.Checklist.Types.TaskItem
+import Futurice.App.Checklist.Types.TaskRole
 
 import qualified FUM
 
@@ -41,11 +43,11 @@ data World = World
     { _worldEmployees  :: !(IdMap Employee)
     , _worldTasks      :: !(IdMap Task)
     , _worldLists      :: !(IdMap Checklist)
-    , _worldTaskItems  :: !(Map (Identifier Employee) (Map (Identifier Task) TaskItemDone))
+    , _worldTaskItems  :: !(Map (Identifier Employee) (Map (Identifier Task) TaskItem))
     , _worldUsers      :: AuthCheck
       -- ^ ACL lookup
     -- lazy fields, updated on need when accessed
-    , _worldTaskItems' :: Map (Identifier Task) (Map (Identifier Employee) TaskItemDone)
+    , _worldTaskItems' :: Map (Identifier Task) (Map (Identifier Employee) TaskItem)
       -- ^ isomorphic with 'worldTaskItems'
     }
 
@@ -68,7 +70,7 @@ mkWorld
     :: IdMap Employee
     -> IdMap Task
     -> IdMap Checklist
-    -> Map (Identifier Employee) (Map (Identifier Task) TaskItemDone)
+    -> Map (Identifier Employee) (Map (Identifier Task) TaskItem)
     -> AuthCheck
     -> World
 mkWorld es ts ls is us =

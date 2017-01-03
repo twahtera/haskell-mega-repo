@@ -44,7 +44,7 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
                 select_ [ id_ "futu-task-role", data_ "futu-value" v ] $ for_ [ minBound .. maxBound ] $ \role ->
                     optionSelected_ (role == task ^. taskRole)
                         [ value_ $ role ^. re _TaskRole ]
-                        $ toHtml $ roleToText role
+                        $ toHtml $ role ^. re _TaskRole
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Save"

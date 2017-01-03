@@ -29,8 +29,9 @@ module Futurice.App.Checklist.Command (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens      (set, (%~))
-import Data.Swagger      (NamedSchema (..))
+import Control.Lens               (iforOf_, non, (%=), (?=))
+import Control.Monad.State.Strict (execState)
+import Data.Swagger               (NamedSchema (..))
 import Futurice.Aeson
        (FromJSONField1, fromJSONField1, object, withObject, (.!=), (.:), (.:?),
        (.=))
@@ -197,8 +198,8 @@ data Command f
     | CmdAddTask (Identifier Checklist) (Identifier Task) TaskAppliance
     | CmdRemoveTask (Identifier Checklist) (Identifier Task)
     | CmdCreateEmployee (f :$ Identifier Employee) (Identifier Checklist) (EmployeeEdit Identity)
+    | CmdTaskItemToggle (Identifier Employee) (Identifier Task) TaskItem
 
--- CmdCreateEmployee
 -- CmdEditEmployee
 -- CmdEditTaskAppliance
 -- CmdArchiveEmployee
@@ -224,27 +225,43 @@ traverseCommand _f (CmdRemoveTask c t) =
     pure $ CmdRemoveTask c t
 traverseCommand f (CmdCreateEmployee e c x) =
     CmdCreateEmployee <$> f e <*> pure c <*> pure x
+traverseCommand _ (CmdTaskItemToggle e t x) =
+    pure $ CmdTaskItemToggle e t x
 
+-- = operators are the same as ~ lens operators, but modify the state of MonadState.
+--
 -- todo: in error monad, if e.g. identifier don't exist
 applyCommand :: Command Identity -> World -> World
-applyCommand cmd world = case cmd of
+applyCommand cmd world = flip execState world $ case cmd of
     CmdCreateChecklist (Identity cid) n ->
-        world & worldLists . at cid ?~ Checklist cid n mempty
+        worldLists . at cid ?= Checklist cid n mempty
+
     CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity role)) ->
-        world & worldTasks . at tid ?~ Task tid n mempty role
+        worldTasks . at tid ?= Task tid n mempty role
+
     CmdAddTask cid tid app ->
-        world & worldLists . ix cid . checklistTasks . at tid ?~ app
+        worldLists . ix cid . checklistTasks . at tid ?= app
+        -- TODO: add to worldTaskItems
+
     CmdRemoveTask cid tid ->
-        world & worldLists . ix cid . checklistTasks . at tid .~ Nothing
+        worldLists . ix cid . checklistTasks . at tid Lens..= Nothing
+
     CmdRenameChecklist cid n ->
-        world & worldLists . ix cid . checklistName .~ n
-    CmdEditTask tid (TaskEdit mn mr) -> world & worldTasks . ix tid %~ update
-      where
-        update task = task
-            & maybe id (set taskName) mn
-            & maybe id (set taskRole) mr
-    CmdCreateEmployee (Identity eid) cid x ->
-        world & worldEmployees . at eid ?~ fromEmployeeEdit eid cid x
+         worldLists . ix cid . checklistName Lens..= n
+
+    CmdEditTask tid te ->
+        worldTasks . ix tid %= applyTaskEdit te
+
+    CmdCreateEmployee (Identity eid) cid x -> do
+        -- create user
+        worldEmployees . at eid ?= fromEmployeeEdit eid cid x
+        -- add initial tasks
+        iforOf_ (worldLists . ix cid . checklistTasks . ifolded) world $ \tid _app ->
+            -- TODO: check appliance before adding
+            worldTaskItems . at eid . non mempty . at tid ?= TaskItemTodo
+
+    CmdTaskItemToggle eid tid d ->
+        worldTaskItems . ix eid . ix tid Lens..= d
 
 transactCommand
     :: (MonadLog m, MonadIO m)
@@ -271,6 +288,8 @@ instance Eq1 f => Eq (Command f) where
         = cid == cid' && tid == tid'
     CmdCreateEmployee eid cid x == CmdCreateEmployee eid' cid' x'
         = eq1 eid eid' && cid == cid' && x == x'
+    CmdTaskItemToggle eid tid d == CmdTaskItemToggle eid' tid' d'
+        = eid == eid' && tid == tid' && d == d'
 
     -- Otherwise false
     _ == _ = False
@@ -297,6 +316,9 @@ instance Show1 f => Show (Command f) where
     showsPrec d (CmdCreateEmployee e c x) = showsTernaryWith
         showsPrec1 showsPrec showsPrec
         "CmdCreateEmployee" d e c x
+    showsPrec d (CmdTaskItemToggle e t done) = showsTernaryWith
+        showsPrec showsPrec showsPrec
+        "CmdTaskItemToggle" d e t done
 
 instance SOP.All (SOP.Compose Arbitrary f) '[Identifier Checklist, Identifier Task, Identifier Employee]
     => Arbitrary (Command f)
@@ -346,6 +368,12 @@ instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task,
         , "cid"  .= cid
         , "edit" .= x
         ]
+    toJSON (CmdTaskItemToggle eid tid done) = object
+        [ "cmd"  .= ("task-item-toggle" :: Text)
+        , "eid"  .= eid
+        , "tid"  .= tid
+        , "done" .= done
+        ]
 
     -- toEncoding
 
@@ -377,6 +405,10 @@ instance FromJSONField1 f => FromJSON (Command f)
                 <$> fromJSONField1 obj "eid"
                 <*> obj .: "cid"
                 <*> obj .: "edit"
+            "task-item-toggle" -> CmdTaskItemToggle
+                <$> obj .: "eid"
+                <*> obj .: "tid"
+                <*> obj .: "done"
 
             _ -> fail $ "Invalid Command tag " ++ cmd ^. unpacked
 

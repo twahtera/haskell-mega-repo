@@ -11,20 +11,17 @@ module Futurice.App.Checklist.Types.Basic where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens       (Getter, Prism', prism', to)
-import Data.Aeson.Compat  (Value (Null, String), withText)
-import Data.Swagger
-       (SwaggerType (SwaggerString), ToParamSchema (..), enum_, type_)
+import Control.Lens       (Getter, to)
+import Data.Aeson.Compat  (Value (Null))
 import Futurice.Arbitrary (arbitraryAdjective, arbitraryNoun, arbitraryVerb)
 import Futurice.Generics
 import Futurice.IdMap     (HasKey (..))
-import Servant            (FromHttpApiData (..), ToHttpApiData (..))
 
 import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.Location
 import Futurice.App.Checklist.Types.ContractType
+import Futurice.App.Checklist.Types.TaskRole
 
-import qualified Data.Map        as Map
 import qualified Data.Text       as T
 import qualified FUM
 import qualified Test.QuickCheck as QC
@@ -86,14 +83,6 @@ data CheckResult
       -- ^ Definitively not ok, task cannot be completed.
   deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
 
-
--- | The role which is primarily interested in the task.
-data TaskRole
-    = TaskRoleIT
-    | TaskRoleHR
-    | TaskRoleSupervisor
-  deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
-
 -- | Checklist is collection of tasks. Used to group tasks together to create task instances together.
 --  Example lists are "new full-time employee in Helsinki"
 data Checklist = Checklist
@@ -101,11 +90,6 @@ data Checklist = Checklist
     , _checklistName  :: !(Name Checklist)
     , _checklistTasks :: !(Map (Identifier Task) TaskAppliance)
     }
-  deriving (Eq, Ord, Show, Typeable, Generic)
-
-data TaskItemDone
-    = TaskItemDone
-    | TaskItemTodo
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 -- | Task appliance, e.g. this task is /"only for Helsinki and permanent employees"/.
@@ -122,9 +106,7 @@ makeWrapped ''Name
 makeLenses ''Employee
 makeLenses ''Task
 makePrisms ''CheckResult
-makePrisms ''TaskRole
 makeLenses ''Checklist
-makePrisms ''TaskItemDone
 
 -------------------------------------------------------------------------------
 -- HasIdentifier instances
@@ -186,23 +168,13 @@ instance ArbitraryName a => Arbitrary (Name a) where
 deriveGeneric ''Employee
 deriveGeneric ''Task
 deriveGeneric ''CheckResult
-deriveGeneric ''TaskRole
 deriveGeneric ''Checklist
-deriveGeneric ''TaskItemDone
 
 instance Arbitrary Employee where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance Arbitrary TaskItemDone where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
 instance Arbitrary Checklist where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance Arbitrary TaskRole where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
@@ -224,39 +196,3 @@ instance ToJSON TaskAppliance where
 
 instance FromJSON TaskAppliance where
     parseJSON _ = pure TaskApplianceAll
-
--------------------------------------------------------------------------------
--- Task role
--------------------------------------------------------------------------------
-
-roleToText :: TaskRole -> Text
-roleToText TaskRoleIT         = "IT"
-roleToText TaskRoleHR         = "HR"
-roleToText TaskRoleSupervisor = "Supervisor"
-
-roleFromText :: Text -> Maybe TaskRole
-roleFromText t = Map.lookup (T.toLower t) m
-  where
-    m = Map.fromList $ map (\x -> (T.toLower $ roleToText x, x)) [minBound .. maxBound]
-
-_TaskRole :: Prism' Text TaskRole
-_TaskRole = prism' roleToText roleFromText
-
-instance ToParamSchema TaskRole where
-    toParamSchema _ = mempty
-          & type_ .~ SwaggerString
-          & enum_ ?~ (String . roleToText <$> [minBound .. maxBound])
-
-instance FromHttpApiData TaskRole where
-    parseUrlPiece t =
-        maybe (Left $ "invalid location " <> t) Right $ t ^? _TaskRole
-
-instance ToHttpApiData TaskRole where
-    toUrlPiece = roleToText
-
-instance ToJSON TaskRole where
-    toJSON = String . roleToText
-
-instance FromJSON TaskRole where
-    parseJSON = withText "TaskRole" $ \t ->
-        maybe (fail $ "Invalid role: " <> T.unpack t) pure . roleFromText $ t

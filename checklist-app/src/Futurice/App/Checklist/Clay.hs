@@ -20,6 +20,10 @@ css = do
     header ? do
         marginTop $ em 1
         marginBottom $ em 1
+    label # ".error" ? do
+        color red
+    "input[type=text]" # ".error" ? do
+        borderColor red
     table ? tbody ? tr ? do
         nthChild "even" & do
             ".eta-far-past"    & backgroundColor (lighten 0.92 blue)

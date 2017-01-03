@@ -251,7 +251,7 @@ uriText (URI _ _ path query _) = ("/" <> path <> query) ^. packed
 -- TodoCounter
 -------------------------------------------------------------------------------
 
-toTodoCounter :: World -> TaskRole -> Identifier Task -> TaskItemDone -> TodoCounter
+toTodoCounter :: World -> TaskRole -> Identifier Task -> TaskItem -> TodoCounter
 toTodoCounter world tr tid td =
     case (has (worldTasks . ix tid . taskRole . only tr) world, td) of
         (True,  TaskItemDone) -> TodoCounter 1 1 1 1
@@ -273,7 +273,12 @@ instance Monoid TodoCounter where
 
 taskCheckbox :: Monad m => World -> Employee -> Task -> HtmlT m ()
 taskCheckbox world employee task = do
-    checkbox_ checked [ id_ megaid ]
+    checkbox_ checked
+        [ id_ megaid
+        , futuId_ "task-done-checkbox"
+        , data_ "futu-employee" $ employee ^. identifierText
+        , data_ "futu-task" $ task ^. identifierText
+        ]
     label_ [ attrfor_ megaid ] $ task ^. nameHtml
   where
     checked = flip has world

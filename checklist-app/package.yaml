@@ -26,6 +26,7 @@ dependencies:
   - generics-sop
   - lens
   - lucid
+  - mtl
   - postgresql-simple
   - QuickCheck
   - resource-pool

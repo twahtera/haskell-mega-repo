@@ -48,7 +48,7 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
                     for_ [ minBound .. maxBound ] $ \role ->
                         optionSelected_ (Just role == mrole)
                             [ value_ $ role ^. re _TaskRole ]
-                            $ toHtml $ roleToText role
+                            $ toHtml $ role ^. re _TaskRole
             largemed_ 8 $ label_ $ do
                 "Checklist"
                 select_ [ name_ "checklist"] $ do

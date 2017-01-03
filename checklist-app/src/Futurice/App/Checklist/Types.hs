@@ -22,7 +22,7 @@ module Futurice.App.Checklist.Types (
     TaskRole(..),
     CheckResult(..),
     Checklist(..),
-    TaskItemDone (..),
+    TaskItem (..),
     TaskAppliance(..),
     -- ** Wrappers
     Identifier(..),
@@ -52,10 +52,11 @@ module Futurice.App.Checklist.Types (
     -- ** TaskRole
     _TaskRole,
     _TaskRoleIT, _TaskRoleHR, _TaskRoleSupervisor,
-    roleToText, roleFromText,
+    taskRoleToText, taskRoleFromText,
     -- ** Checklist
     checklistName, checklistTasks,
     -- ** TaskItemDone
+    _TaskItem,
     _TaskItemDone, _TaskItemTodo,
     -- * World
     World,
@@ -76,7 +77,9 @@ import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.ContractType
 import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.Location
+import Futurice.App.Checklist.Types.TaskItem
 import Futurice.App.Checklist.Types.World
+import Futurice.App.Checklist.Types.TaskRole
 
 import qualified FUM (UserName)
 
