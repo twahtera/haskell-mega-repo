@@ -5,6 +5,9 @@
 
 set -ex
 
+# This matters
+unset POSIXLY_CORRECT
+
 ROOTDIR=$(pwd)
 
 # Check that we have somewhat clean working dir
