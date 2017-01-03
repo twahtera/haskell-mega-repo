@@ -10,6 +10,7 @@ import Futurice.Servant          (SSOUser)
 import Servant.API
 import Servant.HTML.Lucid        (HTML)
 
+import Futurice.App.Checklist.Ack     (Ack)
 import Futurice.App.Checklist.Command (Command)
 import Futurice.App.Checklist.Types
        (Checklist, Employee, Identifier, Location, Task, TaskRole)
@@ -27,7 +28,7 @@ type ChecklistAPI = IndexPageEndpoint
     :<|> TaskPageEndpoint
     :<|> EmployeePageEndpoint
     -- Command
-    :<|> "command" :> SSOUser :> ReqBody '[JSON] (Command Proxy) :> Post '[JSON] Text
+    :<|> "command" :> SSOUser :> ReqBody '[JSON] (Command Proxy) :> Post '[JSON] Ack
 
 checklistApi :: Proxy ChecklistAPI
 checklistApi = Proxy
@@ -50,7 +51,7 @@ type TasksPageEndpoint =
     QueryParam "checklist" (Identifier Checklist) :>
     Get '[HTML] (HtmlPage "tasks")
 
-type ChecklistsPageEndpoint = 
+type ChecklistsPageEndpoint =
     "checklists" :>
     SSOUser :>
     Get '[HTML] (HtmlPage "checklists")

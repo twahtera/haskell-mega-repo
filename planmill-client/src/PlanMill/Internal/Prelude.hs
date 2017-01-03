@@ -22,8 +22,6 @@ module PlanMill.Internal.Prelude (
 
 import Prelude ()
 import Futurice.Prelude
-import Futurice.Time
-
 import Data.Aeson.Compat
        (FromJSON (..), ToJSON (..), Value (..), object, withObject, withText,
        (.!=), (.:), (.:?), (.=))
@@ -32,6 +30,7 @@ import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo (..), sopStructuralInfo)
 import Data.Time                 (ZonedTime, zonedTimeToLocalTime)
 import Data.Time.Clock.POSIX     (utcTimeToPOSIXSeconds)
+import Futurice.Time
 import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
 
 import qualified Data.Aeson.Extra   as Aeson

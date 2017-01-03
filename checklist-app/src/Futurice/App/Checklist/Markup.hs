@@ -35,6 +35,8 @@ module Futurice.App.Checklist.Markup (
     toTodoCounter,
     -- * Tasks
     taskCheckbox,
+    -- * URI
+    uriText,
     ) where
 
 import Prelude ()
