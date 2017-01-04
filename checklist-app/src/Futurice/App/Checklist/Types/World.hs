@@ -18,7 +18,7 @@ module Futurice.App.Checklist.Types.World (
 -- import Futurice.Generics
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens     (contains, filtered, ifiltered, (%~))
+import Control.Lens     (contains, filtered, ifiltered)
 import Futurice.IdMap   (IdMap)
 
 import qualified Data.Map        as Map

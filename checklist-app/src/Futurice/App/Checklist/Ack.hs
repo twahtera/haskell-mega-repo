@@ -6,7 +6,7 @@ module Futurice.App.Checklist.Ack (
 
 import Prelude ()
 import Futurice.Prelude
-import Data.Aeson.Compat (ToJSON (..), Value, object, (.=))
+import Data.Aeson.Compat (object, (.=))
 import Data.Swagger      (NamedSchema (..))
 import Futurice.Generics
 

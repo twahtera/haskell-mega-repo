@@ -31,7 +31,7 @@ module Futurice.App.Checklist.Command (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens               (iforOf_, non, (%=), (?=))
+import Control.Lens               (iforOf_, non)
 import Control.Monad.State.Strict (execState)
 import Data.Swagger               (NamedSchema (..))
 import Futurice.Aeson

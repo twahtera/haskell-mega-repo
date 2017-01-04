@@ -45,7 +45,6 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import qualified Numeric.Interval.NonEmpty  as Interval
 import qualified PlanMill                   as PM
 
-import Data.Binary        (get)
 import Data.Binary.Get    (Get, runGetOrFail)
 import Data.Binary.Tagged
        (SemanticVersion, Version, structuralInfo,

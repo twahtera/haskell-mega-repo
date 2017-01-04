@@ -15,7 +15,6 @@ module Futurice.App.Proxy (
 
 import Prelude ()
 import Futurice.Prelude
-import Data.Aeson                      (Value)
 import Data.Pool                       (createPool, withResource)
 import Data.Reflection                 (Given (..), give)
 import Data.Text.Encoding              (decodeLatin1)

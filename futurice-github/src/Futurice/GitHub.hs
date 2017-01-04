@@ -21,13 +21,13 @@ module Futurice.GitHub (
     ) where
 
 import Prelude ()
+
 import Futurice.Prelude   hiding (Pair)
 import Control.Lens       (( # ))
 import Data.Aeson.Compat
        (AesonException (..), FromJSON (..), Object, ToJSON (..), eitherDecode,
        encode, object, (.:), (.=))
 import Data.Aeson.Types   (Pair, Parser)
-import Data.Binary        (Binary (..))
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo (..), StructuralInfo (..))
 import Data.Constraint    (Dict (..))

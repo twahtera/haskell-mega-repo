@@ -13,7 +13,6 @@ import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Servant
 import Futurice.Stricter
 import Servant
-import Servant.Utils.Links       (safeLink)
 
 import Futurice.App.Checklist.Ack
 import Futurice.App.Checklist.API
