@@ -35,13 +35,11 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
             label_ $ do
                 "Name"
                 let v = task ^. nameText
-                -- TODO: change id to futu-id
-                input_ [ id_ "futu-task-name", type_ "text", data_ "futu-value" v, value_ v ]
+                input_ [ futuId_ "task-name", type_ "text", value_ v ]
         row_ $ large_ 12 $
             label_ $ do
                 "Role"
-                let v = task ^. taskRole . re _TaskRole
-                select_ [ id_ "futu-task-role", data_ "futu-value" v ] $ for_ [ minBound .. maxBound ] $ \role ->
+                select_ [ futuId_ "task-role" ] $ for_ [ minBound .. maxBound ] $ \role ->
                     optionSelected_ (role == task ^. taskRole)
                         [ value_ $ role ^. re _TaskRole ]
                         $ toHtml $ role ^. re _TaskRole

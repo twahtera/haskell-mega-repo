@@ -124,38 +124,18 @@ document.addEventListener("DOMContentLoaded", function () {
   function taskCreateForm(form) {
     console.info("Initialising task creation form");
 
-    var nameEl = $_("input[data-futu-id=task-name]", form);
-    var roleEl = $_("select[data-futu-id=task-role]", form);
+    var defs = {
+      name: { sel: "input[data-futu-id=task-name]", check: nonEmptyCheck },
+      role: { sel: "select[data-futu-id=task-role]" },
+    }
 
-    var submitBtn = $_("button[data-futu-action=submit]", form);
-    var resetBtn = $_("button[data-futu-action=reset]", form);
+    var actions = initialiseFormDefs(defs, form);
 
-    var name$ = menrvaInputValue(nameEl);
-    var role$ = menrvaInputValue(roleEl);
-
-    var changed$ = menrva.combine(name$, role$, function (name, role) {
-      return name !== "" && role !== "";
-    });
-
-    changed$.onValue(function (changed) {
-      submitBtn.disabled = !changed;
-      resetBtn.disabled = !changed;
-    });
-
-    buttonOnClick(resetBtn, function () {
-      nameEl.value = "";
-      roleEl.value = "IT";
-    });
-
-    buttonOnClick(submitBtn, function () {
-      var name = name$.value();
-      var role = role$.value();
-
-      var edit = {};
-      edit.name = name;
-      edit.role = role;
-
-      cmdCreateTask(edit);
+    initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
+      cmdCreateTask({
+        name: values.name,
+        role: values.role,
+      });
     });
   }
 
@@ -164,43 +144,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.info("Initialising task editing form: " + taskId);
 
-    var nameEl = $_("#futu-task-name", form);
-    var roleEl = $_("#futu-task-role", form);
+    var defs = {
+      name: { sel: "input[data-futu-id=task-name]", check: nonEmptyCheck },
+      role: { sel: "select[data-futu-id=task-role]" },
+    }
 
-    var submitBtn = $_("button[data-futu-action=submit]", form);
-    var resetBtn = $_("button[data-futu-action=reset]", form);
+    var actions = initialiseFormDefs(defs, form);
 
-    // todo: check elements
-
-    var nameOrig = nameEl.dataset.futuValue;
-    var roleOrig = roleEl.dataset.futuValue;
-
-    var name$ = menrvaInputValue(nameEl);
-    var role$ = menrvaInputValue(roleEl);
-
-    var changed$ = menrva.combine(name$, role$, function (name, role) {
-      return name !== nameOrig || role !== roleOrig;
-    });
-
-    changed$.onValue(function (changed) {
-      submitBtn.disabled = !changed;
-      resetBtn.disabled = !changed;
-    });
-
-    buttonOnClick(resetBtn, function () {
-      nameEl.value = nameOrig;
-      roleEl.value = roleOrig;
-    });
-
-    buttonOnClick(submitBtn, function () {
-      var name = name$.value();
-      var role = role$.value();
-
-      var edit = {};
-      if (name !== nameOrig) edit.name = name;
-      if (role !== nameOrig) edit.role = role;
-
-      cmdEditTask(taskId, edit);
+    initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
+      // TODO: strip non-changed!
+      cmdEditTask(taskId, {
+        name: values.name,
+        role: values.role,
+      });
     });
   }
 
@@ -453,7 +409,6 @@ document.addEventListener("DOMContentLoaded", function () {
         tr.push(false);
         tr.push(def.signal);
         tr.push(inputValue(def.el));
-        tr.push(def.submittable$);
       });
       menrva.transaction(tr).commit();
     }
@@ -508,11 +463,17 @@ document.addEventListener("DOMContentLoaded", function () {
         .value();
     });
 
-    var dirty$ = menrva.record(_.mapValues(defs, "dirty$")).map(function (rec) {
+    var changed$ = menrva.record(_.mapValues(defs, "changed$")).map(function (rec) {
       return _.chain(rec)
         .values()
         .some()
         .value();
+    });
+
+    menrva.combine(submittable$, changed$, function (submittable, changed) {
+      return changed || !submittable;
+    }).onValue(function (enabled) {
+      submitBtn.disabled = !enabled;
     });
 
     submittable$.onValue(function (submittable) {
