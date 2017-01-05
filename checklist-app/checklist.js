@@ -1,6 +1,18 @@
 document.addEventListener("DOMContentLoaded", function () {
   console.info("Initialising checklist js");
 
+  // Reload indicator
+  var futuReloadIndicatorEl = $_("#futu-reload-indicator");
+  buttonOnClick(futuReloadIndicatorEl, function () {
+    // todo: check: no pending.
+    location.reload();
+  });
+  var futuReloadIndicator$ = menrva.source({ total: 0, done: 0 }, _.isEqual);
+  futuReloadIndicator$.onValue(function (val) {
+    futuReloadIndicatorEl.innerText = val.done + "/" + val.total;
+    futuReloadIndicatorEl.style.display = val.total === 0 ? "none" : "";
+  });
+
   $$("form").forEach(function (form) {
     var formId = form.dataset.futuId;
 
@@ -329,6 +341,12 @@ document.addEventListener("DOMContentLoaded", function () {
   function command(cmd) {
     var url = "/command";
 
+    menrva
+      .transaction([futuReloadIndicator$, function (x) {
+        return { total: x.total + 1, done: x.done };
+      }])
+      .commit();
+
     var headers = new Headers();
     headers.append("Accept", "application/json");
     headers.append("Content-Type", "application/json");
@@ -365,7 +383,11 @@ document.addEventListener("DOMContentLoaded", function () {
         console.info("command ack", res);
         switch (res.ack) {
           case "ok":
-            // do nothing
+            menrva
+              .transaction([futuReloadIndicator$, function (x) {
+                return { total: x.total, done: x.done + 1 };
+              }])
+              .commit();
             break;
           case "load":
             location.pathname = res.url;

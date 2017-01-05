@@ -71,7 +71,7 @@ navigation (fu, viewerRole, _viewerLocation) = do
             li_ [ class_ "menu-text"] $ do
                 "Checklist"
                 sup_ "2"
-            li_ $ a_ [ id_ "futu-reload-indicator", href_ "#", style_ "display: none", title_ "You made changes, refresh page to show" ] $ span_ "1"
+            li_ $ a_ [ id_ "futu-reload-indicator", href_ "#", style_ "display: none", title_ "You made changes, refresh page to show" ]  "1"
             li_ $ a_ [ indexPageHref Nothing (Nothing :: Maybe Checklist) (Nothing :: Maybe Task) ] "Employees"
             li_ $ a_ [ checklistsPageHref ] "Checklists"
             li_ $ a_ [ tasksPageHref Nothing (Nothing :: Maybe Checklist) ] "Tasks"
