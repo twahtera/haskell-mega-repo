@@ -82,7 +82,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
                         toHtml (show i) *> "/" *> toHtml (show j)
             td_ $ forWith_
                 (br_ [])
-                (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l))
+                (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l && l ^. identifier /= checklist ^. identifier))
                 checklistLink
             td_ $ button_
                 [ class_ "button alert", futuId_ "task-remove"
