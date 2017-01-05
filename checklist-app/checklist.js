@@ -247,6 +247,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function taskRemoveBtn(btn) {
     buttonOnClick(btn, function () {
+      // prevent dbl-click
+      btn.disabled = true;
+
       var checklistId = btn.dataset.futuChecklistId;
       var taskId = btn.dataset.futuTaskId;
 
