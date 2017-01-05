@@ -63,13 +63,9 @@ document.addEventListener("DOMContentLoaded", function () {
       hrNumber: { sel: "input[data-futu-id=employee-hr-number" },
     };
 
-    var actions = initialiseFormDefs(defs);
+    var actions = initialiseFormDefs(defs, form);
 
-    var resetBtn = $_("button[data-futu-action=reset]", form);
-    initaliseResetButton(resetBtn, defs, actions);
-
-    var submitBtn = $_("button[data-futu-action=submit]", form);
-    initialiseSubmitButton(submitBtn, defs, actions, function (values) {
+    initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
       var checklistId = values.checklistId;
       var edit = _.omit(values, "checklistId");
       cmdCreateEmployee(checklistId, edit);
@@ -79,30 +75,14 @@ document.addEventListener("DOMContentLoaded", function () {
   function checklistCreateForm(form) {
     console.info("Initialising checklist creation form");
 
-    var nameEl = $_("input[data-futu-id=checklist-name]", form);
+    var defs = {
+        name: { sel: "input[data-futu-id=checklist-name]", check: nonEmptyCheck },
+    };
 
-    var submitBtn = $_("button[data-futu-action=submit]", form);
-    var resetBtn = $_("button[data-futu-action=reset]", form);
+    var actions = initialiseFormDefs(defs, form);
 
-    var name$ = menrvaInputValue(nameEl);
-
-    var changed$ = menrva.combine(name$, function (name) {
-      return name !== "";
-    });
-
-    changed$.onValue(function (changed) {
-      submitBtn.disabled = !changed;
-      resetBtn.disabled = !changed;
-    });
-
-    buttonOnClick(resetBtn, function () {
-      nameEl.value = "";
-    });
-
-    buttonOnClick(submitBtn, function () {
-      var name = name$.value();
-
-      cmdCreateChecklist(name);
+    initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
+      cmdCreateChecklist(values.name);
     });
   }
 
@@ -414,9 +394,11 @@ document.addEventListener("DOMContentLoaded", function () {
     return !!str.match(/^\d{4}-\d\d-\d\d$/);
   }
 
-  function initialiseFormDefs(defs) {
+  function initialiseFormDefs(defs, form) {
+    assert(form, "initialiseFormDefs: provide form element");
+
     _.forEach(defs, function (def, k) {
-      def.el = $_(def.sel);
+      def.el = $_(def.sel, form);
       def.checkbox = def.el.type === "checkbox";
       def.orig = inputValue(def.el)
       def.signal = menrvaInputValue(def.el);
@@ -450,6 +432,11 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     });
 
+    // reset btn
+    var resetBtn = $_("button[data-futu-action=reset]", form);
+    initaliseResetButton(resetBtn, defs, { markClean: markClean });
+
+    // actions
     function markDirty() {
       var tr = [];
       _.forEach(defs, function (def) {
@@ -464,6 +451,9 @@ document.addEventListener("DOMContentLoaded", function () {
       _.forEach(defs, function (def) {
         tr.push(def.dirty$);
         tr.push(false);
+        tr.push(def.signal);
+        tr.push(inputValue(def.el));
+        tr.push(def.submittable$);
       });
       menrva.transaction(tr).commit();
     }
@@ -471,6 +461,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return {
       markDirty: markDirty,
       markClean: markClean,
+      submitBtn: $_("button[data-futu-action=submit]", form)
     };
   }
 
@@ -495,7 +486,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     buttonOnClick(resetBtn, function () {
-      actions.markClean();
       _.forEach(defs, function (def) {
         // TODO: inputValueSet
         if (def.el.type === "checkbox") {
@@ -504,6 +494,9 @@ document.addEventListener("DOMContentLoaded", function () {
           def.el.value = def.orig;
         }
       });
+
+      // after value update!
+      actions.markClean();
     });
   }
 
