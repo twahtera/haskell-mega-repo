@@ -1,6 +1,18 @@
 document.addEventListener("DOMContentLoaded", function () {
   console.info("Initialising checklist js");
 
+  // Reload indicator
+  var futuReloadIndicatorEl = $_("#futu-reload-indicator");
+  buttonOnClick(futuReloadIndicatorEl, function () {
+    // todo: check: no pending.
+    location.reload();
+  });
+  var futuReloadIndicator$ = menrva.source({ total: 0, done: 0 }, _.isEqual);
+  futuReloadIndicator$.onValue(function (val) {
+    futuReloadIndicatorEl.innerText = val.done + "/" + val.total;
+    futuReloadIndicatorEl.style.display = val.total === 0 ? "none" : "";
+  });
+
   $$("form").forEach(function (form) {
     var formId = form.dataset.futuId;
 
@@ -51,13 +63,9 @@ document.addEventListener("DOMContentLoaded", function () {
       hrNumber: { sel: "input[data-futu-id=employee-hr-number" },
     };
 
-    var actions = initialiseFormDefs(defs);
+    var actions = initialiseFormDefs(defs, form);
 
-    var resetBtn = $_("button[data-futu-action=reset]", form);
-    initaliseResetButton(resetBtn, defs, actions);
-
-    var submitBtn = $_("button[data-futu-action=submit]", form);
-    initialiseSubmitButton(submitBtn, defs, actions, function (values) {
+    initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
       var checklistId = values.checklistId;
       var edit = _.omit(values, "checklistId");
       cmdCreateEmployee(checklistId, edit);
@@ -67,30 +75,14 @@ document.addEventListener("DOMContentLoaded", function () {
   function checklistCreateForm(form) {
     console.info("Initialising checklist creation form");
 
-    var nameEl = $_("input[data-futu-id=checklist-name]", form);
+    var defs = {
+        name: { sel: "input[data-futu-id=checklist-name]", check: nonEmptyCheck },
+    };
 
-    var submitBtn = $_("button[data-futu-action=submit]", form);
-    var resetBtn = $_("button[data-futu-action=reset]", form);
+    var actions = initialiseFormDefs(defs, form);
 
-    var name$ = menrvaInputValue(nameEl);
-
-    var changed$ = menrva.combine(name$, function (name) {
-      return name !== "";
-    });
-
-    changed$.onValue(function (changed) {
-      submitBtn.disabled = !changed;
-      resetBtn.disabled = !changed;
-    });
-
-    buttonOnClick(resetBtn, function () {
-      nameEl.value = "";
-    });
-
-    buttonOnClick(submitBtn, function () {
-      var name = name$.value();
-
-      cmdCreateChecklist(name);
+    initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
+      cmdCreateChecklist(values.name);
     });
   }
 
@@ -132,38 +124,18 @@ document.addEventListener("DOMContentLoaded", function () {
   function taskCreateForm(form) {
     console.info("Initialising task creation form");
 
-    var nameEl = $_("input[data-futu-id=task-name]", form);
-    var roleEl = $_("select[data-futu-id=task-role]", form);
+    var defs = {
+      name: { sel: "input[data-futu-id=task-name]", check: nonEmptyCheck },
+      role: { sel: "select[data-futu-id=task-role]" },
+    }
 
-    var submitBtn = $_("button[data-futu-action=submit]", form);
-    var resetBtn = $_("button[data-futu-action=reset]", form);
+    var actions = initialiseFormDefs(defs, form);
 
-    var name$ = menrvaInputValue(nameEl);
-    var role$ = menrvaInputValue(roleEl);
-
-    var changed$ = menrva.combine(name$, role$, function (name, role) {
-      return name !== "" && role !== "";
-    });
-
-    changed$.onValue(function (changed) {
-      submitBtn.disabled = !changed;
-      resetBtn.disabled = !changed;
-    });
-
-    buttonOnClick(resetBtn, function () {
-      nameEl.value = "";
-      roleEl.value = "IT";
-    });
-
-    buttonOnClick(submitBtn, function () {
-      var name = name$.value();
-      var role = role$.value();
-
-      var edit = {};
-      edit.name = name;
-      edit.role = role;
-
-      cmdCreateTask(edit);
+    initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
+      cmdCreateTask({
+        name: values.name,
+        role: values.role,
+      });
     });
   }
 
@@ -172,43 +144,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.info("Initialising task editing form: " + taskId);
 
-    var nameEl = $_("#futu-task-name", form);
-    var roleEl = $_("#futu-task-role", form);
+    var defs = {
+      name: { sel: "input[data-futu-id=task-name]", check: nonEmptyCheck },
+      role: { sel: "select[data-futu-id=task-role]" },
+    }
 
-    var submitBtn = $_("button[data-futu-action=submit]", form);
-    var resetBtn = $_("button[data-futu-action=reset]", form);
+    var actions = initialiseFormDefs(defs, form);
 
-    // todo: check elements
-
-    var nameOrig = nameEl.dataset.futuValue;
-    var roleOrig = roleEl.dataset.futuValue;
-
-    var name$ = menrvaInputValue(nameEl);
-    var role$ = menrvaInputValue(roleEl);
-
-    var changed$ = menrva.combine(name$, role$, function (name, role) {
-      return name !== nameOrig || role !== roleOrig;
-    });
-
-    changed$.onValue(function (changed) {
-      submitBtn.disabled = !changed;
-      resetBtn.disabled = !changed;
-    });
-
-    buttonOnClick(resetBtn, function () {
-      nameEl.value = nameOrig;
-      roleEl.value = roleOrig;
-    });
-
-    buttonOnClick(submitBtn, function () {
-      var name = name$.value();
-      var role = role$.value();
-
-      var edit = {};
-      if (name !== nameOrig) edit.name = name;
-      if (role !== nameOrig) edit.role = role;
-
-      cmdEditTask(taskId, edit);
+    initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
+      // TODO: strip non-changed!
+      cmdEditTask(taskId, {
+        name: values.name,
+        role: values.role,
+      });
     });
   }
 
@@ -235,6 +183,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function taskRemoveBtn(btn) {
     buttonOnClick(btn, function () {
+      // prevent dbl-click
+      btn.disabled = true;
+
       var checklistId = btn.dataset.futuChecklistId;
       var taskId = btn.dataset.futuTaskId;
 
@@ -329,6 +280,12 @@ document.addEventListener("DOMContentLoaded", function () {
   function command(cmd) {
     var url = "/command";
 
+    menrva
+      .transaction([futuReloadIndicator$, function (x) {
+        return { total: x.total + 1, done: x.done };
+      }])
+      .commit();
+
     var headers = new Headers();
     headers.append("Accept", "application/json");
     headers.append("Content-Type", "application/json");
@@ -365,7 +322,11 @@ document.addEventListener("DOMContentLoaded", function () {
         console.info("command ack", res);
         switch (res.ack) {
           case "ok":
-            // do nothing
+            menrva
+              .transaction([futuReloadIndicator$, function (x) {
+                return { total: x.total, done: x.done + 1 };
+              }])
+              .commit();
             break;
           case "load":
             location.pathname = res.url;
@@ -389,9 +350,11 @@ document.addEventListener("DOMContentLoaded", function () {
     return !!str.match(/^\d{4}-\d\d-\d\d$/);
   }
 
-  function initialiseFormDefs(defs) {
+  function initialiseFormDefs(defs, form) {
+    assert(form, "initialiseFormDefs: provide form element");
+
     _.forEach(defs, function (def, k) {
-      def.el = $_(def.sel);
+      def.el = $_(def.sel, form);
       def.checkbox = def.el.type === "checkbox";
       def.orig = inputValue(def.el)
       def.signal = menrvaInputValue(def.el);
@@ -425,6 +388,11 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     });
 
+    // reset btn
+    var resetBtn = $_("button[data-futu-action=reset]", form);
+    initaliseResetButton(resetBtn, defs, { markClean: markClean });
+
+    // actions
     function markDirty() {
       var tr = [];
       _.forEach(defs, function (def) {
@@ -439,6 +407,8 @@ document.addEventListener("DOMContentLoaded", function () {
       _.forEach(defs, function (def) {
         tr.push(def.dirty$);
         tr.push(false);
+        tr.push(def.signal);
+        tr.push(inputValue(def.el));
       });
       menrva.transaction(tr).commit();
     }
@@ -446,6 +416,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return {
       markDirty: markDirty,
       markClean: markClean,
+      submitBtn: $_("button[data-futu-action=submit]", form)
     };
   }
 
@@ -470,7 +441,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     buttonOnClick(resetBtn, function () {
-      actions.markClean();
       _.forEach(defs, function (def) {
         // TODO: inputValueSet
         if (def.el.type === "checkbox") {
@@ -479,6 +449,9 @@ document.addEventListener("DOMContentLoaded", function () {
           def.el.value = def.orig;
         }
       });
+
+      // after value update!
+      actions.markClean();
     });
   }
 
@@ -490,11 +463,17 @@ document.addEventListener("DOMContentLoaded", function () {
         .value();
     });
 
-    var dirty$ = menrva.record(_.mapValues(defs, "dirty$")).map(function (rec) {
+    var changed$ = menrva.record(_.mapValues(defs, "changed$")).map(function (rec) {
       return _.chain(rec)
         .values()
         .some()
         .value();
+    });
+
+    menrva.combine(submittable$, changed$, function (submittable, changed) {
+      return changed || !submittable;
+    }).onValue(function (enabled) {
+      submitBtn.disabled = !enabled;
     });
 
     submittable$.onValue(function (submittable) {
