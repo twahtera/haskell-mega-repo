@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE KindSignatures       #-}
 {-# LANGUAGE OverloadedStrings    #-}
@@ -17,6 +18,7 @@ module Futurice.App.Checklist.Command (
     -- * Command
     Command (..),
     traverseCommand,
+    CIT (..),
     applyCommand,
     transactCommand,
     -- * Edits
@@ -29,7 +31,7 @@ module Futurice.App.Checklist.Command (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens               (iforOf_, non, (%=), (?=))
+import Control.Lens               (iforOf_, non)
 import Control.Monad.State.Strict (execState)
 import Data.Swagger               (NamedSchema (..))
 import Futurice.Aeson
@@ -206,17 +208,22 @@ data Command f
 
 deriveGeneric ''Command
 
+data CIT a where
+    CITTask      :: CIT Task
+    CITEmployee  :: CIT Employee
+    CITChecklist :: CIT Checklist
+
 traverseCommand
     :: Applicative m
-    => (forall x. f (Identifier x) -> m (g (Identifier x)))
+    => (forall x. CIT x -> f (Identifier x) -> m (g (Identifier x)))
     -> Command f
     -> m (Command g)
 traverseCommand  f (CmdCreateChecklist i n) =
-    CmdCreateChecklist <$> f i <*> pure n
+    CmdCreateChecklist <$> f CITChecklist i <*> pure n
 traverseCommand _f (CmdRenameChecklist i n) =
     pure $ CmdRenameChecklist i n
-traverseCommand  f (CmdCreateTask i e) =
-    CmdCreateTask <$> f i <*> pure e
+traverseCommand f (CmdCreateTask i e) =
+    CmdCreateTask <$> f CITTask i <*> pure e
 traverseCommand _f (CmdEditTask i e) =
     pure $ CmdEditTask i e
 traverseCommand _f (CmdAddTask c t a) =
@@ -224,7 +231,7 @@ traverseCommand _f (CmdAddTask c t a) =
 traverseCommand _f (CmdRemoveTask c t) =
     pure $ CmdRemoveTask c t
 traverseCommand f (CmdCreateEmployee e c x) =
-    CmdCreateEmployee <$> f e <*> pure c <*> pure x
+    CmdCreateEmployee <$> f CITEmployee e <*> pure c <*> pure x
 traverseCommand _ (CmdTaskItemToggle e t x) =
     pure $ CmdTaskItemToggle e t x
 

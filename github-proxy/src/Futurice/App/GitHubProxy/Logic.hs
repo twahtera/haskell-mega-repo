@@ -34,7 +34,6 @@ import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.HashMap.Strict        as HM
 import qualified Database.PostgreSQL.Simple as Postgres
 
-import Data.Binary        (get)
 import Data.Binary.Get    (Get, runGetOrFail)
 import Data.Binary.Tagged
        (SemanticVersion, Version, structuralInfo,

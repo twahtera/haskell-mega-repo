@@ -85,7 +85,7 @@ envs:
     FUTUHOURSMOCK_EKPORT:  "9912"
 
     ## Development
-    CHECKLIST_MOCKAUTH: "YES"
+    MOCKAUTH: "YES"
 
     # Legacy
     # PORT: "8080"

@@ -25,7 +25,6 @@ module Futurice.App.Reports.GithubUsers (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens                     ((%=))
 import Control.Monad.Trans.State.Strict (execState)
 import Data.Foldable                    (foldl')
 import Data.Maybe                       (isJust)

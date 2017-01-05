@@ -55,6 +55,7 @@ library
     , uuid
   exposed-modules:
       Futurice.App.Checklist
+      Futurice.App.Checklist.Ack
       Futurice.App.Checklist.API
       Futurice.App.Checklist.Clay
       Futurice.App.Checklist.Command

@@ -1,21 +1,24 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist (defaultMain) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Arrow             ((&&&))
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Servant
+import Futurice.Stricter
 import Servant
 
+import Futurice.App.Checklist.Ack
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
+import Futurice.App.Checklist.Markup                (uriText)
 import Futurice.App.Checklist.Pages.Checklist
 import Futurice.App.Checklist.Pages.Checklists
 import Futurice.App.Checklist.Pages.CreateChecklist
@@ -176,28 +179,34 @@ commandImpl
     => Ctx
     -> Maybe FUM.UserName
     -> Command Proxy
-    -> m Text
+    -> m Ack
 commandImpl ctx fu cmd =
-    withAuthUser' "forbidden" ctx fu $ \_world (fumUsername, _, _) ->
+    withAuthUser' (AckErr "forbidden") ctx fu $ \_world (fumUsername, _, _) ->
     liftIO $ runLogT "command" (ctxLogger ctx) $ do
-        (res, cmd') <- instantiatedCmd
+        (cmd', res) <- instantiatedCmd
         ctxApplyCmd fumUsername cmd' ctx
         pure res
   where
-    instantiatedCmd = case cmd of
-        -- tasks
-        CmdEditTask tid e           -> mk "ok" $ CmdEditTask tid e
-        CmdAddTask cid tid app      -> mk "ok" $ CmdAddTask cid tid app
-        CmdRemoveTask cid tid       -> mk "ok" $ CmdRemoveTask cid tid
-        CmdRenameChecklist tid n    -> mk "ok" $ CmdRenameChecklist tid n
-        CmdTaskItemToggle eid tid d -> mk "ok" $ CmdTaskItemToggle eid tid d
-        -- creation tasks
-        CmdCreateChecklist Proxy n  -> create $ \cid -> CmdCreateChecklist cid n
-        CmdCreateTask Proxy e       -> create $ \tid -> CmdCreateTask tid e
-        CmdCreateEmployee Proxy c x -> create $ \eid -> CmdCreateEmployee eid c x
+    instantiatedCmd = flip runStricterT mempty $ traverseCommand genIdentifier cmd
 
-    mk a b = pure (a, b)
-    create f = (view identifierText &&& f . Identity) . Identifier <$> ctxGetCRandom ctx
+    genIdentifier
+        :: (MonadIO m, MonadWriter Ack m)
+        => CIT x -> Proxy (Identifier x) -> m (Identity (Identifier x))
+    genIdentifier CITEmployee Proxy = do
+        eid <- Identifier <$> ctxGetCRandom ctx
+        tell $ AckLoad $ uriText $
+            safeLink checklistApi employeePageEndpoint eid
+        pure (Identity eid)
+    genIdentifier CITTask Proxy = do
+        tid <- Identifier <$> ctxGetCRandom ctx
+        tell $ AckLoad $ uriText $
+            safeLink checklistApi taskPageEndpoint tid
+        pure (Identity tid)
+    genIdentifier CITChecklist Proxy = do
+        cid <- Identifier <$> ctxGetCRandom ctx
+        tell $ AckLoad $ uriText $
+            safeLink checklistApi checklistPageEndpoint cid
+        pure (Identity cid)
 
 -------------------------------------------------------------------------------
 -- Auth

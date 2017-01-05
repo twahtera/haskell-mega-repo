@@ -15,5 +15,5 @@ data Config = Config
 
 instance Configure Config where
     configure = Config
-        <$> envVarWithDefault "CHECKLIST_MOCKAUTH" False
+        <$> envVarWithDefault "MOCKAUTH" False
         <*> envConnectInfo

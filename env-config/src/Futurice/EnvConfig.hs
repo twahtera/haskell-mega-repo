@@ -162,7 +162,7 @@ envConnectInfo = f
     <$> envVar "POSTGRES_URL"
     <*> envVar "POSTGRES_PASS"
   where
-    f connInfo pass = connInfo { connectPassword = pass }
+    f connInfo password = connInfo { connectPassword = password }
 
 -------------------------------------------------------------------------------
 -- Defaults

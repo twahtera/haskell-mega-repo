@@ -27,6 +27,7 @@ library:
     - base-compat
     - async
     - futurice-prelude
+    - lens
     - monad-logger
     - stm
     - transformers

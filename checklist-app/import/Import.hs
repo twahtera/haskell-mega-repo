@@ -9,12 +9,12 @@ module Main (main) where
 import Prelude ()
 import Futurice.Prelude
 import Control.Exception                (bracket)
-import Control.Lens                     (use, (%=), _4)
+import Control.Lens                     (use, _4)
 import Control.Monad.Trans.State.Strict
        (StateT (..), evalState, execStateT, modify')
 import Data.Aeson.Compat
        (FromJSON (..), Parser, withObject, (.:))
-import Data.Yaml                        (Value, decodeFileEither)
+import Data.Yaml                        (decodeFileEither)
 import Futurice.EnvConfig               (getConfig)
 import Futurice.UUID                    (uuidWords)
 import System.Environment               (getArgs)

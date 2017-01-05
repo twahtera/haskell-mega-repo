@@ -30,7 +30,7 @@ module PlanMill.Types.Query (
 
 import Prelude ()
 import PlanMill.Internal.Prelude
-import Data.Binary                      (Binary (..), Put)
+import Data.Binary                      (Put)
 import Data.Binary.Tagged               (StructuralInfo (..))
 import Data.Constraint
 import Data.GADT.Compare                (GEq (..), defaultEq)
