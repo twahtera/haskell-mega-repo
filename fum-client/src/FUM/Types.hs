@@ -14,6 +14,7 @@ import Data.Aeson.Types
        (FromJSONKey (..), ToJSONKey (..), fromJSONKeyCoerce, toJSONKeyText)
 import Data.Swagger      (ToSchema)
 import Test.QuickCheck   (Arbitrary (..), elements)
+import Web.HttpApiData   (FromHttpApiData (..), ToHttpApiData (..))
 
 import qualified Data.Csv                             as Csv
 import qualified Data.Maybe.Strict                    as S
@@ -118,6 +119,14 @@ instance Postgres.FromField UserName where
 
 instance IsString UserName where
     fromString = UserName . fromString
+
+instance ToHttpApiData UserName where
+    toUrlPiece = _getUserName
+    toQueryParam = _getUserName
+
+instance FromHttpApiData UserName where
+    parseUrlPiece = Right . UserName
+    parseQueryParam = Right . UserName
 
 instance Arbitrary UserName where
     arbitrary = UserName <$> gen
