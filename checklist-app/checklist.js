@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
     switch (formId) {
       case "selector": return;
       case "employee-create": return employeeCreateForm(form);
+      case "employee-edit": return employeeEditForm(form);
       case "checklist-create": return checklistCreateForm(form);
       case "checklist-edit": return checklistEditForm(form);
       case "task-create": return taskCreateForm(form);
@@ -32,7 +33,7 @@ document.addEventListener("DOMContentLoaded", function () {
   $$("input[data-futu-id=task-done-checkbox]").forEach(taskToggleCheckbox);
 
   function unknownForm(form) {
-    console.warn("Unknown form", form);
+    console.warn("Unknown form", form.dataset.futuId, form);
 
     function disable(el) {
       el.disabled = true;
@@ -41,6 +42,7 @@ document.addEventListener("DOMContentLoaded", function () {
     $$("button", form).forEach(disable);
     $$("input", form).forEach(disable);
     $$("select", form).forEach(disable);
+    $$("textarea", form).forEach(disable);
   }
 
   function employeeCreateForm(form) {
@@ -60,7 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
       phone: { sel: "input[data-futu-id=employee-phone" },
       contactEmail: { sel: "input[data-futu-id=employee-contact-email" },
       fumLogin: { sel: "input[data-futu-id=employee-fum-login" },
-      hrNumber: { sel: "input[data-futu-id=employee-hr-number" },
+      hrNumber: { sel: "input[data-futu-id=employee-hr-number", check: numberCheck },
     };
 
     var actions = initialiseFormDefs(defs, form);
@@ -69,6 +71,33 @@ document.addEventListener("DOMContentLoaded", function () {
       var checklistId = values.checklistId;
       var edit = _.omit(values, "checklistId");
       cmdCreateEmployee(checklistId, edit);
+    });
+  }
+
+  function employeeEditForm(form) {
+    var employeeId = form.dataset.futuEmployeeId;
+    console.info("Initialising employee editing form: " + employeeId);
+
+    var defs = {
+      firstName: { sel: "input[data-futu-id=employee-firstname", check: nonEmptyCheck },
+      lastName: { sel: "input[data-futu-id=employee-lastname", check: nonEmptyCheck },
+      contractType: { sel: "select[data-futu-id=employee-contract-type" },
+      location: { sel: "select[data-futu-id=employee-location" },
+      confirmed: { sel: "input[data-futu-id=employee-confirmed" },
+      startingDay: { sel: "input[data-futu-id=employee-starting-day", check: dayCheck },
+      supervisor: { sel: "input[data-futu-id=employee-supervisor", check: nonEmptyCheck },
+      tribe: { sel: "input[data-futu-id=employee-tribe", check: nonEmptyCheck },
+      info: { sel: "textarea[data-futu-id=employee-info" },
+      phone: { sel: "input[data-futu-id=employee-phone" },
+      contactEmail: { sel: "input[data-futu-id=employee-contact-email" },
+      fumLogin: { sel: "input[data-futu-id=employee-fum-login" },
+      hrNumber: { sel: "input[data-futu-id=employee-hr-number", check: optionalCheck(numberCheck) },
+    };
+
+    var actions = initialiseFormDefs(defs, form);
+
+    initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
+      cmdEditEmployee(employeeId, values);
     });
   }
 
@@ -214,6 +243,15 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function cmdEditEmployee(employeeId, edit) {
+    traceCall(cmdEditEmployee, arguments);
+    return command({
+      cmd: "edit-employee",
+      eid: employeeId,
+      edit: edit,
+    });
+  }
+
   function cmdCreateChecklist(name) {
     console.info("cmdCreateChecklist", name);
     return command({
@@ -343,11 +381,22 @@ document.addEventListener("DOMContentLoaded", function () {
   // Form "library"
 
   function nonEmptyCheck(str) {
-    return str.trim() !== "";
+    var t = str.trim();
+    return t === "" ? undefined : t;
+  }
+
+  function optionalCheck(check) {
+    return function (str) {
+      return str.trim() === "" ? null : check(str);
+    };
+  }
+
+  function numberCheck(str) {
+    return str.match(/^\d+$/) ? (str | 0) : undefined;
   }
 
   function dayCheck(str) {
-    return !!str.match(/^\d{4}-\d\d-\d\d$/);
+    return str.match(/^\d{4}-\d\d-\d\d$/) ? str : undefined;
   }
 
   function initialiseFormDefs(defs, form) {
@@ -358,16 +407,13 @@ document.addEventListener("DOMContentLoaded", function () {
       def.checkbox = def.el.type === "checkbox";
       def.orig = inputValue(def.el)
       def.signal = menrvaInputValue(def.el);
+      def.signal$ = def.check ? def.signal.map(def.check) : def.signal;
 
       def.changed$ = def.signal.map(function (x) {
         return x != def.orig;
       });
 
-      if (def.check) {
-        def.submittable$ = def.signal.map(def.check);
-      } else {
-        def.submittable$ = menrva.source(true);
-      }
+      def.submittable$ = def.signal$.map(function (x) { return x !== undefined; });
 
       // dirty
       def.dirty$ = menrva.source(false);
@@ -488,7 +534,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     buttonOnClick(submitBtn, function () {
       if (submittable$.value()) {
-        var values = _.mapValues(defs, function (def) { return def.signal.value(); });
+        var values = _.mapValues(defs, function (def) { return def.signal$.value(); });
         callback(values);
       } else {
         actions.markDirty();

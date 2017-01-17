@@ -24,6 +24,7 @@ dependencies:
   - futurice-prelude
   - futurice-servant
   - generics-sop
+  - http-api-data
   - lens
   - lucid
   - mtl

@@ -114,8 +114,8 @@ data EmployeeEdit f = EmployeeEdit
     -- this fields are optional
     , eePhone        :: !(Maybe Text)
     , eeContactEmail :: !(Maybe Text)
-    , eeFUMLogin     :: !(Maybe FUM.UserName)
-    , eeHRNumber     :: !(Maybe Int)
+    , eeFumLogin     :: !(Maybe FUM.UserName)
+    , eeHrNumber     :: !(Maybe Int)
     }
 
 deriveGeneric ''EmployeeEdit
@@ -139,14 +139,25 @@ fromEmployeeEdit eid cid EmployeeEdit {..} = Employee
     , _employeeInfo         = runIdentity eeInfo
     , _employeePhone        = eePhone
     , _employeeContactEmail = eeContactEmail
-    , _employeeFUMLogin     = eeFUMLogin
-    , _employeeHRNumber     = eeHRNumber
+    , _employeeFUMLogin     = eeFumLogin
+    , _employeeHRNumber     = eeHrNumber
     }
 
 applyEmployeeEdit :: EmployeeEdit Maybe -> Employee -> Employee
 applyEmployeeEdit ee
     = maybe id (Lens.set employeeFirstName) (eeFirstName ee)
     . maybe id (Lens.set employeeLastName) (eeLastName ee)
+    . maybe id (Lens.set employeeContractType) (eeContractType ee)
+    . maybe id (Lens.set employeeLocation) (eeLocation ee)
+    . maybe id (Lens.set employeeConfirmed) (eeConfirmed ee)
+    . maybe id (Lens.set employeeStartingDay) (eeStartingDay ee)
+    . maybe id (Lens.set employeeSupervisor) (eeSupervisor ee)
+    . maybe id (Lens.set employeeTribe) (eeTribe ee)
+    . maybe id (Lens.set employeeInfo) (eeInfo ee)
+    . Lens.over employeePhone (eePhone ee <|>)
+    . Lens.over employeeContactEmail (eeContactEmail ee <|>)
+    . Lens.over employeeFUMLogin (eeFumLogin ee <|>)
+    . Lens.over employeeHRNumber (eeHrNumber ee <|>)
 
 instance Eq1 f => Eq (EmployeeEdit f) where
     a == b
@@ -200,9 +211,9 @@ data Command f
     | CmdAddTask (Identifier Checklist) (Identifier Task) TaskAppliance
     | CmdRemoveTask (Identifier Checklist) (Identifier Task)
     | CmdCreateEmployee (f :$ Identifier Employee) (Identifier Checklist) (EmployeeEdit Identity)
+    | CmdEditEmployee (Identifier Employee) (EmployeeEdit Maybe)
     | CmdTaskItemToggle (Identifier Employee) (Identifier Task) TaskItem
 
--- CmdEditEmployee
 -- CmdEditTaskAppliance
 -- CmdArchiveEmployee
 
@@ -232,6 +243,8 @@ traverseCommand _f (CmdRemoveTask c t) =
     pure $ CmdRemoveTask c t
 traverseCommand f (CmdCreateEmployee e c x) =
     CmdCreateEmployee <$> f CITEmployee e <*> pure c <*> pure x
+traverseCommand _f (CmdEditEmployee e x) =
+    pure $ CmdEditEmployee e x
 traverseCommand _ (CmdTaskItemToggle e t x) =
     pure $ CmdTaskItemToggle e t x
 
@@ -267,6 +280,9 @@ applyCommand cmd world = flip execState world $ case cmd of
             -- TODO: check appliance before adding
             worldTaskItems . at eid . non mempty . at tid ?= TaskItemTodo
 
+    CmdEditEmployee eid x -> do
+        worldEmployees . ix eid %= applyEmployeeEdit x
+
     CmdTaskItemToggle eid tid d ->
         worldTaskItems . ix eid . ix tid Lens..= d
 
@@ -295,6 +311,8 @@ instance Eq1 f => Eq (Command f) where
         = cid == cid' && tid == tid'
     CmdCreateEmployee eid cid x == CmdCreateEmployee eid' cid' x'
         = eq1 eid eid' && cid == cid' && x == x'
+    CmdEditEmployee eid x == CmdEditEmployee eid' x'
+        = eid == eid' && x == x'
     CmdTaskItemToggle eid tid d == CmdTaskItemToggle eid' tid' d'
         = eid == eid' && tid == tid' && d == d'
 
@@ -323,6 +341,9 @@ instance Show1 f => Show (Command f) where
     showsPrec d (CmdCreateEmployee e c x) = showsTernaryWith
         showsPrec1 showsPrec showsPrec
         "CmdCreateEmployee" d e c x
+    showsPrec d (CmdEditEmployee e x) = showsBinaryWith
+        showsPrec showsPrec
+        "CmdEditEmployee" d e x
     showsPrec d (CmdTaskItemToggle e t done) = showsTernaryWith
         showsPrec showsPrec showsPrec
         "CmdTaskItemToggle" d e t done
@@ -375,6 +396,11 @@ instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task,
         , "cid"  .= cid
         , "edit" .= x
         ]
+    toJSON (CmdEditEmployee eid x) = object
+        [ "cmd"  .= ("edit-employee" :: Text)
+        , "eid"  .= eid
+        , "edit" .= x
+        ]
     toJSON (CmdTaskItemToggle eid tid done) = object
         [ "cmd"  .= ("task-item-toggle" :: Text)
         , "eid"  .= eid
@@ -411,6 +437,9 @@ instance FromJSONField1 f => FromJSON (Command f)
             "create-employee" -> CmdCreateEmployee
                 <$> fromJSONField1 obj "eid"
                 <*> obj .: "cid"
+                <*> obj .: "edit"
+            "edit-employee" -> CmdEditEmployee
+                <$> obj .: "eid"
                 <*> obj .: "edit"
             "task-item-toggle" -> CmdTaskItemToggle
                 <$> obj .: "eid"

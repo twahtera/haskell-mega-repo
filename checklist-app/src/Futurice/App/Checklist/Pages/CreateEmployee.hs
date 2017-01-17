@@ -35,14 +35,12 @@ createEmployeePage world authUser = checklistPage_ ("Create employee") authUser 
             input_ [ futuId_ "employee-lastname", type_ "text" ]
         row_ $ large_ 12 $ label_ $ do
             "Contract"
-            -- TODO: sort checklists
             select_ [ futuId_ "employee-contract-type" ] $ for_ [ minBound .. maxBound ] $ \x ->
                 optionSelected_ False
                     [ value_ $ x ^. re _ContractType ]
                     $ toHtml $ x ^. re _ContractType
         row_ $ large_ 12 $ label_ $ do
             "Location"
-            -- TODO: sort checklists
             select_ [ futuId_ "employee-location" ] $ for_ [ minBound .. maxBound ] $ \x ->
                 optionSelected_ False
                     [ value_ $ x ^. re _Location ]
