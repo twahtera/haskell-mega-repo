@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
       phone: { sel: "input[data-futu-id=employee-phone" },
       contactEmail: { sel: "input[data-futu-id=employee-contact-email" },
       fumLogin: { sel: "input[data-futu-id=employee-fum-login" },
-      hrNumber: { sel: "input[data-futu-id=employee-hr-number", check: numberCheck },
+      hrNumber: { sel: "input[data-futu-id=employee-hr-number", check: optionalCheck(numberCheck) },
     };
 
     var actions = initialiseFormDefs(defs, form);
