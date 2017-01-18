@@ -5,7 +5,7 @@ module Futurice.App.Checklist.Pages.Index (indexPage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (filtered, has, ifoldMapOf, only, re, to)
+import Control.Lens              (Traversal', united, filtered, has, ifoldMapOf, only, re, to)
 import Data.Time                 (addDays, diffDays)
 import Futurice.Lucid.Foundation
 
@@ -19,8 +19,9 @@ indexPage
     -> Maybe Location
     -> Maybe Checklist
     -> Maybe Task
+    -> Bool
     -> HtmlPage "indexpage"
-indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mtask =
+indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mtask showAll =
     let employees0 = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
         employees1 = maybe id (\l -> filter (has $ employeeLocation . only l)) mloc $ employees0
         employees2 = maybe id (\cl -> filter (has $ employeeChecklist . only (cl ^. identifier))) mlist $ employees1
@@ -28,8 +29,15 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
         employees' = employees3
 
         taskPredicate :: Task -> Employee -> Bool
-        taskPredicate task employee = flip has world $
-            worldTaskItems . ix (employee ^. identifier) . ix (task ^. identifier)
+        taskPredicate task employee = flip has world $ worldTaskItems
+            . ix (employee ^. identifier)
+            . ix (task ^. identifier)
+            . taskItemPredicate
+
+        -- Single item traversal which we use as a filter in taskPredicate
+        taskItemPredicate :: Traversal' TaskItem ()
+        taskItemPredicate | showAll   = united
+                          | otherwise = _TaskItemTodo
 
     in checklistPage_ "Employees" authUser $ do
         -- Title
@@ -56,7 +64,7 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
                         optionSelected_ (Just cl == mlist)
                             [ value_ $ cl ^. identifier . to identifierToText ]
                             $ cl ^. nameHtml
-            largemed_ 5 $ label_ $ do
+            largemed_ 4 $ label_ $ do
                 "Task"
                 select_ [ name_ "task" ] $ do
                     option_ [ value_ "" ] $ "Show all"
@@ -66,9 +74,14 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
                                 task ^. nameHtml
                                 " "
                                 countEmployeesWithTask world task employees2
+
+            largemed_ 1 $ label_ $ do
+                "all"
+                div_ $ checkbox_ showAll [ name_ "show-all", value_ "true", title_ "Show also people with task already done" ]
+
             largemed_ 1 $ label_ $ do
                 toHtmlRaw ("&nbsp;" :: Text)
-                button_ [ class_ "button" ] $ "Filter"
+                div_ $ button_ [ class_ "button" ] $ "Filter"
 
         -- The table
         row_ $ large_ 12 $ table_ $ do
@@ -102,7 +115,7 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
                     td_ $ locationHtml mlist $ employee ^. employeeLocation
                     td_ $ employeeLink employee
                     td_ $ maybe
-                        (checklistNameHtml world mloc $ employee ^. employeeChecklist)
+                        (checklistNameHtml world mloc (employee ^. employeeChecklist) showAll)
                         (taskCheckbox world employee)
                         mtask
                     td_ $ toHtml $ show startingDay

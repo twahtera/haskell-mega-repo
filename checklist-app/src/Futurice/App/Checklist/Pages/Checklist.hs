@@ -76,7 +76,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
 
             td_ $ taskLink task
             td_ $ roleHtml mlist (task ^. taskRole)
-            td_ $ a_ [ indexPageHref Nothing mlist (Just tid) ] $
+            td_ $ a_ [ indexPageHref Nothing mlist (Just tid) False ] $
                 case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
                     TodoCounter _ _ i j ->
                         toHtml (show i) *> "/" *> toHtml (show j)

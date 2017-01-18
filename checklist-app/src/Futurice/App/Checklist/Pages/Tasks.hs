@@ -74,7 +74,7 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
 
                 td_ $ taskLink task
                 td_ $ roleHtml mlist (task ^. taskRole)
-                td_ $ a_ [ indexPageHref Nothing mlist (Just tid) ] $
+                td_ $ a_ [ indexPageHref Nothing mlist (Just tid) defaultShowAll ] $
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
                         TodoCounter _ _ i j ->
                             toHtml (show i) *> "/" *> toHtml (show j)
