@@ -35,23 +35,26 @@ createTaskPage world authUser = checklistPage_ ("Create task") authUser $ do
                         [ value_ $ role ^. re _TaskRole ]
                         $ toHtml $ role ^. re _TaskRole
         row_ $ do
-            large_ 12 $ label_ $ do
+            large_ 6 $ label_ $ do
                 "Checklist 1"
                 checklistSelect "task-checklist-1"
-            --large_ 6 $ label_ $ do
-            --    "Appliance, not implemented"
+            large_ 6 $ label_ $ do
+                "Appliance"
+                checklistAppliance "task-checklist-appliance-1"
         row_ $ do
-            large_ 12 $ label_ $ do
+            large_ 6 $ label_ $ do
                 "Checklist 2"
                 checklistSelect "task-checklist-2"
-            --large_ 6 $ label_ $ do
-            --    "Appliance, not implemented"
+            large_ 6 $ label_ $ do
+                "Appliance"
+                checklistAppliance "task-checklist-appliance-1"
         row_ $ do
-            large_ 12 $ label_ $ do
+            large_ 6 $ label_ $ do
                 "Checklist 3"
                 checklistSelect "task-checklist-3"
-            --large_ 6 $ label_ $ do
-            --    "Appliance, not implemented"
+            large_ 6 $ label_ $ do
+                "Appliance"
+                checklistAppliance "task-checklist-appliance-1"
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Create"
@@ -64,3 +67,7 @@ createTaskPage world authUser = checklistPage_ ("Create task") authUser $ do
             optionSelected_ False
                 [ value_ $ cl ^. identifier . to identifierToText ]
                 $ cl ^. nameHtml
+
+    checklistAppliance :: Monad m => Text -> HtmlT m ()
+    checklistAppliance n = input_
+        [ name_ n, type_ "text", placeholder_ "TODO: esimerkki appliance" ]
