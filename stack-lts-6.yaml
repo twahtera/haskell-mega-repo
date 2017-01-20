@@ -9,8 +9,6 @@ packages:
 - dynmap-cache/
 - env-config/
 - favicon-app/
-- flowdock-cli/
-- flowdock-grep/
 - flowdock-rest/
 - fum-client/
 - futuhours-api/
