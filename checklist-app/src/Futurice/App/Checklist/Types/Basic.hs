@@ -12,14 +12,14 @@ module Futurice.App.Checklist.Types.Basic where
 import Prelude ()
 import Futurice.Prelude
 import Control.Lens       (Getter, to)
-import Data.Aeson.Compat  (Value (Null))
 import Futurice.Arbitrary (arbitraryAdjective, arbitraryNoun, arbitraryVerb)
 import Futurice.Generics
 import Futurice.IdMap     (HasKey (..))
 
+import Futurice.App.Checklist.Types.ContractType
 import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.Location
-import Futurice.App.Checklist.Types.ContractType
+import Futurice.App.Checklist.Types.TaskAppliance
 import Futurice.App.Checklist.Types.TaskRole
 
 import qualified Data.Text       as T
@@ -90,12 +90,6 @@ data Checklist = Checklist
     , _checklistName  :: !(Name Checklist)
     , _checklistTasks :: !(Map (Identifier Task) TaskAppliance)
     }
-  deriving (Eq, Ord, Show, Typeable, Generic)
-
--- | Task appliance, e.g. this task is /"only for Helsinki and permanent employees"/.
---
--- /TODO;/ define my. maybe depend on 'Contract' and 'Location'.
-data TaskAppliance = TaskApplianceAll
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 -------------------------------------------------------------------------------
@@ -178,21 +172,6 @@ instance Arbitrary Checklist where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
--- | Returns always 'TaskApplianceAll'
-instance Arbitrary TaskAppliance where
-    arbitrary = pure TaskApplianceAll
-    shrink    = const []
-
 instance Arbitrary Task where
     arbitrary = sopArbitrary
     shrink    = sopShrink
-
--------------------------------------------------------------------------------
--- aeson
--------------------------------------------------------------------------------
-
-instance ToJSON TaskAppliance where
-    toJSON _ = Null
-
-instance FromJSON TaskAppliance where
-    parseJSON _ = pure TaskApplianceAll

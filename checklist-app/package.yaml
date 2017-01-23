@@ -14,6 +14,7 @@ dependencies:
   - base >= 4.7 && <4.10
   - aeson
   - aeson-compat
+  - ansi-wl-pprint
   - clay
   - containers
   - crypto-api
@@ -25,11 +26,13 @@ dependencies:
   - futurice-servant
   - generics-sop
   - http-api-data
+  - lattices
   - lens
   - lucid
   - mtl
   - postgresql-simple
   - QuickCheck
+  - recursion-schemes >= 5.0.1
   - resource-pool
   - servant
   - servant-lucid
@@ -38,6 +41,7 @@ dependencies:
   - swagger2
   - text
   - time
+  - trifecta
   - uuid
 
 library:

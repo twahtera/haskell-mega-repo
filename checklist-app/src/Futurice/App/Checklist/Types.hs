@@ -79,6 +79,7 @@ import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.Location
 import Futurice.App.Checklist.Types.TaskItem
 import Futurice.App.Checklist.Types.World
+import Futurice.App.Checklist.Types.TaskAppliance
 import Futurice.App.Checklist.Types.TaskRole
 
 import qualified FUM (UserName)

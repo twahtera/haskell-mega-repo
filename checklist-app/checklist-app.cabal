@@ -29,6 +29,7 @@ library
       base >= 4.7 && <4.10
     , aeson
     , aeson-compat
+    , ansi-wl-pprint
     , clay
     , containers
     , crypto-api
@@ -40,11 +41,13 @@ library
     , futurice-servant
     , generics-sop
     , http-api-data
+    , lattices
     , lens
     , lucid
     , mtl
     , postgresql-simple
     , QuickCheck
+    , recursion-schemes >= 5.0.1
     , resource-pool
     , servant
     , servant-lucid
@@ -53,6 +56,7 @@ library
     , swagger2
     , text
     , time
+    , trifecta
     , uuid
   exposed-modules:
       Futurice.App.Checklist
@@ -78,6 +82,7 @@ library
       Futurice.App.Checklist.Types.Ctx
       Futurice.App.Checklist.Types.Identifier
       Futurice.App.Checklist.Types.Location
+      Futurice.App.Checklist.Types.TaskAppliance
       Futurice.App.Checklist.Types.TaskItem
       Futurice.App.Checklist.Types.TaskRole
       Futurice.App.Checklist.Types.World
@@ -92,6 +97,7 @@ executable checklist-app-server
       base >= 4.7 && <4.10
     , aeson
     , aeson-compat
+    , ansi-wl-pprint
     , clay
     , containers
     , crypto-api
@@ -103,11 +109,13 @@ executable checklist-app-server
     , futurice-servant
     , generics-sop
     , http-api-data
+    , lattices
     , lens
     , lucid
     , mtl
     , postgresql-simple
     , QuickCheck
+    , recursion-schemes >= 5.0.1
     , resource-pool
     , servant
     , servant-lucid
@@ -116,6 +124,7 @@ executable checklist-app-server
     , swagger2
     , text
     , time
+    , trifecta
     , uuid
     , checklist-app
   default-language: Haskell2010
@@ -129,6 +138,7 @@ executable checklist-import
       base >= 4.7 && <4.10
     , aeson
     , aeson-compat
+    , ansi-wl-pprint
     , clay
     , containers
     , crypto-api
@@ -140,11 +150,13 @@ executable checklist-import
     , futurice-servant
     , generics-sop
     , http-api-data
+    , lattices
     , lens
     , lucid
     , mtl
     , postgresql-simple
     , QuickCheck
+    , recursion-schemes >= 5.0.1
     , resource-pool
     , servant
     , servant-lucid
@@ -153,6 +165,7 @@ executable checklist-import
     , swagger2
     , text
     , time
+    , trifecta
     , uuid
     , checklist-app
     , transformers
@@ -169,6 +182,7 @@ test-suite unit-tests
       base >= 4.7 && <4.10
     , aeson
     , aeson-compat
+    , ansi-wl-pprint
     , clay
     , containers
     , crypto-api
@@ -180,11 +194,13 @@ test-suite unit-tests
     , futurice-servant
     , generics-sop
     , http-api-data
+    , lattices
     , lens
     , lucid
     , mtl
     , postgresql-simple
     , QuickCheck
+    , recursion-schemes >= 5.0.1
     , resource-pool
     , servant
     , servant-lucid
@@ -193,6 +209,7 @@ test-suite unit-tests
     , swagger2
     , text
     , time
+    , trifecta
     , uuid
     , tasty
     , tasty-quickcheck

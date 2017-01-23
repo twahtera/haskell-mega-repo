@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE GADTs                #-}
 {-# LANGUAGE KindSignatures       #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE RankNTypes           #-}
@@ -31,6 +31,7 @@ module Futurice.App.Checklist.Command (
 
 import Prelude ()
 import Futurice.Prelude
+import Algebra.Lattice            (top)
 import Control.Lens               (iforOf_, non)
 import Control.Monad.State.Strict (execState)
 import Data.Swagger               (NamedSchema (..))
@@ -379,11 +380,11 @@ instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task,
         , "tid"  .= tid
         , "edit" .= te
         ]
-    toJSON (CmdAddTask cid tid TaskApplianceAll) = object
+    toJSON (CmdAddTask cid tid app) = object
         [ "cmd"       .= ("add-task" :: Text)
         , "cid"       .= cid
         , "tid"       .= tid
-        -- , "appliance" .= app
+        , "appliance" .= app
         ]
     toJSON (CmdRemoveTask cid tid) = object
         [ "cmd"       .= ("remove-task" :: Text)
@@ -430,7 +431,7 @@ instance FromJSONField1 f => FromJSON (Command f)
             "add-task" -> CmdAddTask
                 <$> obj .: "cid"
                 <*> obj .: "tid"
-                <*> obj .:? "appliance" .!= TaskApplianceAll
+                <*> obj .:? "appliance" .!= top
             "remove-task" -> CmdRemoveTask
                 <$> obj .: "cid"
                 <*> obj .: "tid"
