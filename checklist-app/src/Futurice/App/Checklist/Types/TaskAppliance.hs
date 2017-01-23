@@ -97,6 +97,7 @@ parseTaskAppliance :: Text -> Either String TaskAppliance
 parseTaskAppliance = p . T.toLower . T.strip
   where
     p :: Text -> Either String TaskAppliance
+    p ""    = Right TAAll
     p "all" = Right TAAll
     p t     = case parseByteString taP mempty (TE.encodeUtf8 t) of
         Success q -> Right q

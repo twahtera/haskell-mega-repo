@@ -198,6 +198,27 @@ instance
   where
     parseJSON = sopParseJSON
 
+-------------------------------------------------------------------------------
+-- TaskAddition
+-------------------------------------------------------------------------------
+
+data TaskAddition = TaskAddition (Identifier Checklist) TaskAppliance
+  deriving (Eq, Show)
+
+deriveGeneric ''TaskAddition
+
+instance Arbitrary TaskAddition where
+    arbitrary = sopArbitrary
+    shrink = sopShrink
+
+instance ToJSON TaskAddition where
+    toJSON (TaskAddition cid app) = object [ "cid" .= cid, "app" .= app ]
+    toEncoding (TaskAddition cid app) = Aeson.pairs ( "cid" .= cid <> "app" .= app )
+
+instance FromJSON TaskAddition where
+    parseJSON = withObject "TaskAddition" $ \obj -> TaskAddition
+        <$> obj .: "cid"
+        <*> obj .:? "app" .!= top
 
 -------------------------------------------------------------------------------
 -- Command
@@ -207,7 +228,7 @@ instance
 data Command f
     = CmdCreateChecklist (f :$ Identifier Checklist) (Name Checklist)
     | CmdRenameChecklist (Identifier Checklist) (Name Checklist)
-    | CmdCreateTask (f :$ Identifier Task) (TaskEdit Identity)
+    | CmdCreateTask (f :$ Identifier Task) (TaskEdit Identity) [TaskAddition]
     | CmdEditTask (Identifier Task) (TaskEdit Maybe)
     | CmdAddTask (Identifier Checklist) (Identifier Task) TaskAppliance
     | CmdRemoveTask (Identifier Checklist) (Identifier Task)
@@ -234,8 +255,8 @@ traverseCommand  f (CmdCreateChecklist i n) =
     CmdCreateChecklist <$> f CITChecklist i <*> pure n
 traverseCommand _f (CmdRenameChecklist i n) =
     pure $ CmdRenameChecklist i n
-traverseCommand f (CmdCreateTask i e) =
-    CmdCreateTask <$> f CITTask i <*> pure e
+traverseCommand f (CmdCreateTask i e ls ) =
+    CmdCreateTask <$> f CITTask i <*> pure e <*> pure ls
 traverseCommand _f (CmdEditTask i e) =
     pure $ CmdEditTask i e
 traverseCommand _f (CmdAddTask c t a) =
@@ -257,8 +278,10 @@ applyCommand cmd world = flip execState world $ case cmd of
     CmdCreateChecklist (Identity cid) n ->
         worldLists . at cid ?= Checklist cid n mempty
 
-    CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity role)) ->
+    CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity role)) ls -> do
         worldTasks . at tid ?= Task tid n mempty role
+        for_ ls $ \(TaskAddition cid app) ->
+            worldLists . ix cid . checklistTasks . at tid ?= app
 
     CmdAddTask cid tid app ->
         worldLists . ix cid . checklistTasks . at tid ?= app
@@ -302,8 +325,8 @@ instance Eq1 f => Eq (Command f) where
         = eq1 cid cid' && n == n'
     CmdRenameChecklist cid n == CmdRenameChecklist cid' n'
         = cid == cid' && n == n'
-    CmdCreateTask tid te == CmdCreateTask tid' te'
-        = eq1 tid tid' && te == te'
+    CmdCreateTask tid te ls == CmdCreateTask tid' te' ls'
+        = eq1 tid tid' && te == te' && ls == ls'
     CmdEditTask tid te == CmdEditTask tid' te'
         = tid == tid' && te == te'
     CmdAddTask cid tid app == CmdAddTask cid' tid' app'
@@ -327,9 +350,9 @@ instance Show1 f => Show (Command f) where
     showsPrec d (CmdRenameChecklist i n) = showsBinaryWith
         showsPrec showsPrec
         "CmdRenameChecklist" d i n
-    showsPrec d (CmdCreateTask i te) = showsBinaryWith
-        showsPrec1 showsPrec
-        "CmdCreateTask" d i te
+    showsPrec d (CmdCreateTask i te ls) = showsTernaryWith
+        showsPrec1 showsPrec showsPrec
+        "CmdCreateTask" d i te ls
     showsPrec d (CmdEditTask i te) = showsBinaryWith
         showsPrec showsPrec
         "CmdEditTask" d i te
@@ -370,10 +393,11 @@ instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task,
         , "cid"  .= cid
         , "name" .= n
         ]
-    toJSON (CmdCreateTask tid te) = object
+    toJSON (CmdCreateTask tid te lists) = object
         [ "cmd"  .= ("create-task" :: Text)
         , "tid"  .= tid
         , "edit" .= te
+        , "lists" .= lists
         ]
     toJSON (CmdEditTask tid te) = object
         [ "cmd"  .= ("edit-task" :: Text)
@@ -425,6 +449,7 @@ instance FromJSONField1 f => FromJSON (Command f)
             "create-task" -> CmdCreateTask
                 <$> fromJSONField1 obj "tid"
                 <*> obj .: "edit"
+                <*> obj .:? "lists" .!= []
             "edit-task" -> CmdEditTask
                 <$> obj .: "tid"
                 <*> obj .: "edit"

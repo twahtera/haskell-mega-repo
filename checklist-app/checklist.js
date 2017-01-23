@@ -156,15 +156,28 @@ document.addEventListener("DOMContentLoaded", function () {
     var defs = {
       name: { sel: "input[data-futu-id=task-name]", check: nonEmptyCheck },
       role: { sel: "select[data-futu-id=task-role]" },
+      list1: { sel: "select[data-futu-id=task-checklist-1]" },
+      app1:  { sel: "input[data-futu-id=task-checklist-appliance-1]" },
+      list2: { sel: "select[data-futu-id=task-checklist-2]" },
+      app2:  { sel: "input[data-futu-id=task-checklist-appliance-2]" },
+      list3: { sel: "select[data-futu-id=task-checklist-3]" },
+      app3:  { sel: "input[data-futu-id=task-checklist-appliance-3]" },
     }
 
     var actions = initialiseFormDefs(defs, form);
 
     initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
-      cmdCreateTask({
+      var lists = [];
+      if (values.list1) { lists.push({ cid: values.list1, app: values.app1 }); }
+      if (values.list2) { lists.push({ cid: values.list2, app: values.app2 }); }
+      if (values.list3) { lists.push({ cid: values.list3, app: values.app3 }); }
+
+      var edit = {
         name: values.name,
         role: values.role,
-      });
+      };
+
+      cmdCreateTask(edit, lists);
     });
   }
 
@@ -269,11 +282,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  function cmdCreateTask(edit) {
-    console.info("cmdCreateTask", edit);
+  function cmdCreateTask(edit, lists) {
+    console.info("cmdCreateTask", edit, lists);
     return command({
       cmd: "create-task",
       edit: edit,
+      lists: lists,
     });
   }
 

@@ -47,21 +47,21 @@ createTaskPage world authUser = checklistPage_ ("Create task") authUser $ do
                 checklistSelect "task-checklist-2"
             large_ 6 $ label_ $ do
                 "Appliance"
-                checklistAppliance "task-checklist-appliance-1"
+                checklistAppliance "task-checklist-appliance-2"
         row_ $ do
             large_ 6 $ label_ $ do
                 "Checklist 3"
                 checklistSelect "task-checklist-3"
             large_ 6 $ label_ $ do
                 "Appliance"
-                checklistAppliance "task-checklist-appliance-1"
+                checklistAppliance "task-checklist-appliance-3"
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Create"
             button_ [ class_ "button", data_ "futu-action" "reset" ] $ "Reset"
   where
     checklistSelect :: Monad m => Text -> HtmlT m ()
-    checklistSelect n = select_ [ name_ n ] $ do
+    checklistSelect n = select_ [ futuId_ n ] $ do
         option_ [ value_ "" ] $ "-"
         for_ (world ^.. worldLists . folded) $ \cl ->
             optionSelected_ False
@@ -70,4 +70,4 @@ createTaskPage world authUser = checklistPage_ ("Create task") authUser $ do
 
     checklistAppliance :: Monad m => Text -> HtmlT m ()
     checklistAppliance n = input_
-        [ name_ n, type_ "text", placeholder_ "TODO: esimerkki appliance" ]
+        [ futuId_ n, type_ "text", placeholder_ "e.g. not external, helsinki or tampere" ]
