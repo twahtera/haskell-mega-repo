@@ -13,12 +13,13 @@ module Futurice.App.Checklist.Types.World (
     worldUsers,
     -- * Getters
     worldTaskItems',
+    worldTasksSorted,
     ) where
 
 -- import Futurice.Generics
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens     (contains, filtered, ifiltered)
+import Control.Lens     (Getter, contains, filtered, ifiltered, to)
 import Futurice.Graph   (Graph)
 import Futurice.IdMap   (IdMap)
 
@@ -54,6 +55,9 @@ data World = World
     }
 
 makeLenses ''World
+
+worldTasksSorted :: Getter World [Task]
+worldTasksSorted = to $ \world -> Graph.revTopSort (world ^. worldTasks)
 
 emptyWorld :: World
 emptyWorld = mkWorld mempty mempty mempty mempty (const Nothing)

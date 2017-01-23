@@ -52,6 +52,7 @@ library
     , servant
     , servant-lucid
     , servant-server
+    , singleton-bool
     , stm
     , swagger2
     , text
@@ -120,6 +121,7 @@ executable checklist-app-server
     , servant
     , servant-lucid
     , servant-server
+    , singleton-bool
     , stm
     , swagger2
     , text
@@ -161,6 +163,7 @@ executable checklist-import
     , servant
     , servant-lucid
     , servant-server
+    , singleton-bool
     , stm
     , swagger2
     , text
@@ -205,6 +208,7 @@ test-suite unit-tests
     , servant
     , servant-lucid
     , servant-server
+    , singleton-bool
     , stm
     , swagger2
     , text

@@ -71,6 +71,7 @@ module Futurice.App.Checklist.Types (
     worldTaskItems,
     worldUsers,
     worldTaskItems',
+    worldTasksSorted,
     -- * Access
     AuthUser,
     ) where

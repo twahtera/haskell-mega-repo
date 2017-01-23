@@ -139,7 +139,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var name$ = menrvaInputValue(nameEl);
 
     var changed$ = menrva.combine(name$, function (name) {
-      return name !== nameOrig;
+      return !_.isEqual(name, nameOrig);
     });
 
     changed$.onValue(function (changed) {
@@ -165,6 +165,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var defs = {
       name: { sel: "input[data-futu-id=task-name]", check: nonEmptyCheck },
       role: { sel: "select[data-futu-id=task-role]", check: nonEmptyCheck },
+      prereqs: { sel: "select[data-futu-id=task-prereqs" },
       list1: { sel: "select[data-futu-id=task-checklist-1]" },
       app1:  { sel: "input[data-futu-id=task-checklist-appliance-1]" },
       list2: { sel: "select[data-futu-id=task-checklist-2]" },
@@ -184,6 +185,7 @@ document.addEventListener("DOMContentLoaded", function () {
       var edit = {
         name: values.name,
         role: values.role,
+        prereqs: values.prereqs,
       };
 
       cmdCreateTask(edit, lists);
@@ -198,16 +200,14 @@ document.addEventListener("DOMContentLoaded", function () {
     var defs = {
       name: { sel: "input[data-futu-id=task-name]", check: nonEmptyCheck },
       role: { sel: "select[data-futu-id=task-role]" },
+      prereqs: { sel: "select[data-futu-id=task-prereqs" },
     }
 
     var actions = initialiseFormDefs(defs, form);
 
     initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
       // TODO: strip non-changed!
-      cmdEditTask(taskId, {
-        name: values.name,
-        role: values.role,
-      });
+      cmdEditTask(taskId, values);
     });
   }
 
@@ -633,7 +633,17 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function inputValue(el) {
-    return el.type === "checkbox" ? el.checked : el.value.trim();
+    if (el.tagName === "INPUT" && el.type === "checkbox") {
+        return el.checked;
+    } else if (el.tagName === "INPUT") {
+        return el.value.trim();
+    } else if (el.tagName === "SELECT" && el.multiple) {
+        return $$("option:checked", el).map(function (o) { return o.value.trim(); });
+    } else if (el.tagName === "SELECT") {
+        return el.value.trim();
+    } else {
+        return "";
+    }
   }
 
   function assert(cond, msg) {

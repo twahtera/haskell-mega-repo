@@ -5,7 +5,7 @@ module Futurice.App.Checklist.Pages.CreateTask (createTaskPage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (re, to)
+import Control.Lens              (forOf_, lengthOf, re, to)
 import Futurice.Lucid.Foundation
 
 import Futurice.App.Checklist.Markup
@@ -34,6 +34,13 @@ createTaskPage world authUser = checklistPage_ ("Create task") authUser $ do
                         optionSelected_ False
                             [ value_ $ role ^. re _TaskRole ]
                             $ toHtml $ role ^. re _TaskRole
+        row_ $ large_ 12 $ label_ $ do
+            "Prerequisites"
+            select_ [ futuId_ "task-prereqs", multiple_ "multiple", size_ $ textShow (lengthOf (worldTasks . folded) world) ] $
+                forOf_ (worldTasksSorted . folded) world $ \t -> do
+                    optionSelected_ False
+                        [ value_ $ t ^. identifierText ]
+                        $ toHtml $ t ^. nameText
         row_ $ do
             large_ 6 $ label_ $ do
                 "Checklist 1"
