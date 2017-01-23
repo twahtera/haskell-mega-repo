@@ -164,8 +164,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var defs = {
       name: { sel: "input[data-futu-id=task-name]", check: nonEmptyCheck },
+      info: { sel: "input[data-futu-id=task-info]" },
       role: { sel: "select[data-futu-id=task-role]", check: nonEmptyCheck },
-      prereqs: { sel: "select[data-futu-id=task-prereqs" },
+      prereqs: { sel: "select[data-futu-id=task-prereqs", check: isArrayCheck },
       list1: { sel: "select[data-futu-id=task-checklist-1]" },
       app1:  { sel: "input[data-futu-id=task-checklist-appliance-1]" },
       list2: { sel: "select[data-futu-id=task-checklist-2]" },
@@ -184,6 +185,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       var edit = {
         name: values.name,
+        info: values.info,
         role: values.role,
         prereqs: values.prereqs,
       };
@@ -199,14 +201,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var defs = {
       name: { sel: "input[data-futu-id=task-name]", check: nonEmptyCheck },
+      info: { sel: "input[data-futu-id=task-info]" },
       role: { sel: "select[data-futu-id=task-role]" },
-      prereqs: { sel: "select[data-futu-id=task-prereqs" },
+      prereqs: { sel: "select[data-futu-id=task-prereqs", check: isArrayCheck },
     }
 
     var actions = initialiseFormDefs(defs, form);
 
     initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
-      // TODO: strip non-changed!
       cmdEditTask(taskId, values);
     });
   }
@@ -282,7 +284,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function cmdCreateChecklist(name) {
-    console.info("cmdCreateChecklist", name);
+    traceCall(cmdCreateChecklist, arguments);
     return command({
       cmd: "create-checklist",
       name: name,
@@ -290,7 +292,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function cmdEditChecklist(checklistId, name) {
-    console.info("cmdEditChecklist", checklistId, name);
+    traceCall(cmdEditChecklist, arguments);
     return command({
       cmd: "rename-checklist",
       cid: checklistId,
@@ -299,7 +301,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function cmdCreateTask(edit, lists) {
-    console.info("cmdCreateTask", edit, lists);
+    traceCall(cmdCreateTask, arguments);
     return command({
       cmd: "create-task",
       edit: edit,
@@ -308,7 +310,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function cmdEditTask(taskId, edit) {
-    console.info("cmdEditTask", taskId, edit);
+    traceCall(cmdEditTask, arguments);
     return command({
       cmd: "edit-task",
       tid:  taskId,
@@ -418,6 +420,10 @@ document.addEventListener("DOMContentLoaded", function () {
     return t === "" ? undefined : t;
   }
 
+  function isArrayCheck(x) {
+    return _.isArray(x) ? x : undefined;
+  }
+
   function optionalCheck(check) {
     return function (str) {
       return str.trim() === "" ? null : check(str);
@@ -443,7 +449,7 @@ document.addEventListener("DOMContentLoaded", function () {
       def.signal$ = def.check ? def.signal.map(def.check) : def.signal;
 
       def.changed$ = def.signal.map(function (x) {
-        return x != def.orig;
+        return !_.isEqual(x, def.orig);
       });
 
       def.submittable$ = def.signal$.map(function (x) { return x !== undefined; });
@@ -577,26 +583,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Menrva helpers
   function menrvaInputValue(el) {
-    // if checkbox
-    if (el.type === "checkbox") return menrvaCheckboxValue(el);
-
-    // otherwise use .value
-    var value$ = menrva.source(el.value);
+    var value$ = menrva.source(inputValue(el), _.isEqual)
     var cb = function () {
       menrva.transaction()
         .set(value$, inputValue(el))
-        .commit();
-    };
-    el.addEventListener("keyup", cb);
-    el.addEventListener("change", cb);
-    return value$;
-  }
-
-  function menrvaCheckboxValue(el) {
-    var value$ = menrva.source(el.checked);
-    var cb = function () {
-      menrva.transaction()
-        .set(value$, el.checked)
         .commit();
     };
     el.addEventListener("keyup", cb);

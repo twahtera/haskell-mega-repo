@@ -38,6 +38,10 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
                 input_ [ futuId_ "task-name", type_ "text", value_ v ]
         row_ $ large_ 12 $
             label_ $ do
+                "Info"
+                input_ [ futuId_ "task-info", type_ "text", value_ $ task ^. taskInfo ]
+        row_ $ large_ 12 $
+            label_ $ do
                 "Role"
                 select_ [ futuId_ "task-role" ] $ for_ [ minBound .. maxBound ] $ \role ->
                     optionSelected_ (role == task ^. taskRole)

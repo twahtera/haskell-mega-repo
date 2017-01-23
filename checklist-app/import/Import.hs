@@ -74,13 +74,13 @@ dataToCommands (Data cls ts) = ($ []) <$> execStateT action id
         -- Tasks
         ts' <- for ts $ \(TaskD n r) -> do
             taskId <- Identifier <$> lift newUUID
-            tellCmd $ CmdCreateTask (Identity taskId) (TaskEdit (Identity n) (Identity r) (Identity mempty)) []
+            tellCmd $ CmdCreateTask (pure taskId) (TaskEdit (pure n) (pure "") (pure r) (pure mempty)) []
             pure taskId
 
         -- Checklists
         for_  cls $ \(ChecklistD n cts) -> do
             checklistId <- Identifier <$> lift newUUID
-            tellCmd $ CmdCreateChecklist (Identity checklistId) n
+            tellCmd $ CmdCreateChecklist (pure checklistId) n
 
             for_ cts $ \td' -> case td' of
                 TaskId taskId' -> do
@@ -88,10 +88,10 @@ dataToCommands (Data cls ts) = ($ []) <$> execStateT action id
                     tellCmd $ CmdAddTask checklistId taskId top
                 TaskD' (TaskD n' r) -> do
                     taskId <- Identifier <$> lift newUUID
-                    tellCmd $ CmdCreateTask (Identity taskId) (TaskEdit (Identity n') (Identity r) (Identity mempty)) []
+                    tellCmd $ CmdCreateTask (pure taskId) (TaskEdit (pure n') (pure "") (pure r) (pure mempty)) []
                     tellCmd $ CmdAddTask checklistId taskId top
 
-    tellCmd :: Command Identity -> StateT ([Command Identity] -> [Command Identity]) m ()
+    tellCmd :: Command pure -> StateT ([Command pure] -> [Command pure]) m ()
     tellCmd cmd = modify' (. (cmd :))
 
 

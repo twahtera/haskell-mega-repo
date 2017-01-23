@@ -27,6 +27,10 @@ createTaskPage world authUser = checklistPage_ ("Create task") authUser $ do
                 input_ [ futuId_ "task-name", type_ "text" ]
         row_ $ large_ 12 $
             label_ $ do
+                "Info"
+                input_ [ futuId_ "task-info", type_ "text" ]
+        row_ $ large_ 12 $
+            label_ $ do
                 "Role"
                 select_ [ futuId_ "task-role" ] $ do
                     optionSelected_ True [ value_ "" ] "-"

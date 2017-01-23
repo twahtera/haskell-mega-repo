@@ -67,6 +67,8 @@ data Task = Task
     { _taskId           :: !(Identifier Task)
     , _taskName         :: !(Name Task)
       -- ^ Display name
+    , _taskInfo         :: !Text
+      -- ^ additional info
     , _taskPrereqs      :: !(Set :$ Identifier Task)
       -- ^ Some tasks can be done only after some other tasks are done.
     , _taskRole         :: !TaskRole
