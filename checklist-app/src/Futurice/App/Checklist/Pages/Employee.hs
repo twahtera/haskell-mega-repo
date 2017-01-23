@@ -15,7 +15,7 @@ import Futurice.App.Checklist.Types
 
 import qualified Data.Map       as Map
 import qualified FUM            (UserName (..))
-import qualified Futurice.IdMap as IdMap
+import qualified Futurice.Graph as Graph
 
 -- |
 --
@@ -113,6 +113,6 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
             td_ $ taskCheckbox world employee task
  where
   tasks = toList $ Map.intersection
-        (IdMap.toMap (world ^. worldTasks))
+        (Graph.toMap (world ^. worldTasks))
         (world ^. worldTaskItems . ix (employee ^. identifier))
   mlist = world ^? worldLists . ix (employee ^. employeeChecklist)
