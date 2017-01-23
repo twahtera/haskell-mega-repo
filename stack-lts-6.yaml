@@ -66,12 +66,12 @@ extra-deps:
 - kan-extensions-5.0.1
 - lens-4.15.1
 - log-base-0.7
+- trifecta-1.6.1
 - machines-0.6.1
 - machines-directory-0.2.1.0
 - monad-http-0.2.0.0
 - pointed-5
 - QuickCheck-2.9.2
-- recursion-schemes-5
 - semigroupoids-5.1
 - servant-0.9
 - servant-cassava-0.8
@@ -80,6 +80,7 @@ extra-deps:
 - servant-server-0.9
 - servant-swagger-1.1.2
 - servant-swagger-ui-0.2.0.2.1.5
+- recursion-schemes-5.0.1
 - singleton-bool-0.1.2.0
 - snap-core-1.0.0.0
 - snap-server-1.0.1.0
