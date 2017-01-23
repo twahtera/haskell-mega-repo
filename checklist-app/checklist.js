@@ -323,7 +323,7 @@ document.addEventListener("DOMContentLoaded", function () {
       cid: checklistId,
       tid: taskId,
       appliance: appliance,
-    });
+    }, true);
   }
 
   function cmdRemoveTask(checklistId, taskId) {
@@ -332,7 +332,7 @@ document.addEventListener("DOMContentLoaded", function () {
       cmd: "remove-task",
       cid: checklistId,
       tid: taskId,
-    });
+    }, true);
   }
 
   function cmdTaskDoneToggle(employeeId, taskId, done) {
@@ -345,7 +345,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  function command(cmd) {
+  function command(cmd, reload) {
     var url = "/command";
 
     menrva
@@ -380,11 +380,15 @@ document.addEventListener("DOMContentLoaded", function () {
         console.info("command ack", res);
         switch (res.ack) {
           case "ok":
-            menrva
-              .transaction([futuReloadIndicator$, function (x) {
-                return { total: x.total, done: x.done + 1 };
-              }])
-              .commit();
+            if (reload) {
+              location.reload();
+            } else {
+              menrva
+                .transaction([futuReloadIndicator$, function (x) {
+                  return { total: x.total, done: x.done + 1 };
+                }])
+                .commit();
+            }
             break;
           case "load":
             location.pathname = res.url;
