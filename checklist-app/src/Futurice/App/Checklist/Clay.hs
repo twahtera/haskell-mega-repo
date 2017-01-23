@@ -26,6 +26,8 @@ css = do
         borderColor red
     "input[type=date]" # ".error" ? do
         borderColor red
+    "select" # ".error" ? do
+        borderColor red
     table ? tbody ? tr ? do
         nthChild "even" & do
             ".eta-far-past"    & backgroundColor (lighten 0.92 blue)

@@ -155,7 +155,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var defs = {
       name: { sel: "input[data-futu-id=task-name]", check: nonEmptyCheck },
-      role: { sel: "select[data-futu-id=task-role]" },
+      role: { sel: "select[data-futu-id=task-role]", check: nonEmptyCheck },
       list1: { sel: "select[data-futu-id=task-checklist-1]" },
       app1:  { sel: "input[data-futu-id=task-checklist-appliance-1]" },
       list2: { sel: "select[data-futu-id=task-checklist-2]" },

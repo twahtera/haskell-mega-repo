@@ -28,12 +28,12 @@ createTaskPage world authUser = checklistPage_ ("Create task") authUser $ do
         row_ $ large_ 12 $
             label_ $ do
                 "Role"
-                let r = TaskRoleIT
-                let v = r ^. re _TaskRole
-                select_ [ futuId_ "task-role", data_ "futu-value" v ] $ for_ [ minBound .. maxBound ] $ \role ->
-                    optionSelected_ (role == r)
-                        [ value_ $ role ^. re _TaskRole ]
-                        $ toHtml $ role ^. re _TaskRole
+                select_ [ futuId_ "task-role" ] $ do
+                    optionSelected_ True [ value_ "" ] "-"
+                    for_ [ minBound .. maxBound ] $ \role ->
+                        optionSelected_ False
+                            [ value_ $ role ^. re _TaskRole ]
+                            $ toHtml $ role ^. re _TaskRole
         row_ $ do
             large_ 6 $ label_ $ do
                 "Checklist 1"
