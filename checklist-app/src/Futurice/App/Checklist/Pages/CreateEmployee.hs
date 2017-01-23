@@ -23,10 +23,12 @@ createEmployeePage world authUser = checklistPage_ ("Create employee") authUser 
         row_ $ large_ 12 $ label_ $ do
             "Checklist"
             -- TODO: sort checklists
-            select_ [ futuId_ "employee-checklist" ] $ forOf_ (worldLists . folded) world $ \l ->
-                optionSelected_ False
-                    [ value_ $ l ^. identifierText ]
-                    $ toHtml $ l ^. nameText
+            select_ [ futuId_ "employee-checklist" ] $ do
+                optionSelected_ True [ value_ "" ] "-"
+                forOf_ (worldLists . folded) world $ \l ->
+                    optionSelected_ False
+                        [ value_ $ l ^. identifierText ]
+                        $ toHtml $ l ^. nameText
         row_ $ large_ 12 $ label_ $ do
             "First name"
             input_ [ futuId_ "employee-firstname", type_ "text" ]
@@ -35,16 +37,20 @@ createEmployeePage world authUser = checklistPage_ ("Create employee") authUser 
             input_ [ futuId_ "employee-lastname", type_ "text" ]
         row_ $ large_ 12 $ label_ $ do
             "Contract"
-            select_ [ futuId_ "employee-contract-type" ] $ for_ [ minBound .. maxBound ] $ \x ->
-                optionSelected_ False
-                    [ value_ $ x ^. re _ContractType ]
-                    $ toHtml $ x ^. re _ContractType
+            select_ [ futuId_ "employee-contract-type" ] $ do
+                optionSelected_ True [ value_ "" ] "-"
+                for_ [ minBound .. maxBound ] $ \x ->
+                    optionSelected_ False
+                        [ value_ $ x ^. re _ContractType ]
+                        $ toHtml $ x ^. re _ContractType
         row_ $ large_ 12 $ label_ $ do
             "Location"
-            select_ [ futuId_ "employee-location" ] $ for_ [ minBound .. maxBound ] $ \x ->
-                optionSelected_ False
-                    [ value_ $ x ^. re _Location ]
-                    $ toHtml $ x ^. re _Location
+            select_ [ futuId_ "employee-location" ] $ do
+                optionSelected_ True [ value_ "" ] "-"
+                for_ [ minBound .. maxBound ] $ \x ->
+                    optionSelected_ False
+                        [ value_ $ x ^. re _Location ]
+                        $ toHtml $ x ^. re _Location
         row_ $ large_ 12 $ label_ $ do
             "Confirmed"
             br_ []

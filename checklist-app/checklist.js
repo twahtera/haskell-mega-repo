@@ -49,11 +49,11 @@ document.addEventListener("DOMContentLoaded", function () {
     console.info("Initialising employee creation form");
 
     var defs = {
-      checklistId: { sel: "select[data-futu-id=employee-checklist" },
+      checklistId: { sel: "select[data-futu-id=employee-checklist", check: nonEmptyCheck },
       firstName: { sel: "input[data-futu-id=employee-firstname", check: nonEmptyCheck },
       lastName: { sel: "input[data-futu-id=employee-lastname", check: nonEmptyCheck },
-      contractType: { sel: "select[data-futu-id=employee-contract-type" },
-      location: { sel: "select[data-futu-id=employee-location" },
+      contractType: { sel: "select[data-futu-id=employee-contract-type", check: nonEmptyCheck },
+      location: { sel: "select[data-futu-id=employee-location", check: nonEmptyCheck },
       confirmed: { sel: "input[data-futu-id=employee-confirmed" },
       startingDay: { sel: "input[data-futu-id=employee-starting-day", check: dayCheck },
       supervisor: { sel: "input[data-futu-id=employee-supervisor", check: nonEmptyCheck },
