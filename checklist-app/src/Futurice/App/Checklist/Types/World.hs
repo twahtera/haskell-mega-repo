@@ -13,17 +13,20 @@ module Futurice.App.Checklist.Types.World (
     worldUsers,
     -- * Getters
     worldTaskItems',
+    worldTasksSorted,
     ) where
 
 -- import Futurice.Generics
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens     (contains, filtered, ifiltered)
+import Control.Lens     (Getter, contains, filtered, ifiltered, to)
+import Futurice.Graph   (Graph)
 import Futurice.IdMap   (IdMap)
 
 import qualified Data.Map        as Map
 import qualified Data.Set        as Set
 import qualified Data.Set.Lens   as Set
+import qualified Futurice.Graph  as Graph
 import qualified Futurice.IdMap  as IdMap
 import qualified Test.QuickCheck as QC
 
@@ -41,7 +44,7 @@ type AuthCheck = Maybe FUM.UserName -> Maybe (FUM.UserName, TaskRole, Location)
 -- | World desribes the state of the db.
 data World = World
     { _worldEmployees  :: !(IdMap Employee)
-    , _worldTasks      :: !(IdMap Task)
+    , _worldTasks      :: !(Graph Task)
     , _worldLists      :: !(IdMap Checklist)
     , _worldTaskItems  :: !(Map (Identifier Employee) (Map (Identifier Task) TaskItem))
     , _worldUsers      :: AuthCheck
@@ -52,6 +55,9 @@ data World = World
     }
 
 makeLenses ''World
+
+worldTasksSorted :: Getter World [Task]
+worldTasksSorted = to $ \world -> Graph.revTopSort (world ^. worldTasks)
 
 emptyWorld :: World
 emptyWorld = mkWorld mempty mempty mempty mempty (const Nothing)
@@ -85,7 +91,7 @@ mkWorld es ts ls is us =
             & IdMap.toIdMapOf (folded . filtered (\u -> validCid $ u ^. employeeChecklist))
 
         ts' = ts
-            & IdMap.unsafeTraversal . taskDependencies
+            & IdMap.unsafeTraversal . taskPrereqs
             %~ Set.setOf (folded . filtered validTid)
 
         ls' = ls
@@ -93,7 +99,7 @@ mkWorld es ts ls is us =
             %~ toMapOf (ifolded . ifiltered (\k _v -> validTid k))
 
         -- TODO: validate is
-    in World es' ts' ls' is us (swapMapMap is)
+    in World es' (Graph.fromIdMap ts') ls' is us (swapMapMap is)
 
 -- | Generates consistent worlds.
 instance QC.Arbitrary World where
@@ -137,7 +143,7 @@ instance QC.Arbitrary World where
         ts' <- flip IdMap.unsafeTraversal ts $ \task -> do
             deps <- Set.fromList <$> QC.listOf tidGen
             pure $ task
-                & taskDependencies .~ deps
+                & taskPrereqs .~ deps
 
         -- TaskItems
         -- For all eid, tid pair generate none, todo, done - value

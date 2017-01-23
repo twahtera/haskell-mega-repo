@@ -4,7 +4,7 @@ module Futurice.App.Checklist.Pages.Employee (employeePage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (re)
+import Control.Lens              (forOf_, has, re)
 import Futurice.Lucid.Foundation
 import Servant.API               (safeLink)
 import Web.HttpApiData           (toQueryParam)
@@ -13,10 +13,6 @@ import Futurice.App.Checklist.API    (checklistApi, createEmployeePageEndpoint)
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
-import qualified Data.Map       as Map
-import qualified FUM            (UserName (..))
-import qualified Futurice.IdMap as IdMap
-
 -- |
 --
 -- === Preconditions
@@ -24,7 +20,7 @@ import qualified Futurice.IdMap as IdMap
 -- * 'Employee' is in the 'World'.
 employeePage
     :: World
-    -> (FUM.UserName, TaskRole, Location)    -- ^ logged in user
+    -> AuthUser
     -> Employee
     -> HtmlPage "employee"
 employeePage world authUser employee = checklistPage_ (view nameText employee) authUser $ do
@@ -107,12 +103,12 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
             th_ [ title_ "Task" ]  "Task"
             th_ [ title_ "Role" ]  "Role"
             th_ [ title_ "Check" ] "Check"
-        tbody_ $ for_ tasks $ \task -> tr_ $ do
-            td_ $ taskLink task
-            td_ $ roleHtml mlist (task ^. taskRole)
-            td_ $ taskCheckbox world employee task
- where
-  tasks = toList $ Map.intersection
-        (IdMap.toMap (world ^. worldTasks))
-        (world ^. worldTaskItems . ix (employee ^. identifier))
-  mlist = world ^? worldLists . ix (employee ^. employeeChecklist)
+        tbody_ $ forOf_ (worldTasksSorted . folded) world $ \task -> do
+            let tid = task ^. identifier
+            when (has (worldTaskItems . ix eid . ix tid) world) $ tr_ $ do
+                td_ $ taskLink task
+                td_ $ roleHtml mlist (task ^. taskRole)
+                td_ $ taskCheckbox world employee task
+  where
+    eid = employee ^. identifier
+    mlist = world ^? worldLists . ix (employee ^. employeeChecklist)

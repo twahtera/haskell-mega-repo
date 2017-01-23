@@ -4,7 +4,7 @@ module Futurice.App.Checklist.Pages.Task (taskPage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (re)
+import Control.Lens              (re, contains, lengthOf, forOf_)
 import Data.Time                 (diffDays)
 import Futurice.Lucid.Foundation
 
@@ -38,11 +38,22 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
                 input_ [ futuId_ "task-name", type_ "text", value_ v ]
         row_ $ large_ 12 $
             label_ $ do
+                "Info"
+                input_ [ futuId_ "task-info", type_ "text", value_ $ task ^. taskInfo ]
+        row_ $ large_ 12 $
+            label_ $ do
                 "Role"
                 select_ [ futuId_ "task-role" ] $ for_ [ minBound .. maxBound ] $ \role ->
                     optionSelected_ (role == task ^. taskRole)
                         [ value_ $ role ^. re _TaskRole ]
                         $ toHtml $ role ^. re _TaskRole
+        row_ $ large_ 12 $ label_ $ do
+            "Prerequisites"
+            select_ [ futuId_ "task-prereqs", multiple_ "multiple", size_ $ textShow (lengthOf (worldTasks . folded) world) ] $
+                forOf_ (worldTasksSorted . folded) world $ \t -> do
+                    optionSelected_ (task ^. taskPrereqs . contains (t ^. identifier))
+                        [ value_ $ t ^. identifierText ]
+                        $ toHtml $ t ^. nameText
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Save"

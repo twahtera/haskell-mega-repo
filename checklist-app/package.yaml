@@ -37,6 +37,7 @@ dependencies:
   - servant
   - servant-lucid
   - servant-server
+  - singleton-bool
   - stm
   - swagger2
   - text

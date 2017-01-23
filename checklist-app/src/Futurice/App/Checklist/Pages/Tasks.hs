@@ -19,11 +19,10 @@ tasksPage
     -> Maybe Checklist
     -> HtmlPage "tasks"
 tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
-    let tasks0 = world ^.. worldTasks . folded
+    let tasks0 = world ^.. worldTasksSorted . folded
         tasks1 = maybe id (filter . rolePredicate) mrole tasks0
         tasks2 = maybe id (filter . checklistPredicate) mlist tasks1
-        tasks3 = sortOn (view name) tasks2
-        tasks' = tasks3
+        tasks' = tasks2
 
         rolePredicate :: TaskRole -> Task -> Bool
         rolePredicate role task = role == task ^. taskRole
@@ -65,6 +64,7 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
         row_ $ large_ 12 $ table_ $ do
             thead_ $ tr_ $ do
                 th_ [ title_ "Task" ]                       "Task"
+                th_ [ title_ "Info" ]                       "Info"
                 th_ [ title_ "Role" ]                       "Role"
                 th_ [ title_ "Active employees todo/done" ] "Employees"
                 th_ [ title_ "Checklists with the task" ]   "Checklists"
@@ -73,7 +73,8 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
                 let tid = task ^. identifier
 
                 td_ $ taskLink task
-                td_ $ roleHtml mlist (task ^. taskRole)
+                td_ $ toHtml $ task ^. taskInfo
+                td_ $ roleHtml mlist $ task ^. taskRole
                 td_ $ a_ [ indexPageHref Nothing mlist (Just tid) defaultShowAll ] $
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
                         TodoCounter _ _ i j ->

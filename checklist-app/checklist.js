@@ -32,6 +32,14 @@ document.addEventListener("DOMContentLoaded", function () {
   $$("button[data-futu-id=task-remove]").forEach(taskRemoveBtn);
   $$("input[data-futu-id=task-done-checkbox]").forEach(taskToggleCheckbox);
   $$("button[data-futu-link-button]").forEach(linkButton);
+  $$("div[data-futu-id=error-callout] button").forEach(function (btn) {
+    buttonOnClick(btn, function () {
+      var el = $("div[data-futu-id=error-callout]");
+      if (el) {
+        el.style.display = "none";
+      }
+    });
+  });
 
   function unknownForm(form) {
     console.warn("Unknown form", form.dataset.futuId, form);
@@ -131,7 +139,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var name$ = menrvaInputValue(nameEl);
 
     var changed$ = menrva.combine(name$, function (name) {
-      return name !== nameOrig;
+      return !_.isEqual(name, nameOrig);
     });
 
     changed$.onValue(function (changed) {
@@ -156,7 +164,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var defs = {
       name: { sel: "input[data-futu-id=task-name]", check: nonEmptyCheck },
+      info: { sel: "input[data-futu-id=task-info]" },
       role: { sel: "select[data-futu-id=task-role]", check: nonEmptyCheck },
+      prereqs: { sel: "select[data-futu-id=task-prereqs", check: isArrayCheck },
       list1: { sel: "select[data-futu-id=task-checklist-1]" },
       app1:  { sel: "input[data-futu-id=task-checklist-appliance-1]" },
       list2: { sel: "select[data-futu-id=task-checklist-2]" },
@@ -175,7 +185,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
       var edit = {
         name: values.name,
+        info: values.info,
         role: values.role,
+        prereqs: values.prereqs,
       };
 
       cmdCreateTask(edit, lists);
@@ -189,17 +201,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var defs = {
       name: { sel: "input[data-futu-id=task-name]", check: nonEmptyCheck },
+      info: { sel: "input[data-futu-id=task-info]" },
       role: { sel: "select[data-futu-id=task-role]" },
+      prereqs: { sel: "select[data-futu-id=task-prereqs", check: isArrayCheck },
     }
 
     var actions = initialiseFormDefs(defs, form);
 
     initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
-      // TODO: strip non-changed!
-      cmdEditTask(taskId, {
-        name: values.name,
-        role: values.role,
-      });
+      cmdEditTask(taskId, values);
     });
   }
 
@@ -274,7 +284,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function cmdCreateChecklist(name) {
-    console.info("cmdCreateChecklist", name);
+    traceCall(cmdCreateChecklist, arguments);
     return command({
       cmd: "create-checklist",
       name: name,
@@ -282,7 +292,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function cmdEditChecklist(checklistId, name) {
-    console.info("cmdEditChecklist", checklistId, name);
+    traceCall(cmdEditChecklist, arguments);
     return command({
       cmd: "rename-checklist",
       cid: checklistId,
@@ -291,7 +301,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function cmdCreateTask(edit, lists) {
-    console.info("cmdCreateTask", edit, lists);
+    traceCall(cmdCreateTask, arguments);
     return command({
       cmd: "create-task",
       edit: edit,
@@ -300,7 +310,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function cmdEditTask(taskId, edit) {
-    console.info("cmdEditTask", taskId, edit);
+    traceCall(cmdEditTask, arguments);
     return command({
       cmd: "edit-task",
       tid:  taskId,
@@ -315,7 +325,7 @@ document.addEventListener("DOMContentLoaded", function () {
       cid: checklistId,
       tid: taskId,
       appliance: appliance,
-    });
+    }, true);
   }
 
   function cmdRemoveTask(checklistId, taskId) {
@@ -324,7 +334,7 @@ document.addEventListener("DOMContentLoaded", function () {
       cmd: "remove-task",
       cid: checklistId,
       tid: taskId,
-    });
+    }, true);
   }
 
   function cmdTaskDoneToggle(employeeId, taskId, done) {
@@ -337,7 +347,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  function command(cmd) {
+  function command(cmd, reload) {
     var url = "/command";
 
     menrva
@@ -368,25 +378,19 @@ document.addEventListener("DOMContentLoaded", function () {
           });
         }
       })
-      .catch(function (exc) {
-        console.error(exc);
-        /*
-        overlay.message.classList.add("alert");
-        overlay.message.classList.remove("primary");
-        overlay.message.innerHTML = "Tapahtui virhe!<br />" + exc
-        overlay.overlay.style.display = "";
-        */
-        throw exc;
-      })
       .then(function (res) {
         console.info("command ack", res);
         switch (res.ack) {
           case "ok":
-            menrva
-              .transaction([futuReloadIndicator$, function (x) {
-                return { total: x.total, done: x.done + 1 };
-              }])
-              .commit();
+            if (reload) {
+              location.reload();
+            } else {
+              menrva
+                .transaction([futuReloadIndicator$, function (x) {
+                  return { total: x.total, done: x.done + 1 };
+                }])
+                .commit();
+            }
             break;
           case "load":
             location.pathname = res.url;
@@ -397,6 +401,15 @@ document.addEventListener("DOMContentLoaded", function () {
           default:
             console.error("Unknown ack type");
         }
+      })
+      .catch(function (exc) {
+        console.error(exc);
+        var errorCallout = $("div[data-futu-id=error-callout]");
+        var errorCalloutContent = $("div[data-futu-id=error-callout-content]", errorCallout)
+        if (errorCallout && errorCalloutContent) {
+          errorCalloutContent.innerText = exc;
+          errorCallout.style.display = "";
+        }
       });
   }
 
@@ -405,6 +418,10 @@ document.addEventListener("DOMContentLoaded", function () {
   function nonEmptyCheck(str) {
     var t = str.trim();
     return t === "" ? undefined : t;
+  }
+
+  function isArrayCheck(x) {
+    return _.isArray(x) ? x : undefined;
   }
 
   function optionalCheck(check) {
@@ -432,7 +449,7 @@ document.addEventListener("DOMContentLoaded", function () {
       def.signal$ = def.check ? def.signal.map(def.check) : def.signal;
 
       def.changed$ = def.signal.map(function (x) {
-        return x != def.orig;
+        return !_.isEqual(x, def.orig);
       });
 
       def.submittable$ = def.signal$.map(function (x) { return x !== undefined; });
@@ -566,26 +583,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Menrva helpers
   function menrvaInputValue(el) {
-    // if checkbox
-    if (el.type === "checkbox") return menrvaCheckboxValue(el);
-
-    // otherwise use .value
-    var value$ = menrva.source(el.value);
+    var value$ = menrva.source(inputValue(el), _.isEqual)
     var cb = function () {
       menrva.transaction()
         .set(value$, inputValue(el))
-        .commit();
-    };
-    el.addEventListener("keyup", cb);
-    el.addEventListener("change", cb);
-    return value$;
-  }
-
-  function menrvaCheckboxValue(el) {
-    var value$ = menrva.source(el.checked);
-    var cb = function () {
-      menrva.transaction()
-        .set(value$, el.checked)
         .commit();
     };
     el.addEventListener("keyup", cb);
@@ -622,7 +623,17 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function inputValue(el) {
-    return el.type === "checkbox" ? el.checked : el.value.trim();
+    if (el.tagName === "INPUT" && el.type === "checkbox") {
+        return el.checked;
+    } else if (el.tagName === "INPUT") {
+        return el.value.trim();
+    } else if (el.tagName === "SELECT" && el.multiple) {
+        return $$("option:checked", el).map(function (o) { return o.value.trim(); });
+    } else if (el.tagName === "SELECT") {
+        return el.value.trim();
+    } else {
+        return "";
+    }
   }
 
   function assert(cond, msg) {

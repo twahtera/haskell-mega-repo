@@ -48,7 +48,7 @@ module Futurice.App.Checklist.Types (
     _LocStockholm, _LocMunich, _LocOther,
     locationToText, locationFromText,
     -- ** Task
-    taskName, taskDependencies, taskRole,
+    taskName, taskInfo, taskPrereqs, taskRole,
     -- ** CheckResult
     _CheckResultSuccess, _CheckResultMaybe, _CheckResultFailure,
     -- ** TaskRole
@@ -71,6 +71,7 @@ module Futurice.App.Checklist.Types (
     worldTaskItems,
     worldUsers,
     worldTaskItems',
+    worldTasksSorted,
     -- * Access
     AuthUser,
     ) where

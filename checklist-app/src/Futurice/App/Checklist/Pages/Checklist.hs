@@ -4,7 +4,7 @@ module Futurice.App.Checklist.Pages.Checklist (checklistPage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (filtered, foldMapOf, has, iforOf_)
+import Control.Lens              (filtered, foldMapOf, has, forOf_)
 import Data.Time                 (diffDays)
 import Futurice.Lucid.Foundation
 
@@ -68,11 +68,12 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
             th_ [ title_ "Role" ]                       "Role"
             th_ [ title_ "Active employees todo/done" ] "Employees"
             th_ [ title_ "To whom this task applies" ]  "Appliance"
-            th_ [ title_ "Other checklists with the task" ]   "Other checklists"
+            th_ [ title_ "Other checklists with the task" ] "Other checklists"
             th_ [ title_ "Remove task from the checklist" ] "Remove"
 
-        tbody_ $ iforOf_ (checklistTasks . ifolded) checklist $ \tid app ->
-            for_ (world ^? worldTasks . ix tid) $ \task -> tr_ $ do
+        tbody_ $ forOf_ (worldTasksSorted . folded) world $ \task -> do
+            let tid = task ^. identifier
+            for_ (checklist ^? checklistTasks . ix tid) $ \app -> tr_ $ do
                 td_ $ taskLink task
                 td_ $ roleHtml mlist (task ^. taskRole)
                 td_ $ a_ [ indexPageHref Nothing mlist (Just tid) False ] $
@@ -113,7 +114,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
 
 
   where
-    allTasks = world ^.. worldTasks . folded
+    allTasks = world ^.. worldTasksSorted . folded
 
     mlist = Just checklist
 

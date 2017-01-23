@@ -14,6 +14,7 @@ import Futurice.Prelude
 import Control.Lens       (Getter, to)
 import Futurice.Arbitrary (arbitraryAdjective, arbitraryNoun, arbitraryVerb)
 import Futurice.Generics
+import Futurice.Graph     (IsNode (..))
 import Futurice.IdMap     (HasKey (..))
 
 import Futurice.App.Checklist.Types.ContractType
@@ -66,7 +67,9 @@ data Task = Task
     { _taskId           :: !(Identifier Task)
     , _taskName         :: !(Name Task)
       -- ^ Display name
-    , _taskDependencies :: !(Set :$ Identifier Task)
+    , _taskInfo         :: !Text
+      -- ^ additional info
+    , _taskPrereqs      :: !(Set :$ Identifier Task)
       -- ^ Some tasks can be done only after some other tasks are done.
     , _taskRole         :: !TaskRole
       -- ^ Tasks can be fullfilled by different roles.
@@ -121,6 +124,9 @@ instance HasKey Employee where
 instance HasKey Task where
     type Key Task = Identifier Task
     key = taskId
+
+instance IsNode Task where
+    nodeNeighbors t = t ^.. taskPrereqs . folded
 
 instance HasKey Checklist where
     type Key Checklist = Identifier Checklist

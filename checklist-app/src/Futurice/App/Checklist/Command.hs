@@ -35,6 +35,8 @@ import Algebra.Lattice            (top)
 import Control.Lens               (iforOf_, non, use)
 import Control.Monad.State.Strict (execState)
 import Data.Swagger               (NamedSchema (..))
+import Data.Singletons.Bool
+import Data.Type.Equality
 import Futurice.Aeson
        (FromJSONField1, fromJSONField1, object, withObject, (.!=), (.:), (.:?),
        (.=))
@@ -56,8 +58,10 @@ import Futurice.App.Checklist.Types
 -------------------------------------------------------------------------------
 
 data TaskEdit f = TaskEdit
-    { teName :: !(f :$ Name Task)
-    , teRole :: !(f TaskRole)
+    { teName    :: !(f :$ Name Task)
+    , teInfo    :: !(f :$ Text)
+    , teRole    :: !(f TaskRole)
+    , tePrereqs :: !(f :$ Set :$ Identifier Task)
     }
 
 deriveGeneric ''TaskEdit
@@ -65,25 +69,30 @@ deriveGeneric ''TaskEdit
 applyTaskEdit :: TaskEdit Maybe -> Task -> Task
 applyTaskEdit te
     = maybe id (Lens.set taskName) (teName te)
+    . maybe id (Lens.set taskInfo) (teInfo te)
     . maybe id (Lens.set taskRole) (teRole te)
+    . maybe id (Lens.set taskPrereqs) (tePrereqs te)
 
 instance Eq1 f => Eq (TaskEdit f) where
-    TaskEdit n r == TaskEdit n' r' = eq1 n n' && eq1 r r'
+    TaskEdit n i r pr == TaskEdit n' i' r' pr' =
+        eq1 n n' && eq1 i i' && eq1 r r' && eq1 pr pr'
 
 instance Show1 f => Show (TaskEdit f) where
-    showsPrec d (TaskEdit n r) = showsBinaryWith
-        showsPrec1 showsPrec1
-        "TaskEdit" d n r
+    showsPrec d (TaskEdit n _ r pr) = showsTernaryWith
+        showsPrec1 showsPrec1 showsPrec1
+        "TaskEdit" d n r pr
 
-instance SOP.All (SOP.Compose Arbitrary f) '[Name Task, TaskRole]
+type TaskEditTypes = '[Name Task, TaskRole, Set :$ Identifier Task, Text]
+
+instance SOP.All (SOP.Compose Arbitrary f) TaskEditTypes
     => Arbitrary (TaskEdit f)
   where
     arbitrary = sopArbitrary
     shrink = sopShrink
 
 instance
-    ( SOP.All (SOP.Compose ToJSON f) '[Name Task, TaskRole]
-    , SOP.All (SOP.Compose IsMaybe f) '[Name Task, TaskRole]
+    ( SOP.All (SOP.Compose ToJSON f) TaskEditTypes
+    , SOP.All (SOP.Compose IsMaybe f) TaskEditTypes
     )
     => ToJSON (TaskEdit f)
   where
@@ -91,12 +100,25 @@ instance
     toEncoding = sopToEncoding
 
 instance
-    ( SOP.All (SOP.Compose FromJSON f) '[Name Task, TaskRole]
-    , SOP.All (SOP.Compose IsMaybe f) '[Name Task, TaskRole]
+    ( SOP.All (SOP.Compose FromJSON f) TaskEditTypes
+    , SBoolI (f == Maybe), Applicative f
     )
     => FromJSON (TaskEdit f)
   where
-    parseJSON = sopParseJSON
+    -- We don't use sopParseJSON because of special treatment of prereqs
+    -- in not Maybe case (i.e. Identity)
+    parseJSON = withObject "TaskEdit" $ \obj ->
+        case sboolEqRefl :: Maybe (f :~: Maybe) of
+            Just Refl -> TaskEdit
+                <$> obj .:? "name"
+                <*> obj .:? "info"
+                <*> obj .:? "role"
+                <*> obj .:? "prereqs"
+            Nothing -> TaskEdit
+                <$> obj .: "name"
+                <*> obj .:? "info" .!= pure mempty
+                <*> obj .: "role"
+                <*> obj .:? "prereqs" .!= pure mempty
 
 -------------------------------------------------------------------------------
 -- Employee edit
@@ -278,8 +300,8 @@ applyCommand cmd world = flip execState world $ case cmd of
     CmdCreateChecklist (Identity cid) n ->
         worldLists . at cid ?= Checklist cid n mempty
 
-    CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity role)) ls -> do
-        worldTasks . at tid ?= Task tid n mempty role
+    CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity i) (Identity role) (Identity pr)) ls -> do
+        worldTasks . at tid ?= Task tid n i pr role
         for_ ls $ \(TaskAddition cid app) ->
             worldLists . ix cid . checklistTasks . at tid ?= app
 
