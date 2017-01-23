@@ -63,12 +63,13 @@ indexPageImpl
     -> Maybe Location
     -> Maybe (Identifier Checklist)
     -> Maybe (Identifier Task)
+    -> Bool
     -> m (HtmlPage "indexpage")
-indexPageImpl ctx fu loc cid tid = withAuthUser ctx fu impl
+indexPageImpl ctx fu loc cid tid showAll = withAuthUser ctx fu impl
   where
     impl world userInfo = do
         today <- currentDay
-        pure $ indexPage world today userInfo loc checklist task
+        pure $ indexPage world today userInfo loc checklist task showAll
       where
         checklist = do
             cid' <- cid
@@ -116,10 +117,14 @@ createEmployeePageImpl
     :: (MonadIO m)
     => Ctx
     -> Maybe FUM.UserName
+    -> Maybe (Identifier Employee)
     -> m (HtmlPage "create-employee")
-createEmployeePageImpl ctx fu = withAuthUser ctx fu impl
+createEmployeePageImpl ctx fu meid = withAuthUser ctx fu impl
   where
-    impl world userInfo = pure $ createEmployeePage world userInfo
+    impl world userInfo = pure $ createEmployeePage world userInfo memployee
+      where
+        memployee = meid >>= \eid -> world ^? worldEmployees . ix eid
+
 
 checklistsPageImpl
     :: MonadIO m

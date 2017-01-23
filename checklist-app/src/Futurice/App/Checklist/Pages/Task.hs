@@ -66,7 +66,7 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
             td_ $ locationHtml (Nothing :: Maybe Checklist) $ employee ^. employeeLocation
             td_ $ employeeLink employee
             -- TODO: checklist link
-            td_ $ checklistNameHtml world Nothing $ employee ^. employeeChecklist
+            td_ $ checklistNameHtml world Nothing (employee ^. employeeChecklist) defaultShowAll
             td_ $ taskCheckbox world employee task
             td_ $ toHtml $ show startingDay
             td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed

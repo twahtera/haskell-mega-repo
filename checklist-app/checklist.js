@@ -31,6 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   $$("button[data-futu-id=task-remove]").forEach(taskRemoveBtn);
   $$("input[data-futu-id=task-done-checkbox]").forEach(taskToggleCheckbox);
+  $$("button[data-futu-link-button]").forEach(linkButton);
 
   function unknownForm(form) {
     console.warn("Unknown form", form.dataset.futuId, form);
@@ -49,11 +50,11 @@ document.addEventListener("DOMContentLoaded", function () {
     console.info("Initialising employee creation form");
 
     var defs = {
-      checklistId: { sel: "select[data-futu-id=employee-checklist" },
+      checklistId: { sel: "select[data-futu-id=employee-checklist", check: nonEmptyCheck },
       firstName: { sel: "input[data-futu-id=employee-firstname", check: nonEmptyCheck },
       lastName: { sel: "input[data-futu-id=employee-lastname", check: nonEmptyCheck },
-      contractType: { sel: "select[data-futu-id=employee-contract-type" },
-      location: { sel: "select[data-futu-id=employee-location" },
+      contractType: { sel: "select[data-futu-id=employee-contract-type", check: nonEmptyCheck },
+      location: { sel: "select[data-futu-id=employee-location", check: nonEmptyCheck },
       confirmed: { sel: "input[data-futu-id=employee-confirmed" },
       startingDay: { sel: "input[data-futu-id=employee-starting-day", check: dayCheck },
       supervisor: { sel: "input[data-futu-id=employee-supervisor", check: nonEmptyCheck },
@@ -62,7 +63,7 @@ document.addEventListener("DOMContentLoaded", function () {
       phone: { sel: "input[data-futu-id=employee-phone" },
       contactEmail: { sel: "input[data-futu-id=employee-contact-email" },
       fumLogin: { sel: "input[data-futu-id=employee-fum-login" },
-      hrNumber: { sel: "input[data-futu-id=employee-hr-number", check: numberCheck },
+      hrNumber: { sel: "input[data-futu-id=employee-hr-number", check: optionalCheck(numberCheck) },
     };
 
     var actions = initialiseFormDefs(defs, form);
@@ -155,16 +156,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var defs = {
       name: { sel: "input[data-futu-id=task-name]", check: nonEmptyCheck },
-      role: { sel: "select[data-futu-id=task-role]" },
+      role: { sel: "select[data-futu-id=task-role]", check: nonEmptyCheck },
+      list1: { sel: "select[data-futu-id=task-checklist-1]" },
+      app1:  { sel: "input[data-futu-id=task-checklist-appliance-1]" },
+      list2: { sel: "select[data-futu-id=task-checklist-2]" },
+      app2:  { sel: "input[data-futu-id=task-checklist-appliance-2]" },
+      list3: { sel: "select[data-futu-id=task-checklist-3]" },
+      app3:  { sel: "input[data-futu-id=task-checklist-appliance-3]" },
     }
 
     var actions = initialiseFormDefs(defs, form);
 
     initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
-      cmdCreateTask({
+      var lists = [];
+      if (values.list1) { lists.push({ cid: values.list1, app: values.app1 }); }
+      if (values.list2) { lists.push({ cid: values.list2, app: values.app2 }); }
+      if (values.list3) { lists.push({ cid: values.list3, app: values.app3 }); }
+
+      var edit = {
         name: values.name,
         role: values.role,
-      });
+      };
+
+      cmdCreateTask(edit, lists);
     });
   }
 
@@ -207,6 +221,13 @@ document.addEventListener("DOMContentLoaded", function () {
       var appl = appl$.value();
 
       cmdAddTask(checklistId, taskId, appl);
+    });
+  }
+
+  function linkButton(btn) {
+    buttonOnClick(btn, function () {
+      btn.disabled = true;
+      location.href = btn.dataset.futuLinkButton;
     });
   }
 
@@ -269,11 +290,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  function cmdCreateTask(edit) {
-    console.info("cmdCreateTask", edit);
+  function cmdCreateTask(edit, lists) {
+    console.info("cmdCreateTask", edit, lists);
     return command({
       cmd: "create-task",
       edit: edit,
+      lists: lists,
     });
   }
 

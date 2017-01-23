@@ -37,6 +37,8 @@ module Futurice.App.Checklist.Markup (
     taskCheckbox,
     -- * URI
     uriText,
+    -- * Defaults
+    defaultShowAll,
     ) where
 
 import Prelude ()
@@ -72,12 +74,12 @@ navigation (fu, viewerRole, _viewerLocation) = do
                 "Checklist"
                 sup_ "2"
             li_ $ a_ [ id_ "futu-reload-indicator", href_ "#", style_ "display: none", title_ "You made changes, refresh page to show" ]  "1"
-            li_ $ a_ [ indexPageHref Nothing (Nothing :: Maybe Checklist) (Nothing :: Maybe Task) ] "Employees"
+            li_ $ a_ [ indexPageHref Nothing (Nothing :: Maybe Checklist) (Nothing :: Maybe Task) defaultShowAll ] "Employees"
             li_ $ a_ [ checklistsPageHref ] "Checklists"
             li_ $ a_ [ tasksPageHref Nothing (Nothing :: Maybe Checklist) ] "Tasks"
             li_ $ a_ [ createChecklistPageHref ] "Create List"
             li_ $ a_ [ createTaskPageHref ] "Create Task"
-            li_ $ a_ [ createEmployeePageHref ] "Create Employee"
+            li_ $ a_ [ createEmployeePageHref Nothing ] "Create Employee"
         div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
             li_ [ class_ "menu-text" ] $ do
                 "Hello "
@@ -129,11 +131,12 @@ nameHtml = nameText . to toHtml
 
 indexPageHref
     :: (HasIdentifier c Checklist, HasIdentifier t Task)
-    => Maybe Location -> Maybe c -> Maybe t -> Attribute
-indexPageHref mloc mlist mtask =
+    => Maybe Location -> Maybe c -> Maybe t -> Bool -> Attribute
+indexPageHref mloc mlist mtask showAll =
     href_ $ uriText $ safeLink checklistApi indexPageEndpoint mloc
         (mlist ^? _Just . identifier)
         (mtask ^? _Just . identifier)
+        showAll
 
 tasksPageHref
     :: (HasIdentifier c Checklist)
@@ -155,9 +158,9 @@ createTaskPageHref :: Attribute
 createTaskPageHref =
     href_ $ uriText $ safeLink checklistApi createTaskPageEndpoint
 
-createEmployeePageHref :: Attribute
-createEmployeePageHref =
-    href_ $ uriText $ safeLink checklistApi createEmployeePageEndpoint
+createEmployeePageHref :: Maybe (Identifier Employee) -> Attribute
+createEmployeePageHref meid =
+    href_ $ uriText $ safeLink checklistApi createEmployeePageEndpoint meid
 
 taskPageHref
     :: (HasIdentifier t Task)
@@ -205,7 +208,7 @@ locationHtml
     => Maybe c -> Location -> HtmlT m ()
 locationHtml mlist l = a_ [ href, title_ locName ] $ locSlug
   where
-    href = indexPageHref (Just l) mlist (Nothing :: Maybe Task)
+    href = indexPageHref (Just l) mlist (Nothing :: Maybe Task) False
 
     locSlug = case l of
         LocHelsinki  -> "Hel"
@@ -242,9 +245,9 @@ contractTypeHtml ContractTypePartTimer    = span_ [title_ "Part timer"]    "Part
 contractTypeHtml ContractTypeSummerWorker = span_ [title_ "Summer worker"] "Sum"
 
 -- | TODO: better error
-checklistNameHtml :: Monad m => World -> Maybe Location -> Identifier Checklist -> HtmlT m ()
-checklistNameHtml world mloc i =
-    a_ [ indexPageHref mloc (Just i) (Nothing :: Maybe Task) ] $
+checklistNameHtml :: Monad m => World -> Maybe Location -> Identifier Checklist -> Bool -> HtmlT m ()
+checklistNameHtml world mloc i notDone =
+    a_ [ indexPageHref mloc (Just i) (Nothing :: Maybe Task) notDone ] $
         world ^. worldLists . at i . non (error "Inconsisten world") . nameHtml
 
 uriText :: URI -> Text
@@ -296,3 +299,13 @@ taskCheckbox world employee task = do
         employee ^. identifier . uuid . to UUID.toText <>
         "_" <>
         task ^. identifier . uuid . to UUID.toText
+
+-------------------------------------------------------------------------------
+-- Defaults
+-------------------------------------------------------------------------------
+
+-- | If @show-all@ isn't specified, we assume it is.
+--
+-- /Note:/ Changing this to 'True' won't work, as the absence of flag == False.
+defaultShowAll :: Bool
+defaultShowAll = False

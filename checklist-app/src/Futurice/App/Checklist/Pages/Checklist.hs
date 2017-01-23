@@ -4,12 +4,13 @@ module Futurice.App.Checklist.Pages.Checklist (checklistPage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (filtered, foldMapOf, has)
+import Control.Lens              (filtered, foldMapOf, has, iforOf_)
 import Data.Time                 (diffDays)
 import Futurice.Lucid.Foundation
 
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
+import Futurice.App.Checklist.Types.TaskAppliance (prettyTaskAppliance)
 
 import qualified Futurice.IdMap as IdMap
 
@@ -53,7 +54,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
         row_ $ large_ 12 $
             label_ $ do
                 "Appliance"
-                input_ [ futuId_ "task-appliance", type_ "text", value_ "*" ]
+                input_ [ futuId_ "task-appliance", type_ "text", value_ "", placeholder_ "e.g. helsinki or tampere, permanent or fixed-term, external" ]
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Add"
@@ -66,30 +67,29 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
             th_ [ title_ "Task" ]                       "Task"
             th_ [ title_ "Role" ]                       "Role"
             th_ [ title_ "Active employees todo/done" ] "Employees"
+            th_ [ title_ "To whom this task applies" ]  "Appliance"
             th_ [ title_ "Other checklists with the task" ]   "Other checklists"
             th_ [ title_ "Remove task from the checklist" ] "Remove"
 
-
-        tbody_ $ for_ tasks' $ \task -> tr_ $ do
-
-            let tid = task ^. identifier
-
-            td_ $ taskLink task
-            td_ $ roleHtml mlist (task ^. taskRole)
-            td_ $ a_ [ indexPageHref Nothing mlist (Just tid) ] $
-                case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
-                    TodoCounter _ _ i j ->
-                        toHtml (show i) *> "/" *> toHtml (show j)
-            td_ $ forWith_
-                (br_ [])
-                (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l && l ^. identifier /= checklist ^. identifier))
-                checklistLink
-            td_ $ button_
-                [ class_ "button alert", futuId_ "task-remove"
-                , data_ "futu-checklist-id" $ checklist ^. identifierText
-                , data_ "futu-task-id" $ task ^. identifierText
-                ]
-                "Remove"
+        tbody_ $ iforOf_ (checklistTasks . ifolded) checklist $ \tid app ->
+            for_ (world ^? worldTasks . ix tid) $ \task -> tr_ $ do
+                td_ $ taskLink task
+                td_ $ roleHtml mlist (task ^. taskRole)
+                td_ $ a_ [ indexPageHref Nothing mlist (Just tid) False ] $
+                    case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
+                        TodoCounter _ _ i j ->
+                            toHtml (show i) *> "/" *> toHtml (show j)
+                td_ $ toHtml $ prettyTaskAppliance app
+                td_ $ forWith_
+                    (br_ [])
+                    (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l && l ^. identifier /= checklist ^. identifier))
+                    checklistLink
+                td_ $ button_
+                    [ class_ "button alert", futuId_ "task-remove"
+                    , data_ "futu-checklist-id" $ checklist ^. identifierText
+                    , data_ "futu-task-id" $ task ^. identifierText
+                    ]
+                    "Remove"
 
     -- Employees
     subheader_ "Employees"
@@ -115,17 +115,10 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
   where
     allTasks = world ^.. worldTasks . folded
 
-    tasks2 = maybe id (filter . checklistPredicate) mlist allTasks
-    tasks' = tasks2
-
     mlist = Just checklist
 
     countUsers TaskItemDone = TodoCounter 0 0 1 1
     countUsers TaskItemTodo = TodoCounter 0 0 0 1
-
-    checklistPredicate :: Checklist -> Task -> Bool
-    checklistPredicate cl task = flip has world $
-        worldLists . ix (cl ^. identifier) . checklistTasks . ix (task ^. identifier)
 
     employees =  sortOn (view employeeStartingDay)
         $ filter (\e -> e ^. employeeChecklist == checklist ^. identifier)

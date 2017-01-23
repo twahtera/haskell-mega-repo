@@ -8,6 +8,7 @@ module Main (main) where
 
 import Prelude ()
 import Futurice.Prelude
+import Algebra.Lattice                  (top)
 import Control.Exception                (bracket)
 import Control.Lens                     (use, _4)
 import Control.Monad.Trans.State.Strict
@@ -73,7 +74,7 @@ dataToCommands (Data cls ts) = ($ []) <$> execStateT action id
         -- Tasks
         ts' <- for ts $ \(TaskD n r) -> do
             taskId <- Identifier <$> lift newUUID
-            tellCmd $ CmdCreateTask (Identity taskId) (TaskEdit (Identity n) (Identity r))
+            tellCmd $ CmdCreateTask (Identity taskId) (TaskEdit (Identity n) (Identity r)) []
             pure taskId
 
         -- Checklists
@@ -84,11 +85,11 @@ dataToCommands (Data cls ts) = ($ []) <$> execStateT action id
             for_ cts $ \td' -> case td' of
                 TaskId taskId' -> do
                     taskId <- maybe (fail "no task") pure $ ts' ^? ix taskId'
-                    tellCmd $ CmdAddTask checklistId taskId TaskApplianceAll
+                    tellCmd $ CmdAddTask checklistId taskId top
                 TaskD' (TaskD n' r) -> do
                     taskId <- Identifier <$> lift newUUID
-                    tellCmd $ CmdCreateTask (Identity taskId) (TaskEdit (Identity n') (Identity r))
-                    tellCmd $ CmdAddTask checklistId taskId TaskApplianceAll
+                    tellCmd $ CmdCreateTask (Identity taskId) (TaskEdit (Identity n') (Identity r)) []
+                    tellCmd $ CmdAddTask checklistId taskId top
 
     tellCmd :: Command Identity -> StateT ([Command Identity] -> [Command Identity]) m ()
     tellCmd cmd = modify' (. (cmd :))

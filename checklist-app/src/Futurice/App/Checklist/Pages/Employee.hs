@@ -6,8 +6,10 @@ import Prelude ()
 import Futurice.Prelude
 import Control.Lens              (re)
 import Futurice.Lucid.Foundation
+import Servant.API               (safeLink)
 import Web.HttpApiData           (toQueryParam)
 
+import Futurice.App.Checklist.API    (checklistApi, createEmployeePageEndpoint)
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
@@ -33,6 +35,14 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
     row_ $ large_ 12 $ dl_ $ do
         dt_ "Checklist"
         dd_ $ maybe (pure ()) checklistLink mlist
+
+    row_ $ large_ 12 $ do
+        button_
+            [ class_ "button"
+            , data_ "futu-link-button" $ uriText
+            $ safeLink checklistApi createEmployeePageEndpoint $ employee ^? identifier
+            ]
+            "Copy into new employee"
 
     -- Edit
     row_ $ large_ 12 $ form_ [ futuId_ "employee-edit", data_ "futu-employee-id" $ employee ^. identifierText ] $ do
@@ -72,6 +82,7 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
             textarea_ [ futuId_ "employee-info" ] $ toHtml $ employee ^. employeeInfo
         row_ $ large_ 12 $ label_ $ do
             "Phone"
+            -- TODO: maybe it's simpler to just define empty value
             input_ $ [ futuId_ "employee-phone", type_ "tel" ] ++
                 catMaybes [ value_ <$> employee ^. employeePhone ]
         row_ $ large_ 12 $ label_ $ do
