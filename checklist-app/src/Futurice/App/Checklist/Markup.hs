@@ -79,7 +79,7 @@ navigation (fu, viewerRole, _viewerLocation) = do
             li_ $ a_ [ tasksPageHref Nothing (Nothing :: Maybe Checklist) ] "Tasks"
             li_ $ a_ [ createChecklistPageHref ] "Create List"
             li_ $ a_ [ createTaskPageHref ] "Create Task"
-            li_ $ a_ [ createEmployeePageHref ] "Create Employee"
+            li_ $ a_ [ createEmployeePageHref Nothing ] "Create Employee"
         div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
             li_ [ class_ "menu-text" ] $ do
                 "Hello "
@@ -158,9 +158,9 @@ createTaskPageHref :: Attribute
 createTaskPageHref =
     href_ $ uriText $ safeLink checklistApi createTaskPageEndpoint
 
-createEmployeePageHref :: Attribute
-createEmployeePageHref =
-    href_ $ uriText $ safeLink checklistApi createEmployeePageEndpoint
+createEmployeePageHref :: Maybe (Identifier Employee) -> Attribute
+createEmployeePageHref meid =
+    href_ $ uriText $ safeLink checklistApi createEmployeePageEndpoint meid
 
 taskPageHref
     :: (HasIdentifier t Task)

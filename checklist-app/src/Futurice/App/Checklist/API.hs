@@ -77,6 +77,7 @@ type CreateEmployeePageEndpoint =
     SSOUser :>
     "employees" :>
     "create" :>
+    QueryParam "copy-employee" (Identifier Employee) :>
     Get '[HTML] (HtmlPage "create-employee")
 
 -------------------------------------------------------------------------------

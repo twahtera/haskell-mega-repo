@@ -117,10 +117,14 @@ createEmployeePageImpl
     :: (MonadIO m)
     => Ctx
     -> Maybe FUM.UserName
+    -> Maybe (Identifier Employee)
     -> m (HtmlPage "create-employee")
-createEmployeePageImpl ctx fu = withAuthUser ctx fu impl
+createEmployeePageImpl ctx fu meid = withAuthUser ctx fu impl
   where
-    impl world userInfo = pure $ createEmployeePage world userInfo
+    impl world userInfo = pure $ createEmployeePage world userInfo memployee
+      where
+        memployee = meid >>= \eid -> world ^? worldEmployees . ix eid
+
 
 checklistsPageImpl
     :: MonadIO m

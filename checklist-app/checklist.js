@@ -31,6 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   $$("button[data-futu-id=task-remove]").forEach(taskRemoveBtn);
   $$("input[data-futu-id=task-done-checkbox]").forEach(taskToggleCheckbox);
+  $$("button[data-futu-link-button]").forEach(linkButton);
 
   function unknownForm(form) {
     console.warn("Unknown form", form.dataset.futuId, form);
@@ -220,6 +221,13 @@ document.addEventListener("DOMContentLoaded", function () {
       var appl = appl$.value();
 
       cmdAddTask(checklistId, taskId, appl);
+    });
+  }
+
+  function linkButton(btn) {
+    buttonOnClick(btn, function () {
+      btn.disabled = true;
+      location.href = btn.dataset.futuLinkButton;
     });
   }
 
