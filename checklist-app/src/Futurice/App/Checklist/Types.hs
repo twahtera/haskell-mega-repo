@@ -31,6 +31,8 @@ module Futurice.App.Checklist.Types (
     identifierText,
     Name (..),
     HasName (..),
+    -- * Functions
+    employeeTaskApplies,
     -- * Lenses
     -- ** Employee
     employeeFirstName, employeeLastName, employeeContractType, employeeLocation, employeeConfirmed,

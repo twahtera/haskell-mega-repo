@@ -10,14 +10,15 @@ import Algebra.Lattice
        (BoundedJoinSemiLattice (..), BoundedLattice,
        BoundedMeetSemiLattice (..), JoinSemiLattice (..), Lattice,
        MeetSemiLattice (..), joins1, meets1)
+import Control.Applicative      (liftA2)
 import Data.Aeson.Compat        (withText)
 import Data.Functor.Foldable    (cata, embed)
 import Data.Functor.Foldable.TH
 import Futurice.Generics
 import Text.Trifecta
 
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
+import qualified Data.Text                    as T
+import qualified Data.Text.Encoding           as TE
 import qualified Text.PrettyPrint.ANSI.Leijen as PP
 
 import Futurice.App.Checklist.Types.ContractType
@@ -88,6 +89,20 @@ normaliseTaskAppliance = cata alg
     alg (TAAndF x y) = x /\ y
     alg (TAOrF x y)  = x \/ y
     alg ta           = embed ta
+
+-------------------------------------------------------------------------------
+-- Predicate
+-------------------------------------------------------------------------------
+
+taskApplianceToPredicate :: TaskAppliance -> (ContractType, Location) -> Bool
+taskApplianceToPredicate = cata alg
+  where
+    alg TAAllF               = const True
+    alg (TANotF p)           = not . p
+    alg (TAAndF p q)         = liftA2 (&&) p q
+    alg (TAOrF p q)          = liftA2 (||) p q
+    alg (TAContractTypeF ct) = (ct ==) . fst
+    alg (TALocationF l)      = (l ==) . snd
 
 -------------------------------------------------------------------------------
 -- parse & pretty

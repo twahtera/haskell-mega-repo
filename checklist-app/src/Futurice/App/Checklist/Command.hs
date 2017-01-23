@@ -32,7 +32,7 @@ module Futurice.App.Checklist.Command (
 import Prelude ()
 import Futurice.Prelude
 import Algebra.Lattice            (top)
-import Control.Lens               (iforOf_, non)
+import Control.Lens               (iforOf_, non, use)
 import Control.Monad.State.Strict (execState)
 import Data.Swagger               (NamedSchema (..))
 import Futurice.Aeson
@@ -283,9 +283,13 @@ applyCommand cmd world = flip execState world $ case cmd of
         for_ ls $ \(TaskAddition cid app) ->
             worldLists . ix cid . checklistTasks . at tid ?= app
 
-    CmdAddTask cid tid app ->
+    CmdAddTask cid tid app -> do
         worldLists . ix cid . checklistTasks . at tid ?= app
-        -- TODO: add to worldTaskItems
+        es <- toList <$> use worldEmployees
+        for_ es $ \e -> do
+            let eid = e ^. identifier
+            when (e ^. employeeChecklist == cid && employeeTaskApplies e app) $ do
+                worldTaskItems . at eid . non mempty . at tid %= Just . fromMaybe TaskItemTodo
 
     CmdRemoveTask cid tid ->
         worldLists . ix cid . checklistTasks . at tid Lens..= Nothing
@@ -298,11 +302,12 @@ applyCommand cmd world = flip execState world $ case cmd of
 
     CmdCreateEmployee (Identity eid) cid x -> do
         -- create user
-        worldEmployees . at eid ?= fromEmployeeEdit eid cid x
+        let e = fromEmployeeEdit eid cid x
+        worldEmployees . at eid ?= e
         -- add initial tasks
-        iforOf_ (worldLists . ix cid . checklistTasks . ifolded) world $ \tid _app ->
-            -- TODO: check appliance before adding
-            worldTaskItems . at eid . non mempty . at tid ?= TaskItemTodo
+        iforOf_ (worldLists . ix cid . checklistTasks . ifolded) world $ \tid app ->
+            when (employeeTaskApplies e app) $
+                worldTaskItems . at eid . non mempty . at tid ?= TaskItemTodo
 
     CmdEditEmployee eid x -> do
         worldEmployees . ix eid %= applyEmployeeEdit x

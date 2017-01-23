@@ -103,6 +103,14 @@ makePrisms ''CheckResult
 makeLenses ''Checklist
 
 -------------------------------------------------------------------------------
+-- TaskAppliance helpers
+-------------------------------------------------------------------------------
+
+employeeTaskApplies :: Employee -> TaskAppliance -> Bool
+employeeTaskApplies e ta = taskApplianceToPredicate ta
+    (e ^. employeeContractType, e ^. employeeLocation)
+
+-------------------------------------------------------------------------------
 -- HasIdentifier instances
 -------------------------------------------------------------------------------
 
