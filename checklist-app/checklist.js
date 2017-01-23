@@ -32,6 +32,14 @@ document.addEventListener("DOMContentLoaded", function () {
   $$("button[data-futu-id=task-remove]").forEach(taskRemoveBtn);
   $$("input[data-futu-id=task-done-checkbox]").forEach(taskToggleCheckbox);
   $$("button[data-futu-link-button]").forEach(linkButton);
+  $$("div[data-futu-id=error-callout] button").forEach(function (btn) {
+    buttonOnClick(btn, function () {
+      var el = $("div[data-futu-id=error-callout]");
+      if (el) {
+        el.style.display = "none";
+      }
+    });
+  });
 
   function unknownForm(form) {
     console.warn("Unknown form", form.dataset.futuId, form);
@@ -368,16 +376,6 @@ document.addEventListener("DOMContentLoaded", function () {
           });
         }
       })
-      .catch(function (exc) {
-        console.error(exc);
-        /*
-        overlay.message.classList.add("alert");
-        overlay.message.classList.remove("primary");
-        overlay.message.innerHTML = "Tapahtui virhe!<br />" + exc
-        overlay.overlay.style.display = "";
-        */
-        throw exc;
-      })
       .then(function (res) {
         console.info("command ack", res);
         switch (res.ack) {
@@ -396,6 +394,15 @@ document.addEventListener("DOMContentLoaded", function () {
             break;
           default:
             console.error("Unknown ack type");
+        }
+      })
+      .catch(function (exc) {
+        console.error(exc);
+        var errorCallout = $("div[data-futu-id=error-callout]");
+        var errorCalloutContent = $("div[data-futu-id=error-callout-content]", errorCallout)
+        if (errorCallout && errorCalloutContent) {
+          errorCalloutContent.innerText = exc;
+          errorCallout.style.display = "";
         }
       });
   }

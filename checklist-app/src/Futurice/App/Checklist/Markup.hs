@@ -63,6 +63,9 @@ checklistPage_ :: Text -> AuthUser -> Html () -> HtmlPage sym
 checklistPage_ title authUser body =
     page_ (title <> " - Checklist²" ) pageParams $ do
         navigation authUser
+        div_ [ futuId_ "error-callout", class_ "callout alert", style_ "display: none" ] $ do
+            div_ [ futuId_ "error-callout-content" ] $ pure ()
+            button_ [ class_ "button" ] "Close"
         body
 
 -- http://foundation.zurb.com/sites/docs/top-bar.html
