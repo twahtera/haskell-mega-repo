@@ -226,7 +226,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var actions = initialiseFormDefs(defs, form);
 
     initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
-      cmdAddTask(checklistId, values.task, value.appl);
+      cmdAddTask(checklistId, values.task, values.appl);
     });
   }
 
