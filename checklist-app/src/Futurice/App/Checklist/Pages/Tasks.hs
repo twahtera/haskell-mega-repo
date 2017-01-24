@@ -67,7 +67,7 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
                 th_ [ title_ "Info", style_ "max-width: 20em;" ] "Info"
                 th_ [ title_ "Role" ]                       "Role"
                 th_ [ title_ "Direct prerequisites" ]       "Prerequisites"
-                th_ [ title_ "Active employees todo/done" ] "Employees"
+                th_ [ title_ "Active employees todo/done" ] "Empl"
                 th_ [ title_ "Checklists with the task" ]   "Checklists"
 
             tbody_ $ for_ tasks' $ \task -> tr_ $ do

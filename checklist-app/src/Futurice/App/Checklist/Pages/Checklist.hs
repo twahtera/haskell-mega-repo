@@ -68,7 +68,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
             th_ [ title_ "Info", style_ "max-width: 20em;" ] "Info"
             th_ [ title_ "Role" ]                       "Role"
             th_ [ title_ "Direct prerequisites" ]       "Prerequisites"
-            th_ [ title_ "Active employees todo/done" ] "Employees"
+            th_ [ title_ "Active employees todo/done" ] "Empl"
             th_ [ title_ "To whom this task applies" ]  "Appliance"
             th_ [ title_ "Other checklists with the task" ] "Other checklists"
             th_ [ title_ "Remove task from the checklist" ] "Remove"
