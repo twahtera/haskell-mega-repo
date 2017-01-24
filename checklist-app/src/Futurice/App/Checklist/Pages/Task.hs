@@ -49,6 +49,8 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
                         $ toHtml $ role ^. re _TaskRole
         row_ $ large_ 12 $ label_ $ do
             "Prerequisites"
+            br_ []
+            small_ $ i_ "Note: Prerequisites must be also added to the checklist"
             select_ [ futuId_ "task-prereqs", multiple_ "multiple", size_ $ textShow (lengthOf (worldTasks . folded) world) ] $
                 forOf_ (worldTasksSorted . folded) world $ \t -> do
                     optionSelected_ (task ^. taskPrereqs . contains (t ^. identifier))
