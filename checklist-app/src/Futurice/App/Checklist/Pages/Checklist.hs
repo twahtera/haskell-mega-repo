@@ -4,7 +4,7 @@ module Futurice.App.Checklist.Pages.Checklist (checklistPage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (filtered, foldMapOf, has, forOf_)
+import Control.Lens              (filtered, foldMapOf, forOf_, has, to)
 import Data.Time                 (diffDays)
 import Futurice.Lucid.Foundation
 
@@ -46,8 +46,9 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
         row_ $ large_ 12 $
             label_ $ do
                 "Task"
-                select_ [ futuId_ "task-id" ] $ for_ allTasks $ \task ->
-                    option_
+                select_ [ futuId_ "task-id" ] $ do
+                    optionSelected_ True [ value_ "" ] "-"
+                    for_ allTasks $ \task -> option_
                         [ value_ $ task ^. identifierText ]
                         $ task ^. nameHtml
 
@@ -58,6 +59,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Add"
+            button_ [ class_ "button", data_ "futu-action" "reset" ] $ "Reset"
 
     -- Tasks
     subheader_ "Tasks"
@@ -65,8 +67,10 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
     row_ $ large_ 12 $ table_ $ do
         thead_ $ tr_ $ do
             th_ [ title_ "Task" ]                       "Task"
+            th_ [ title_ "Info", style_ "max-width: 20em;" ] "Info"
             th_ [ title_ "Role" ]                       "Role"
-            th_ [ title_ "Active employees todo/done" ] "Employees"
+            th_ [ title_ "Direct prerequisites" ]       "Prerequisites"
+            th_ [ title_ "Active employees todo/done" ] "Empl"
             th_ [ title_ "To whom this task applies" ]  "Appliance"
             th_ [ title_ "Other checklists with the task" ] "Other checklists"
             th_ [ title_ "Remove task from the checklist" ] "Remove"
@@ -75,7 +79,13 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
             let tid = task ^. identifier
             for_ (checklist ^? checklistTasks . ix tid) $ \app -> tr_ $ do
                 td_ $ taskLink task
+                td_ [ style_ "max-width: 20em;" ] $ small_ $ toHtml $ task ^. taskInfo
                 td_ $ roleHtml mlist (task ^. taskRole)
+                td_ $ forOf_ (taskPrereqs . folded . to (\tid' -> world ^. worldTasks . at tid') . _Just) task $ \prereqTask -> do
+                    let prereqTid = prereqTask ^. identifier
+                    for_ (checklist ^? checklistTasks . ix prereqTid) $ \_ -> do
+                        taskLink prereqTask
+                        br_ []
                 td_ $ a_ [ indexPageHref Nothing mlist (Just tid) False ] $
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
                         TodoCounter _ _ i j ->

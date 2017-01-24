@@ -7,7 +7,9 @@ import Futurice.Prelude
 import Control.Lens              (re, contains, lengthOf, forOf_)
 import Data.Time                 (diffDays)
 import Futurice.Lucid.Foundation
+import Servant.API (safeLink)
 
+import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
@@ -29,6 +31,15 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
     -- Title
     header (task ^. nameText <> " -  task") []
 
+    row_ $ large_ 12 $ do
+        button_
+            [ class_ "button"
+            , data_ "futu-link-button" $ uriText
+            $ safeLink checklistApi indexPageEndpoint
+                  Nothing Nothing (task ^? identifier) defaultShowAll
+            ]
+            "Goto employees listing"
+
     -- Edit
     row_ $ large_ 12 $ form_ [ futuId_ "task-edit", data_ "futu-task-id" $ task ^. identifierText ] $ do
         row_ $ large_ 12 $
@@ -49,6 +60,8 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
                         $ toHtml $ role ^. re _TaskRole
         row_ $ large_ 12 $ label_ $ do
             "Prerequisites"
+            br_ []
+            small_ $ i_ "Note: Prerequisites must be also added to the checklist"
             select_ [ futuId_ "task-prereqs", multiple_ "multiple", size_ $ textShow (lengthOf (worldTasks . folded) world) ] $
                 forOf_ (worldTasksSorted . folded) world $ \t -> do
                     optionSelected_ (task ^. taskPrereqs . contains (t ^. identifier))

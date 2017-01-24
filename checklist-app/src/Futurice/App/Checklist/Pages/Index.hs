@@ -5,7 +5,8 @@ module Futurice.App.Checklist.Pages.Index (indexPage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (Traversal', united, filtered, has, ifoldMapOf, only, re, to)
+import Control.Lens
+       (Traversal', filtered, has, hasn't, ifoldMapOf, only, re, to, united)
 import Data.Time                 (addDays, diffDays)
 import Futurice.Lucid.Foundation
 
@@ -43,7 +44,8 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
         -- Title
         header "Active employees"
             [ (^. re _Location) <$> mloc
-            , (^. nameText ) <$> mlist
+            , (^. nameText) <$> mlist
+            , (^. nameText) <$> mtask
             ]
 
         -- List filtering controls
@@ -82,6 +84,12 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
             largemed_ 1 $ label_ $ do
                 toHtmlRaw ("&nbsp;" :: Text)
                 div_ $ button_ [ class_ "button" ] $ "Filter"
+
+        for_ mtask $ \task -> when (hasn't (taskInfo . _Empty) task) $ do
+            row_ $ large_ 12 $ do
+                b_ "Task info: "
+                toHtml $ task ^. taskInfo
+                hr_ []
 
         -- The table
         row_ $ large_ 12 $ table_ $ do

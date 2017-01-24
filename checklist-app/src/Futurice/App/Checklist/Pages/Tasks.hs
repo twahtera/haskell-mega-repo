@@ -4,7 +4,7 @@ module Futurice.App.Checklist.Pages.Tasks (tasksPage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (filtered, foldMapOf, has, re, to)
+import Control.Lens              (filtered, foldMapOf, has, re, to, forOf_)
 import Futurice.Lucid.Foundation
 
 import Futurice.App.Checklist.Markup
@@ -64,17 +64,21 @@ tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
         row_ $ large_ 12 $ table_ $ do
             thead_ $ tr_ $ do
                 th_ [ title_ "Task" ]                       "Task"
-                th_ [ title_ "Info" ]                       "Info"
+                th_ [ title_ "Info", style_ "max-width: 20em;" ] "Info"
                 th_ [ title_ "Role" ]                       "Role"
-                th_ [ title_ "Active employees todo/done" ] "Employees"
+                th_ [ title_ "Direct prerequisites" ]       "Prerequisites"
+                th_ [ title_ "Active employees todo/done" ] "Empl"
                 th_ [ title_ "Checklists with the task" ]   "Checklists"
 
             tbody_ $ for_ tasks' $ \task -> tr_ $ do
                 let tid = task ^. identifier
 
                 td_ $ taskLink task
-                td_ $ toHtml $ task ^. taskInfo
+                td_ [ style_ "max-width: 20em;" ] $ small_ $ toHtml $ task ^. taskInfo
                 td_ $ roleHtml mlist $ task ^. taskRole
+                td_ $ forOf_ (taskPrereqs . folded . to (\tid' -> world ^. worldTasks . at tid') . _Just) task $ \prereqTask -> do
+                    taskLink prereqTask
+                    br_ []
                 td_ $ a_ [ indexPageHref Nothing mlist (Just tid) defaultShowAll ] $
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
                         TodoCounter _ _ i j ->
