@@ -44,7 +44,8 @@ indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mta
         -- Title
         header "Active employees"
             [ (^. re _Location) <$> mloc
-            , (^. nameText ) <$> mlist
+            , (^. nameText) <$> mlist
+            , (^. nameText) <$> mtask
             ]
 
         -- List filtering controls
