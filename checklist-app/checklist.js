@@ -168,11 +168,11 @@ document.addEventListener("DOMContentLoaded", function () {
       role: { sel: "select[data-futu-id=task-role]", check: nonEmptyCheck },
       prereqs: { sel: "select[data-futu-id=task-prereqs", check: isArrayCheck },
       list1: { sel: "select[data-futu-id=task-checklist-1]" },
-      app1:  { sel: "input[data-futu-id=task-checklist-appliance-1]" },
+      app1:  { sel: "input[data-futu-id=task-checklist-appliance-1]", check: applianceCheck },
       list2: { sel: "select[data-futu-id=task-checklist-2]" },
-      app2:  { sel: "input[data-futu-id=task-checklist-appliance-2]" },
+      app2:  { sel: "input[data-futu-id=task-checklist-appliance-2]", check: applianceCheck },
       list3: { sel: "select[data-futu-id=task-checklist-3]" },
-      app3:  { sel: "input[data-futu-id=task-checklist-appliance-3]" },
+      app3:  { sel: "input[data-futu-id=task-checklist-appliance-3]", check: applianceCheck },
     }
 
     var actions = initialiseFormDefs(defs, form);
@@ -204,7 +204,7 @@ document.addEventListener("DOMContentLoaded", function () {
       info: { sel: "input[data-futu-id=task-info]" },
       role: { sel: "select[data-futu-id=task-role]" },
       prereqs: { sel: "select[data-futu-id=task-prereqs", check: isArrayCheck },
-    }
+    };
 
     var actions = initialiseFormDefs(defs, form);
 
@@ -218,19 +218,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.info("Initialising task addition form", checklistId);
 
-    var taskEl = $_("select[data-futu-id=task-id]", form);
-    var applEl = $_("input[data-futu-id=task-appliance]", form);
+    var defs = {
+      task: { sel: "select[data-futu-id=task-id]", check: nonEmptyCheck },
+      appl: { sel: "input[data-futu-id=task-appliance]", check: applianceCheck },
+    };
 
-    var submitBtn = $_("button[data-futu-action=submit]", form);
+    var actions = initialiseFormDefs(defs, form);
 
-    var task$ = menrvaInputValue(taskEl);
-    var appl$ = menrvaInputValue(applEl);
-
-    buttonOnClick(submitBtn, function () {
-      var taskId = task$.value();
-      var appl = appl$.value();
-
-      cmdAddTask(checklistId, taskId, appl);
+    initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
+      cmdAddTask(checklistId, values.task, value.appl);
     });
   }
 
@@ -422,6 +418,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function isArrayCheck(x) {
     return _.isArray(x) ? x : undefined;
+  }
+
+  // Quick 'n' dirty check for appliance
+  function applianceCheck(x) {
+    var m = x.match(/^(all|berlin|external|fixed-term|helsinki|london|munich|not|other|part-timer|permanent|stockholm|summer-worker|tampere|and|or| +|\(\))*$/i);
+    return m ? x : undefined;
   }
 
   function optionalCheck(check) {
