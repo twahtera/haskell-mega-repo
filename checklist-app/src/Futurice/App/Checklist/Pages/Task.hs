@@ -7,7 +7,9 @@ import Futurice.Prelude
 import Control.Lens              (re, contains, lengthOf, forOf_)
 import Data.Time                 (diffDays)
 import Futurice.Lucid.Foundation
+import Servant.API (safeLink)
 
+import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
@@ -28,6 +30,15 @@ taskPage
 taskPage world today authUser task = checklistPage_ (view nameText task <> " - task") authUser $ do
     -- Title
     header (task ^. nameText <> " -  task") []
+
+    row_ $ large_ 12 $ do
+        button_
+            [ class_ "button"
+            , data_ "futu-link-button" $ uriText
+            $ safeLink checklistApi indexPageEndpoint
+                  Nothing Nothing (task ^? identifier) defaultShowAll
+            ]
+            "Goto employees listing"
 
     -- Edit
     row_ $ large_ 12 $ form_ [ futuId_ "task-edit", data_ "futu-task-id" $ task ^. identifierText ] $ do
