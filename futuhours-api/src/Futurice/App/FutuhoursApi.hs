@@ -48,6 +48,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         pmLookupMapT <- newTVarIO pmLookupMap
         pure $ Ctx
             { ctxPlanmillUserLookup = pmLookupMapT
+            , ctxMockUser           = cfgMockUser config
             }
 
 makeIntegrationsConfig

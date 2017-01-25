@@ -11,4 +11,5 @@ type PlanmillUserLookupMap = HashMap FUM.UserName PM.User
 
 data Ctx = Ctx
     { ctxPlanmillUserLookup :: !(TVar PlanmillUserLookupMap)
+    , ctxMockUser           :: !(Maybe FUM.UserName)
     }

@@ -49,6 +49,7 @@ library
     , postgresql-simple
     , QuickCheck
     , resource-pool
+    , semigroupoids
     , servant
     , servant-lucid
     , servant-server
