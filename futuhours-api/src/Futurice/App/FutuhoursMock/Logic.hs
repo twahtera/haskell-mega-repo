@@ -43,7 +43,7 @@ userEndpoint
     -> ExceptT ServantErr IO User
 userEndpoint _ctx _fumUser = liftIO $ do
     -- TODO: how to generate unique values per request?
-    _userBalance <- randomRIO (-10,40) :: IO Float
+    _userBalance <- fromInteger <$> randomRIO (-10,40)
     _userHolidaysLeft <- randomRIO (0, 24)
     _userUtilizationRate <- randomRIO (0,100) :: IO Float
     pure $ User
@@ -113,7 +113,7 @@ mkEntryEndPoint :: (MonadTime m, MonadIO m) => EntryUpdate -> m EntryUpdateRespo
 mkEntryEndPoint req = do
     ps <- fillProjects
     let date = _euDate req
-    usrB <- liftIO $ randomRIO (-10, 40)
+    usrB <- liftIO $ fromInteger <$> randomRIO (-10, 40)
     usrHL <- liftIO $ randomRIO (0, 24)
     usrUTZ <- liftIO $ randomRIO (0,100)
     newEntryId <- liftIO $ randomRIO (0, 100)

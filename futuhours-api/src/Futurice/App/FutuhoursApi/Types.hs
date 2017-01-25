@@ -16,9 +16,11 @@ import Prelude ()
 import Futurice.Prelude
 import Control.Lens        (Getter, andOf, foldOf, imap, sumOf, to)
 import Data.Aeson          (Value (..), withText)
+import Data.Fixed          (Centi)
 import Data.Swagger        (NamedSchema (..))
 import Futurice.Generics
 import Futurice.Monoid     (Average (..))
+import Futurice.Time
 import Futurice.Time.Month (dayToMonth)
 import Test.QuickCheck     (arbitraryBoundedEnum)
 
@@ -123,7 +125,7 @@ data EntryUpdateResponse = EntryUpdateResponse
 data User = User
     { _userFirstName       :: !Text
     , _userLastName        :: !Text
-    , _userBalance         :: !Float -- ^ TODO NDT 'Hours Centi
+    , _userBalance         :: !(NDT 'Hours Centi)
     , _userHolidaysLeft    :: !Int
     , _userUtilizationRate :: !Float
     , _userProfilePicture  :: !Text

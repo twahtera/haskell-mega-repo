@@ -25,6 +25,7 @@ library:
     - base >= 4.8 && < 4.10
     - aeson
     - aeson-compat
+    - constraints
     - env-config
     - fum-client
     - futurice-foundation
@@ -42,6 +43,7 @@ library:
     - postgresql-simple
     - QuickCheck
     - resource-pool
+    - semigroupoids
     - servant
     - servant-lucid
     - servant-server
