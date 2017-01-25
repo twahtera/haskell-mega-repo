@@ -1,5 +1,7 @@
+{-# LANGUAGE RecordWildCards #-}
 module Futurice.App.FutuhoursApi.Config (
     Config(..),
+    cfgPlanmillCfg,
     ) where
 
 import Prelude ()
@@ -25,6 +27,13 @@ data Config = Config
     , cfgMockUser          :: !(Maybe FUM.UserName)
     }
   deriving (Show)
+
+cfgPlanmillCfg :: Config -> PM.Cfg
+cfgPlanmillCfg Config {..} = PM.Cfg
+    { cfgUserId  = cfgPlanmillAdminUser
+    , cfgApiKey  = cfgPlanmillSignature
+    , cfgBaseUrl = cfgPlanmillUrl
+    }
 
 instance Configure Config where
     configure = Config

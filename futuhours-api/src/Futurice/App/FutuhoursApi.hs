@@ -16,7 +16,7 @@ import Futurice.Servant
 import Servant
 
 import Futurice.App.FutuhoursApi.API
-import Futurice.App.FutuhoursApi.Config (Config (..))
+import Futurice.App.FutuhoursApi.Config
 import Futurice.App.FutuhoursApi.Ctx
 import Futurice.App.FutuhoursApi.Logic
        (entryDeleteEndpoint, entryEndpoint, entryIdEndpoint, hoursEndpoint,
@@ -48,7 +48,9 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         pmLookupMapT <- newTVarIO pmLookupMap
         pure $ Ctx
             { ctxPlanmillUserLookup = pmLookupMapT
+            , ctxPlanmillCfg        = cfgPlanmillCfg config
             , ctxMockUser           = cfgMockUser config
+            , ctxLogger             = logger
             }
 
 makeIntegrationsConfig
