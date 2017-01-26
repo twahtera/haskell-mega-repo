@@ -13,6 +13,8 @@ import Control.Monad.Http   (HttpT, evalHttpT)
 import Data.Yaml            (decodeFileEither)
 import System.Environment   (getArgs)
 import System.IO            (hPutStrLn, stderr)
+import Data.Time.Clock      (NominalDiffTime, addUTCTime)
+import Data.Time            (fromGregorian, toGregorian)
 
 import qualified Data.HashMap.Strict as HM
 
@@ -69,6 +71,13 @@ printDumpStats (Dump ps ts as t us) = do
     putStrLn $ "teams:       " <> show (HM.size t)
     putStrLn $ "users:       " <> show (HM.size us)
 
+timeInterval :: (MonadIO m, MonadTime m) => Integer -> Integer -> m (Day, Day)
+timeInterval x y = do
+    now <- currentTime
+    let ndt z = (fromInteger z) :: NominalDiffTime
+    let mkRelDay z' = utctDay $ addUTCTime (ndt $ 86400*z') now
+    pure (mkRelDay x, mkRelDay y)
+
 -------------------------------------------------------------------------------
 -- My projects
 -------------------------------------------------------------------------------
@@ -84,18 +93,17 @@ myProjects = do
 -- Timereports
 -------------------------------------------------------------------------------
 
-myTimereports :: ( MonadPlanMill m, MonadIO m, MonadThrow m) => m ()
+myTimereports :: ( MonadPlanMill m, MonadIO m, MonadThrow m, MonadTime m) => m ()
 myTimereports = do
     me' <- planmillAction me
     putPretty me'
-    let ident = Ident 17549
+    let ident = me' ^. identifier
     u <- planmillAction $ user ident
     putPretty u
     t <- traverse (planmillAction . team) (uTeam u)
     putPretty t
-    interval <- mkInterval
-        (utctDay $(mkUTCTime "2016-03-01T00:00:00.000Z"))
-        (utctDay $(mkUTCTime "2016-05-01T00:00:00.000Z"))
+    intDays <- timeInterval (-7) 30
+    interval <- mkInterval (fst intDays) (snd intDays)
     let interval' = ResultInterval IntervalStart $ intervalDayToIntervalUTC interval
     trs <- planmillVectorAction $ timereportsFromIntervalFor interval' ident
     putPretty trs
@@ -104,12 +112,15 @@ myTimereports = do
 -- Capacity calendar
 -------------------------------------------------------------------------------
 
-capacityCalendar :: (MonadPlanMill m, MonadIO m, MonadThrow m) => m ()
+capacityCalendar :: (MonadPlanMill m, MonadIO m, MonadThrow m, MonadTime m) => m ()
 capacityCalendar = do
     me' <- planmillAction me
+    let ident = me' ^. identifier
     putPretty me'
-    interval <- mkInterval $(mkDay "2016-01-01") $(mkDay "2016-02-01")
-    cc <- planmillVectorAction $ userCapacity interval $ Ident 17557
+    now <- currentTime
+    let (year, _, _) = toGregorian $ utctDay now
+    interval <- mkInterval (fromGregorian year 1 1) (fromGregorian year 12 31)
+    cc <- planmillVectorAction $ userCapacity interval $ ident
     putPretty cc
 
 -------------------------------------------------------------------------------
