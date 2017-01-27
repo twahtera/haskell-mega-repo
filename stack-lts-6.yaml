@@ -1,4 +1,4 @@
-resolver: lts-6.27
+resolver: lts-6.28
 packages:
 - ansi-pretty/
 - avar/

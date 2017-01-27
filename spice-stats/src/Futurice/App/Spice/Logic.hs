@@ -34,10 +34,9 @@ import qualified Text.Regex.Applicative.Text as RE
 import Futurice.App.Spice.Types
 
 mailMessageOpts :: FD.MessageOptions
-mailMessageOpts =
-    FD.defMessageOptions
-        & FD.msgOptEvents .~ [FD.EventDiscussion]
-        & FD.msgOptLimit  .~ Just 100
+mailMessageOpts = FD.defaultMessageOptions
+    & FD.msgOptEvents .~ [FD.EventDiscussion]
+    & FD.msgOptLimit  .~ Just 100
 
 fetchMessagesLoop :: FD.ParamName FD.Organisation
                   -> FD.ParamName FD.Flow
