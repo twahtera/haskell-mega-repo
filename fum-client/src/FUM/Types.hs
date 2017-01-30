@@ -173,6 +173,9 @@ instance IsString GroupName where
 instance FromJSON GroupName where
     parseJSON = withText "FUM GroupName" $ pure . GroupName
 
+instance ToJSON GroupName where
+    toJSON = toJSON . _getGroupName
+
 -------------------------------------------------------------------------------
 -- List name
 -------------------------------------------------------------------------------
@@ -190,6 +193,9 @@ instance IsString ListName where
 
 instance FromJSON ListName where
     parseJSON = withText "FUM ListName" $ pure . ListName
+
+instance ToJSON ListName where
+    toJSON = toJSON . _getListName
 
 -------------------------------------------------------------------------------
 -- User status
