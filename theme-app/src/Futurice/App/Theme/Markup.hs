@@ -21,17 +21,17 @@ import qualified Data.Text as T
 
 indexPage :: HtmlPage "index"
 indexPage = page_ "Futurice colors and logos" $ do
-        row_ $ large_ 12 $ h1_ "Futurice colors and logos"
-        row_ $ do
-            large_ 9 $ do
-                h3_ "Colors"
-                colors
-            large_ 3 $ do
-                h3_ "Download logos"
-                ul_ $ for_ logos $ \(name, url) ->
-                    li_ $ a_ [href_ $ "/images/" <> url ] $ toHtml name
-                h3_ "Design book"
-                a_ [href_ $ "/images/Futurice_Guide_v4.pdf" ] $ "Design book"
+    row_ $ large_ 12 $ h1_ "Futurice colors and logos"
+    row_ $ do
+        large_ 9 $ do
+            h3_ "Colors"
+            colors
+        large_ 3 $ do
+            h3_ "Download logos"
+            ul_ $ for_ logos $ \(name, url) ->
+                li_ $ a_ [href_ $ "/images/" <> url ] $ toHtml name
+            h3_ "Design book"
+            a_ [href_ $ "/images/Futurice_Guide_v4.pdf" ] $ "Design book"
 
 colors :: Monad m => HtmlT m ()
 colors = do
@@ -45,14 +45,11 @@ colors = do
         row' $ for_ [minBound .. maxBound ] $ \col ->
             largemed_ 4 $ colorBox Small $ FutuAccent fam col
 
-flipMaybe :: a -> Maybe b -> (b -> a) -> a
-flipMaybe d m f = maybe d f m
-
 data BoxSize = Large | Medium | Small
 
 colorBox :: Monad m => BoxSize -> Colour -> HtmlT m ()
 colorBox boxSize colour = div_ [style_ $ render css ] $ do
-    flipMaybe (pure ()) (colourName colour) $ \name -> do
+    for_ (colourName colour) $ \name -> do
         b_ $ toHtml $ name
         br_ []
     b_ $ toHtml $ colourPantoneName colour
@@ -115,6 +112,8 @@ logos =
     , ("PNG, Green Favicon, 129x129", "futurice-favicon.png")
     , ("SVG, Green", "futurice.svg")
     , ("EPS, Green", "futurice.eps")
+    , ("PNG, future co-created. Green, 2569x1325", "futurice-future-co-created.png")
+    , ("AI, future co-created, Green", "futurice-future-co-created.ai")
     ]
 
 -------------------------------------------------------------------------------
