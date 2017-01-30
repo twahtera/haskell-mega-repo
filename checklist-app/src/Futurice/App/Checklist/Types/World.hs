@@ -10,7 +10,6 @@ module Futurice.App.Checklist.Types.World (
     worldTasks,
     worldLists,
     worldTaskItems,
-    worldUsers,
     -- * Getters
     worldTaskItems',
     worldTasksSorted,
@@ -47,7 +46,6 @@ data World = World
     , _worldTasks      :: !(Graph Task)
     , _worldLists      :: !(IdMap Checklist)
     , _worldTaskItems  :: !(Map (Identifier Employee) (Map (Identifier Task) TaskItem))
-    , _worldUsers      :: AuthCheck
       -- ^ ACL lookup
     -- lazy fields, updated on need when accessed
     , _worldTaskItems' :: Map (Identifier Task) (Map (Identifier Employee) TaskItem)
@@ -60,7 +58,7 @@ worldTasksSorted :: Getter World [Task]
 worldTasksSorted = to $ \world -> Graph.revTopSort (world ^. worldTasks)
 
 emptyWorld :: World
-emptyWorld = mkWorld mempty mempty mempty mempty (const Nothing)
+emptyWorld = mkWorld mempty mempty mempty mempty
 
 -- | Create world from employees, tasks, checklists, and items.
 --
@@ -77,9 +75,8 @@ mkWorld
     -> IdMap Task
     -> IdMap Checklist
     -> Map (Identifier Employee) (Map (Identifier Task) TaskItem)
-    -> AuthCheck
     -> World
-mkWorld es ts ls is us =
+mkWorld es ts ls is =
     let tids            = IdMap.keysSet ts
         cids            = IdMap.keysSet ls
         -- Validation predicates
@@ -99,7 +96,7 @@ mkWorld es ts ls is us =
             %~ toMapOf (ifolded . ifiltered (\k _v -> validTid k))
 
         -- TODO: validate is
-    in World es' (Graph.fromIdMap ts') ls' is us (swapMapMap is)
+    in World es' (Graph.fromIdMap ts') ls' is (swapMapMap is)
 
 -- | Generates consistent worlds.
 instance QC.Arbitrary World where
@@ -153,8 +150,5 @@ instance QC.Arbitrary World where
             makeTaskItem ((eid, tid), Just done) = (eid, Map.singleton tid done)
         let is'' = Map.fromListWith Map.union (map makeTaskItem is')
 
-        -- Users of checklist, hardcoded in mock
-        us <- pure $ fmap (\u -> (u, TaskRoleIT, LocHelsinki))
-
         -- World
-        pure $ mkWorld es' ts' cs is'' us
+        pure $ mkWorld es' ts' cs is''

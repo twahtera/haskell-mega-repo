@@ -10,7 +10,7 @@ import Futurice.EnvConfig
 import qualified FUM
 
 data Config = Config
-    { cfgMockAuth           :: !Bool
+    { cfgMockUser           :: !(Maybe FUM.UserName)
     , cfgPostgresConnInfo   :: !ConnectInfo
     -- ACL:
     , cfgFumToken           :: !FUM.AuthToken
@@ -24,7 +24,7 @@ data Config = Config
 
 instance Configure Config where
     configure = Config
-        <$> envVarWithDefault "MOCKAUTH" False
+        <$> optionalAlt (envVar "MOCKUSER")
         <*> envConnectInfo
         <*> envVar "FUM_TOKEN"
         <*> envVar "FUM_BASEURL"

@@ -69,7 +69,6 @@ module Futurice.App.Checklist.Types (
     worldTasks,
     worldLists,
     worldTaskItems,
-    worldUsers,
     worldTaskItems',
     worldTasksSorted,
     -- * Access
@@ -87,4 +86,4 @@ import Futurice.App.Checklist.Types.TaskRole
 
 import qualified FUM (UserName)
 
-type AuthUser = (FUM.UserName, TaskRole, Location)
+type AuthUser = (FUM.UserName, TaskRole)
