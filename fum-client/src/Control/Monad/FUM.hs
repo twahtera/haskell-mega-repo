@@ -15,12 +15,13 @@ import Data.Constraint (Constraint)
 import Data.Aeson.Compat (FromJSON)
 
 import FUM.Request
-import FUM.Types   (User)
+import FUM.Types   (User, Group)
 
 -- | Class of monads which can perform FUM actions
 class
     ( Monad m
     , MonadFUMC m (Vector User)
+    , MonadFUMC m Group
     )
     => MonadFUM m
   where

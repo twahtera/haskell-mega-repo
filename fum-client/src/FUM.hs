@@ -5,9 +5,11 @@ module FUM (
     -- * Actions
     fumUsers,
     fumList,
+    fumGroup,
     -- * Requests
     fumUsersR,
     fumListR,
+    fumGroupR,
     executeRequest,
     -- * Legacy Methods
     fetchUsers,
@@ -36,7 +38,11 @@ fumUsersR = FumPagedGet "users/"
 
 fumListR :: ListName -> FUM (Vector User)
 fumListR (ListName listName) =
-    FumGet $ "list/" <> listName ^. from packed <> "/"
+    FumGet $ "list/" <> listName ^. unpacked <> "/"
+
+fumGroupR :: GroupName -> FUM Group
+fumGroupR (GroupName name) =
+    FumGet $ "groups/" <> name ^. unpacked <> "/"
 
 -------------------------------------------------------------------------------
 -- Actions
@@ -47,6 +53,9 @@ fumUsers = fumAction fumUsersR
 
 fumList :: MonadFUM m => ListName -> m (Vector User)
 fumList = fumAction . fumListR
+
+fumGroup :: MonadFUM m => GroupName -> m Group
+fumGroup = fumAction . fumGroupR
 
 executeRequest
     :: FromJSON a

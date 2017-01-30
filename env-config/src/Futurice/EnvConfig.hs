@@ -228,6 +228,9 @@ instance FromEnvVar FUM.BaseUrl where
 instance FromEnvVar FUM.ListName where
     fromEnvVar = fmap FUM.ListName . fromEnvVar
 
+instance FromEnvVar FUM.GroupName where
+    fromEnvVar = fmap FUM.GroupName . fromEnvVar
+
 instance FromEnvVar FUM.UserName where
     fromEnvVar = fmap FUM.UserName . fromEnvVar
 
