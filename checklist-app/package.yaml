@@ -15,6 +15,7 @@ dependencies:
   - aeson
   - aeson-compat
   - ansi-wl-pprint
+  - async
   - clay
   - containers
   - crypto-api

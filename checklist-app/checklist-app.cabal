@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.15.0.
+-- This file has been generated from package.yaml by hpack version 0.16.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -30,6 +30,7 @@ library
     , aeson
     , aeson-compat
     , ansi-wl-pprint
+    , async
     , clay
     , containers
     , crypto-api
@@ -99,6 +100,7 @@ executable checklist-app-server
     , aeson
     , aeson-compat
     , ansi-wl-pprint
+    , async
     , clay
     , containers
     , crypto-api
@@ -141,6 +143,7 @@ executable checklist-import
     , aeson
     , aeson-compat
     , ansi-wl-pprint
+    , async
     , clay
     , containers
     , crypto-api
@@ -186,6 +189,7 @@ test-suite unit-tests
     , aeson
     , aeson-compat
     , ansi-wl-pprint
+    , async
     , clay
     , containers
     , crypto-api
