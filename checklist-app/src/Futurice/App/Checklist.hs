@@ -2,6 +2,8 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TupleSections     #-}
 module Futurice.App.Checklist (defaultMain) where
 
 import Prelude ()
@@ -186,7 +188,7 @@ commandImpl
     -> Command Proxy
     -> m Ack
 commandImpl ctx fu cmd =
-    withAuthUser' (AckErr "forbidden") ctx fu $ \_world (fumUsername, _, _) ->
+    withAuthUser' (AckErr "forbidden") ctx fu $ \_world (fumUsername, _) ->
     liftIO $ runLogT "command" (ctxLogger ctx) $ do
         (cmd', res) <- instantiatedCmd
         ctxApplyCmd fumUsername cmd' ctx
@@ -228,17 +230,18 @@ withAuthUser = withAuthUser' forbiddedPage
 withAuthUser'
     :: MonadIO m
     => a                           -- ^ Response to unauthenticated users
-    -> Ctx -> Maybe FUM.UserName
+    -> Ctx
+    -> Maybe FUM.UserName
     -> (World -> AuthUser -> m a)
     -> m a
 withAuthUser' def ctx fu f = do
-    world <- liftIO $ readTVarIO $ ctxWorld ctx
-    case userInfo world of
-        Nothing        -> pure def
-        Just userInfo' -> f world userInfo'
-  where
-    userInfo :: World -> Maybe (FUM.UserName, TaskRole, Location)
-    userInfo world = world ^? worldUsers . ix fu . _Just
+    let fu'      = fu <|> ctxMockUser ctx
+        authUser = fu' >>= \fu'' -> (fu'',) <$> ctxACL ctx ^. at fu''
+    case authUser of
+        Nothing -> pure def
+        Just authUser' -> do
+            world <- liftIO $ readTVarIO (ctxWorld ctx)
+            f world authUser'
 
 -------------------------------------------------------------------------------
 -- Main
@@ -252,16 +255,17 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp checklistApi .~ server
     & serverEnvPfx           .~ "CHECKLISTAPP"
   where
-    mockCredentials = (FUM.UserName "phadej", TaskRoleIT, LocHelsinki)
-
     makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
-    makeCtx cfg logger _cache = do
-        ctx <- newCtx logger (cfgPostgresConnInfo cfg) emptyWorld
+    makeCtx Config {..} logger _cache = do
+        ctx <- newCtx
+            logger
+            cfgPostgresConnInfo
+            cfgFumToken cfgFumBaseurl
+            (cfgFumITGroup, cfgFumHRGroup, cfgFumSupervisorGroup)
+            cfgMockUser
+            emptyWorld
         cmds <- withResource (ctxPostgres ctx) $ \conn ->
             Postgres.fromOnly <$$> Postgres.query_ conn "SELECT cmddata FROM checklist2.commands ORDER BY cid;"
         let world0 = foldl' (flip applyCommand) emptyWorld cmds
-        let world1 = if cfgMockAuth cfg
-            then world0 & worldUsers .~ const (Just mockCredentials)
-            else world0
-        atomically $ writeTVar (ctxWorld ctx) world1
+        atomically $ writeTVar (ctxWorld ctx) world0
         pure ctx

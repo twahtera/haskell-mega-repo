@@ -6,7 +6,6 @@ module Futurice.App.FutuhoursApi.Config (
 
 import Prelude ()
 import Futurice.Prelude
-import Data.Functor.Alt    (Alt (..))
 import Futurice.EnvConfig
 import Network.HTTP.Client (Request, responseTimeout, responseTimeoutMicro)
 
@@ -47,7 +46,3 @@ instance Configure Config where
         <*> optionalAlt (envVar "MOCKUSER")
       where
         f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }
-
--- | Like 'optional' but for 'Alt', not 'Alternative'
-optionalAlt :: (Applicative f, Alt f) => f a -> f (Maybe a)
-optionalAlt x = Just <$> x <!> pure Nothing

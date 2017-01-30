@@ -22,6 +22,20 @@ import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 
 -------------------------------------------------------------------------------
+-- Utilities for aeson
+-------------------------------------------------------------------------------
+
+-- We need this before TH-splices.
+
+(.:??) :: FromJSON a => Object -> Text -> Parser (S.Maybe a)
+obj .:?? key = view strict <$> obj .:? key
+
+emptyToNothing :: Text -> Maybe Text
+emptyToNothing t
+    | isn't _Empty t = Just t
+    | otherwise      = Nothing
+
+-------------------------------------------------------------------------------
 -- Authentication token
 -------------------------------------------------------------------------------
 
@@ -32,6 +46,9 @@ newtype AuthToken = AuthToken { _getAuthToken :: Text }
 makeLenses ''AuthToken
 instance Hashable AuthToken
 instance NFData AuthToken
+
+instance IsString AuthToken where
+    fromString = AuthToken . view packed
 
 class HasAuthToken a where
     authToken :: Lens' a AuthToken
@@ -53,6 +70,9 @@ newtype BaseUrl = BaseUrl { _getBaseUrl :: String }
 makeLenses ''BaseUrl
 instance Hashable BaseUrl
 instance NFData BaseUrl
+
+instance IsString BaseUrl where
+    fromString = BaseUrl . view packed
 
 class HasBaseUrl a where
     baseUrl :: Lens' a BaseUrl
@@ -136,6 +156,27 @@ instance Arbitrary UserName where
         g          = elements ['a'..'z']
 
 -------------------------------------------------------------------------------
+-- Group name
+-------------------------------------------------------------------------------
+
+-- | FUM group name
+newtype GroupName = GroupName { _getGroupName :: Text }
+    deriving (Eq, Ord, Show, Read, Typeable, Generic)
+
+makeLenses ''GroupName
+instance Hashable GroupName
+instance NFData GroupName
+
+instance IsString GroupName where
+    fromString = GroupName . view packed
+
+instance FromJSON GroupName where
+    parseJSON = withText "FUM GroupName" $ pure . GroupName
+
+instance ToJSON GroupName where
+    toJSON = toJSON . _getGroupName
+
+-------------------------------------------------------------------------------
 -- List name
 -------------------------------------------------------------------------------
 
@@ -147,8 +188,14 @@ makeLenses ''ListName
 instance Hashable ListName
 instance NFData ListName
 
+instance IsString ListName where
+    fromString = ListName . view packed
+
 instance FromJSON ListName where
     parseJSON = withText "FUM ListName" $ pure . ListName
+
+instance ToJSON ListName where
+    toJSON = toJSON . _getListName
 
 -------------------------------------------------------------------------------
 -- User status
@@ -221,13 +268,31 @@ userFullName :: Getter User Text
 userFullName = to $ \u -> u ^. userFirst <> " " <> u ^. userLast
 
 -------------------------------------------------------------------------------
--- Utilities for aeson
+-- Group
 -------------------------------------------------------------------------------
 
-(.:??) :: FromJSON a => Object -> Text -> Parser (S.Maybe a)
-obj .:?? key = view strict <$> obj .:? key
+-- Object (fromList [("email",String "teamit@futurice.com"),("users",Array [String "epan",String "itteam",String "jvai",String "kaho",String "lekl",String "lrom",String "emkos",String "ogre",String "rlar",String "tsuo",String "thak"]),("email_aliases",Array []),("resources",Array []),("name",String "TeamIT"),("id",Number 2323.0),("description",String "It Infra Team"),("editor_group",String "TeamIT")])
+data Group = Group
+    { _groupName        :: !GroupName
+    , _groupEmail       :: !Text
+    , _groupDescription :: !Text
+    , _groupEditor      :: !GroupName
+    , _groupUsers       :: !(Vector UserName)
+    , _groupId          :: !Int
+    -- group resources, json key: resources
+    }
+  deriving (Eq, Ord, Show, Read, Typeable, Generic)
 
-emptyToNothing :: Text -> Maybe Text
-emptyToNothing t
-    | isn't _Empty t = Just t
-    | otherwise      = Nothing
+makeLenses ''Group
+instance Hashable Group
+instance NFData Group
+
+instance FromJSON Group where
+    parseJSON = withObject "Group object" $ \v -> Group
+        <$> v .: "name"
+        <*> v .: "email"
+        <*> v .: "description"
+        <*> v .: "editor_group"
+        <*> v .: "users"
+        <*> v .: "id"
+

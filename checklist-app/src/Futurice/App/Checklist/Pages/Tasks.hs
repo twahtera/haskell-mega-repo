@@ -10,15 +10,13 @@ import Futurice.Lucid.Foundation
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
-import qualified FUM
-
 tasksPage
-    :: World                                 -- ^ the world
-    -> (FUM.UserName, TaskRole, Location)    -- ^ logged in user
+    :: World       -- ^ the world
+    -> AuthUser    -- ^ logged in user
     -> Maybe TaskRole
     -> Maybe Checklist
     -> HtmlPage "tasks"
-tasksPage world authUser@(_fu, _viewerRole, _viewerLocation) mrole mlist =
+tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
     let tasks0 = world ^.. worldTasksSorted . folded
         tasks1 = maybe id (filter . rolePredicate) mrole tasks0
         tasks2 = maybe id (filter . checklistPredicate) mlist tasks1

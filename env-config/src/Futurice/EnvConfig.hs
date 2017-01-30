@@ -14,6 +14,7 @@ module Futurice.EnvConfig (
     FromEnvVar (..),
     -- * Helpers
     envConnectInfo,
+    optionalAlt,
     -- * re-exports
     (<!>),
     ) where
@@ -228,6 +229,9 @@ instance FromEnvVar FUM.BaseUrl where
 instance FromEnvVar FUM.ListName where
     fromEnvVar = fmap FUM.ListName . fromEnvVar
 
+instance FromEnvVar FUM.GroupName where
+    fromEnvVar = fmap FUM.GroupName . fromEnvVar
+
 instance FromEnvVar FUM.UserName where
     fromEnvVar = fmap FUM.UserName . fromEnvVar
 
@@ -327,3 +331,11 @@ optimise zs = foldl' f (Set.fromList zs) ms
     g y x
         | y `Set.isProperSubsetOf` x = y
     g _ x = x
+
+-------------------------------------------------------------------------------
+-- Helpers
+-------------------------------------------------------------------------------
+
+-- | Like 'optional' but for 'Alt', not 'Alternative'
+optionalAlt :: (Applicative f, Alt f) => f a -> f (Maybe a)
+optionalAlt x = Just <$> x <!> pure Nothing

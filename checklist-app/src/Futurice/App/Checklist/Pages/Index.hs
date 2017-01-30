@@ -22,7 +22,7 @@ indexPage
     -> Maybe Task
     -> Bool
     -> HtmlPage "indexpage"
-indexPage world today authUser@(_fu, viewerRole, _viewerLocation) mloc mlist mtask showAll =
+indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
     let employees0 = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
         employees1 = maybe id (\l -> filter (has $ employeeLocation . only l)) mloc $ employees0
         employees2 = maybe id (\cl -> filter (has $ employeeChecklist . only (cl ^. identifier))) mlist $ employees1

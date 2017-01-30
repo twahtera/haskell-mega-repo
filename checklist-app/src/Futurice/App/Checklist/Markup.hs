@@ -70,7 +70,7 @@ checklistPage_ title authUser body =
 
 -- http://foundation.zurb.com/sites/docs/top-bar.html
 navigation :: Monad m => AuthUser -> HtmlT m ()
-navigation (fu, viewerRole, _viewerLocation) = do
+navigation (fu, viewerRole) = do
     div_ [ class_ "top-bar" ] $ do
         div_ [ class_ "top-bar-left" ] $ ul_ [ class_ "dropdown menu" ] $ do
             li_ [ class_ "menu-text"] $ do

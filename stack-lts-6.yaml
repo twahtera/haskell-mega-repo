@@ -43,7 +43,7 @@ packages:
 # https://github.com/aloiscochard/machines-directory/pull/7
 - location:
     git: https://github.com/phadej/machines-directory.git
-    commit: ff01ef0cd0ce0ff092eb1d2fcaa64f6fbad547c2
+    commit: 5d848a2912e7b4ccc30db4085f290e4899e92b21 
   extra-dep: true
 extra-deps:
 - aeson-1.0.1.0
