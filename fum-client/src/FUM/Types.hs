@@ -274,7 +274,7 @@ userFullName = to $ \u -> u ^. userFirst <> " " <> u ^. userLast
 -- Object (fromList [("email",String "teamit@futurice.com"),("users",Array [String "epan",String "itteam",String "jvai",String "kaho",String "lekl",String "lrom",String "emkos",String "ogre",String "rlar",String "tsuo",String "thak"]),("email_aliases",Array []),("resources",Array []),("name",String "TeamIT"),("id",Number 2323.0),("description",String "It Infra Team"),("editor_group",String "TeamIT")])
 data Group = Group
     { _groupName        :: !GroupName
-    , _groupEmail       :: !Text
+    , _groupEmail       :: !(Maybe Text)
     , _groupDescription :: !Text
     , _groupEditor      :: !GroupName
     , _groupUsers       :: !(Vector UserName)
@@ -290,7 +290,7 @@ instance NFData Group
 instance FromJSON Group where
     parseJSON = withObject "Group object" $ \v -> Group
         <$> v .: "name"
-        <*> v .: "email"
+        <*> v .:? "email"
         <*> v .: "description"
         <*> v .: "editor_group"
         <*> v .: "users"
