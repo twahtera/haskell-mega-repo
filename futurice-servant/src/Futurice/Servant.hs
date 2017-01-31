@@ -291,7 +291,7 @@ instance HasServer api context => HasServer (SSOUser :> api) context where
         route (Proxy :: Proxy api) context (passToServer subserver ssoUser)
       where
         ssoUser req = FUM.UserName . T.filter isAlpha . TE.decodeLatin1 <$>
-            lookup "HTTP_REMOTE_USER" (requestHeaders req)
+            lookup "REMOTE-USER" (requestHeaders req)
 
 instance HasLink api => HasLink (SSOUser :> api) where
     type MkLink (SSOUser :> api) = MkLink api
