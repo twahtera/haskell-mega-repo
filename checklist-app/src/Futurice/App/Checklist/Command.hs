@@ -302,16 +302,9 @@ applyCommand cmd world = flip execState world $ case cmd of
 
     CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity i) (Identity role) (Identity pr)) ls -> do
         worldTasks . at tid ?= Task tid n i pr role
-        for_ ls $ \(TaskAddition cid app) ->
-            worldLists . ix cid . checklistTasks . at tid ?= app
+        for_ ls $ \(TaskAddition cid app) -> addTask cid tid app
 
-    CmdAddTask cid tid app -> do
-        worldLists . ix cid . checklistTasks . at tid ?= app
-        es <- toList <$> use worldEmployees
-        for_ es $ \e -> do
-            let eid = e ^. identifier
-            when (e ^. employeeChecklist == cid && employeeTaskApplies e app) $ do
-                worldTaskItems . at eid . non mempty . at tid %= Just . fromMaybe TaskItemTodo
+    CmdAddTask cid tid app -> addTask cid tid app
 
     CmdRemoveTask cid tid ->
         worldLists . ix cid . checklistTasks . at tid Lens..= Nothing
@@ -336,6 +329,15 @@ applyCommand cmd world = flip execState world $ case cmd of
 
     CmdTaskItemToggle eid tid d ->
         worldTaskItems . ix eid . ix tid Lens..= d
+  where
+    -- tasks are added with both explicit CmdAddTask and during CmdCreateTask
+    addTask cid tid app = do
+        worldLists . ix cid . checklistTasks . at tid ?= app
+        es <- toList <$> use worldEmployees
+        for_ es $ \e -> do
+            let eid = e ^. identifier
+            when (e ^. employeeChecklist == cid && employeeTaskApplies e app) $ do
+                worldTaskItems . at eid . non mempty . at tid %= Just . fromMaybe TaskItemTodo
 
 transactCommand
     :: (MonadLog m, MonadIO m)
