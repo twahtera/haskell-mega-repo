@@ -59,14 +59,13 @@ server ctx = indexPageImpl ctx
 -------------------------------------------------------------------------------
 
 indexPageImpl
-    :: (MonadIO m, MonadTime m)
-    => Ctx
+    :: Ctx
     -> Maybe FUM.UserName
     -> Maybe Location
     -> Maybe (Identifier Checklist)
     -> Maybe (Identifier Task)
     -> Bool
-    -> m (HtmlPage "indexpage")
+    -> Handler (HtmlPage "indexpage")
 indexPageImpl ctx fu loc cid tid showAll = withAuthUser ctx fu impl
   where
     impl world userInfo = do
@@ -82,12 +81,11 @@ indexPageImpl ctx fu loc cid tid showAll = withAuthUser ctx fu impl
             world ^? worldTasks . ix tid'
 
 tasksPageImpl
-    :: (MonadIO m)
-    => Ctx
+    :: Ctx
     -> Maybe FUM.UserName
     -> Maybe TaskRole
     -> Maybe (Identifier Checklist)
-    -> m (HtmlPage "tasks")
+    -> Handler (HtmlPage "tasks")
 tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
   where
     impl world userInfo =
@@ -98,29 +96,26 @@ tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
             world ^? worldLists . ix cid'
 
 createChecklistPageImpl
-    :: (MonadIO m)
-    => Ctx
+    :: Ctx
     -> Maybe FUM.UserName
-    -> m (HtmlPage "create-checklist")
+    -> Handler (HtmlPage "create-checklist")
 createChecklistPageImpl ctx fu = withAuthUser ctx fu impl
   where
     impl world userInfo = pure $ createChecklistPage world userInfo
 
 createTaskPageImpl
-    :: (MonadIO m)
-    => Ctx
+    :: Ctx
     -> Maybe FUM.UserName
-    -> m (HtmlPage "create-task")
+    -> Handler (HtmlPage "create-task")
 createTaskPageImpl ctx fu = withAuthUser ctx fu impl
   where
     impl world userInfo = pure $ createTaskPage world userInfo
 
 createEmployeePageImpl
-    :: (MonadIO m)
-    => Ctx
+    :: Ctx
     -> Maybe FUM.UserName
     -> Maybe (Identifier Employee)
-    -> m (HtmlPage "create-employee")
+    -> Handler (HtmlPage "create-employee")
 createEmployeePageImpl ctx fu meid = withAuthUser ctx fu impl
   where
     impl world userInfo = pure $ createEmployeePage world userInfo memployee
@@ -129,20 +124,18 @@ createEmployeePageImpl ctx fu meid = withAuthUser ctx fu impl
 
 
 checklistsPageImpl
-    :: MonadIO m
-    => Ctx
+    :: Ctx
     -> Maybe FUM.UserName
-    -> m (HtmlPage "checklists")
+    -> Handler (HtmlPage "checklists")
 checklistsPageImpl ctx fu = withAuthUser ctx fu impl
   where
     impl world userInfo = pure $ checklistsPage world userInfo
 
 taskPageImpl
-    :: (MonadIO m, MonadTime m)
-    => Ctx
+    :: Ctx
     -> Maybe FUM.UserName
     -> Identifier Task
-    -> m (HtmlPage "task")
+    -> Handler (HtmlPage "task")
 taskPageImpl ctx fu tid = withAuthUser ctx fu impl
   where
     impl world userInfo = case world ^? worldTasks . ix tid of
@@ -152,11 +145,10 @@ taskPageImpl ctx fu tid = withAuthUser ctx fu impl
             pure $ taskPage world today userInfo task
 
 checklistPageImpl
-    :: (MonadIO m, MonadTime m)
-    => Ctx
+    :: Ctx
     -> Maybe FUM.UserName
     -> Identifier Checklist
-    -> m (HtmlPage "checklist")
+    -> Handler (HtmlPage "checklist")
 checklistPageImpl ctx fu cid = withAuthUser ctx fu impl
   where
     impl world userInfo = case world ^? worldLists . ix cid of
@@ -166,11 +158,10 @@ checklistPageImpl ctx fu cid = withAuthUser ctx fu impl
             pure $ checklistPage world today userInfo checklist
 
 employeePageImpl
-    :: (MonadIO m)
-    => Ctx
+    :: Ctx
     -> Maybe FUM.UserName
     -> Identifier Employee
-    -> m (HtmlPage "employee")
+    -> Handler (HtmlPage "employee")
 employeePageImpl ctx fu eid = withAuthUser ctx fu impl
   where
     impl world userInfo = pure $ case world ^? worldEmployees . ix eid of
@@ -182,14 +173,13 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
 -------------------------------------------------------------------------------
 
 commandImpl
-    :: MonadIO m
+    :: (MonadIO m, MonadBaseControl IO m, MonadTime m)
     => Ctx
     -> Maybe FUM.UserName
     -> Command Proxy
     -> m Ack
-commandImpl ctx fu cmd =
-    withAuthUser' (AckErr "forbidden") ctx fu $ \_world (fumUsername, _) ->
-    liftIO $ runLogT "command" (ctxLogger ctx) $ do
+commandImpl ctx fu cmd = runLogT "command" (ctxLogger ctx) $
+    withAuthUser' (AckErr "forbidden") ctx fu $ \_world (fumUsername, _) -> do
         (cmd', res) <- instantiatedCmd
         ctxApplyCmd fumUsername cmd' ctx
         pure res
@@ -221,24 +211,27 @@ commandImpl ctx fu cmd =
 
 -- | Read only pages
 withAuthUser
-    :: MonadIO m
+    :: (MonadIO m, MonadBase IO m, MonadTime m)
     => Ctx -> Maybe FUM.UserName
     -> (World -> AuthUser -> m (HtmlPage a))
     -> m (HtmlPage a)
-withAuthUser = withAuthUser' forbiddedPage
+withAuthUser ctx fu f = runLogT "withAuthUser" (ctxLogger ctx) $
+    withAuthUser' forbiddedPage ctx fu (\w u -> lift $ f w u)
 
 withAuthUser'
-    :: MonadIO m
+    :: (MonadIO m, MonadBase IO m, MonadTime m)
     => a                           -- ^ Response to unauthenticated users
     -> Ctx
     -> Maybe FUM.UserName
-    -> (World -> AuthUser -> m a)
-    -> m a
+    -> (World -> AuthUser -> LogT m a)
+    -> LogT m a
 withAuthUser' def ctx fu f = do
     let fu'      = fu <|> ctxMockUser ctx
         authUser = fu' >>= \fu'' -> (fu'',) <$> ctxACL ctx ^. at fu''
     case authUser of
-        Nothing -> pure def
+        Nothing -> do
+            logInfo_ $ "Unauthorised user " <> textShow fu
+            pure def
         Just authUser' -> do
             world <- liftIO $ readTVarIO (ctxWorld ctx)
             f world authUser'
