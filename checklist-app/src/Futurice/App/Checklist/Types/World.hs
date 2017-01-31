@@ -18,7 +18,7 @@ module Futurice.App.Checklist.Types.World (
 -- import Futurice.Generics
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens     (Getter, contains, filtered, ifiltered, to)
+import Control.Lens     (Getter, contains, filtered, ifiltered, to, (<&>))
 import Futurice.Graph   (Graph)
 import Futurice.IdMap   (IdMap)
 
@@ -52,7 +52,24 @@ data World = World
       -- ^ isomorphic with 'worldTaskItems'
     }
 
-makeLenses ''World
+worldEmployees :: Lens' World (IdMap Employee)
+worldEmployees f (World es ts ls is _) = f es <&>
+    \x -> mkWorld x (Graph.toIdMap ts) ls is
+
+worldTasks :: Lens' World (Graph Task)
+worldTasks f (World es ts ls is _) = f ts <&>
+    \x -> mkWorld es (Graph.toIdMap x) ls is
+
+worldLists :: Lens' World (IdMap Checklist)
+worldLists f (World es ts ls is _) = f ls <&>
+    \x -> mkWorld es (Graph.toIdMap ts) x is
+
+worldTaskItems :: Lens' World (Map (Identifier Employee) (Map (Identifier Task) TaskItem))
+worldTaskItems f (World es ts ls is _) = f is <&>
+    \x -> mkWorld es (Graph.toIdMap ts) ls x
+
+worldTaskItems' :: Getter World (Map (Identifier Task) (Map (Identifier Employee) TaskItem))
+worldTaskItems' = to _worldTaskItems'
 
 worldTasksSorted :: Getter World [Task]
 worldTasksSorted = to $ \world -> Graph.revTopSort (world ^. worldTasks)
@@ -96,7 +113,9 @@ mkWorld es ts ls is =
             %~ toMapOf (ifolded . ifiltered (\k _v -> validTid k))
 
         -- TODO: validate is
-    in World es' (Graph.fromIdMap ts') ls' is (swapMapMap is)
+
+        swappedIs = swapMapMap is
+    in World es' (Graph.fromIdMap ts') ls' is swappedIs
 
 -- | Generates consistent worlds.
 instance QC.Arbitrary World where
