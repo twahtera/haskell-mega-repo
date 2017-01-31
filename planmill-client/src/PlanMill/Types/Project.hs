@@ -32,6 +32,7 @@ data Project = Project
     , pCategory                   :: !(Maybe Int)
     , pFinish                     :: !(Maybe UTCTime)
     , pFixedRevenue               :: !(Maybe Double)
+    -- , pFixedWork                  :: !(Maybe Int) -- TODO: failed to parse
     , pFixedWorkEffort            :: !(Maybe Int)
     , pInvoiceAppendix            :: !(Maybe Int)
     , pInvoicedRevenue            :: !(Maybe Double) -- TODO: better type
@@ -79,6 +80,7 @@ instance FromJSON Project where
                 <*> obj .: "category"
                 <*> (getU <$$> obj .:? "finish")
                 <*> obj .: "fixedRevenue"
+                -- <*> obj .: "fixedWork"
                 <*> obj .: "fixedWorkEffort"
                 <*> obj .:? "invoiceAppendix"
                 <*> obj .:? "invoicedRevenue"
