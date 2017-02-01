@@ -4,10 +4,11 @@ module Futurice.App.Checklist.Pages.Task (taskPage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (re, contains, lengthOf, forOf_)
+import Control.Lens              (contains, forOf_, lengthOf, re)
 import Data.Time                 (diffDays)
 import Futurice.Lucid.Foundation
-import Servant.API (safeLink)
+import Servant.API               (safeLink)
+import Web.HttpApiData           (toUrlPiece)
 
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Markup
@@ -34,7 +35,7 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
     row_ $ large_ 12 $ do
         button_
             [ class_ "button"
-            , data_ "futu-link-button" $ uriText
+            , data_ "futu-link-button" $ toUrlPiece
             $ safeLink checklistApi indexPageEndpoint
                   Nothing Nothing (task ^? identifier) defaultShowAll
             ]

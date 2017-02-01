@@ -35,8 +35,6 @@ module Futurice.App.Checklist.Markup (
     toTodoCounter,
     -- * Tasks
     taskCheckbox,
-    -- * URI
-    uriText,
     -- * Defaults
     defaultShowAll,
     ) where
@@ -44,12 +42,13 @@ module Futurice.App.Checklist.Markup (
 import Prelude ()
 import Futurice.Prelude
 import Control.Lens        (Getter, has, non, only, re, to, _Wrapped)
-import Servant.Utils.Links (URI (..), safeLink)
+import Servant.Utils.Links (safeLink)
+import Web.HttpApiData     (toUrlPiece)
 
 import Futurice.App.Checklist.API
+import Futurice.App.Checklist.Clay  (pageParams)
 import Futurice.App.Checklist.Types
 import Futurice.Lucid.Foundation
-import Futurice.App.Checklist.Clay (pageParams)
 
 import qualified Data.Text as T
 import qualified Data.UUID as UUID
@@ -136,7 +135,7 @@ indexPageHref
     :: (HasIdentifier c Checklist, HasIdentifier t Task)
     => Maybe Location -> Maybe c -> Maybe t -> Bool -> Attribute
 indexPageHref mloc mlist mtask showAll =
-    href_ $ uriText $ safeLink checklistApi indexPageEndpoint mloc
+    href_ $ toUrlPiece $ safeLink checklistApi indexPageEndpoint mloc
         (mlist ^? _Just . identifier)
         (mtask ^? _Just . identifier)
         showAll
@@ -145,32 +144,32 @@ tasksPageHref
     :: (HasIdentifier c Checklist)
     => Maybe TaskRole -> Maybe c -> Attribute
 tasksPageHref mrole mlist =
-    href_ $ uriText $ safeLink checklistApi tasksPageEndpoint mrole
+    href_ $ toUrlPiece $ safeLink checklistApi tasksPageEndpoint mrole
         (mlist ^? _Just . identifier)
 
 checklistsPageHref
     :: Attribute
 checklistsPageHref =
-    href_ $ uriText $ safeLink checklistApi checklistsPageEndpoint
+    href_ $ toUrlPiece $ safeLink checklistApi checklistsPageEndpoint
 
 createChecklistPageHref :: Attribute
 createChecklistPageHref =
-    href_ $ uriText $ safeLink checklistApi createChecklistPageEndpoint
+    href_ $ toUrlPiece $ safeLink checklistApi createChecklistPageEndpoint
 
 createTaskPageHref :: Attribute
 createTaskPageHref =
-    href_ $ uriText $ safeLink checklistApi createTaskPageEndpoint
+    href_ $ toUrlPiece $ safeLink checklistApi createTaskPageEndpoint
 
 createEmployeePageHref :: Maybe (Identifier Employee) -> Attribute
 createEmployeePageHref meid =
-    href_ $ uriText $ safeLink checklistApi createEmployeePageEndpoint meid
+    href_ $ toUrlPiece $ safeLink checklistApi createEmployeePageEndpoint meid
 
 taskPageHref
     :: (HasIdentifier t Task)
     => t
     -> Attribute
 taskPageHref t =
-    href_ $ uriText $ safeLink checklistApi taskPageEndpoint
+    href_ $ toUrlPiece $ safeLink checklistApi taskPageEndpoint
         (t ^. identifier)
 
 employeePageHref
@@ -178,7 +177,7 @@ employeePageHref
     => c
     -> Attribute
 employeePageHref e =
-    href_ $ uriText $ safeLink checklistApi employeePageEndpoint
+    href_ $ toUrlPiece $ safeLink checklistApi employeePageEndpoint
         (e ^. identifier)
 
 checklistPageHref
@@ -186,7 +185,7 @@ checklistPageHref
     => c
     -> Attribute
 checklistPageHref l =
-    href_ $ uriText $ safeLink checklistApi checklistPageEndpoint
+    href_ $ toUrlPiece $ safeLink checklistApi checklistPageEndpoint
         (l ^. identifier)
 
 -------------------------------------------------------------------------------
@@ -252,9 +251,6 @@ checklistNameHtml :: Monad m => World -> Maybe Location -> Identifier Checklist 
 checklistNameHtml world mloc i notDone =
     a_ [ indexPageHref mloc (Just i) (Nothing :: Maybe Task) notDone ] $
         world ^. worldLists . at i . non (error "Inconsisten world") . nameHtml
-
-uriText :: URI -> Text
-uriText (URI _ _ path query _) = ("/" <> path <> query) ^. packed
 
 -------------------------------------------------------------------------------
 -- TodoCounter

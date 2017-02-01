@@ -33,12 +33,12 @@ mkAvatar
     -> Maybe Text  -- ^ URL, is mandatory
     -> Maybe Int   -- ^ size, minimum size is 16
     -> Bool        -- ^ greyscale
-    -> ExceptT ServantErr IO DynamicImage'
+    -> Handler DynamicImage'
 mkAvatar _ Nothing _ _ =
     throwError $ ServantErr 400 errMsg (fromString errMsg) []
   where
     errMsg = "'url' query parameter is required"
-mkAvatar (logger, cache, mgr) (Just url) msize grey = ExceptT . fmap (first f) $ do
+mkAvatar (logger, cache, mgr) (Just url) msize grey = mk $ do
     hPutStrLn stderr $ mconcat
         [ "fetching ", T.unpack url
         , " size: ", show msize
@@ -49,10 +49,16 @@ mkAvatar (logger, cache, mgr) (Just url) msize grey = ExceptT . fmap (first f) $
     res <- cachedIO logger cache 3600 url $ httpLbs req mgr
     (fmap . fmap) (addHeader "public, max-age=3600")
         . cachedIO logger cache 3600 (url, size, grey)
-        . pure . avatar size grey . responseBody
+        . pure
+        . avatar size grey
+        . responseBody
         $ res
   where
     size  = max 16 $ fromMaybe 32 msize
+
+    mk :: IO (Either String a) -> Handler a
+    mk action = liftIO action >>= either (throwError . f) pure
+
     f err = ServantErr
         500
         "Avatar conversion error"

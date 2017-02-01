@@ -59,8 +59,9 @@ instance Convertible pub priv => Convertible (a -> pub) (a -> priv) where
     convert env cli x = convert env (cli x)
 
 instance Convertible (ClientM a) (Handler a) where
-    convert env cli = withExceptT transformError $ ExceptT $ runClientM cli env
+    convert env cli = mk $ runClientM cli env
       where
+        mk action = liftIO action >>= either (throwError . transformError) pure
         transformError err = err504 { errBody = fromString $ show err }
 
 -------------------------------------------------------------------------------

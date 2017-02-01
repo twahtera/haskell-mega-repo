@@ -38,7 +38,7 @@ library:
     - http-types
     - lens
     - log-logentries
-    - servant ==0.9.*
+    - servant ==0.10.*
     - servant-cassava
     - servant-lucid
     - servant-server

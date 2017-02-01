@@ -18,8 +18,8 @@ import Futurice.App.Spice.Server.API
 
 type Ctx = (DynMapCache, Logger, Manager, Config)
 
-serveSpiceStats :: Ctx -> ExceptT ServantErr IO Stats
-serveSpiceStats (cache, logger, mgr, cfg) = lift $ cachedIO logger cache 600 () $ do
+serveSpiceStats :: Ctx -> Handler Stats
+serveSpiceStats (cache, logger, mgr, cfg) = liftIO $ cachedIO logger cache 600 () $ do
     msgs <- fetchMessagesLoop (cfgFdOrg cfg) (cfgFdFlow cfg) (cfgFdAuth cfg) mgr
     spiceStats mgr msgs (cfgGhAuth cfg)
 
