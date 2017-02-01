@@ -10,7 +10,8 @@ import Servant.API               (safeLink)
 import Web.HttpApiData           (toQueryParam, toUrlPiece)
 
 import Futurice.App.Checklist.API
-       (checklistApi, createEmployeePageEndpoint, employeeAuditPageEndpoint)
+       (checklistApi, checklistPageEndpoint, createEmployeePageEndpoint,
+       employeeAuditPageEndpoint)
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
@@ -28,12 +29,14 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
     -- Title
     header (employee ^. nameText) []
 
-    -- Info
-    row_ $ large_ 12 $ dl_ $ do
-        dt_ "Checklist"
-        dd_ $ maybe (pure ()) checklistLink mlist
-
+    -- Buttons
     row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
+        for_ mlist $ \cl -> button_
+            [ class_ "button"
+            , data_ "futu-link-button" $ uriText
+            $ safeLink checklistApi checklistPageEndpoint (cl ^. identifier)
+            ]
+            $ toHtml $ "Checklist: " <> cl ^. nameText
         button_
             [ class_ "button"
             , data_ "futu-link-button" $ toUrlPiece

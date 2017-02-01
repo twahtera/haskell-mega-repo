@@ -26,6 +26,7 @@ import Futurice.App.Checklist.Pages.CreateChecklist
 import Futurice.App.Checklist.Pages.CreateEmployee
 import Futurice.App.Checklist.Pages.CreateTask
 import Futurice.App.Checklist.Pages.Employee
+import Futurice.App.Checklist.Pages.EmployeeAudit
 import Futurice.App.Checklist.Pages.Error
        (forbiddedPage, notFoundPage)
 import Futurice.App.Checklist.Pages.Index
@@ -177,9 +178,12 @@ employeeAuditPageImpl
     -> Maybe FUM.UserName
     -> Identifier Employee
     -> Handler (HtmlPage "employee-audit")
-employeeAuditPageImpl ctx fu _eid = withAuthUser ctx fu impl
+employeeAuditPageImpl ctx fu eid = withAuthUser ctx fu impl
   where
-    impl _world _userInfo = pure notFoundPage
+    impl world userInfo = case world ^? worldEmployees . ix eid of
+        Nothing -> pure notFoundPage
+        Just employee -> do
+            pure $ employeeAuditPage world userInfo employee []
 
 -------------------------------------------------------------------------------
 -- Command implementation
