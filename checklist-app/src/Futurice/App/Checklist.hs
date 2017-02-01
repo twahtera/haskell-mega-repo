@@ -51,6 +51,7 @@ server ctx = indexPageImpl ctx
     :<|> checklistPageImpl ctx
     :<|> taskPageImpl ctx
     :<|> employeePageImpl ctx
+    :<|> employeeAuditPageImpl ctx
     :<|> commandImpl ctx
 
 -------------------------------------------------------------------------------
@@ -166,6 +167,19 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
     impl world userInfo = pure $ case world ^? worldEmployees . ix eid of
         Nothing       -> notFoundPage
         Just employee -> employeePage world userInfo employee
+
+-------------------------------------------------------------------------------
+-- Audit
+-------------------------------------------------------------------------------
+
+employeeAuditPageImpl
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> Identifier Employee
+    -> Handler (HtmlPage "employee-audit")
+employeeAuditPageImpl ctx fu _eid = withAuthUser ctx fu impl
+  where
+    impl _world _userInfo = pure notFoundPage
 
 -------------------------------------------------------------------------------
 -- Command implementation
