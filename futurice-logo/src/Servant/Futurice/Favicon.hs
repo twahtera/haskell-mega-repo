@@ -39,4 +39,3 @@ instance SColour c => MimeRender PNG (FutuFavicon c) where
 
 serveFutuFavicon :: Server (FutuFaviconAPI c)
 serveFutuFavicon = pure FutuFavicon
-

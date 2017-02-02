@@ -7,7 +7,7 @@ import Futurice.Prelude
 import Control.Lens              (forOf_, has, re)
 import Futurice.Lucid.Foundation
 import Servant.API               (safeLink)
-import Web.HttpApiData           (toQueryParam)
+import Web.HttpApiData           (toQueryParam, toUrlPiece)
 
 import Futurice.App.Checklist.API    (checklistApi, createEmployeePageEndpoint)
 import Futurice.App.Checklist.Markup
@@ -35,7 +35,7 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
     row_ $ large_ 12 $ do
         button_
             [ class_ "button"
-            , data_ "futu-link-button" $ uriText
+            , data_ "futu-link-button" $ toUrlPiece
             $ safeLink checklistApi createEmployeePageEndpoint $ employee ^? identifier
             ]
             "Copy into new employee"

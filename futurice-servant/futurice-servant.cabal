@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.15.0.
+-- This file has been generated from package.yaml by hpack version 0.16.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -45,7 +45,7 @@ library
     , http-types
     , lens
     , log-logentries
-    , servant ==0.9.*
+    , servant ==0.10.*
     , servant-cassava
     , servant-lucid
     , servant-server

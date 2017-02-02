@@ -1,4 +1,4 @@
-resolver: nightly-2016-12-07
+resolver: nightly-2016-12-31
 packages:
 - ansi-pretty/
 - avar/
@@ -48,8 +48,15 @@ packages:
     commit: 5d848a2912e7b4ccc30db4085f290e4899e92b21 
   extra-dep: true
 extra-deps:
+- cabal-doctest-1
+- binary-orphans-0.1.6.0
 - folds-0.7.1
 - haxl-0.4.0.2
 - recursion-schemes-5.0.1
 - time-parsers-0.1.2.0
+- servant-0.10
+- servant-server-0.10
+- servant-client-0.10
+- servant-swagger-1.1.2.1
+- servant-swagger-ui-0.2.2.2.2.8
 flags: {}

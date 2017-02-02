@@ -31,7 +31,7 @@ import qualified Test.QuickCheck as QC
 projectEndpoint
     :: Ctx
     -> Maybe FUM.UserName
-    -> ExceptT ServantErr IO (Vector Project)
+    -> Handler (Vector Project)
 projectEndpoint _ctx _fumUser = liftIO $ do
     p <- QC.sample' QC.arbitrary
     pure $ p ^. vector
@@ -40,7 +40,7 @@ projectEndpoint _ctx _fumUser = liftIO $ do
 userEndpoint
     :: Ctx
     -> Maybe FUM.UserName
-    -> ExceptT ServantErr IO User
+    -> Handler User
 userEndpoint _ctx _fumUser = liftIO $ do
     -- TODO: how to generate unique values per request?
     _userBalance <- fromInteger <$> randomRIO (-10,40)
@@ -59,7 +59,7 @@ hoursEndpoint
     -> Maybe FUM.UserName
     -> Maybe Day
     -> Maybe Day
-    -> ExceptT ServantErr IO HoursResponse
+    -> Handler HoursResponse
 hoursEndpoint _ctx _fumUser (Just sd) (Just ed) = do
     months <- liftIO $ fmap last $ QC.sample' $ genMonths [ sd .. ed ]
     p <- liftIO $ fillProjects
@@ -159,7 +159,7 @@ entryEndpoint
     :: Ctx
     -> Maybe FUM.UserName
     -> EntryUpdate
-    -> ExceptT ServantErr IO EntryUpdateResponse
+    -> Handler EntryUpdateResponse
 entryEndpoint _ctx _fumUser req = do
     res <- liftIO $ mkEntryEndPoint req
     return res
@@ -170,7 +170,7 @@ entryIdEndpoint
     -> Maybe FUM.UserName
     -> Int
     -> EntryUpdate
-    -> ExceptT ServantErr IO EntryUpdateResponse
+    -> Handler EntryUpdateResponse
 entryIdEndpoint _ctx _fumUser _id req = do
     res <- liftIO $ mkEntryEndPoint req
     -- Set every entryId to 1.
@@ -185,7 +185,7 @@ entryDeleteEndpoint
     -> Maybe FUM.UserName
     -> Int
     -> EntryUpdate
-    -> ExceptT ServantErr IO EntryUpdateResponse
+    -> Handler EntryUpdateResponse
 entryDeleteEndpoint _ctx _fumUser _id _eu = do
     now <- currentTime
     let dummyReq = EntryUpdate

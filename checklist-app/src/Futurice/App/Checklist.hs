@@ -20,7 +20,6 @@ import Futurice.App.Checklist.Ack
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
-import Futurice.App.Checklist.Markup                (uriText)
 import Futurice.App.Checklist.Pages.Checklist
 import Futurice.App.Checklist.Pages.Checklists
 import Futurice.App.Checklist.Pages.CreateChecklist
@@ -191,17 +190,17 @@ commandImpl ctx fu cmd = runLogT "command" (ctxLogger ctx) $
         => CIT x -> Proxy (Identifier x) -> m (Identity (Identifier x))
     genIdentifier CITEmployee Proxy = do
         eid <- Identifier <$> ctxGetCRandom ctx
-        tell $ AckLoad $ uriText $
+        tell $ AckLoad $ toUrlPiece $
             safeLink checklistApi employeePageEndpoint eid
         pure (Identity eid)
     genIdentifier CITTask Proxy = do
         tid <- Identifier <$> ctxGetCRandom ctx
-        tell $ AckLoad $ uriText $
+        tell $ AckLoad $ toUrlPiece $
             safeLink checklistApi taskPageEndpoint tid
         pure (Identity tid)
     genIdentifier CITChecklist Proxy = do
         cid <- Identifier <$> ctxGetCRandom ctx
-        tell $ AckLoad $ uriText $
+        tell $ AckLoad $ toUrlPiece $
             safeLink checklistApi checklistPageEndpoint cid
         pure (Identity cid)
 

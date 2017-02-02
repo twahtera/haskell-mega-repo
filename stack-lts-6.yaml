@@ -1,4 +1,4 @@
-resolver: lts-6.28
+resolver: lts-6.29
 packages:
 - ansi-pretty/
 - avar/
@@ -50,6 +50,8 @@ extra-deps:
 - aeson-extra-0.4.0.0
 - aeson-pretty-0.8.2
 - bifunctors-5.4.1
+- binary-orphans-0.1.6.0
+- cabal-doctest-1
 - clay-0.11
 - comonad-5
 - extra-1.5.1
@@ -66,21 +68,21 @@ extra-deps:
 - kan-extensions-5.0.1
 - lens-4.15.1
 - log-base-0.7
-- trifecta-1.6.1
 - machines-0.6.1
 - machines-directory-0.2.1.0
 - monad-http-0.2.0.0
+- natural-transformation-0.4
 - pointed-5
 - QuickCheck-2.9.2
-- semigroupoids-5.1
-- servant-0.9
-- servant-cassava-0.8
-- servant-client-0.9
-- servant-docs-0.9
-- servant-server-0.9
-- servant-swagger-1.1.2
-- servant-swagger-ui-0.2.0.2.1.5
 - recursion-schemes-5.0.1
+- semigroupoids-5.1
+- servant-0.10
+- servant-cassava-0.8
+- servant-client-0.10
+- servant-docs-0.9
+- servant-server-0.10
+- servant-swagger-1.1.2.1
+- servant-swagger-ui-0.2.2.2.2.8
 - singleton-bool-0.1.2.0
 - snap-core-1.0.0.0
 - snap-server-1.0.1.0
@@ -89,4 +91,5 @@ extra-deps:
 - time-parsers-0.1.2.0
 - transformers-0.5.2.0
 - transformers-compat-0.5.1.4
+- trifecta-1.6.1
 flags: {}
