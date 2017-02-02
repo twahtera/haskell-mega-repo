@@ -4,6 +4,20 @@
 
 ![dependency graph](https://raw.githubusercontent.com/futurice/haskell-mega-repo/master/deps.png)
 
+## Getting started
+
+1. Clone the repository `git clone --recursive git@github.com:futurice/haskell-mega-repo.git`
+    - If you didn't clone recursively, fetch the submodules with `git submodule update --init`
+2. Install native dependencies:
+    - macOS:
+        - `brew install fftw`
+        - https://postgresapp.com/ and `source env-postgres-osx.sh`
+    - Ubuntu: `apt-get install libfftw3-dev libpq-dev`
+3. Build and run *theme-app*
+    - theme-app is a small app without external integrations.
+    - `stack build --fast theme-app`
+    - `stack exec -- theme-app-server`
+
 ## Maintaining
 
 ### Tracking the master
