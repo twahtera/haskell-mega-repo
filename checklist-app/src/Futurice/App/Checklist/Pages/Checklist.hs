@@ -10,7 +10,6 @@ import Futurice.Lucid.Foundation
 
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
-import Futurice.App.Checklist.Types.TaskAppliance (prettyTaskAppliance)
 
 import qualified Futurice.IdMap as IdMap
 
@@ -90,7 +89,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
                         TodoCounter _ _ i j ->
                             toHtml (show i) *> "/" *> toHtml (show j)
-                td_ $ toHtml $ prettyTaskAppliance app
+                td_ $ toHtml app
                 td_ $ forWith_
                     (br_ [])
                     (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l && l ^. identifier /= checklist ^. identifier))
