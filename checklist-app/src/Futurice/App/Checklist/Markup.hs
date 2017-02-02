@@ -203,7 +203,7 @@ checklistLink :: Monad m => Checklist -> HtmlT m ()
 checklistLink cl = a_ [ checklistPageHref cl ] $ cl ^. nameHtml
 
 taskLink :: Monad m => Task -> HtmlT m ()
-taskLink task = a_ [taskPageHref task ] $ task ^. nameHtml
+taskLink task = a_ [ taskPageHref task ] $ task ^. nameHtml
 
 -------------------------------------------------------------------------------
 -- Miscs
