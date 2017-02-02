@@ -43,3 +43,8 @@ css = do
             ".eta-near-future" & backgroundColor (lighten 0.92 orange)
             ".eta-future"      & backgroundColor (lighten 0.95 red)
             ".eta-far-future"  & backgroundColor (lighten 0.95 violet)
+    -- Task appliance classes
+    "span" # ".contract" ? do
+        color "#600"
+    "span" # ".location" ? do
+        color "#060"

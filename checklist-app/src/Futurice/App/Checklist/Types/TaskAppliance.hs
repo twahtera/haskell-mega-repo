@@ -10,11 +10,12 @@ import Algebra.Lattice
        (BoundedJoinSemiLattice (..), BoundedLattice,
        BoundedMeetSemiLattice (..), JoinSemiLattice (..), Lattice,
        MeetSemiLattice (..), joins1, meets1)
-import Control.Applicative      (liftA2)
-import Data.Aeson.Compat        (withText)
-import Data.Functor.Foldable    (cata, embed)
+import Control.Applicative       (liftA2)
+import Data.Aeson.Compat         (withText)
+import Data.Functor.Foldable     (cata, embed)
 import Data.Functor.Foldable.TH
 import Futurice.Generics
+import Futurice.Lucid.Foundation (HtmlT, ToHtml (..), class_, em_, span_)
 import Text.Trifecta
 
 import qualified Data.Text                    as T
@@ -148,10 +149,26 @@ prettyTaskAppliance = go 0
     go _ TAAll               = "all"
     go _ (TANot ta)          = "not " <> go 2 ta
     go d (TAAnd x y)         = pars (d >= 2) $ go 2 x <> " and " <> go 1 y
-    go d (TAOr  x y)         = pars (d >= 1) $ go 1 x <> " or " <> go 0 y
+    go d (TAOr  x y)         = pars (d >= 1) $ go 1 x <> " or "  <> go 0 y
 
     pars True  t = "(" <> t <> ")"
     pars False t = t
+
+instance ToHtml TaskAppliance where
+    toHtmlRaw = toHtml
+    toHtml = go 0
+      where
+        go :: Monad m => Int -> TaskAppliance -> HtmlT m ()
+        go _ (TAContractType ct) = span_ [ class_ "contract" ] $ toHtml $ contractTypeToText ct
+        go _ (TALocation l)      = span_ [ class_ "location" ] $ toHtml $ locationToText l
+        go _ TAAll               = em_ "all"
+        go _ (TANot ta)          = em_ "not " <> go 2 ta
+        go d (TAAnd x y)         = pars (d >= 2) $ go 2 x <> " " <> em_ "and" <> " " <> go 1 y
+        go d (TAOr  x y)         = pars (d >= 1) $ go 1 x <> " " <> em_ "or"  <> " " <> go 0 y
+
+        pars True  t = "(" <> t <> ")"
+        pars False t = t
+
 
 -------------------------------------------------------------------------------
 -- Instance

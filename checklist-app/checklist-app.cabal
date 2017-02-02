@@ -74,6 +74,7 @@ library
       Futurice.App.Checklist.Pages.CreateEmployee
       Futurice.App.Checklist.Pages.CreateTask
       Futurice.App.Checklist.Pages.Employee
+      Futurice.App.Checklist.Pages.EmployeeAudit
       Futurice.App.Checklist.Pages.Error
       Futurice.App.Checklist.Pages.Index
       Futurice.App.Checklist.Pages.Task

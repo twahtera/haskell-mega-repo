@@ -10,6 +10,7 @@ module Futurice.App.Checklist.Markup (
     futuId_,
     futuForm_,
     -- * Link attributes
+    linkToText,
     indexPageHref,
     tasksPageHref,
     checklistsPageHref,
@@ -42,7 +43,7 @@ module Futurice.App.Checklist.Markup (
 import Prelude ()
 import Futurice.Prelude
 import Control.Lens        (Getter, has, non, only, re, to, _Wrapped)
-import Servant.Utils.Links (safeLink)
+import Servant.Utils.Links (Link, safeLink)
 import Web.HttpApiData     (toUrlPiece)
 
 import Futurice.App.Checklist.API
@@ -131,11 +132,14 @@ nameHtml = nameText . to toHtml
 -- Hrefs
 -------------------------------------------------------------------------------
 
+linkToText :: Link -> Text
+linkToText l = "/" <> toUrlPiece l
+
 indexPageHref
     :: (HasIdentifier c Checklist, HasIdentifier t Task)
     => Maybe Location -> Maybe c -> Maybe t -> Bool -> Attribute
 indexPageHref mloc mlist mtask showAll =
-    href_ $ toUrlPiece $ safeLink checklistApi indexPageEndpoint mloc
+    href_ $ linkToText $ safeLink checklistApi indexPageEndpoint mloc
         (mlist ^? _Just . identifier)
         (mtask ^? _Just . identifier)
         showAll
@@ -144,32 +148,32 @@ tasksPageHref
     :: (HasIdentifier c Checklist)
     => Maybe TaskRole -> Maybe c -> Attribute
 tasksPageHref mrole mlist =
-    href_ $ toUrlPiece $ safeLink checklistApi tasksPageEndpoint mrole
+    href_ $ linkToText $ safeLink checklistApi tasksPageEndpoint mrole
         (mlist ^? _Just . identifier)
 
 checklistsPageHref
     :: Attribute
 checklistsPageHref =
-    href_ $ toUrlPiece $ safeLink checklistApi checklistsPageEndpoint
+    href_ $ linkToText $ safeLink checklistApi checklistsPageEndpoint
 
 createChecklistPageHref :: Attribute
 createChecklistPageHref =
-    href_ $ toUrlPiece $ safeLink checklistApi createChecklistPageEndpoint
+    href_ $ linkToText $ safeLink checklistApi createChecklistPageEndpoint
 
 createTaskPageHref :: Attribute
 createTaskPageHref =
-    href_ $ toUrlPiece $ safeLink checklistApi createTaskPageEndpoint
+    href_ $ linkToText $ safeLink checklistApi createTaskPageEndpoint
 
 createEmployeePageHref :: Maybe (Identifier Employee) -> Attribute
 createEmployeePageHref meid =
-    href_ $ toUrlPiece $ safeLink checklistApi createEmployeePageEndpoint meid
+    href_ $ linkToText $ safeLink checklistApi createEmployeePageEndpoint meid
 
 taskPageHref
     :: (HasIdentifier t Task)
     => t
     -> Attribute
 taskPageHref t =
-    href_ $ toUrlPiece $ safeLink checklistApi taskPageEndpoint
+    href_ $ linkToText $ safeLink checklistApi taskPageEndpoint
         (t ^. identifier)
 
 employeePageHref
@@ -177,7 +181,7 @@ employeePageHref
     => c
     -> Attribute
 employeePageHref e =
-    href_ $ toUrlPiece $ safeLink checklistApi employeePageEndpoint
+    href_ $ linkToText $ safeLink checklistApi employeePageEndpoint
         (e ^. identifier)
 
 checklistPageHref
@@ -185,7 +189,7 @@ checklistPageHref
     => c
     -> Attribute
 checklistPageHref l =
-    href_ $ toUrlPiece $ safeLink checklistApi checklistPageEndpoint
+    href_ $ linkToText $ safeLink checklistApi checklistPageEndpoint
         (l ^. identifier)
 
 -------------------------------------------------------------------------------
@@ -199,7 +203,7 @@ checklistLink :: Monad m => Checklist -> HtmlT m ()
 checklistLink cl = a_ [ checklistPageHref cl ] $ cl ^. nameHtml
 
 taskLink :: Monad m => Task -> HtmlT m ()
-taskLink task = a_ [taskPageHref task ] $ task ^. nameHtml
+taskLink task = a_ [ taskPageHref task ] $ task ^. nameHtml
 
 -------------------------------------------------------------------------------
 -- Miscs

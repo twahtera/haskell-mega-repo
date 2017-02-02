@@ -7,9 +7,11 @@ import Futurice.Prelude
 import Control.Lens              (forOf_, has, re)
 import Futurice.Lucid.Foundation
 import Servant.API               (safeLink)
-import Web.HttpApiData           (toQueryParam, toUrlPiece)
+import Web.HttpApiData           (toQueryParam)
 
-import Futurice.App.Checklist.API    (checklistApi, createEmployeePageEndpoint)
+import Futurice.App.Checklist.API
+       (checklistApi, checklistPageEndpoint, createEmployeePageEndpoint,
+       employeeAuditPageEndpoint)
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
@@ -27,18 +29,26 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
     -- Title
     header (employee ^. nameText) []
 
-    -- Info
-    row_ $ large_ 12 $ dl_ $ do
-        dt_ "Checklist"
-        dd_ $ maybe (pure ()) checklistLink mlist
-
-    row_ $ large_ 12 $ do
+    -- Buttons
+    row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
+        for_ mlist $ \cl -> button_
+            [ class_ "button"
+            , data_ "futu-link-button" $ linkToText
+            $ safeLink checklistApi checklistPageEndpoint (cl ^. identifier)
+            ]
+            $ toHtml $ "Checklist: " <> cl ^. nameText
         button_
             [ class_ "button"
-            , data_ "futu-link-button" $ toUrlPiece
+            , data_ "futu-link-button" $ linkToText
             $ safeLink checklistApi createEmployeePageEndpoint $ employee ^? identifier
             ]
             "Copy into new employee"
+        button_
+            [ class_ "button"
+            , data_ "futu-link-button" $ linkToText
+            $ safeLink checklistApi employeeAuditPageEndpoint $ employee ^. identifier
+            ]
+            "Audit log"
 
     -- Edit
     row_ $ large_ 12 $ form_ [ futuId_ "employee-edit", data_ "futu-employee-id" $ employee ^. identifierText ] $ do
