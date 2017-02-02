@@ -33,7 +33,7 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
     row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
         for_ mlist $ \cl -> button_
             [ class_ "button"
-            , data_ "futu-link-button" $ uriText
+            , data_ "futu-link-button" $ toUrlPiece
             $ safeLink checklistApi checklistPageEndpoint (cl ^. identifier)
             ]
             $ toHtml $ "Checklist: " <> cl ^. nameText
@@ -45,7 +45,7 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
             "Copy into new employee"
         button_
             [ class_ "button"
-            , data_ "futu-link-button" $ uriText
+            , data_ "futu-link-button" $ toUrlPiece
             $ safeLink checklistApi employeeAuditPageEndpoint $ employee ^. identifier
             ]
             "Audit log"

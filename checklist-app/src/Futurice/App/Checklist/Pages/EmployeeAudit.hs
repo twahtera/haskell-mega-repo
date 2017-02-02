@@ -7,7 +7,7 @@ import Futurice.Prelude
 --import Control.Lens              (forOf_, has, re)
 import Futurice.Lucid.Foundation
 import Servant.API               (safeLink)
---import Web.HttpApiData           (toQueryParam)
+import Web.HttpApiData           (toUrlPiece)
 
 import Futurice.App.Checklist.API
        (checklistApi, employeePageEndpoint)
@@ -28,7 +28,7 @@ employeeAuditPage _world authUser employee _cmds = checklistPage_ (view nameText
     row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
         button_
             [ class_ "button"
-            , data_ "futu-link-button" $ uriText
+            , data_ "futu-link-button" $ toUrlPiece
             $ safeLink checklistApi employeePageEndpoint $ employee ^. identifier
             ]
             "Employee page"
