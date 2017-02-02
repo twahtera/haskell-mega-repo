@@ -183,7 +183,8 @@ employeeAuditPageImpl ctx fu eid = withAuthUser ctx fu impl
     impl world userInfo = case world ^? worldEmployees . ix eid of
         Nothing -> pure notFoundPage
         Just employee -> do
-            pure $ employeeAuditPage world userInfo employee []
+            cmds <- fetchEmployeeCommands ctx employee
+            pure $ employeeAuditPage world userInfo employee cmds
 
 -------------------------------------------------------------------------------
 -- Command implementation
@@ -221,6 +222,25 @@ commandImpl ctx fu cmd = runLogT "command" (ctxLogger ctx) $
         tell $ AckLoad $ toUrlPiece $
             safeLink checklistApi checklistPageEndpoint cid
         pure (Identity cid)
+
+-------------------------------------------------------------------------------
+-- Commands fetch
+-------------------------------------------------------------------------------
+
+fetchEmployeeCommands
+    :: MonadBaseControl IO m
+    => Ctx
+    -> Employee
+    -> m [(Command Identity, FUM.UserName, UTCTime)]
+fetchEmployeeCommands ctx e = withResource (ctxPostgres ctx) $ \conn ->
+    liftBase $ Postgres.query conn query (e ^. identifier, e ^. employeeChecklist)
+  where
+    query = fromString $ unwords
+        [ "SELECT cmddata, username, updated FROM checklist2.commands"
+        , "WHERE cmddata :: json ->> 'eid' = ? or cmddata :: json ->> 'cid' = ?"
+        , "ORDER BY cid ASC"
+        , ";"
+        ]
 
 -------------------------------------------------------------------------------
 -- Auth

@@ -19,6 +19,7 @@ import Futurice.Generics
 import Servant.API
 
 import qualified Data.UUID as UUID
+import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 
 newtype Identifier a = Identifier UUID
     deriving (Eq, Ord, Show, Typeable, Generic)
@@ -51,11 +52,14 @@ instance ToJSON (Identifier a) where
 instance FromJSON (Identifier a) where
     parseJSON = fmap Identifier . parseJSON
 
+instance Postgres.ToField (Identifier a) where
+    toField (Identifier i) = Postgres.toField i
+
 -------------------------------------------------------------------------------
 -- HasIdentifier
 -------------------------------------------------------------------------------
 
--- | TODO: evaluate if we really need this
+-- | TODO: evaluate if we really need this, we have 'Key'
 class Entity ident => HasIdentifier entity ident | entity -> ident where
     identifier :: Lens' entity (Identifier ident)
 
