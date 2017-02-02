@@ -16,7 +16,7 @@
 3. Build and run *theme-app*
     - theme-app is a small app without external integrations.
     - `stack build --fast theme-app`
-    - `stack exec -- theme-app-server`
+    - `LOGENTRIES_TOKEN=00000000-0000-0000-0000-000000000000 stack exec -- theme-app-server`
 
 ## Maintaining
 
