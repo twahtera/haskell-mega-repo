@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var formId = form.dataset.futuId;
 
     switch (formId) {
-      case "selector": return;
+      case "selector": return selectorForm(form);
       case "employee-create": return employeeCreateForm(form);
       case "employee-edit": return employeeEditForm(form);
       case "checklist-create": return checklistCreateForm(form);
@@ -52,6 +52,24 @@ document.addEventListener("DOMContentLoaded", function () {
     $$("input", form).forEach(disable);
     $$("select", form).forEach(disable);
     $$("textarea", form).forEach(disable);
+  }
+
+  function selectorForm(form) {
+    console.info("Initialising selector form");
+    var btn = $_("button", form);
+    var inputs = $$("select, input", form);
+
+    buttonOnClick(btn, function () {
+      var querys = [];
+      inputs.forEach(function (el) {
+        var value = inputValue(el);
+        if (value !== "" && value !== false) {
+          querys.push(el.name + "=" + encodeURIComponent(value));
+        }
+      });
+
+      location.search = "?" + querys.join("&");
+    });
   }
 
   function employeeCreateForm(form) {
