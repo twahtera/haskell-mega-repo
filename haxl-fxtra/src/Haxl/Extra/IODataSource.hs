@@ -35,7 +35,7 @@ instance Show t => Show (GenIORequest t a) where
 instance Eq t => Eq (GenIORequest t a) where
     (GenIORequest tag _) == (GenIORequest tag' _) = tag == tag'
 
-instance Show t => Haxl.Core.Show1 (GenIORequest t) where show1 = show
+instance Show t => Haxl.Core.ShowP (GenIORequest t) where showp = show
 
 instance Hashable t => Hashable (GenIORequest t a) where
     hashWithSalt salt (GenIORequest tag _) = hashWithSalt salt tag

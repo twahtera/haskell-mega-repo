@@ -35,7 +35,7 @@ instance Hashable (GHR a) where
 instance Show (GHR a) where
     showsPrec d (GHR _ r) = showsPrec d r
 
-instance H.Show1 GHR where show1 = show
+instance H.ShowP GHR where showp = show
 
 instance H.StateKey GHR where
     data State GHR = GHState !Logger !Manager !HTTP.Request

@@ -13,7 +13,7 @@ module Futurice.App.FutuhoursMock.Logic (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens        (Traversal', forOf)
+import Control.Lens        (forOf)
 import Data.Vector.Lens    (vector)
 import Futurice.Time.Month (dayToMonth)
 import Servant

@@ -6,7 +6,6 @@ module Futurice.App.Checklist.Types.TaskItem where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens      (Prism', prism')
 import Data.Aeson.Compat (Value (String), withText)
 import Data.Swagger
        (SwaggerType (SwaggerString), ToParamSchema (..), enum_, type_)

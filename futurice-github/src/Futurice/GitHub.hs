@@ -82,11 +82,11 @@ data SomeTag where
 instance Show SomeTag where
     showsPrec d (MkSomeTag t) = showParen (d > 10)
         $ showString "MkSomeTag (intToSomeRep "
-        . showsPrec 11 (nsToInt t)
+        . showsPrec 11 (hindex t)
         . showString ")"
 
 instance ToJSON SomeTag where
-    toJSON (MkSomeTag t) = toJSON (nsToInt t)
+    toJSON (MkSomeTag t) = toJSON (hindex t)
 
 instance FromJSON SomeTag where
     parseJSON v = do
@@ -97,7 +97,7 @@ instance FromJSON SomeTag where
         mk (MkSomeRep ns) = MkSomeTag ns
 
 instance Binary SomeTag where
-    put (MkSomeTag t) = put (nsToInt t)
+    put (MkSomeTag t) = put (hindex t)
     get = do
         n <- get
         maybe (fail $ "Invalid tag number: " ++ show n) (pure . mk) (intToSomeRep n)
@@ -130,9 +130,9 @@ intToSomeRep n = case sList :: SList xs of
         0 -> Just (MkSomeRep (Z Refl))
         _ -> succSomeRep <$> intToSomeRep (n - 1)
 
-nsToInt :: NS f xs -> Int
-nsToInt (Z _) = 0
-nsToInt (S n) = 1 + nsToInt n
+hindex :: NS f xs -> Int
+hindex (Z _) = 0
+hindex (S n) = 1 + hindex n
 
 eqRep :: NS (Is a) xs -> NS (Is b) xs -> Maybe (a :~: b)
 eqRep (Z Refl) (Z Refl) = Just Refl
@@ -158,7 +158,7 @@ instance Eq SomeRequest where
 
 instance Hashable SomeRequest where
     hashWithSalt salt (MkSomeRequest t r) = salt
-        `hashWithSalt` (nsToInt t)
+        `hashWithSalt` (hindex t)
         `hashWithSalt` r
 
 instance Show SomeRequest where
