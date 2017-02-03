@@ -6,6 +6,7 @@ cache:
   directories:
   - $HOME/.stack
   - .stack-work
+  - $HOME/.local/bin
 
 before_install:
 # Cache name
@@ -21,7 +22,10 @@ before_install:
 # Download and unpack the stack executable
 - mkdir -p ~/.local/bin
 - export PATH=$HOME/.local/bin:$PATH
-- travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+- if [ ! -e ~/.local/bin/stack ]; then
+    travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack';
+    travis_retry curl -L http://oleg.fi/stack.xz | xz -d > ~/.local/bin/stack;
+  fi
 # Version infos
 - stack +RTS -N1 -RTS --version
 - ghc --version
@@ -61,6 +65,7 @@ matrix:
         - libfftw3-dev
         - alex-3.1.7
         - happy-1.19.5
+        - ghc-7.10.3
         - ghc-8.0.1
         - libgmp-dev
 
