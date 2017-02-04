@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.15.0.
+-- This file has been generated from package.yaml by hpack version 0.17.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -32,13 +32,18 @@ library
   build-depends:
       base                  >=4.7   && <4.10
     , base-compat
-    , async
+    , clock
+    , ekg-core
     , futurice-prelude
     , lens
+    , lifted-async
+    , lifted-base
     , monad-logger
+    , mtl
     , stm
-    , transformers
+    , text
     , time
+    , transformers
   exposed-modules:
       Futurice.Periocron
   default-language: Haskell2010
