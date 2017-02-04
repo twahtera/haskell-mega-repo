@@ -6,7 +6,7 @@ module Futurice.App.Checklist.Pages.Index (indexPage) where
 import Prelude ()
 import Futurice.Prelude
 import Control.Lens
-       (Traversal', filtered, has, hasn't, ifoldMapOf, only, re, to, united)
+       (filtered, has, hasn't, ifoldMapOf, only, re, to, united)
 import Data.Time                 (addDays, diffDays)
 import Futurice.Lucid.Foundation
 

@@ -15,11 +15,11 @@ module Futurice.App.Spice.Logic (
     statsGithubRepos,
     ) where
 
-import Futurice.Prelude
 import Prelude ()
+import Futurice.Prelude
 
-import Control.Lens        (Fold, Traversal', failing, folding, to)
-import Data.Char           (isAlphaNum, isDigit, isSpace)
+import Control.Lens (Fold, failing, folding, to)
+import Data.Char    (isAlphaNum, isDigit, isSpace)
 
 import Text.Regex.Applicative.Text (RE', psym, sym)
 

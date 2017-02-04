@@ -59,7 +59,7 @@ module Futurice.Servant (
 import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM               (atomically)
-import Control.Lens                         (Lens, LensLike)
+import Control.Lens                         (LensLike)
 import Control.Monad.Catch                  (fromException, handleAll)
 import Data.Char                            (isAlpha)
 import Data.Swagger                         hiding (port)
