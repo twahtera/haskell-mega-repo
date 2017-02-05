@@ -167,21 +167,19 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp reportsApi .~ server
     & serverEnvPfx         .~ "REPORTSAPP"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
     makeCtx cfg lgr cache = do
         manager <- newManager tlsManagerSettings
         let ctx = (cache, manager, lgr, cfg)
 
-        _ <- spawnPeriocron (Options lgr 60) $ hcollapse $
-            hcmap (Proxy :: Proxy RClass) (K . mkReportPeriocron ctx) reports
+        let jobs = hcollapse $
+                hcmap (Proxy :: Proxy RClass) (K . mkReportPeriocron ctx) reports
 
-        return ctx
+        return (ctx, jobs)
 
-    mkReportPeriocron :: forall r. RClass r => Ctx -> ReportEndpoint r -> (Job, Intervals)
-    mkReportPeriocron ctx (ReportEndpoint r) =
-        ( Job (name ^. packed) (r ctx)
-        , shifted (2 * 60) $ every $ 10 * 60
-        )
+    mkReportPeriocron :: forall r. RClass r => Ctx -> ReportEndpoint r -> Job
+    mkReportPeriocron ctx (ReportEndpoint r) = mkJob (name ^. packed) (r ctx)
+        $ shifted (2 * 60) $ every $ 10 * 60
       where
         name = "Updating report " <> symbolVal (Proxy :: Proxy (RName r))
 

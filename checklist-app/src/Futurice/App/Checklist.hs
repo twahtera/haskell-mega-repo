@@ -285,7 +285,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp checklistApi .~ server
     & serverEnvPfx           .~ "CHECKLISTAPP"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
     makeCtx Config {..} logger _cache = do
         ctx <- newCtx
             logger
@@ -298,4 +298,4 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             Postgres.fromOnly <$$> Postgres.query_ conn "SELECT cmddata FROM checklist2.commands ORDER BY cid;"
         let world0 = foldl' (flip applyCommand) emptyWorld cmds
         atomically $ writeTVar (ctxWorld ctx) world0
-        pure ctx
+        pure (ctx, [])

@@ -47,8 +47,8 @@ main = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp api     .~ server
     & serverEnvPfx      .~ "FAVICON"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
-    makeCtx _cfg logger cache = return (logger, cache)
+    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+    makeCtx _cfg logger cache = return ((logger, cache), [])
 
 -------------------------------------------------------------------------------
 -- IndexPage

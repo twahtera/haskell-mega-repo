@@ -36,7 +36,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp spiceStatsApi .~ server
     & serverEnvPfx            .~ "SPICESTATS"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
     makeCtx cfg logger cache = do
         mgr <- newManager tlsManagerSettings
-        return (cache, logger, mgr, cfg)
+        return ((cache, logger, mgr, cfg), [])

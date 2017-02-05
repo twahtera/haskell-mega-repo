@@ -6,7 +6,7 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-module Futurice.App.PlanMillProxy (defaultMain) where
+module Futurice.App.PlanMillProxy (defaultMain, Job) where
 
 import Prelude ()
 import Futurice.Prelude
@@ -39,7 +39,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp planmillProxyApi .~ server
     & serverEnvPfx        .~ "PLANMILLPROXY"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
     makeCtx (Config cfg connectionInfo) logger cache = do
         postgresPool <- createPool
             (Postgres.connect connectionInfo)
@@ -53,17 +53,17 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                 }
         let jobs =
                 -- See every 5 minutes, if there's something to update in cache
-                [ ( Job "cache update"  $ updateCache ctx
-                  , shifted (3 * 60) $ every $ 5 * 60
-                  )
+                [ mkJob "cache update" (updateCache ctx)
+                  $ shifted (3 * 60) $ every $ 5 * 60
+
                 -- Cleanup cache every three hours
-                , ( Job "cache cleanup" $ cleanupCache ctx
-                  , every $ 180 * 60
-                  )
+                , mkJob "cache cleanup" (cleanupCache ctx)
+                  $ every $ 180 * 60
+
                 -- Update capacities once in a while
-                , ( Job "capacities update" $ updateCapacities ctx
-                  , tail $ every $ 15 * 60
-                  )
+                , mkJob "capacities update" (updateCapacities ctx)
+                  $ shifted (15 * 60) $ every $ 15 * 60
+
                 {-
                 -- Update recent timereports often
                 , ( Job "timereports update" $ updateRecentTimereports ctx
@@ -71,16 +71,11 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                   )
                 -}
                 -- Update timereports
-                , ( Job "update timereports" $ updateAllTimereports ctx
-                  , shifted (5 * 60) $ every $ 45 * 60 -- TODO: see how often it should be run
-                  )
+                , mkJob "update timereports" (updateAllTimereports ctx)
+                  $ shifted (5 * 60) $ every $ 45 * 60 -- TODO: see how often it should be run
 
-                , ( Job "update without timereports" $ updateWithoutTimereports ctx
-                  , shifted (10 * 60) $ every $ 2 * 60 * 60
-                  )
+                , mkJob "update without timereports" (updateWithoutTimereports ctx)
+                  $ shifted (10 * 60) $ every $ 2 * 60 * 60
                 ]
 
-        -- Spawn periocron, polling each minute
-        _ <- spawnPeriocron (Options logger 60) jobs
-
-        pure ctx
+        pure (ctx, jobs)
