@@ -23,6 +23,7 @@ import Prelude ()
 import Futurice.Prelude
 import Control.Monad.Catch              (handle)
 import Control.Monad.PlanMill           (planmillQuery)
+import Data.Aeson.Compat                (object, (.=))
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, taggedDecode, taggedEncode)
 import Data.Constraint
@@ -186,7 +187,13 @@ updateCache :: Ctx -> IO ()
 updateCache ctx = runLIO ctx $ \conn -> do
     qs <- handleSqlError [] $ Postgres.query_ conn selectQuery
     logInfo_ $ "Updating " <> textShow (length qs) <> " cache items"
-    for_ qs $ \(Postgres.Only (SomeQuery q)) -> fetch conn q
+    for_ qs $ \(Postgres.Only (SomeQuery q)) -> do
+        res <- fetch conn q
+        case res of
+            Right () -> pure ()
+            Left exc -> do
+                logAttention "Update failed" $ object [ "query" .= q, "exc" .= show exc ]
+                void $ handleSqlError 0 $ Postgres.execute conn deleteQuery (Postgres.Only q)
   where
     fetch :: Postgres.Connection -> Query a -> LIO (Either SomeException ())
     fetch conn q =
@@ -199,8 +206,8 @@ updateCache ctx = runLIO ctx $ \conn -> do
         nfdataDict = queryDict (Proxy :: Proxy NFData) q
 
     fetch'
-      :: (Binary a, HasStructuralInfo a, HasSemanticVersion a)
-      => Postgres.Connection -> Query a -> LIO (Either SomeException ())
+        :: (Binary a, HasStructuralInfo a, HasSemanticVersion a)
+        => Postgres.Connection -> Query a -> LIO (Either SomeException ())
     fetch' conn q = liftIO $ tryDeep $ runLogT' ctx $ do
         x <- fetchFromPlanMill ctx q
         storeInPostgres conn q x
@@ -212,6 +219,13 @@ updateCache ctx = runLIO ctx $ \conn -> do
         , "WHERE current_timestamp - updated > (" ++ genericAge ++ " :: interval) * (1 + variance) AND viewed > 0"
         , "ORDER BY viewed"
         , "LIMIT 1000"
+        , ";"
+        ]
+
+    deleteQuery :: Postgres.Query
+    deleteQuery = fromString $ unwords $
+        [ "DELETE FROM planmillproxy.cache"
+        , "WHERE query = ?"
         , ";"
         ]
 
