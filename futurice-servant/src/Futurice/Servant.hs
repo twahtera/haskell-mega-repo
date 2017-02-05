@@ -54,6 +54,8 @@ module Futurice.Servant (
     CachePolicy(..),
     -- * Middlewares
     logStdoutDev,
+    -- * Re-export
+    Job,
     ) where
 
 import Prelude ()
@@ -69,6 +71,8 @@ import Futurice.Cache
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
 import Futurice.EnvConfig                   (Configure, getConfigWithPorts)
+import Futurice.Periocron
+       (Job, defaultOptions, every, mkJob, spawnPeriocron)
 import GHC.Prim                             (coerce)
 import Log.Backend.Logentries               (withLogentriesLogger)
 import Network.Wai
@@ -87,12 +91,14 @@ import System.Remote.Monitoring             (forkServer, serverMetricStore)
 
 import qualified Data.Aeson               as Aeson
 import qualified Data.Text                as T
-import qualified Data.UUID.Types          as UUID
 import qualified Data.Text.Encoding       as TE
+import qualified Data.UUID.Types          as UUID
 import qualified FUM
 import qualified Futurice.DynMap          as DynMap
 import qualified Network.HTTP.Types       as H
 import qualified Network.Wai.Handler.Warp as Warp
+import qualified System.Metrics           as Metrics
+import qualified System.Metrics.Json      as Metrics
 
 type FuturiceAPI api colour =
     FutuFaviconAPI colour
@@ -201,8 +207,8 @@ serverColour = lens (const Proxy) $ \sc _ -> coerce sc
 futuriceServerMain
     :: forall cfg ctx api colour.
        (Configure cfg, HasSwagger api, HasServer api '[], SColour colour)
-    => (cfg -> Logger -> DynMapCache -> IO ctx)
-       -- ^ Initialise the context for application
+    => (cfg -> Logger -> DynMapCache -> IO (ctx, [Job]))
+       -- ^ Initialise the context for application, add periocron jobs
     -> ServerConfig I colour ctx api
        -- ^ Server configuration
     -> IO ()
@@ -221,12 +227,16 @@ futuriceServerMain makeCtx (SC t d server middleware (I envpfx)) =
 
   where
     main cfg p ekgP cache logger = do
-        ctx            <- makeCtx cfg logger cache
+        (ctx, jobs)    <- makeCtx cfg logger cache
         let server'    =  futuriceServer t d cache proxyApi (server ctx)
                        :: Server (FuturiceAPI api colour)
 
         store      <- serverMetricStore <$> forkServer "localhost" ekgP
         waiMetrics <- registerWaiMetrics store
+
+        let jobs' = mkJob "stats" (ekgJob logger store) (every $ 5 * 60)
+                  : jobs
+        _ <- spawnPeriocron (defaultOptions logger) store jobs'
 
         runLogT "futurice-servant" logger $ do
             logInfo_ $ "Starting " <> t <> " at port " <> textShow p
@@ -238,6 +248,11 @@ futuriceServerMain makeCtx (SC t d server middleware (I envpfx)) =
             $ metrics waiMetrics
             $ middleware ctx
             $ serve proxyApi' server'
+
+    ekgJob :: Logger -> Metrics.Store -> IO ()
+    ekgJob logger store = runLogT "ekg" logger $ do
+        sample <- liftIO $ Metrics.sampleAll store
+        logInfo "ekg sample" (Metrics.sampleToJson sample)
 
     handler logger e = do
         runLogT "futurice-servant" logger $ logAttention_ $ textShow e

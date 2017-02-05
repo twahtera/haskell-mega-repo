@@ -152,7 +152,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverMiddleware   .~ (\ctx -> basicAuth' (checkCreds ctx) "P-R-O-X-Y")
     & serverEnvPfx       .~ "PROXYMGMT"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
     makeCtx Config {..} _logger _cache = do
         mgr                  <- newManager tlsManagerSettings
         reportsAppBaseurl    <- parseBaseUrl cfgReportsAppBaseurl
@@ -163,7 +163,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             (Postgres.connect cfgPostgresConnInfo)
             Postgres.close
             1 10 5
-        pure $ Ctx
+        pure $ flip (,) [] $ Ctx
             { ctxManager              = mgr
             , ctxPostgresPool         = postgresPool
             , ctxReportsAppBaseurl    = reportsAppBaseurl

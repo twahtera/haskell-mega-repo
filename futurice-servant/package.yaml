@@ -28,6 +28,8 @@ library:
     - base-compat
     - dynmap-cache
     - ekg
+    - ekg-core
+    - ekg-json
     - env-config
     - exceptions
     - fum-client
@@ -38,6 +40,7 @@ library:
     - http-types
     - lens
     - log-logentries
+    - periocron
     - servant ==0.10.*
     - servant-cassava
     - servant-lucid

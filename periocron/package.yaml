@@ -25,10 +25,15 @@ library:
   dependencies:
     - base                  >=4.7   && <4.10
     - base-compat
-    - async
+    - clock
+    - ekg-core
     - futurice-prelude
     - lens
+    - lifted-async
+    - lifted-base
     - monad-logger
+    - mtl
     - stm
-    - transformers
+    - text
     - time
+    - transformers

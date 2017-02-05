@@ -34,7 +34,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
     & serverEnvPfx          .~ "CONTACTSAPI"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
     makeCtx Config {..} logger cache = do
         mgr <- newManager tlsManagerSettings
         now <- currentTime
@@ -63,7 +63,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         let action = cachedIO logger cache 3600 () getContacts
 
         -- Periodically try to fetch new data
-        _ <- spawnPeriocron (Options logger 300)
-            [ (Job "update contacts" action, every 300)
-            ]
-        pure action
+        let job = mkJob "update contacts" action $ every 300
+
+        pure (action, [job])

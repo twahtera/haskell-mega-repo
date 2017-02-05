@@ -38,30 +38,28 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp githubProxyApi .~ server
     & serverEnvPfx        .~ "GITHUBPROXY"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
     makeCtx (Config auth connectionInfo) logger cache = do
         postgresPool <- createPool
             (Postgres.connect connectionInfo)
             Postgres.close
             1 10 5
+
         let ctx = Ctx
                 { ctxCache        = cache
                 , ctxGitHubAuth   = auth
                 , ctxPostgresPool = postgresPool
                 , ctxLogger       = logger
                 }
+
         let jobs =
                 -- See every 5 minutes, if there's something to update in cache
-                [ ( Job "cache update"  $ updateCache ctx
-                  , shifted (3 * 60) $ every $ 5 * 60
-                  )
+                [ mkJob "cache update"  (updateCache ctx)
+                  $ shifted (3 * 60) $ every $ 5 * 60
+
                 -- Cleanup cache every three hours
-                , ( Job "cache cleanup" $ cleanupCache ctx
-                  , every $ 180 * 60
-                  )
+                , mkJob "cache cleanup" (cleanupCache ctx)
+                  $ every $ 180 * 60
                 ]
 
-        -- Spawn periocron, polling each minute
-        _ <- spawnPeriocron (Options logger 60) jobs
-
-        pure ctx
+        pure (ctx, jobs)

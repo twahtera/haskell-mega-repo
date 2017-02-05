@@ -39,14 +39,14 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC2))
     & serverEnvPfx          .~ "FUTUHOURSAPI"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO Ctx
+    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
     makeCtx config logger _cache = do
         now <- currentTime
         mgr <- newManager tlsManagerSettings
         let integrConfig = makeIntegrationsConfig now logger mgr config
         pmLookupMap <- runIntegrations integrConfig fumPlanmillMap
         pmLookupMapT <- newTVarIO pmLookupMap
-        pure $ Ctx
+        pure $ flip (,) [] $ Ctx
             { ctxPlanmillUserLookup = pmLookupMapT
             , ctxPlanmillCfg        = cfgPlanmillCfg config
             , ctxMockUser           = cfgMockUser config

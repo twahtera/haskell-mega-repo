@@ -103,13 +103,13 @@ initDataSourceBatch lgr mgr req = QueryFunction queryFunction
         -- We execute queries in batches
         let batchSize = clamp (32 ... maxBatchSize) $ 1 + length blockedFetches `div` 4
         let blockedFetchesChunks = chunksOf batchSize blockedFetches
-        -- TODO: write own logging lib, we don't like monad-logger that much
         -- startTime <- currentTime
         --
         asyncs <- for blockedFetchesChunks
             $ \bf -> fmap (bf,) . async
             $ runLogT "planmill-haxl" lgr $ do
-                logTrace "requesting" (Aeson.toJSON $ map extractQuery bf)
+                logTrace ("requesting " <> textShow (length bf) <> " queries") $
+                    Aeson.toJSON $ map extractQuery $ take 3 bf
                 liftIO $ do
                     res <- HTTP.httpLbs (mkRequest bf) mgr
                     -- Use for debugging:
