@@ -44,6 +44,7 @@ library:
   source-dirs: src
   dependencies:
     - aeson
+    - aeson-compat
     - binary
     - binary-tagged
     - bytestring
