@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.1.
+-- This file has been generated from package.yaml by hpack version 0.17.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -33,11 +33,11 @@ library
     , clay
     , file-embed
     , futurice-prelude
-    , futurice-servant
     , language-javascript >= 0.6.0.8 && <0.7
     , lens
     , lucid
     , mmorph
+    , swagger2
     , template-haskell
     , text
   exposed-modules:

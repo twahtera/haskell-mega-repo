@@ -38,12 +38,12 @@ module Futurice.Lucid.Foundation (
 
 import Prelude ()
 import Futurice.Prelude
+import Data.Swagger (ToSchema (..), NamedSchema (..))
 import Clay                   (Css, render)
 import Control.Monad.Morph    (hoist)
 import Data.FileEmbed         (embedStringFile)
 import Futurice.JavaScript
 import Futurice.JavaScript.TH
-import Futurice.Servant
 import GHC.TypeLits           (KnownSymbol, Symbol, symbolVal)
 import Lucid                  hiding (for_)
 
