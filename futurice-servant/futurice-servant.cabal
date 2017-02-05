@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.16.0.
+-- This file has been generated from package.yaml by hpack version 0.17.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -35,6 +35,8 @@ library
     , base-compat
     , dynmap-cache
     , ekg
+    , ekg-core
+    , ekg-json
     , env-config
     , exceptions
     , fum-client
@@ -45,6 +47,7 @@ library
     , http-types
     , lens
     , log-logentries
+    , periocron
     , servant ==0.10.*
     , servant-cassava
     , servant-lucid
