@@ -40,6 +40,7 @@ import Prelude ()
 import Futurice.Prelude
 import Data.Swagger (ToSchema (..), NamedSchema (..))
 import Clay                   (Css, render)
+import Futurice.Lucid.Style   (css)
 import Control.Monad.Morph    (hoist)
 import Data.FileEmbed         (embedStringFile)
 import Futurice.JavaScript
@@ -47,7 +48,6 @@ import Futurice.JavaScript.TH
 import GHC.TypeLits           (KnownSymbol, Symbol, symbolVal)
 import Lucid                  hiding (for_)
 
-import qualified Data.Text as T
 import qualified Lucid     as L
 
 embeddedFoundationStyle_ :: Monad m => HtmlT m ()
@@ -153,16 +153,7 @@ pageImpl t p b = HtmlPage $ doctypehtml_ $ do
         meta_ [httpEquiv_ "x-ua-compatible", content_"ie=edge"]
         embeddedFoundationStyle_
         embeddedLodash_
-        -- TODO: rework, use @clay@
-        style_ $ T.unlines
-            [ ".emphasize td { font-weight: bold; background: #eee }"
-            , ".emphasize2 td { font-style: italic; background: #efe; }"
-            , "h1, h2, h3, h4, li, td, div, span, b { font-family: \"Lucida Grande\", Helvetica, Arial, sans-serif; }"
-            , "* { font-size: 11pt; }"
-            , "h1 { font-size: 20pt; font-weight: bold; }"
-            , "h2 { font-size: 15pt; font-weight: bold; }"
-            , "h3 { font-size: 13pt; font-weight: bold; }"
-            ]
+        style_ $ view strict $ render css
         -- additional styles
         for_ (p ^. pageCss) $ style_ . view strict . render
         -- additional js
