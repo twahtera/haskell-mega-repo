@@ -68,7 +68,17 @@ hoursEndpoint
     -> Maybe Day
     -> Maybe Day
     -> Handler HoursResponse
-hoursEndpoint = error "hoursEndpoint: implement me"
+hoursEndpoint _ctx _fu _start _end =
+  -- mock:"
+  pure $ HoursResponse
+      { _hoursResponseDefaultWorkHours = 7.5
+      , _hoursResponseProjects         = projects
+      , _hoursResponseMonths           = mkHoursMonth holidayNames entries
+      }
+    where
+      holidayNames = mempty
+      entries      = mempty
+      projects     = mempty
 
 -- | @POST /entry@
 entryEndpoint
