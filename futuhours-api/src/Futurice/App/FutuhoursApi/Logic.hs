@@ -15,7 +15,7 @@ import Control.Concurrent.STM (readTVarIO)
 import Data.Aeson             (FromJSON)
 import Data.Constraint
 import Futurice.Time          (ndtConvert')
-import Servant                (Handler, err403)
+import Servant                (Handler, err400, err403)
 
 import Futurice.App.FutuhoursApi.Ctx
 import Futurice.App.FutuhoursApi.Types
@@ -68,17 +68,34 @@ hoursEndpoint
     -> Maybe Day
     -> Maybe Day
     -> Handler HoursResponse
-hoursEndpoint _ctx _fu _start _end =
-  -- mock:"
-  pure $ HoursResponse
-      { _hoursResponseDefaultWorkHours = 7.5
-      , _hoursResponseProjects         = projects
-      , _hoursResponseMonths           = mkHoursMonth holidayNames entries
-      }
-    where
-      holidayNames = mempty
-      entries      = mempty
-      projects     = mempty
+hoursEndpoint ctx mfum start end = do
+    interval <- maybe (throwError err400) pure interval'
+    authorisedUser ctx mfum $ \_fumusername pmUser -> do
+        let pmUid = pmUser ^. PM.identifier
+        reports <- PM.planmillAction $ PM.timereportsFromIntervalFor interval pmUid
+        let entries = reportToEntry <$> toList reports
+        pure $ HoursResponse
+            { _hoursResponseDefaultWorkHours = 7.5 -- TODO
+            , _hoursResponseProjects         = projects
+            , _hoursResponseMonths           = mkHoursMonth holidayNames entries
+            }
+  where
+    interval'     = (\x y -> PM.ResultInterval PM.IntervalStart $ x PM.... y)
+        <$> start <*> end
+    holidayNames = mempty -- TODO
+    projects     = mempty -- TODO
+
+    reportToEntry :: PM.Timereport -> Entry
+    reportToEntry tr = Entry
+        { _entryId          = tr ^. PM.identifier
+        , _entryProjectId   = fromMaybe (PM.Ident 0) $ PM.trProject tr -- TODO: maybe case
+        , _entryTaskId      = PM.trTask tr
+        , _entryDay         = PM.trStart tr
+        , _entryDescription = fromMaybe "" $ PM.trComment tr
+        , _entryClosed      = False -- TODO
+        , _entryHours       = ndtConvert' $ PM.trAmount tr
+        , _entryBillable    = EntryTypeNotBillable -- TODO, check trBillableStatus
+        }
 
 -- | @POST /entry@
 entryEndpoint

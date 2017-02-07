@@ -103,7 +103,7 @@ entries =
         , _entryProjectId   = absenceProject ^. projectId
         , _entryTaskId      = absenceProject ^. projectFirstTaskId (PM.Ident 2)
         , _entryDescription = absenceProject ^. projectLatestDescription
-        , _entryHours       = 7.5
+        , _entryHours       = 8
         , _entryClosed      = False
         , _entryBillable    = EntryTypeOther
         }
@@ -123,7 +123,7 @@ entries =
         , _entryProjectId   = absenceProject ^. projectId
         , _entryTaskId      = absenceProject ^. projectFirstTaskId (PM.Ident 4)
         , _entryDescription = absenceProject ^. projectLatestDescription
-        , _entryHours       = 2.5
+        , _entryHours       = 3
         , _entryClosed      = False
         , _entryBillable    = EntryTypeOther
         }
@@ -133,7 +133,7 @@ entries =
         , _entryProjectId   = customerProject ^. projectId
         , _entryTaskId      = fromMaybe (PM.Ident 5) $ customerProject ^? projectTasks . traverse .  taskId
         , _entryDescription = "Customer work"
-        , _entryHours       = 5.0
+        , _entryHours       = 5
         , _entryClosed      = False
         , _entryBillable    = EntryTypeBillable
         }
@@ -143,7 +143,7 @@ entries =
         , _entryProjectId   = inactiveProject ^. projectId
         , _entryTaskId      = inactiveProject ^. projectFirstTaskId (PM.Ident 6)
         , _entryDescription = inactiveProject ^. projectLatestDescription
-        , _entryHours       = 9.0
+        , _entryHours       = 9
         , _entryClosed      = True
         , _entryBillable    = EntryTypeBillable
         }
@@ -153,7 +153,7 @@ entries =
         , _entryProjectId   = inactiveProject ^. projectId
         , _entryTaskId      = inactiveProject ^. projectFirstTaskId (PM.Ident 7)
         , _entryDescription = inactiveProject ^. projectLatestDescription
-        , _entryHours       = 7.5
+        , _entryHours       = 8
         , _entryClosed      = True
         , _entryBillable    = EntryTypeBillable
         }

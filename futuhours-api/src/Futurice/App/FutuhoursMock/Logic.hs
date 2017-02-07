@@ -146,7 +146,7 @@ mkEntryEndPoint req = do
             , _userProfilePicture="https://raw.githubusercontent.com/futurice/spiceprogram/gh-pages/assets/img/logo/chilicorn_no_text-128.png"
             }
     let hoursResponse = HoursUpdateResponse
-            { _hoursUpdateResponseDefaultWorkHours = 7.5
+            { _hoursUpdateResponseDefaultWorkHours = 8
             , _hoursUpdateResponseProjects         = ps
             , _hoursUpdateResponseMonths           = months }
     pure $ EntryUpdateResponse
@@ -193,7 +193,7 @@ entryDeleteEndpoint _ctx _fumUser _id _eu = do
             , _euProjectId   = PM.Ident 1
             , _euDescription = "test"
             , _euDate        = utctDay now
-            , _euHours       = 7.5
+            , _euHours       = 8
             , _euClosed      = Nothing
             }
     res <- liftIO $ mkEntryEndPoint dummyReq
