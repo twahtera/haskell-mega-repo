@@ -74,16 +74,17 @@ data Entry = Entry
     , _entryDay         :: !Day
     , _entryDescription :: !Text
     , _entryClosed      :: !Bool
-    , _entryHours       :: !Float
+    , _entryHours       :: !(NDT 'Hours Centi)
     , _entryBillable    :: !EntryType
     }
   deriving (Eq, Show, Typeable, Generic)
 
 entryUtilizationAvg :: Getter Entry (Maybe (Average Float))
-entryUtilizationAvg = to $ \entry -> case _entryBillable entry of
-    EntryTypeBillable    -> Just $ Average (_entryHours entry) 100
-    EntryTypeNotBillable -> Just $ Average (_entryHours entry) 0
-    EntryTypeOther       -> Nothing
+entryUtilizationAvg = to $ \entry ->
+    let NDT hours = _entryHours entry in case _entryBillable entry of
+        EntryTypeBillable    -> Just $ Average (realToFrac hours) 100
+        EntryTypeNotBillable -> Just $ Average (realToFrac hours) 0
+        EntryTypeOther       -> Nothing
 
 -- TODO: perhaps a lens getter for an Entry?
 
@@ -110,7 +111,7 @@ data EntryUpdate = EntryUpdate
     , _euProjectId   :: PM.ProjectId
     , _euDescription :: !Text
     , _euDate        :: !Day
-    , _euHours       :: !Float
+    , _euHours       :: !(NDT 'Hours Centi)
     , _euClosed      :: !(Maybe Bool)
     }
   deriving (Eq, Show, Typeable, Generic)
@@ -139,7 +140,7 @@ data User = User
 -- TODO: is it UI feature?
 data HoursDay = HoursDay
     { _dayHolidayName :: !(Maybe Text)
-    , _dayHours       :: !Float
+    , _dayHours       :: !(NDT 'Hours Centi)
     , _dayEntries     :: ![Entry]
     , _dayClosed      :: !Bool -- ^ TODO: Maybe Bool, why maybe?
     }
@@ -148,7 +149,7 @@ data HoursDay = HoursDay
 defaultHoursDay :: HoursDay
 defaultHoursDay = HoursDay
     { _dayHolidayName = Nothing
-    , _dayHours       = 0.0
+    , _dayHours       = 0
     , _dayEntries     = []
     , _dayClosed      = False
     }
@@ -157,14 +158,14 @@ defaultHoursDay = HoursDay
 -- Keep different types now; perhaps refactor UI to lessen Backend types in Future *shrug*
 data HoursDayUpdate = HoursDayUpdate
     { _hoursDayUpdateHolidayName :: !(Maybe Text)
-    , _hoursDayUpdateHours       :: !Float
+    , _hoursDayUpdateHours       :: !(NDT 'Hours Centi)
     , _hoursDayUpdateEntry       :: !(Maybe Entry)
     }
   deriving (Eq, Show, Typeable, Generic)
 
 -- | TODO: add a '_samples' of Utilisation rate weighted average.
 data HoursMonth = HoursMonth
-    { _monthHours           :: !Float
+    { _monthHours           :: !(NDT 'Hours Centi)
     , _monthUtilizationRate :: !Float
     , _monthDays            :: Map Day HoursDay -- ^ invariant days of the same month
     }

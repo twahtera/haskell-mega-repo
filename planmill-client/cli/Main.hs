@@ -84,7 +84,7 @@ myProjects = do
 -- Timereports
 -------------------------------------------------------------------------------
 
-myTimereports :: ( MonadPlanMill m, MonadIO m, MonadThrow m) => m ()
+myTimereports :: (MonadPlanMill m, MonadIO m) => m ()
 myTimereports = do
     me' <- planmillAction me
     putPretty me'
@@ -93,10 +93,8 @@ myTimereports = do
     putPretty u
     t <- traverse (planmillAction . team) (uTeam u)
     putPretty t
-    interval <- mkInterval
-        (utctDay $(mkUTCTime "2016-03-01T00:00:00.000Z"))
-        (utctDay $(mkUTCTime "2016-05-01T00:00:00.000Z"))
-    let interval' = ResultInterval IntervalStart $ intervalDayToIntervalUTC interval
+    let interval = $(mkDay "2016-03-01") ... $(mkDay "2016-05-01")
+    let interval' = ResultInterval IntervalStart interval
     trs <- planmillVectorAction $ timereportsFromIntervalFor interval' ident
     putPretty trs
 
@@ -104,11 +102,11 @@ myTimereports = do
 -- Capacity calendar
 -------------------------------------------------------------------------------
 
-capacityCalendar :: (MonadPlanMill m, MonadIO m, MonadThrow m) => m ()
+capacityCalendar :: (MonadPlanMill m, MonadIO m) => m ()
 capacityCalendar = do
     me' <- planmillAction me
     putPretty me'
-    interval <- mkInterval $(mkDay "2016-01-01") $(mkDay "2016-02-01")
+    let interval = $(mkDay "2016-01-01") ... $(mkDay "2016-02-01")
     cc <- planmillVectorAction $ userCapacity interval $ Ident 17557
     putPretty cc
 

@@ -20,3 +20,6 @@ instance ToJSON UOffset where
 
 showPlanmillUTCTime :: UTCTime -> String
 showPlanmillUTCTime = formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S.000+00:00"
+
+showPlanmillDay :: Day -> String
+showPlanmillDay d = showPlanmillUTCTime (UTCTime d 0)
