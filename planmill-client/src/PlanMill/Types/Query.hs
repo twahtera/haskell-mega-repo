@@ -59,8 +59,7 @@ import PlanMill.Types.Project        (Project, Projects)
 import PlanMill.Types.Request
        (PlanMill (..), QueryString, planMillGetQs, planMillPagedGetQs)
 import PlanMill.Types.ResultInterval
-       (IntervalType (..), ResultInterval (..), intervalDayToIntervalUTC,
-       intervalToQueryString)
+       (IntervalType (..), ResultInterval (..), intervalToQueryString)
 import PlanMill.Types.Task           (Task, Tasks)
 import PlanMill.Types.TimeBalance    (TimeBalance)
 import PlanMill.Types.Timereport     (Timereport, Timereports)
@@ -111,7 +110,6 @@ queryToRequest (QueryTimereports i (Ident u)) =
         dayIntervalToQueryString
             = intervalToQueryString
             . ResultInterval IntervalStart
-            . intervalDayToIntervalUTC
 
     qs' :: QueryString
     qs' = Map.fromList [ ("person", T.pack $ show u)

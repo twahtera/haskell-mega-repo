@@ -7,7 +7,7 @@
 module Main (main) where
 
 import Prelude ()
-import Futurice.Prelude
+import PlanMill.Internal.Prelude
 
 import Control.Monad.Http                      (evalHttpT)
 import Data.Constraint
@@ -79,14 +79,11 @@ script4 = do
     putPretty t'
     putPretty (t == t')
 
-script5 :: (MonadPlanMill m, MonadIO m, MonadThrow m) => m ()
+script5 :: (MonadPlanMill m, MonadIO m) => m ()
 script5 = do
-    interval <- mkResultInterval IntervalStart
-        $(mkUTCTime "2015-01-01T00:00:00.000Z")
-        $(mkUTCTime "2016-01-01T00:00:00.000Z")
-    interval' <- mkInterval
-        (utctDay $(mkUTCTime "2016-01-01T00:00:00.000Z"))
-        (utctDay $(mkUTCTime "2016-02-01T00:00:00.000Z"))
+    let interval = ResultInterval IntervalStart $
+            $(mkDay "2015-01-01") ...  $(mkDay "2016-01-01")
+    let interval' = $(mkDay "2016-01-01") ... $(mkDay "2016-02-01")
     me' <- planmillAction me
     as <- planmillVectorAction $ reportableAssignments (me' ^. identifier)
     tb <- planmillAction $ userTimeBalance (me' ^. identifier)
