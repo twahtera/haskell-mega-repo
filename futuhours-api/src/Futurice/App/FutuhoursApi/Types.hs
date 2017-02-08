@@ -110,7 +110,7 @@ mkLatestEntry desc = LatestEntry
 data EntryUpdate = EntryUpdate
     { _euTaskId      :: PM.TaskId
     , _euProjectId   :: PM.ProjectId
-    , _euDescription :: !Text
+    , _euDescription :: !(Maybe Text)
     , _euDate        :: !Day
     , _euHours       :: !(NDT 'Hours Centi)
     , _euClosed      :: !(Maybe Bool)

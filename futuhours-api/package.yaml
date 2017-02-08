@@ -38,7 +38,9 @@ library:
     - http-client
     - http-client-tls
     - intervals
+    - monad-control
     - lens
+    - log-base
     - lucid
     - mtl
     - planmill-client

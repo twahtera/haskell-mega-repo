@@ -126,7 +126,7 @@ mkEntryEndPoint req = do
                 , _entryDay         = ModifiedJulianDay 0 -- wrong
                 , _entryProjectId   = _euProjectId req
                 , _entryTaskId      = _euTaskId req
-                , _entryDescription = _euDescription req
+                , _entryDescription = fromMaybe "" $ _euDescription req
                 , _entryHours       = _euHours req
                 , _entryClosed      = fromMaybe False (_euClosed req) -- TODO: is Maybe open or closed?
                 , _entryBillable    = EntryTypeBillable -- wrong
@@ -169,7 +169,7 @@ entryEndpoint _ctx _fumUser req = do
 entryIdEndpoint
     :: Ctx
     -> Maybe FUM.UserName
-    -> Int
+    -> PM.TimereportId
     -> EntryUpdate
     -> Handler EntryUpdateResponse
 entryIdEndpoint _ctx _fumUser _id req = do
@@ -184,15 +184,14 @@ entryIdEndpoint _ctx _fumUser _id req = do
 entryDeleteEndpoint
     :: Ctx
     -> Maybe FUM.UserName
-    -> Int
-    -> EntryUpdate
+    -> PM.TimereportId
     -> Handler EntryUpdateResponse
-entryDeleteEndpoint _ctx _fumUser _id _eu = do
+entryDeleteEndpoint _ctx _fumUser _id = do
     now <- currentTime
     let dummyReq = EntryUpdate
             { _euTaskId      = PM.Ident 1
             , _euProjectId   = PM.Ident 1
-            , _euDescription = "test"
+            , _euDescription = Just "test"
             , _euDate        = utctDay now
             , _euHours       = 8
             , _euClosed      = Nothing

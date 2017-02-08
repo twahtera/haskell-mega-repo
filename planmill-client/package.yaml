@@ -49,6 +49,7 @@ dependencies:
   - hashable
   - hashable-time
   - haxl
+  - http-api-data
   - http-client
   - http-client-tls
   - http-types
