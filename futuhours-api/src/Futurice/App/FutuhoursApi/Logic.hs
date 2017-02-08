@@ -12,6 +12,7 @@ module Futurice.App.FutuhoursApi.Logic (
 import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM (readTVarIO)
+import Control.Lens           (to)
 import Data.Aeson             (FromJSON)
 import Data.Constraint
 import Futurice.Time          (ndtConvert')
@@ -39,7 +40,7 @@ userEndpoint
     :: Ctx
     -> Maybe FUM.UserName
     -> Handler User
-userEndpoint ctx mfum = authorisedUser ctx mfum $ \_fumUsername pmUser -> do
+userEndpoint ctx mfum = authorisedUser ctx mfum $ \_fumUsername pmUser _pmData -> do
     let pmUid = pmUser ^. PM.identifier
     balance <- ndtConvert' . view PM.tbMinutes <$>
         PM.planmillAction (PM.userTimeBalance pmUid)
@@ -70,9 +71,10 @@ hoursEndpoint
     -> Handler HoursResponse
 hoursEndpoint ctx mfum start end = do
     interval <- maybe (throwError err400) pure interval'
-    authorisedUser ctx mfum $ \_fumusername pmUser -> do
+    authorisedUser ctx mfum $ \_fumusername pmUser pmData -> do
         let pmUid = pmUser ^. PM.identifier
         reports <- PM.planmillAction $ PM.timereportsFromIntervalFor interval pmUid
+        let projects = pmData ^.. planmillProjects . folded . to projectToProject
         let entries = reportToEntry <$> toList reports
         pure $ HoursResponse
             { _hoursResponseDefaultWorkHours = 7.5 -- TODO
@@ -83,7 +85,6 @@ hoursEndpoint ctx mfum start end = do
     interval'     = (\x y -> PM.ResultInterval PM.IntervalStart $ x PM.... y)
         <$> start <*> end
     holidayNames = mempty -- TODO
-    projects     = mempty -- TODO
 
     reportToEntry :: PM.Timereport -> Entry
     reportToEntry tr = Entry
@@ -96,6 +97,18 @@ hoursEndpoint ctx mfum start end = do
         , _entryHours       = ndtConvert' $ PM.trAmount tr
         , _entryBillable    = EntryTypeNotBillable -- TODO, check trBillableStatus
         }
+
+    projectToProject :: (PM.Project, [PM.Task]) -> Project
+    projectToProject (p, ts) = Project
+        { _projectId     = p ^. PM.identifier
+        , _projectName   = PM.pName p
+        , _projectTasks  = taskToTask <$> ts
+        , _projectClosed = False -- TODO
+        }
+
+    taskToTask :: PM.Task -> Task
+    taskToTask t = mkTask (t ^. PM.identifier) (PM.taskName t)
+        -- TODO: absence, closed, latestEntry, hoursRemaining
 
 -- | @POST /entry@
 entryEndpoint
@@ -129,14 +142,14 @@ entryDeleteEndpoint = error "entryDeleteEndpoint: implement me"
 
 authorisedUser
     :: Ctx -> Maybe FUM.UserName
-    -> (FUM.UserName -> PM.User -> PlanmillT Handler a)
+    -> (FUM.UserName -> PM.User -> PlanmillData -> PlanmillT Handler a)
     -> Handler a
 authorisedUser ctx mfum f =
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
         pmData <- liftIO $ readTVarIO $ ctxPlanmillData ctx
-        let userMap = planmillUserLookup pmData
-        pmUser <- maybe (throwError err403) pure $ userMap ^. at fumUsername
-        runPlanmillT (f fumUsername pmUser) (ctxPlanmillCfg ctx)
+        pmUser <- maybe (throwError err403) pure $
+            pmData ^. planmillUserLookup . at fumUsername
+        runPlanmillT (f fumUsername pmUser pmData) (ctxPlanmillCfg ctx)
 
 -------------------------------------------------------------------------------
 -- PlanmillT: TODO move to planmill-client

@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Futurice.App.FutuhoursApi.Ctx where
 
 import Prelude ()
@@ -11,10 +12,11 @@ type PlanmillUserLookupMap = HashMap FUM.UserName PM.User
 
 -- | A quite stable data, which we update once in a while when service is run.
 data PlanmillData = PlanmillData
-    { planmillUserLookup :: !(PlanmillUserLookupMap)
-    , planmillProjects   :: !(HashMap PM.ProjectId (PM.Project, [PM.Task]))
-    , planmillTasks      :: !(HashMap PM.TaskId PM.Task)
+    { _planmillUserLookup :: !(PlanmillUserLookupMap)
+    , _planmillProjects   :: !(HashMap PM.ProjectId (PM.Project, [PM.Task]))
+    , _planmillTasks      :: !(HashMap PM.TaskId PM.Task)
     }
+    -- TODO: add a field "reportable tasks per user"
 
 data Ctx = Ctx
     { ctxPlanmillData :: !(TVar PlanmillData)
@@ -22,3 +24,5 @@ data Ctx = Ctx
     , ctxLogger       :: !Logger
     , ctxPlanmillCfg  :: !PM.Cfg
     }
+
+makeLenses ''PlanmillData

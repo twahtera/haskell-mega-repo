@@ -22,6 +22,10 @@ import Futurice.App.FutuhoursApi.Logic
        (entryDeleteEndpoint, entryEndpoint, entryIdEndpoint, hoursEndpoint,
        projectEndpoint, userEndpoint)
 
+import qualified Data.HashMap.Strict as HM
+import qualified PlanMill            as PM
+import qualified PlanMill.Queries    as PMQ
+
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours api"
     :<|> projectEndpoint ctx
@@ -46,18 +50,30 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         now <- currentTime
         mgr <- newManager tlsManagerSettings
         let integrConfig = makeIntegrationsConfig now logger mgr config
-        pmLookupMap <- runIntegrations integrConfig fumPlanmillMap
-        pmDataTVar <- newTVarIO $ PlanmillData
-            { planmillUserLookup = pmLookupMap
-            , planmillProjects   = mempty
-            , planmillTasks      = mempty
-            }
+        pmData <- fetchPlanmillData integrConfig
+        pmDataTVar <- newTVarIO pmData
         pure $ flip (,) [] $ Ctx
             { ctxPlanmillData = pmDataTVar
             , ctxPlanmillCfg  = cfgPlanmillCfg config
             , ctxMockUser     = cfgMockUser config
             , ctxLogger       = logger
             }
+
+    fetchPlanmillData :: IntegrationsConfig I I Proxy Proxy -> IO PlanmillData
+    fetchPlanmillData integrConfig = runIntegrations integrConfig $ do
+        pmLookupMap <- fumPlanmillMap
+        ps <- PMQ.projects
+        ps' <- for (toList ps) $ \p -> mkP p <$> PMQ.projectTasks (p ^. PM.identifier)
+        let ps'' = HM.fromList ps'
+        let ts = HM.fromList $ (\t -> (t ^. PM.identifier, t)) <$>
+                ps' ^.. folded . _2 ._2 . folded
+        pure $ PlanmillData
+            { _planmillUserLookup = pmLookupMap
+            , _planmillProjects   = ps''
+            , _planmillTasks      = ts
+            }
+      where
+        mkP p ts = (p ^. PM.identifier, (p, toList ts))
 
 makeIntegrationsConfig
     :: UTCTime -> Logger -> Manager -> Config

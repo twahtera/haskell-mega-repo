@@ -242,6 +242,8 @@ deriveGeneric ''HoursUpdateResponse
 -- here because we want to use lenses.
 
 -- | Smart constructor.
+--
+-- /TODO:/ have to take interval and make empty days as well?
 mkHoursMonth
     :: Map Day Text  -- ^ Holiday names
     -> [Entry]
