@@ -9,9 +9,16 @@ import qualified PlanMill as PM
 
 type PlanmillUserLookupMap = HashMap FUM.UserName PM.User
 
+-- | A quite stable data, which we update once in a while when service is run.
+data PlanmillData = PlanmillData
+    { planmillUserLookup :: !(PlanmillUserLookupMap)
+    , planmillProjects   :: !(HashMap PM.ProjectId (PM.Project, [PM.Task]))
+    , planmillTasks      :: !(HashMap PM.TaskId PM.Task)
+    }
+
 data Ctx = Ctx
-    { ctxPlanmillUserLookup :: !(TVar PlanmillUserLookupMap)
-    , ctxMockUser           :: !(Maybe FUM.UserName)
-    , ctxLogger             :: !Logger
-    , ctxPlanmillCfg        :: !PM.Cfg
+    { ctxPlanmillData :: !(TVar PlanmillData)
+    , ctxMockUser     :: !(Maybe FUM.UserName)
+    , ctxLogger       :: !Logger
+    , ctxPlanmillCfg  :: !PM.Cfg
     }

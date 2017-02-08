@@ -133,7 +133,8 @@ authorisedUser
     -> Handler a
 authorisedUser ctx mfum f =
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
-        userMap <- liftIO $ readTVarIO $ ctxPlanmillUserLookup ctx
+        pmData <- liftIO $ readTVarIO $ ctxPlanmillData ctx
+        let userMap = planmillUserLookup pmData
         pmUser <- maybe (throwError err403) pure $ userMap ^. at fumUsername
         runPlanmillT (f fumUsername pmUser) (ctxPlanmillCfg ctx)
 

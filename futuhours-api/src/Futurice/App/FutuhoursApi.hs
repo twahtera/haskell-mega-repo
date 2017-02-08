@@ -47,12 +47,16 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         mgr <- newManager tlsManagerSettings
         let integrConfig = makeIntegrationsConfig now logger mgr config
         pmLookupMap <- runIntegrations integrConfig fumPlanmillMap
-        pmLookupMapT <- newTVarIO pmLookupMap
+        pmDataTVar <- newTVarIO $ PlanmillData
+            { planmillUserLookup = pmLookupMap
+            , planmillProjects   = mempty
+            , planmillTasks      = mempty
+            }
         pure $ flip (,) [] $ Ctx
-            { ctxPlanmillUserLookup = pmLookupMapT
-            , ctxPlanmillCfg        = cfgPlanmillCfg config
-            , ctxMockUser           = cfgMockUser config
-            , ctxLogger             = logger
+            { ctxPlanmillData = pmDataTVar
+            , ctxPlanmillCfg  = cfgPlanmillCfg config
+            , ctxMockUser     = cfgMockUser config
+            , ctxLogger       = logger
             }
 
 makeIntegrationsConfig
