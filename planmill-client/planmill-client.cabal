@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.15.0.
+-- This file has been generated from package.yaml by hpack version 0.17.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -58,6 +58,7 @@ library
     , hashable
     , hashable-time
     , haxl
+    , http-api-data
     , http-client
     , http-client-tls
     , http-types
@@ -165,6 +166,7 @@ executable planmill-client
     , hashable
     , hashable-time
     , haxl
+    , http-api-data
     , http-client
     , http-client-tls
     , http-types
@@ -239,6 +241,7 @@ test-suite integration
     , hashable
     , hashable-time
     , haxl
+    , http-api-data
     , http-client
     , http-client-tls
     , http-types
@@ -306,6 +309,7 @@ test-suite test
     , hashable
     , hashable-time
     , haxl
+    , http-api-data
     , http-client
     , http-client-tls
     , http-types

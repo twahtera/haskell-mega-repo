@@ -15,11 +15,12 @@ module PlanMill.Types.Identifier (
 import PlanMill.Internal.Prelude
 
 import qualified Data.Csv        as Csv
-import           Data.Swagger    (ToSchema)
+import           Data.Swagger    (ToParamSchema, ToSchema)
 import           Test.QuickCheck (Arbitrary (..))
+import           Web.HttpApiData (FromHttpApiData (..), ToHttpApiData (..))
 
-import qualified Database.PostgreSQL.Simple.ToField as Postgres
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
+import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 
 -- | Tagged identifier
 newtype Identifier a = Ident Word64
@@ -50,6 +51,13 @@ instance Csv.ToField (Identifier a) where
     toField (Ident x) = Csv.toField x
 
 instance ToSchema (Identifier a)
+instance ToParamSchema (Identifier a)
+
+instance ToHttpApiData (Identifier a) where
+    toUrlPiece (Ident x) = toUrlPiece x
+
+instance FromHttpApiData (Identifier a) where
+    parseUrlPiece = fmap Ident . parseUrlPiece
 
 instance Postgres.ToField (Identifier a) where
     toField (Ident x) = Postgres.toField x

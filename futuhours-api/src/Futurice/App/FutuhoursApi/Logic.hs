@@ -1,5 +1,10 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE UndecidableInstances   #-}
+-- Temp: https://github.com/scrive/log/pull/28
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Futurice.App.FutuhoursApi.Logic (
     projectEndpoint,
     userEndpoint,
@@ -11,12 +16,14 @@ module Futurice.App.FutuhoursApi.Logic (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Concurrent.STM (readTVarIO)
-import Control.Lens           (to)
-import Data.Aeson             (FromJSON)
+import Control.Concurrent.STM      (readTVarIO)
+import Control.Lens                (to)
+import Control.Monad.Trans.Control (defaultLiftWith, defaultRestoreT)
+import Data.Aeson                  (FromJSON)
 import Data.Constraint
-import Futurice.Time          (ndtConvert')
-import Servant                (Handler, err400, err403)
+import Futurice.Time               (ndtConvert')
+import Servant
+       (Handler, ServantErr (..), err400, err403, err500)
 
 import Futurice.App.FutuhoursApi.Ctx
 import Futurice.App.FutuhoursApi.Types
@@ -24,6 +31,8 @@ import Futurice.App.FutuhoursApi.Types
 import qualified FUM
 import qualified PlanMill      as PM
 import qualified PlanMill.Test as PM
+
+import Log.Monad (LogT (..))
 
 -------------------------------------------------------------------------------
 -- Endpoints
@@ -40,27 +49,28 @@ userEndpoint
     :: Ctx
     -> Maybe FUM.UserName
     -> Handler User
-userEndpoint ctx mfum = authorisedUser ctx mfum $ \_fumUsername pmUser _pmData -> do
-    let pmUid = pmUser ^. PM.identifier
-    balance <- ndtConvert' . view PM.tbMinutes <$>
-        PM.planmillAction (PM.userTimeBalance pmUid)
-    -- TODO: get from PM
-    let holidaysLeft = 0
-    let utz = 100
-    -- TODO: change futurice-integrations,
-    -- so we have FUM and PM bidirectional mapping with both User records from both
-    -- available
-    --
-    -- profile picture is then trivial to get from the FUM data.
-    let profilePicture = ""
-    pure $ User
-        { _userFirstName       = PM.uFirstName pmUser
-        , _userLastName        = PM.uLastName pmUser
-        , _userBalance         = balance
-        , _userHolidaysLeft    = holidaysLeft
-        , _userUtilizationRate = utz
-        , _userProfilePicture  = profilePicture
-        }
+userEndpoint ctx mfum =
+    authorisedUser ctx mfum $ \_fumUsername pmUser _pmData -> do
+        let pmUid = pmUser ^. PM.identifier
+        balance <- ndtConvert' . view PM.tbMinutes <$>
+            PM.planmillAction (PM.userTimeBalance pmUid)
+        -- TODO: get from PM
+        let holidaysLeft = 0
+        let utz = 100
+        -- TODO: change futurice-integrations,
+        -- so we have FUM and PM bidirectional mapping with both User records from both
+        -- available
+        --
+        -- profile picture is then trivial to get from the FUM data.
+        let profilePicture = ""
+        pure $ User
+            { _userFirstName       = PM.uFirstName pmUser
+            , _userLastName        = PM.uLastName pmUser
+            , _userBalance         = balance
+            , _userHolidaysLeft    = holidaysLeft
+            , _userUtilizationRate = utz
+            , _userProfilePicture  = profilePicture
+            }
 
 -- | @GET /hours@
 hoursEndpoint
@@ -76,6 +86,7 @@ hoursEndpoint ctx mfum start end = do
         let pmUid = pmUser ^. PM.identifier
         reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
         capacities <- PM.planmillAction $ PM.userCapacity interval pmUid
+        liftIO $ print capacities
         let projects = pmData ^.. planmillProjects . folded . to projectToProject
         let entries = reportToEntry <$> toList reports
         let holidayNames = mkHolidayNames capacities
@@ -128,25 +139,33 @@ entryEndpoint
     -> Maybe FUM.UserName
     -> EntryUpdate
     -> Handler EntryUpdateResponse
-entryEndpoint = error "entryEndpoint: implement me"
+entryEndpoint ctx mfum eu =
+    authorisedUser ctx mfum $ \fumusername _pmUser _pmData -> do
+        logTrace "POST /entry" (fumusername, eu)
+        throwError err500 { errBody = "Not implemented" }
 
 -- | @PUT /entry/#id@
 entryIdEndpoint
     :: Ctx
     -> Maybe FUM.UserName
-    -> Int
+    -> PM.TimereportId
     -> EntryUpdate
     -> Handler EntryUpdateResponse
-entryIdEndpoint = error "entryIdEndpoint: implement me"
+entryIdEndpoint ctx mfum eid eu =
+    authorisedUser ctx mfum $ \fumusername _pmUser _pmData -> do
+        logTrace "PUT /entry" (fumusername, eid, eu)
+        throwError err500 { errBody = "Not implemented" }
 
 -- | @DELETE /entry/#id@
 entryDeleteEndpoint
     :: Ctx
     -> Maybe FUM.UserName
-    -> Int
-    -> EntryUpdate
+    -> PM.TimereportId
     -> Handler EntryUpdateResponse
-entryDeleteEndpoint = error "entryDeleteEndpoint: implement me"
+entryDeleteEndpoint ctx mfum eid =
+    authorisedUser ctx mfum $ \fumusername _pmUser _pmData -> do
+        logTrace "DELETE /entry" (fumusername, eid)
+        throwError err500 { errBody = "Not implemented" }
 
 -------------------------------------------------------------------------------
 -- Utilities
@@ -154,43 +173,60 @@ entryDeleteEndpoint = error "entryDeleteEndpoint: implement me"
 
 authorisedUser
     :: Ctx -> Maybe FUM.UserName
-    -> (FUM.UserName -> PM.User -> PlanmillData -> PlanmillT Handler a)
+    -> (FUM.UserName -> PM.User -> PlanmillData -> PlanmillT (LogT Handler) a)
     -> Handler a
 authorisedUser ctx mfum f =
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
         pmData <- liftIO $ readTVarIO $ ctxPlanmillData ctx
         pmUser <- maybe (throwError err403) pure $
             pmData ^. planmillUserLookup . at fumUsername
-        runPlanmillT (f fumUsername pmUser pmData) (ctxPlanmillCfg ctx)
+        f fumUsername pmUser pmData
+            & runPlanmillT (ctxPlanmillCfg ctx)
+            & runLogT "endpoint" (ctxLogger ctx)
+
 
 -------------------------------------------------------------------------------
 -- PlanmillT: TODO move to planmill-client
 -------------------------------------------------------------------------------
 
 -- TODO: this abit of waste as it reinitialises crypto for each request
-newtype PlanmillT m a = PlanmillT { runPlanmillT :: PM.Cfg -> m a }
+newtype PlanmillT m a = PlanmillT { runPlanmillT' :: ReaderT PM.Cfg m a }
+
+runPlanmillT :: PM.Cfg -> PlanmillT m a -> m a
+runPlanmillT cfg m = runReaderT (runPlanmillT' m) cfg
 
 instance Functor m => Functor (PlanmillT m) where
-    fmap f (PlanmillT x) = PlanmillT $ \cfg -> fmap f (x cfg)
+    fmap f (PlanmillT x) = PlanmillT $ fmap f x
 instance Applicative m => Applicative (PlanmillT m) where
-    pure = PlanmillT . const . pure
-    PlanmillT f <*> PlanmillT x = PlanmillT $ \cfg -> f cfg <*> x cfg
+    pure = PlanmillT . pure
+    PlanmillT f <*> PlanmillT x = PlanmillT (f <*> x)
 instance Monad m => Monad (PlanmillT m) where
     return = pure
-    m >>= k = PlanmillT $ \cfg -> do
-      x <- runPlanmillT m cfg
-      runPlanmillT (k x) cfg
+    m >>= k = PlanmillT $ runPlanmillT' m >>= runPlanmillT' . k
 
 instance MonadTrans PlanmillT where
-    lift = PlanmillT . const
+    lift = PlanmillT . lift
+
+instance MonadError e m => MonadError e (PlanmillT m) where
+    throwError = lift . throwError
+    catchError m h = PlanmillT $ runPlanmillT' m `catchError` (runPlanmillT' . h)
 
 instance MonadIO m => MonadIO (PlanmillT m) where
     liftIO = lift . liftIO
+
+instance MonadTransControl PlanmillT where
+    type StT PlanmillT a = StT (ReaderT PM.Cfg) a
+    liftWith = defaultLiftWith PlanmillT runPlanmillT'
+    restoreT = defaultRestoreT PlanmillT
 
 instance Monad m => PM.MonadPlanMillConstraint (PlanmillT m) where
     type MonadPlanMillC (PlanmillT m) = FromJSON
     entailMonadPlanMillCVector _ _ = Sub Dict
 
 instance MonadIO m => PM.MonadPlanMill (PlanmillT m) where
-    planmillAction planmill = PlanmillT $ \cfg ->
+    planmillAction planmill = PlanmillT $ ReaderT $ \cfg ->
         liftIO $ PM.evalPlanMillIO cfg planmill
+
+instance MonadError e m => MonadError e (LogT m) where
+    throwError = lift . throwError
+    catchError m h = LogT $ unLogT m `catchError` (unLogT . h)
