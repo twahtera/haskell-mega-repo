@@ -71,19 +71,19 @@ hoursEndpoint
     -> Handler HoursResponse
 hoursEndpoint ctx mfum start end = do
     interval <- maybe (throwError err400) pure interval'
+    let resultInterval = PM.ResultInterval PM.IntervalStart interval
     authorisedUser ctx mfum $ \_fumusername pmUser pmData -> do
         let pmUid = pmUser ^. PM.identifier
-        reports <- PM.planmillAction $ PM.timereportsFromIntervalFor interval pmUid
+        reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
         let projects = pmData ^.. planmillProjects . folded . to projectToProject
         let entries = reportToEntry <$> toList reports
         pure $ HoursResponse
             { _hoursResponseDefaultWorkHours = 7.5 -- TODO
             , _hoursResponseProjects         = projects
-            , _hoursResponseMonths           = mkHoursMonth holidayNames entries
+            , _hoursResponseMonths           = mkHoursMonth interval holidayNames entries
             }
   where
-    interval'     = (\x y -> PM.ResultInterval PM.IntervalStart $ x PM.... y)
-        <$> start <*> end
+    interval'    = (PM....) <$> start <*> end
     holidayNames = mempty -- TODO
 
     reportToEntry :: PM.Timereport -> Entry

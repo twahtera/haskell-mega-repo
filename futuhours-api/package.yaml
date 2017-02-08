@@ -37,6 +37,7 @@ library:
     - generics-sop
     - http-client
     - http-client-tls
+    - intervals
     - lens
     - lucid
     - mtl
