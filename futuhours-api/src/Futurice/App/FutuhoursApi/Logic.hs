@@ -75,8 +75,10 @@ hoursEndpoint ctx mfum start end = do
     authorisedUser ctx mfum $ \_fumusername pmUser pmData -> do
         let pmUid = pmUser ^. PM.identifier
         reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
+        capacities <- PM.planmillAction $ PM.userCapacity interval pmUid
         let projects = pmData ^.. planmillProjects . folded . to projectToProject
         let entries = reportToEntry <$> toList reports
+        let holidayNames = mkHolidayNames capacities
         pure $ HoursResponse
             { _hoursResponseDefaultWorkHours = 7.5 -- TODO
             , _hoursResponseProjects         = projects
@@ -84,7 +86,17 @@ hoursEndpoint ctx mfum start end = do
             }
   where
     interval'    = (PM....) <$> start <*> end
-    holidayNames = mempty -- TODO
+
+    mkHolidayNames :: Foldable f => f PM.UserCapacity -> Map Day Text
+    mkHolidayNames = toMapOf (folded . to mk . folded . ifolded)
+      where
+        mk :: PM.UserCapacity -> Maybe (Day, Text)
+        mk uc
+            | Just desc <- PM.userCapacityDescription uc = Just (day, desc)
+            | PM.userCapacityAmount uc == 0              = Just (day, "STAY HOME DAY") -- TODO: better name
+            | otherwise                                  = Nothing
+          where
+            day = PM.userCapacityDate uc
 
     reportToEntry :: PM.Timereport -> Entry
     reportToEntry tr = Entry
