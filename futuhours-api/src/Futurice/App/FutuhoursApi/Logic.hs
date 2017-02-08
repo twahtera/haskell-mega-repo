@@ -181,6 +181,12 @@ instance Monad m => Monad (PlanmillT m) where
       x <- runPlanmillT m cfg
       runPlanmillT (k x) cfg
 
+instance MonadTrans PlanmillT where
+    lift = PlanmillT . const
+
+instance MonadIO m => MonadIO (PlanmillT m) where
+    liftIO = lift . liftIO
+
 instance Monad m => PM.MonadPlanMillConstraint (PlanmillT m) where
     type MonadPlanMillC (PlanmillT m) = FromJSON
     entailMonadPlanMillCVector _ _ = Sub Dict
