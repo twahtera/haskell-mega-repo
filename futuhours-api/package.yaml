@@ -26,6 +26,7 @@ library:
     - aeson
     - aeson-compat
     - constraints
+    - containers
     - env-config
     - fum-client
     - futurice-foundation
@@ -36,25 +37,26 @@ library:
     - generics-sop
     - http-client
     - http-client-tls
+    - intervals
     - lens
     - lucid
     - mtl
     - planmill-client
     - postgresql-simple
     - QuickCheck
+    - random
     - resource-pool
     - semigroupoids
     - servant
     - servant-lucid
     - servant-server
-    - swagger2
-    - time
-    - vector
-    - random
     - stm
+    - swagger2
     - text
+    - time
     - transformers
-    - containers
+    - unordered-containers
+    - vector
 
 
 executables:

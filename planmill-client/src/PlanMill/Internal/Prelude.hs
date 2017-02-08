@@ -16,6 +16,8 @@ module PlanMill.Internal.Prelude (
     ZonedTime, UTCTime(..),
     Aeson.getU, Aeson.getZ, dayFromZ, zonedTimeDay,
     utcTimeToInteger,
+    -- * HasKey
+    HasKey (..),
     -- * Misc
     bsShow,
     ) where
@@ -30,6 +32,7 @@ import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo (..), sopStructuralInfo)
 import Data.Time                 (ZonedTime, zonedTimeToLocalTime)
 import Data.Time.Clock.POSIX     (utcTimeToPOSIXSeconds)
+import Futurice.IdMap            (HasKey (..))
 import Futurice.Time
 import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
 

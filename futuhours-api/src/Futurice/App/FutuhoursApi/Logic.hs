@@ -12,6 +12,7 @@ module Futurice.App.FutuhoursApi.Logic (
 import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM (readTVarIO)
+import Control.Lens           (to)
 import Data.Aeson             (FromJSON)
 import Data.Constraint
 import Futurice.Time          (ndtConvert')
@@ -39,7 +40,7 @@ userEndpoint
     :: Ctx
     -> Maybe FUM.UserName
     -> Handler User
-userEndpoint ctx mfum = authorisedUser ctx mfum $ \_fumUsername pmUser -> do
+userEndpoint ctx mfum = authorisedUser ctx mfum $ \_fumUsername pmUser _pmData -> do
     let pmUid = pmUser ^. PM.identifier
     balance <- ndtConvert' . view PM.tbMinutes <$>
         PM.planmillAction (PM.userTimeBalance pmUid)
@@ -70,20 +71,32 @@ hoursEndpoint
     -> Handler HoursResponse
 hoursEndpoint ctx mfum start end = do
     interval <- maybe (throwError err400) pure interval'
-    authorisedUser ctx mfum $ \_fumusername pmUser -> do
+    let resultInterval = PM.ResultInterval PM.IntervalStart interval
+    authorisedUser ctx mfum $ \_fumusername pmUser pmData -> do
         let pmUid = pmUser ^. PM.identifier
-        reports <- PM.planmillAction $ PM.timereportsFromIntervalFor interval pmUid
+        reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
+        capacities <- PM.planmillAction $ PM.userCapacity interval pmUid
+        let projects = pmData ^.. planmillProjects . folded . to projectToProject
         let entries = reportToEntry <$> toList reports
+        let holidayNames = mkHolidayNames capacities
         pure $ HoursResponse
             { _hoursResponseDefaultWorkHours = 7.5 -- TODO
             , _hoursResponseProjects         = projects
-            , _hoursResponseMonths           = mkHoursMonth holidayNames entries
+            , _hoursResponseMonths           = mkHoursMonth interval holidayNames entries
             }
   where
-    interval'     = (\x y -> PM.ResultInterval PM.IntervalStart $ x PM.... y)
-        <$> start <*> end
-    holidayNames = mempty -- TODO
-    projects     = mempty -- TODO
+    interval'    = (PM....) <$> start <*> end
+
+    mkHolidayNames :: Foldable f => f PM.UserCapacity -> Map Day Text
+    mkHolidayNames = toMapOf (folded . to mk . folded . ifolded)
+      where
+        mk :: PM.UserCapacity -> Maybe (Day, Text)
+        mk uc
+            | Just desc <- PM.userCapacityDescription uc = Just (day, desc)
+            | PM.userCapacityAmount uc == 0              = Just (day, "STAY HOME DAY") -- TODO: better name
+            | otherwise                                  = Nothing
+          where
+            day = PM.userCapacityDate uc
 
     reportToEntry :: PM.Timereport -> Entry
     reportToEntry tr = Entry
@@ -96,6 +109,18 @@ hoursEndpoint ctx mfum start end = do
         , _entryHours       = ndtConvert' $ PM.trAmount tr
         , _entryBillable    = EntryTypeNotBillable -- TODO, check trBillableStatus
         }
+
+    projectToProject :: (PM.Project, [PM.Task]) -> Project
+    projectToProject (p, ts) = Project
+        { _projectId     = p ^. PM.identifier
+        , _projectName   = PM.pName p
+        , _projectTasks  = taskToTask <$> ts
+        , _projectClosed = False -- TODO
+        }
+
+    taskToTask :: PM.Task -> Task
+    taskToTask t = mkTask (t ^. PM.identifier) (PM.taskName t)
+        -- TODO: absence, closed, latestEntry, hoursRemaining
 
 -- | @POST /entry@
 entryEndpoint
@@ -129,13 +154,14 @@ entryDeleteEndpoint = error "entryDeleteEndpoint: implement me"
 
 authorisedUser
     :: Ctx -> Maybe FUM.UserName
-    -> (FUM.UserName -> PM.User -> PlanmillT Handler a)
+    -> (FUM.UserName -> PM.User -> PlanmillData -> PlanmillT Handler a)
     -> Handler a
 authorisedUser ctx mfum f =
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
-        userMap <- liftIO $ readTVarIO $ ctxPlanmillUserLookup ctx
-        pmUser <- maybe (throwError err403) pure $ userMap ^. at fumUsername
-        runPlanmillT (f fumUsername pmUser) (ctxPlanmillCfg ctx)
+        pmData <- liftIO $ readTVarIO $ ctxPlanmillData ctx
+        pmUser <- maybe (throwError err403) pure $
+            pmData ^. planmillUserLookup . at fumUsername
+        runPlanmillT (f fumUsername pmUser pmData) (ctxPlanmillCfg ctx)
 
 -------------------------------------------------------------------------------
 -- PlanmillT: TODO move to planmill-client
@@ -154,6 +180,12 @@ instance Monad m => Monad (PlanmillT m) where
     m >>= k = PlanmillT $ \cfg -> do
       x <- runPlanmillT m cfg
       runPlanmillT (k x) cfg
+
+instance MonadTrans PlanmillT where
+    lift = PlanmillT . const
+
+instance MonadIO m => MonadIO (PlanmillT m) where
+    liftIO = lift . liftIO
 
 instance Monad m => PM.MonadPlanMillConstraint (PlanmillT m) where
     type MonadPlanMillC (PlanmillT m) = FromJSON

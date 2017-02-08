@@ -14,15 +14,16 @@ module Futurice.App.FutuhoursApi.Types where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens        (Getter, andOf, foldOf, imap, sumOf, to)
-import Data.Aeson          (Value (..), withText)
-import Data.Fixed          (Centi)
-import Data.Swagger        (NamedSchema (..))
+import Control.Lens              (Getter, foldOf, imap, sumOf, to)
+import Data.Aeson                (Value (..), withText)
+import Data.Fixed                (Centi)
+import Data.Swagger              (NamedSchema (..))
 import Futurice.Generics
-import Futurice.Monoid     (Average (..))
+import Futurice.Monoid           (Average (..))
 import Futurice.Time
-import Futurice.Time.Month (dayToMonth)
-import Test.QuickCheck     (arbitraryBoundedEnum)
+import Futurice.Time.Month       (dayToMonth)
+import Numeric.Interval.NonEmpty (Interval, inf, sup)
+import Test.QuickCheck           (arbitraryBoundedEnum)
 
 import qualified Data.Map as Map
 import qualified PlanMill as PM
@@ -243,18 +244,23 @@ deriveGeneric ''HoursUpdateResponse
 
 -- | Smart constructor.
 mkHoursMonth
-    :: Map Day Text  -- ^ Holiday names
+    :: Interval Day  -- ^ Interval to include entries from
+    -> Map Day Text  -- ^ Holiday names
     -> [Entry]
     -> Map Month HoursMonth
-mkHoursMonth holidays entries =
+mkHoursMonth interval holidays entries =
     let entriesByDay :: Map Day [Entry]
         entriesByDay = Map.fromListWith (++)
             [ (_entryDay e, [e]) | e <- entries ]
 
+        -- a map spawning whole interval
+        entriesByDay' :: Map Day [a]
+        entriesByDay' = Map.fromList [ (d, []) | d <- [inf interval .. sup interval] ]
+
         entriesByMonth :: Map Month (Map Day [Entry])
         entriesByMonth = Map.fromListWith (Map.unionWith (++))
             [ (dayToMonth d, Map.singleton d es)
-            | (d, es) <- Map.toList entriesByDay
+            | (d, es) <- Map.toList (entriesByDay <> entriesByDay')
             ]
 
     in mkHoursMonth' <$> entriesByMonth
@@ -276,7 +282,7 @@ mkHoursMonth holidays entries =
         { _dayHolidayName = holidays ^? ix d
         , _dayHours       = sumOf (folded . entryHours) es
         , _dayEntries     = es
-        , _dayClosed      = andOf (folded . entryClosed) es
+        , _dayClosed      = False -- TODO: not correct: andOf (folded . entryClosed) es
           -- day is closed if every entry in it is closed
         }
 

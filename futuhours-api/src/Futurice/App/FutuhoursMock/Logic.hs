@@ -13,11 +13,12 @@ module Futurice.App.FutuhoursMock.Logic (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens        (forOf)
-import Data.Vector.Lens    (vector)
-import Futurice.Time.Month (dayToMonth)
+import Control.Lens              (forOf)
+import Data.Vector.Lens          (vector)
+import Futurice.Time.Month       (dayToMonth)
+import Numeric.Interval.NonEmpty ((...))
 import Servant
-import System.Random       (randomRIO)
+import System.Random             (randomRIO)
 
 import Futurice.App.FutuhoursApi.Types
 import Futurice.App.FutuhoursMock.Ctx
@@ -85,7 +86,7 @@ genMonths ds = do
         pure $ es & traverse . entryDay .~ d
 
     -- TODO: there is no holiday map
-    pure $ mkHoursMonth mempty $ concat es
+    pure $ mkHoursMonth (minimum ds ... maximum ds) mempty $ concat es
 
 
 -- | /TODO/: we should use 'MonadRandom', not 'MonadIO'.

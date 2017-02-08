@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 -- | High-level query api
+--
+-- See <https://developers.planmill.com/api/>
 module PlanMill.Queries (
     -- * Monad class
     MonadPlanMillQuery,
@@ -18,6 +20,8 @@ module PlanMill.Queries (
     absences,
     account,
     project,
+    projects,
+    projectTasks,
     task,
     -- * Queries
     usersQuery,
@@ -33,9 +37,9 @@ import GHC.TypeLits    (KnownSymbol, symbolVal)
 import Control.Monad.PlanMill
 
 import PlanMill.Types
-       (Absences, Account, AccountId, Me, Project, ProjectId, Task, TaskId,
-       Team, TeamId, TimeBalance, Timereports, User, UserCapacities, UserId,
-       Users)
+       (Absences, Account, AccountId, Me, Project, ProjectId, Projects, Task,
+       TaskId, Tasks, Team, TeamId, TimeBalance, Timereports, User,
+       UserCapacities, UserId, Users)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
 import PlanMill.Types.Query       (Query (..), QueryTag (..))
@@ -188,17 +192,33 @@ account aid = planmillQuery
     $ QueryGet QueryTagAccount mempty
     $ toUrlParts $ ("accounts" :: Text) // aid
 
--- | A single project in PlanMill
+-- | A single project in PlanMill.
 --
--- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#projects__id__get>
+-- See <https://developers.planmill.com/api/#projects__project_id__get>
 project :: MonadPlanMillQuery m => ProjectId -> m Project
 project pid = planmillQuery
     $ QueryGet QueryTagProject mempty
     $ toUrlParts $ ("projects" :: Text) // pid
 
+-- | Get a list of projects.
+--
+-- See <https://developers.planmill.com/api/#projects_get>
+projects :: MonadPlanMillQuery m => m Projects
+projects = planmillVectorQuery
+    $ QueryPagedGet QueryTagProject mempty
+    $ toUrlParts $ ("projects" :: Text)
+
+-- | Get a list of tasks.
+--
+-- See <https://developers.planmill.com/api/#projects__project_id__tasks_get>
+projectTasks :: MonadPlanMillQuery m => ProjectId -> m Tasks
+projectTasks pid = planmillVectorQuery
+    $ QueryPagedGet QueryTagTask mempty
+    $ toUrlParts $ ("projects" :: Text) // pid // ("tasks" :: Text)
+
 -- | View details of single task.
 --
--- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#tasks__id__get>
+-- See <https://developers.planmill.com/api/#tasks__task_id__get>
 --
 -- TODO: seems to return 500 for most tasks
 task :: MonadPlanMillQuery m => TaskId -> m Task
