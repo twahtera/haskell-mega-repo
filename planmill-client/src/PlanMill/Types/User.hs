@@ -165,6 +165,14 @@ makeLenses ''Team
 deriveGeneric ''User
 deriveGeneric ''Team
 
+instance HasKey User where
+    type Key User = UserId
+    key = uId
+
+instance HasKey Team where
+    type Key Team = TeamId
+    key = tId
+
 instance HasIdentifier User User where
     identifier = uId
 

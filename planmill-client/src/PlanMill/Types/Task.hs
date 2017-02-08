@@ -53,6 +53,10 @@ data Task = Task
 makeLenses ''Task
 deriveGeneric ''Task
 
+instance HasKey Task where
+    type Key Task = TaskId
+    key = taskId
+
 instance HasIdentifier Task Task where
     identifier = taskId
 

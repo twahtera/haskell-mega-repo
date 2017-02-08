@@ -57,6 +57,10 @@ data Project = Project
 makeLenses ''Project
 deriveGeneric ''Project
 
+instance HasKey Project where
+    type Key Project = ProjectId
+    key = pId
+
 instance HasIdentifier Project Project where
     identifier = pId
 
