@@ -155,7 +155,7 @@ missingHoursReport
     -> m MissingHoursReport
 missingHoursReport interval = do
     now <- PM.currentTime
-    fpm <- fumPlanmillMap
+    fpm <- snd <$$> fumPlanmillMap
     fpm' <- traverse (perUser . view PM.identifier) fpm
     pure $ Report (MissingHoursParams now (inf interval) (sup interval)) fpm'
   where

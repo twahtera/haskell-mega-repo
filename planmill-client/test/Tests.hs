@@ -65,6 +65,9 @@ exampleResponses = testGroup "exampleResponses" $
                                                     $(embedFile "fixtures/usercapacity.json")
     , ex "/teams"             (P :: P Teams)        $(embedFile "fixtures/teams.json")
     , ex "/teams/:id"         (P :: P Team)         $(embedFile "fixtures/team.json")
+
+    , ex "/users/:id/vacations"
+                              (P :: P Vacations)    $(embedFile "fixtures/vacations.json")
     ]
   where
     -- Example test

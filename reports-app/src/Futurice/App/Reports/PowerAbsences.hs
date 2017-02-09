@@ -111,7 +111,7 @@ powerAbsenceReport mmonth = do
     let endDay   = lastDayOfMonth month
     let interval = startDay ... endDay
     -- Users
-    fpm <- fumPlanmillMap
+    fpm <- snd <$$> fumPlanmillMap
     -- Fetch all absences, on purpose
     as0 <- PMQ.absences
     -- Take intervals which overlap our interval of the interest

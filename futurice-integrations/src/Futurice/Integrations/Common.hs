@@ -26,10 +26,10 @@ import Data.Time
        (addGregorianMonthsClip, fromGregorian, toGregorian)
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Types
+import Futurice.IdMap (IdMap, idMapOf)
 import Text.Regex.Applicative.Text   (anySym, match)
 
 import qualified Data.HashMap.Strict as HM
-import qualified Data.Set            as Set
 
 import qualified Chat.Flowdock.REST as FD
 import qualified FUM
@@ -104,29 +104,29 @@ githubOrganisationMembers = do
 -- | Get a mapping fum username to planmill user
 --
 -- Silently drops FUM users, which we cannot find planmill user for.
---
--- /TODO/: use applicative
 fumPlanmillMap
     :: ( MonadFUM m, MonadPlanMillQuery m
        , MonadReader env m, HasFUMEmployeeListName env
        )
-    => m (HashMap FUM.UserName PM.User)
+    => m (HashMap FUM.UserName (FUM.User, PM.User))
 fumPlanmillMap =
     combine <$> fumEmployeeList <*> PMQ.users
   where
-    combine :: Vector FUM.User-> Vector PM.User -> HashMap FUM.UserName PM.User
+    combine :: Vector FUM.User -> Vector PM.User -> HashMap FUM.UserName (FUM.User, PM.User)
     combine fum pm = HM.fromList $ catMaybes $ map extract $ toList pm
       where
-        fumNames :: Set FUM.UserName
-        fumNames = Set.fromList $ fum ^.. traverse . FUM.userName
+        fumNames :: IdMap FUM.User
+        fumNames = idMapOf folded fum
 
-        extract :: PM.User -> Maybe (FUM.UserName, PM.User)
+        extract :: PM.User -> Maybe (FUM.UserName, (FUM.User, PM.User))
         extract pmUser = do
             name <- match loginRe (PM.uUserName pmUser)
-            guard (name `Set.member` fumNames)
-            pure (name, pmUser)
+            fumUser <- fumNames ^. at name
+            pure (name, (fumUser, pmUser))
 
-        loginRe = FUM.UserName . view packed <$ "https://login.futurice.com/openid/" <*> many anySym
+        loginRe = FUM.UserName . view packed
+            <$  "https://login.futurice.com/openid/"
+            <*> many anySym
 
 -- | Get information about employee from planmill
 --

@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE OverloadedStrings      #-}
@@ -17,11 +18,12 @@ module Futurice.App.FutuhoursApi.Logic (
 import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM      (readTVarIO)
-import Control.Lens                (to)
+import Control.Lens                (sumOf, to)
 import Control.Monad.Trans.Control (defaultLiftWith, defaultRestoreT)
 import Data.Aeson                  (FromJSON)
 import Data.Constraint
-import Futurice.Time               (ndtConvert')
+import Data.Fixed                  (Centi)
+import Futurice.Time               (NDT, TimeUnit (..), ndtConvert', ndtDivide)
 import Servant
        (Handler, ServantErr (..), err400, err403, err500)
 
@@ -50,26 +52,24 @@ userEndpoint
     -> Maybe FUM.UserName
     -> Handler User
 userEndpoint ctx mfum =
-    authorisedUser ctx mfum $ \_fumUsername pmUser _pmData -> do
+    authorisedUser ctx mfum $ \fumUser pmUser _pmData -> do
         let pmUid = pmUser ^. PM.identifier
         balance <- ndtConvert' . view PM.tbMinutes <$>
             PM.planmillAction (PM.userTimeBalance pmUid)
-        -- TODO: get from PM
-        let holidaysLeft = 0
-        let utz = 100
-        -- TODO: change futurice-integrations,
-        -- so we have FUM and PM bidirectional mapping with both User records from both
-        -- available
-        --
-        -- profile picture is then trivial to get from the FUM data.
-        let profilePicture = ""
+        wh <- workingHours pmUid
+        holidaysLeft <- sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') <$>
+            PM.planmillAction (PM.userVacations pmUid)
+        -- I wish we could do units properly.
+        let holidaysLeft' = pure (ndtDivide holidaysLeft wh) :: NDT 'Days Centi
+        -- TODO: calculate the UTZ (for this month?).
+        let utz = 95
         pure $ User
             { _userFirstName       = PM.uFirstName pmUser
             , _userLastName        = PM.uLastName pmUser
             , _userBalance         = balance
-            , _userHolidaysLeft    = holidaysLeft
+            , _userHolidaysLeft    = holidaysLeft'
             , _userUtilizationRate = utz
-            , _userProfilePicture  = profilePicture
+            , _userProfilePicture  = fromMaybe "" $ fumUser ^. FUM.userImageUrl . lazy
             }
 
 -- | @GET /hours@
@@ -82,16 +82,16 @@ hoursEndpoint
 hoursEndpoint ctx mfum start end = do
     interval <- maybe (throwError err400) pure interval'
     let resultInterval = PM.ResultInterval PM.IntervalStart interval
-    authorisedUser ctx mfum $ \_fumusername pmUser pmData -> do
+    authorisedUser ctx mfum $ \_fumUser pmUser pmData -> do
         let pmUid = pmUser ^. PM.identifier
         reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
         capacities <- PM.planmillAction $ PM.userCapacity interval pmUid
-        liftIO $ print capacities
         let projects = pmData ^.. planmillProjects . folded . to projectToProject
         let entries = reportToEntry <$> toList reports
         let holidayNames = mkHolidayNames capacities
+        wh <- workingHours pmUid
         pure $ HoursResponse
-            { _hoursResponseDefaultWorkHours = 7.5 -- TODO
+            { _hoursResponseDefaultWorkHours = wh
             , _hoursResponseProjects         = projects
             , _hoursResponseMonths           = mkHoursMonth interval holidayNames entries
             }
@@ -140,8 +140,8 @@ entryEndpoint
     -> EntryUpdate
     -> Handler EntryUpdateResponse
 entryEndpoint ctx mfum eu =
-    authorisedUser ctx mfum $ \fumusername _pmUser _pmData -> do
-        logTrace "POST /entry" (fumusername, eu)
+    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
+        logTrace "POST /entry" (fumUser ^. FUM.userName, eu)
         throwError err500 { errBody = "Not implemented" }
 
 -- | @PUT /entry/#id@
@@ -152,8 +152,8 @@ entryIdEndpoint
     -> EntryUpdate
     -> Handler EntryUpdateResponse
 entryIdEndpoint ctx mfum eid eu =
-    authorisedUser ctx mfum $ \fumusername _pmUser _pmData -> do
-        logTrace "PUT /entry" (fumusername, eid, eu)
+    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
+        logTrace "PUT /entry" (fumUser ^. FUM.userName, eid, eu)
         throwError err500 { errBody = "Not implemented" }
 
 -- | @DELETE /entry/#id@
@@ -163,24 +163,28 @@ entryDeleteEndpoint
     -> PM.TimereportId
     -> Handler EntryUpdateResponse
 entryDeleteEndpoint ctx mfum eid =
-    authorisedUser ctx mfum $ \fumusername _pmUser _pmData -> do
-        logTrace "DELETE /entry" (fumusername, eid)
+    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
+        logTrace "DELETE /entry" (fumUser ^. FUM.userName, eid)
         throwError err500 { errBody = "Not implemented" }
 
 -------------------------------------------------------------------------------
 -- Utilities
 -------------------------------------------------------------------------------
 
+-- | Actually we'd like to return 'WithUnit (Hours/Day) Centi'
+workingHours :: Applicative m => PM.UserId -> m (NDT 'Hours Centi)
+workingHours _ = pure 7.5 -- TODO: hardcoded for now.
+
 authorisedUser
     :: Ctx -> Maybe FUM.UserName
-    -> (FUM.UserName -> PM.User -> PlanmillData -> PlanmillT (LogT Handler) a)
+    -> (FUM.User -> PM.User -> PlanmillData -> PlanmillT (LogT Handler) a)
     -> Handler a
 authorisedUser ctx mfum f =
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
         pmData <- liftIO $ readTVarIO $ ctxPlanmillData ctx
-        pmUser <- maybe (throwError err403) pure $
+        (fumUser, pmUser) <- maybe (throwError err403) pure $
             pmData ^. planmillUserLookup . at fumUsername
-        f fumUsername pmUser pmData
+        f fumUser pmUser pmData
             & runPlanmillT (ctxPlanmillCfg ctx)
             & runLogT "endpoint" (ctxLogger ctx)
 

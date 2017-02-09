@@ -46,6 +46,7 @@ module PlanMill.Endpoints (
     user,
     users,
     userTimeBalance,
+    userVacations,
     ) where
 
 import PlanMill.Internal.Prelude
@@ -219,6 +220,12 @@ userCapacity interval uid = planMillGetQs qs $ t "users" // uid // t "capacity"
         [ ("start",  fromString . showPlanmillUTCTime $ UTCTime a 0)
         , ("finish", fromString . showPlanmillUTCTime $ UTCTime b 0)
         ]
+
+-- | Get a list of vacations.
+--
+-- See <https://developers.planmill.com/api/#users__user_id__vacations_get>
+userVacations :: UserId -> PlanMill Vacations
+userVacations uid = planMillPagedGet $ t "users" // uid // t "vacations"
 
 -- | Get a list of assignments
 --

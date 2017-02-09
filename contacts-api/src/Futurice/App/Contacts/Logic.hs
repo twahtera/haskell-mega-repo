@@ -101,7 +101,7 @@ fumPlanmillTeamMap
        , MonadReader env m, HasFUMEmployeeListName env
        )
     => m (HashMap FUM.UserName (Maybe Text))
-fumPlanmillTeamMap = fumPlanmillMap >>= traverse f
+fumPlanmillTeamMap = fumPlanmillMap >>= traverse (f . snd)
   where
     f :: PM.User -> m (Maybe Text)
     f u = PM.tName <$$> traverse PMQ.team (PM.uTeam u)

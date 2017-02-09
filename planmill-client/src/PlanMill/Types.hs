@@ -20,6 +20,7 @@ module PlanMill.Types (
     module PlanMill.Types.Timereport,
     module PlanMill.Types.User,
     module PlanMill.Types.UserCapacity,
+    module PlanMill.Types.Vacation,
     -- * Other
     module PlanMill.Types.Auth,
     module PlanMill.Types.Cfg,
@@ -51,6 +52,7 @@ import PlanMill.Types.TimeBalance
 import PlanMill.Types.Timereport
 import PlanMill.Types.User
 import PlanMill.Types.UserCapacity
+import PlanMill.Types.Vacation
 
 import PlanMill.Types.Auth
 import PlanMill.Types.Cfg
