@@ -156,7 +156,7 @@ balanceReport
 balanceReport interval = do
     now <- currentTime
     fumUsers <- fumEmployeeList
-    fpm <- fumPlanmillMap
+    fpm <- snd <$$> fumPlanmillMap
     fpm' <- itraverse (perUser $ supervisors fumUsers) fpm
     let fpm'' = V.fromList . sortBy cmpPE . HM.elems $ fpm'
     pure $ Report (ReportGenerated now) fpm''

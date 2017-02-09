@@ -50,7 +50,7 @@ userEndpoint
     -> Maybe FUM.UserName
     -> Handler User
 userEndpoint ctx mfum =
-    authorisedUser ctx mfum $ \_fumUsername pmUser _pmData -> do
+    authorisedUser ctx mfum $ \_fumUser pmUser _pmData -> do
         let pmUid = pmUser ^. PM.identifier
         balance <- ndtConvert' . view PM.tbMinutes <$>
             PM.planmillAction (PM.userTimeBalance pmUid)
@@ -82,7 +82,7 @@ hoursEndpoint
 hoursEndpoint ctx mfum start end = do
     interval <- maybe (throwError err400) pure interval'
     let resultInterval = PM.ResultInterval PM.IntervalStart interval
-    authorisedUser ctx mfum $ \_fumusername pmUser pmData -> do
+    authorisedUser ctx mfum $ \_fumUser pmUser pmData -> do
         let pmUid = pmUser ^. PM.identifier
         reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
         capacities <- PM.planmillAction $ PM.userCapacity interval pmUid
@@ -140,8 +140,8 @@ entryEndpoint
     -> EntryUpdate
     -> Handler EntryUpdateResponse
 entryEndpoint ctx mfum eu =
-    authorisedUser ctx mfum $ \fumusername _pmUser _pmData -> do
-        logTrace "POST /entry" (fumusername, eu)
+    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
+        logTrace "POST /entry" (fumUser ^. FUM.userName, eu)
         throwError err500 { errBody = "Not implemented" }
 
 -- | @PUT /entry/#id@
@@ -152,8 +152,8 @@ entryIdEndpoint
     -> EntryUpdate
     -> Handler EntryUpdateResponse
 entryIdEndpoint ctx mfum eid eu =
-    authorisedUser ctx mfum $ \fumusername _pmUser _pmData -> do
-        logTrace "PUT /entry" (fumusername, eid, eu)
+    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
+        logTrace "PUT /entry" (fumUser ^. FUM.userName, eid, eu)
         throwError err500 { errBody = "Not implemented" }
 
 -- | @DELETE /entry/#id@
@@ -163,8 +163,8 @@ entryDeleteEndpoint
     -> PM.TimereportId
     -> Handler EntryUpdateResponse
 entryDeleteEndpoint ctx mfum eid =
-    authorisedUser ctx mfum $ \fumusername _pmUser _pmData -> do
-        logTrace "DELETE /entry" (fumusername, eid)
+    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
+        logTrace "DELETE /entry" (fumUser ^. FUM.userName, eid)
         throwError err500 { errBody = "Not implemented" }
 
 -------------------------------------------------------------------------------
@@ -173,14 +173,14 @@ entryDeleteEndpoint ctx mfum eid =
 
 authorisedUser
     :: Ctx -> Maybe FUM.UserName
-    -> (FUM.UserName -> PM.User -> PlanmillData -> PlanmillT (LogT Handler) a)
+    -> (FUM.User -> PM.User -> PlanmillData -> PlanmillT (LogT Handler) a)
     -> Handler a
 authorisedUser ctx mfum f =
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
         pmData <- liftIO $ readTVarIO $ ctxPlanmillData ctx
-        pmUser <- maybe (throwError err403) pure $
+        (fumUser, pmUser) <- maybe (throwError err403) pure $
             pmData ^. planmillUserLookup . at fumUsername
-        f fumUsername pmUser pmData
+        f fumUser pmUser pmData
             & runPlanmillT (ctxPlanmillCfg ctx)
             & runLogT "endpoint" (ctxLogger ctx)
 

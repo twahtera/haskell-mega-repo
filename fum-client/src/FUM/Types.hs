@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE TypeFamilies        #-}
 module FUM.Types where
 
 import Prelude ()
@@ -13,6 +14,7 @@ import Data.Aeson.Compat
 import Data.Aeson.Types
        (FromJSONKey (..), ToJSONKey (..), fromJSONKeyCoerce, toJSONKeyText)
 import Data.Swagger      (ToSchema)
+import Futurice.IdMap    (HasKey (..))
 import Test.QuickCheck   (Arbitrary (..), elements)
 import Web.HttpApiData   (FromHttpApiData (..), ToHttpApiData (..))
 
@@ -28,7 +30,7 @@ import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 -- We need this before TH-splices.
 
 (.:??) :: FromJSON a => Object -> Text -> Parser (S.Maybe a)
-obj .:?? key = view strict <$> obj .:? key
+obj .:?? k = view strict <$> obj .:? k
 
 emptyToNothing :: Text -> Maybe Text
 emptyToNothing t
@@ -245,6 +247,10 @@ data User = User
 makeLenses ''User
 instance Hashable User
 instance NFData User
+
+instance HasKey User where
+    type Key User = UserName
+    key = userName
 
 instance FromJSON User where
     parseJSON = withObject "User object" $ \v -> User

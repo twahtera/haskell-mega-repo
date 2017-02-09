@@ -70,7 +70,7 @@ powerUserReport
         )
     => m PowerUserReport
 powerUserReport = do
-    fpm <- fumPlanmillMap
+    fpm <- snd <$$> fumPlanmillMap
     toVectorOf folded <$> itraverse powerUser fpm
 
 powerUser :: MonadPlanMillQuery m => FUM.UserName -> PM.User -> m PowerUser

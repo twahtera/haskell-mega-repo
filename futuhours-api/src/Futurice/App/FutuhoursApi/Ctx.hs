@@ -8,7 +8,7 @@ import Control.Concurrent.STM (TVar)
 import qualified FUM
 import qualified PlanMill as PM
 
-type PlanmillUserLookupMap = HashMap FUM.UserName PM.User
+type PlanmillUserLookupMap = HashMap FUM.UserName (FUM.User, PM.User)
 
 -- | A quite stable data, which we update once in a while when service is run.
 data PlanmillData = PlanmillData

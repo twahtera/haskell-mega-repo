@@ -164,7 +164,7 @@ timereportsByTaskReport = do
     let endDay   = today
     let interval = startDay ... endDay
     -- Users
-    fpm <- fumPlanmillMap
+    fpm <- snd <$$> fumPlanmillMap
     -- Timereports
     trs <- concatMap toList <$>
         traverse (PMQ.timereports interval . view PM.identifier) (toList fpm)
