@@ -130,6 +130,7 @@ library
       PlanMill.Types.UrlPart
       PlanMill.Types.User
       PlanMill.Types.UserCapacity
+      PlanMill.Types.Vacation
   default-language: Haskell2010
 
 executable planmill-client
