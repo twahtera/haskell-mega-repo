@@ -128,7 +128,7 @@ data User = User
     { _userFirstName       :: !Text
     , _userLastName        :: !Text
     , _userBalance         :: !(NDT 'Hours Centi)
-    , _userHolidaysLeft    :: !Int
+    , _userHolidaysLeft    :: !(NDT 'Days Centi)
     , _userUtilizationRate :: !Float
     , _userProfilePicture  :: !Text
     }
@@ -180,7 +180,7 @@ data HoursMonthUpdate = HoursMonthUpdate
   deriving (Eq, Show, Typeable, Generic)
 
 data HoursResponse = HoursResponse
-    { _hoursResponseDefaultWorkHours :: !Float
+    { _hoursResponseDefaultWorkHours :: !(NDT 'Hours Centi)
     , _hoursResponseProjects         :: ![Project]
     , _hoursResponseMonths           :: Map Month HoursMonth -- invariant contents: 'HoursMonth' contains days of key-month
     }

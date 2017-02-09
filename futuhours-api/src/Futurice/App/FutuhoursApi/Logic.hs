@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE OverloadedStrings      #-}
@@ -17,11 +18,12 @@ module Futurice.App.FutuhoursApi.Logic (
 import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM      (readTVarIO)
-import Control.Lens                (to)
+import Control.Lens                (sumOf, to)
 import Control.Monad.Trans.Control (defaultLiftWith, defaultRestoreT)
 import Data.Aeson                  (FromJSON)
 import Data.Constraint
-import Futurice.Time               (ndtConvert')
+import Data.Fixed                  (Centi)
+import Futurice.Time               (NDT, TimeUnit (..), ndtConvert', ndtDivide)
 import Servant
        (Handler, ServantErr (..), err400, err403, err500)
 
@@ -54,14 +56,18 @@ userEndpoint ctx mfum =
         let pmUid = pmUser ^. PM.identifier
         balance <- ndtConvert' . view PM.tbMinutes <$>
             PM.planmillAction (PM.userTimeBalance pmUid)
-        -- TODO: get from PM
-        let holidaysLeft = 0
-        let utz = 100
+        wh <- workingHours pmUid
+        holidaysLeft <- sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') <$>
+            PM.planmillAction (PM.userVacations pmUid)
+        -- I wish we could do units properly.
+        let holidaysLeft' = pure (ndtDivide holidaysLeft wh) :: NDT 'Days Centi
+        -- TODO: calculate the UTZ (for this month?).
+        let utz = 95
         pure $ User
             { _userFirstName       = PM.uFirstName pmUser
             , _userLastName        = PM.uLastName pmUser
             , _userBalance         = balance
-            , _userHolidaysLeft    = holidaysLeft
+            , _userHolidaysLeft    = holidaysLeft'
             , _userUtilizationRate = utz
             , _userProfilePicture  = fromMaybe "" $ fumUser ^. FUM.userImageUrl . lazy
             }
@@ -80,12 +86,12 @@ hoursEndpoint ctx mfum start end = do
         let pmUid = pmUser ^. PM.identifier
         reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
         capacities <- PM.planmillAction $ PM.userCapacity interval pmUid
-        liftIO $ print capacities
         let projects = pmData ^.. planmillProjects . folded . to projectToProject
         let entries = reportToEntry <$> toList reports
         let holidayNames = mkHolidayNames capacities
+        wh <- workingHours pmUid
         pure $ HoursResponse
-            { _hoursResponseDefaultWorkHours = 7.5 -- TODO
+            { _hoursResponseDefaultWorkHours = wh
             , _hoursResponseProjects         = projects
             , _hoursResponseMonths           = mkHoursMonth interval holidayNames entries
             }
@@ -164,6 +170,10 @@ entryDeleteEndpoint ctx mfum eid =
 -------------------------------------------------------------------------------
 -- Utilities
 -------------------------------------------------------------------------------
+
+-- | Actually we'd like to return 'WithUnit (Hours/Day) Centi'
+workingHours :: Applicative m => PM.UserId -> m (NDT 'Hours Centi)
+workingHours _ = pure 7.5 -- TODO: hardcoded for now.
 
 authorisedUser
     :: Ctx -> Maybe FUM.UserName
