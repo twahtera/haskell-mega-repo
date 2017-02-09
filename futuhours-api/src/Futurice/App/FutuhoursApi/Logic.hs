@@ -50,26 +50,20 @@ userEndpoint
     -> Maybe FUM.UserName
     -> Handler User
 userEndpoint ctx mfum =
-    authorisedUser ctx mfum $ \_fumUser pmUser _pmData -> do
+    authorisedUser ctx mfum $ \fumUser pmUser _pmData -> do
         let pmUid = pmUser ^. PM.identifier
         balance <- ndtConvert' . view PM.tbMinutes <$>
             PM.planmillAction (PM.userTimeBalance pmUid)
         -- TODO: get from PM
         let holidaysLeft = 0
         let utz = 100
-        -- TODO: change futurice-integrations,
-        -- so we have FUM and PM bidirectional mapping with both User records from both
-        -- available
-        --
-        -- profile picture is then trivial to get from the FUM data.
-        let profilePicture = ""
         pure $ User
             { _userFirstName       = PM.uFirstName pmUser
             , _userLastName        = PM.uLastName pmUser
             , _userBalance         = balance
             , _userHolidaysLeft    = holidaysLeft
             , _userUtilizationRate = utz
-            , _userProfilePicture  = profilePicture
+            , _userProfilePicture  = fromMaybe "" $ fumUser ^. FUM.userImageUrl . lazy
             }
 
 -- | @GET /hours@
