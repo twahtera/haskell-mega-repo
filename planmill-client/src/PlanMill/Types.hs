@@ -27,7 +27,6 @@ module PlanMill.Types (
     module PlanMill.Types.Error,
     module PlanMill.Types.Identifier,
     module PlanMill.Types.Inserted,
-    module PlanMill.Types.MaybeNumberText,
     module PlanMill.Types.Me,
     module PlanMill.Types.Request,
     module PlanMill.Types.ResultInterval,
@@ -59,7 +58,6 @@ import PlanMill.Types.Cfg
 import PlanMill.Types.Error
 import PlanMill.Types.Identifier
 import PlanMill.Types.Inserted
-import PlanMill.Types.MaybeNumberText
 import PlanMill.Types.Me
 import PlanMill.Types.Request
 import PlanMill.Types.ResultInterval

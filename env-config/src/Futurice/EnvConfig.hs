@@ -26,7 +26,6 @@ import Algebra.Lattice
 import Control.Monad.Logger           (LogLevel (..))
 import Data.Functor.Alt               (Alt (..))
 import Data.List                      (foldl')
-import Data.List.NonEmpty             (NonEmpty (..))
 import Data.Semigroup.Foldable        (asum1)
 import Database.PostgreSQL.Simple     (ConnectInfo (..))
 import Database.PostgreSQL.Simple.URL (parseDatabaseUrl)
@@ -42,7 +41,6 @@ import qualified Data.Text          as T
 import qualified Data.UUID.Types    as UUID
 import qualified FUM
 import qualified GitHub             as GH
-import qualified PlanMill           as PM
 
 data EnvVarP a = EnvVar
     { _envVarName :: String
@@ -234,16 +232,6 @@ instance FromEnvVar FUM.GroupName where
 
 instance FromEnvVar FUM.UserName where
     fromEnvVar = fmap FUM.UserName . fromEnvVar
-
--------------------------------------------------------------------------------
--- PlanMill
--------------------------------------------------------------------------------
-
-instance FromEnvVar PM.ApiKey where
-    fromEnvVar = fmap PM.ApiKey . fromEnvVar
-
-instance FromEnvVar (PM.Identifier a) where
-    fromEnvVar = fmap PM.Ident . fromEnvVar
 
 -------------------------------------------------------------------------------
 -- GitHub

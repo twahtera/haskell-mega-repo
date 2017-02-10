@@ -13,7 +13,6 @@ import PlanMill.Internal.Prelude
 
 import PlanMill.Types.Account         (AccountId)
 import PlanMill.Types.Identifier      (HasIdentifier (..), Identifier)
-import PlanMill.Types.MaybeNumberText (getMaybeNumberText)
 import PlanMill.Types.User            (UserId)
 
 type ProjectId = Identifier Project
@@ -74,7 +73,7 @@ instance HasSemanticVersion Project
 instance FromJSON Project where
     parseJSON = withObject "Project" $ \obj ->
         Project <$> obj .: "id"
-                <*> (getMaybeNumberText <$> obj .: "name") -- HACK
+                <*> (getParsedAsText <$> obj .: "name") -- HACK
                 <*> obj .:? "account"
                 <*> obj .:? "accountName"
                 <*> obj .:? "actualCost"

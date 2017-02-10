@@ -37,6 +37,7 @@ library
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , attoparsec
     , base-compat
     , base64-bytestring
     , binary
@@ -52,6 +53,7 @@ library
     , deepseq
     , dependent-sum
     , DRBG
+    , env-config
     , exceptions
     , futurice-prelude
     , generics-sop
@@ -70,10 +72,12 @@ library
     , monadcryptorandom >=0.7.0
     , mtl
     , operational
+    , optparse-sop
     , postgresql-simple
     , QuickCheck
     , reflection >= 2 && <2.3
     , regex-applicative-text
+    , scientific
     , semigroups
     , singleton-bool >= 0.1.2.0
     , swagger2
@@ -114,7 +118,6 @@ library
       PlanMill.Types.ExitCriteria
       PlanMill.Types.Identifier
       PlanMill.Types.Inserted
-      PlanMill.Types.MaybeNumberText
       PlanMill.Types.Me
       PlanMill.Types.Meta
       PlanMill.Types.Project
@@ -146,6 +149,7 @@ executable planmill-client
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , attoparsec
     , base-compat
     , base64-bytestring
     , binary
@@ -161,6 +165,7 @@ executable planmill-client
     , deepseq
     , dependent-sum
     , DRBG
+    , env-config
     , exceptions
     , futurice-prelude
     , generics-sop
@@ -179,10 +184,12 @@ executable planmill-client
     , monadcryptorandom >=0.7.0
     , mtl
     , operational
+    , optparse-sop
     , postgresql-simple
     , QuickCheck
     , reflection >= 2 && <2.3
     , regex-applicative-text
+    , scientific
     , semigroups
     , singleton-bool >= 0.1.2.0
     , swagger2
@@ -196,7 +203,6 @@ executable planmill-client
     , planmill-client
     , optparse-applicative
     , SHA
-    , unordered-containers
     , yaml
   if impl(ghc >= 8.0)
     ghc-options: -freduction-depth=100
@@ -205,6 +211,79 @@ executable planmill-client
   other-modules:
       Caching
       MonadPretty
+  default-language: Haskell2010
+
+executable pm-cli
+  main-is: Main.hs
+  hs-source-dirs:
+      cli2
+  ghc-options: -Wall
+  build-depends:
+      base >=4.8 && <4.10
+    , aeson
+    , aeson-compat
+    , aeson-extra
+    , ansi-pretty
+    , ansi-wl-pprint
+    , async
+    , attoparsec
+    , base-compat
+    , base64-bytestring
+    , binary
+    , binary-orphans
+    , binary-tagged
+    , byteable
+    , bytestring
+    , cassava
+    , composition-extra
+    , constraints
+    , containers
+    , cryptohash
+    , deepseq
+    , dependent-sum
+    , DRBG
+    , env-config
+    , exceptions
+    , futurice-prelude
+    , generics-sop
+    , hashable
+    , hashable-time
+    , haxl
+    , http-api-data
+    , http-client
+    , http-client-tls
+    , http-types
+    , intervals
+    , lens
+    , log-base
+    , monad-http
+    , monad-time
+    , monadcryptorandom >=0.7.0
+    , mtl
+    , operational
+    , optparse-sop
+    , postgresql-simple
+    , QuickCheck
+    , reflection >= 2 && <2.3
+    , regex-applicative-text
+    , scientific
+    , semigroups
+    , singleton-bool >= 0.1.2.0
+    , swagger2
+    , text
+    , time
+    , time-locale-compat
+    , time-parsers
+    , transformers
+    , unordered-containers
+    , vector
+    , monad-control
+    , planmill-client
+    , transformers-base
+  if impl(ghc >= 8.0)
+    ghc-options: -freduction-depth=100
+  if impl(ghc < 8.0)
+    ghc-options: -fcontext-stack=40
   default-language: Haskell2010
 
 test-suite integration
@@ -221,6 +300,7 @@ test-suite integration
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , attoparsec
     , base-compat
     , base64-bytestring
     , binary
@@ -236,6 +316,7 @@ test-suite integration
     , deepseq
     , dependent-sum
     , DRBG
+    , env-config
     , exceptions
     , futurice-prelude
     , generics-sop
@@ -254,10 +335,12 @@ test-suite integration
     , monadcryptorandom >=0.7.0
     , mtl
     , operational
+    , optparse-sop
     , postgresql-simple
     , QuickCheck
     , reflection >= 2 && <2.3
     , regex-applicative-text
+    , scientific
     , semigroups
     , singleton-bool >= 0.1.2.0
     , swagger2
@@ -289,6 +372,7 @@ test-suite test
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , attoparsec
     , base-compat
     , base64-bytestring
     , binary
@@ -304,6 +388,7 @@ test-suite test
     , deepseq
     , dependent-sum
     , DRBG
+    , env-config
     , exceptions
     , futurice-prelude
     , generics-sop
@@ -322,10 +407,12 @@ test-suite test
     , monadcryptorandom >=0.7.0
     , mtl
     , operational
+    , optparse-sop
     , postgresql-simple
     , QuickCheck
     , reflection >= 2 && <2.3
     , regex-applicative-text
+    , scientific
     , semigroups
     , singleton-bool >= 0.1.2.0
     , swagger2

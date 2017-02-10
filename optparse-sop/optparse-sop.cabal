@@ -48,7 +48,7 @@ library
     generics-sop-lens,
     intervals,
     lens,
-    optparse-applicative,
+    optparse-applicative >= 0.13.0.0 && <0.14,
     split,
     time-parsers,
     trifecta

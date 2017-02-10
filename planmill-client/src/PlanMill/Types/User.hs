@@ -23,9 +23,10 @@ module PlanMill.Types.User (
     ) where
 
 import PlanMill.Internal.Prelude
-import PlanMill.Types.Account     (AccountId)
-import PlanMill.Types.Enumeration (EnumValue)
-import PlanMill.Types.Identifier  (HasIdentifier (..), Identifier)
+import PlanMill.Types.Account          (AccountId)
+import PlanMill.Types.CapacityCalendar (CapacityCalendarId)
+import PlanMill.Types.Enumeration      (EnumValue)
+import PlanMill.Types.Identifier       (HasIdentifier (..), Identifier)
 
 import Data.Aeson.Extra.SymTag (SymTag)
 
@@ -37,7 +38,7 @@ data User = User
     , uAccountName       :: !(Maybe Text)
     , uBalanceAdjustment :: !(Maybe Int)
     , uBalanceMaximum    :: !(Maybe Int)
-    , uCalendars         :: !(Maybe Text)
+    , uCalendars         :: !(Maybe CapacityCalendarId)
     --, uCompetence         :: !(Maybe Int) -- users returns Text, users/:id returns Int
     , uContractType      :: !(EnumValue User "contractType")
     , uCurrencyCode      :: !(Maybe Text)
@@ -80,7 +81,7 @@ instance FromJSON User where
         <*> obj .:? "accountName"
         <*> obj .:? "balanceAdjustment"
         <*> obj .:? "balanceMaximum"
-        <*> obj .:? "calendars"
+        <*> optional (getParsedAsIntegral <$> obj .: "calendars") -- TODO
         -- <*> obj .:? "competence"
         <*> obj .: "contractType"
         <*> obj .:? "currencyCode"
