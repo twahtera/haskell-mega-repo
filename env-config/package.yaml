@@ -26,7 +26,6 @@ library:
     - http-client
     - lattices >=1.5.0
     - monad-logger
-    - planmill-client
     - postgresql-simple
     - postgresql-simple-url
     - semigroups

@@ -7,10 +7,13 @@ module PlanMill.Types.Auth (
     ApiKey(..),
     ) where
 
+import Prelude ()
 import PlanMill.Internal.Prelude
+import Futurice.EnvConfig        (FromEnvVar (..))
 
 import qualified Data.ByteString    as BS
 import qualified Data.Text.Encoding as TE
+
 
 -- | Unique 4-8 characters long string composed of upper and lower case letters
 -- and numbers. Each nonce can only be used once so it must be regenerated for
@@ -32,3 +35,6 @@ instance IsString ApiKey where
 
 instance FromJSON ApiKey where
     parseJSON = withText "Planmill apikey" $ pure . ApiKey . TE.encodeUtf8
+
+instance FromEnvVar ApiKey where
+    fromEnvVar = fmap ApiKey . fromEnvVar

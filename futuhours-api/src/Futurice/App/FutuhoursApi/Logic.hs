@@ -18,11 +18,12 @@ module Futurice.App.FutuhoursApi.Logic (
 import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM      (readTVarIO)
-import Control.Lens                (sumOf, to)
+import Control.Lens                (contains, filtered, nullOf, sumOf, to)
 import Control.Monad.Trans.Control (defaultLiftWith, defaultRestoreT)
 import Data.Aeson                  (FromJSON)
 import Data.Constraint
 import Data.Fixed                  (Centi)
+import Data.Set.Lens               (setOf)
 import Futurice.Time               (NDT, TimeUnit (..), ndtConvert', ndtDivide)
 import Servant
        (Handler, ServantErr (..), err400, err403, err500)
@@ -56,7 +57,7 @@ userEndpoint ctx mfum =
         let pmUid = pmUser ^. PM.identifier
         balance <- ndtConvert' . view PM.tbMinutes <$>
             PM.planmillAction (PM.userTimeBalance pmUid)
-        wh <- workingHours pmUid
+        wh <- workingHours pmUser
         holidaysLeft <- sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') <$>
             PM.planmillAction (PM.userVacations pmUid)
         -- I wish we could do units properly.
@@ -86,10 +87,18 @@ hoursEndpoint ctx mfum start end = do
         let pmUid = pmUser ^. PM.identifier
         reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
         capacities <- PM.planmillAction $ PM.userCapacity interval pmUid
-        let projects = pmData ^.. planmillProjects . folded . to projectToProject
+        reps <- PM.planmillAction $ PM.reportableAssignments pmUid
+        let reportableTaskIds = setOf (folded . to PM.raTask) reps
+        let reportedTaskIds   = setOf (folded . to PM.trTask) reports
+        logTrace "reportable" $ show $ reportableTaskIds <> reportedTaskIds
+        let projects = pmData ^..
+                planmillProjects
+                . folded
+                . to (projectToProject reportableTaskIds reportedTaskIds)
+                . folded
         let entries = reportToEntry <$> toList reports
         let holidayNames = mkHolidayNames capacities
-        wh <- workingHours pmUid
+        wh <- workingHours pmUser
         pure $ HoursResponse
             { _hoursResponseDefaultWorkHours = wh
             , _hoursResponseProjects         = projects
@@ -121,13 +130,30 @@ hoursEndpoint ctx mfum start end = do
         , _entryBillable    = EntryTypeNotBillable -- TODO, check trBillableStatus
         }
 
-    projectToProject :: (PM.Project, [PM.Task]) -> Project
-    projectToProject (p, ts) = Project
-        { _projectId     = p ^. PM.identifier
-        , _projectName   = PM.pName p
-        , _projectTasks  = taskToTask <$> ts
-        , _projectClosed = False -- TODO
-        }
+    projectToProject
+        :: Set PM.TaskId -- ^ reportable
+        -> Set PM.TaskId -- ^ reported
+        -> (PM.Project, [PM.Task])
+        -> Maybe Project
+    projectToProject reportable reported (p, ts)
+        | null tasks = Nothing
+        | otherwise  = Just $ Project
+            { _projectId     = p ^. PM.identifier
+            , _projectName   = PM.pName p
+            , _projectTasks  = tasks
+            , _projectClosed = closed
+            }
+      where
+        tasks = ts ^.. folded
+            . filtered (\t -> taskIds ^. contains (t ^. PM.identifier))
+            . to taskToTask
+
+        -- Project is closed, if there aren't reportable tasks anymore.
+        closed =  flip nullOf ts
+            $ folded
+            . filtered (\t -> reportable ^. contains (t ^. PM.identifier))
+
+        taskIds = reportable <> reported
 
     taskToTask :: PM.Task -> Task
     taskToTask t = mkTask (t ^. PM.identifier) (PM.taskName t)
@@ -172,8 +198,10 @@ entryDeleteEndpoint ctx mfum eid =
 -------------------------------------------------------------------------------
 
 -- | Actually we'd like to return 'WithUnit (Hours/Day) Centi'
-workingHours :: Applicative m => PM.UserId -> m (NDT 'Hours Centi)
-workingHours _ = pure 7.5 -- TODO: hardcoded for now.
+workingHours :: MonadLog m => PM.User -> m (NDT 'Hours Centi)
+workingHours pmUser = do
+    logInfo "Capacity calendar" $ show pmUser
+    pure 7.5 -- TODO: hardcoded for now.
 
 authorisedUser
     :: Ctx -> Maybe FUM.UserName

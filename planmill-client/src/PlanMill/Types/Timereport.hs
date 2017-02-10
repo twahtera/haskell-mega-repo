@@ -18,7 +18,6 @@ module PlanMill.Types.Timereport (
 import PlanMill.Internal.Prelude
 
 import PlanMill.Types.Identifier      (HasIdentifier (..), Identifier)
-import PlanMill.Types.MaybeNumberText (getMaybeNumberText)
 import PlanMill.Types.Project         (ProjectId)
 import PlanMill.Types.Task            (TaskId)
 import PlanMill.Types.UOffset         (UOffset (..))
@@ -67,7 +66,7 @@ instance FromJSON Timereport where
         <*> obj .: "amount"
         <*> obj .: "billableStatus"
         <*> obj .:? "billingComment"
-        <*> (getMaybeNumberText <$$> obj .:? "comment")
+        <*> (getParsedAsText <$$> obj .:? "comment")
         <*> obj .:? "dutyType"
         <*> (dayFromZ <$> obj .: "finish")
         <*> obj .: "overtimeAmount"

@@ -8,6 +8,8 @@ module PlanMill.Internal.Prelude (
     (.:), (.:?), (.=), (.!=),
     Value(..),
     typeMismatch,
+    -- ** extras
+    getParsedAsText, getParsedAsIntegral,
     -- * binary-tagged
     HasSemanticVersion, HasStructuralInfo(..), sopStructuralInfo,
     -- * intervals
@@ -32,6 +34,7 @@ import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo (..), sopStructuralInfo)
 import Data.Time                 (ZonedTime, zonedTimeToLocalTime)
 import Data.Time.Clock.POSIX     (utcTimeToPOSIXSeconds)
+import Futurice.Aeson            (getParsedAsIntegral, getParsedAsText)
 import Futurice.IdMap            (HasKey (..))
 import Futurice.Time
 import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))

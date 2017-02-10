@@ -12,15 +12,17 @@ module PlanMill.Types.Identifier (
     HasIdentifier(..),
     ) where
 
+import Prelude ()
 import PlanMill.Internal.Prelude
+import Data.Swagger              (ToParamSchema, ToSchema)
+import Futurice.EnvConfig        (FromEnvVar (..))
+import Test.QuickCheck           (Arbitrary (..))
+import Web.HttpApiData           (FromHttpApiData (..), ToHttpApiData (..))
 
-import qualified Data.Csv        as Csv
-import           Data.Swagger    (ToParamSchema, ToSchema)
-import           Test.QuickCheck (Arbitrary (..))
-import           Web.HttpApiData (FromHttpApiData (..), ToHttpApiData (..))
-
+import qualified Data.Csv                             as Csv
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
+import qualified Options.SOP                          as O
 
 -- | Tagged identifier
 newtype Identifier a = Ident Word64
@@ -68,3 +70,11 @@ instance Postgres.FromField (Identifier a) where
 instance Arbitrary (Identifier a) where
     arbitrary        = Ident <$> arbitrary
     shrink (Ident i) = Ident <$> shrink i
+
+instance FromEnvVar (Identifier a) where
+    fromEnvVar = fmap Ident . fromEnvVar
+
+instance O.FromOptions (Identifier a) where
+    optionsParser = fmap Ident $ O.argument (O.maybeReader readMaybe) $ mconcat
+        [ O.metavar ":ident"
+        ]

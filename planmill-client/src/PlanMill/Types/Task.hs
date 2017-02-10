@@ -16,7 +16,6 @@ module PlanMill.Types.Task (
 import PlanMill.Internal.Prelude
 
 import PlanMill.Types.Identifier      (HasIdentifier (..), Identifier)
-import PlanMill.Types.MaybeNumberText (getMaybeNumberText)
 import PlanMill.Types.Project         (ProjectId)
 
 type TaskId = Identifier Task
@@ -68,24 +67,24 @@ instance HasStructuralInfo Task where structuralInfo = sopStructuralInfo
 instance HasSemanticVersion Task
 
 instance FromJSON Task where
-    parseJSON = withObject "Task" $ \obj ->
-        Task <$> obj .: "id"
-             <*> (getMaybeNumberText <$> obj .: "name") -- HACK
-             <*> obj .: "billableStatus"
-             <*> obj .:? "description"
-             <*> obj .: "dutyType"
-             <*> (getU <$> obj .: "finish")
-             <*> (getU <$$> obj .:? "finishOld")
-             <*> (getU <$$> obj .:? "originalFinish")
-             <*> (getU <$$> obj .:? "originalStart")
-             <*> obj .:? "parent"
-             <*> obj .:? "predecessorTask"
-             <*> obj .:? "priceType"
-             <*> obj .:? "project"
-             <*> (getU <$> obj .: "start")
-             -- <*> obj .: "status"
-             <*> obj .: "targetEffort"
-             <*> (getU <$$> obj .:? "tempFinish")
-             <*> obj .: "type"
-             <*> obj .: "unitPrice"
-             <*> obj .: "wbs"
+    parseJSON = withObject "Task" $ \obj -> Task
+        <$> obj .: "id"
+        <*> (getParsedAsText <$> obj .: "name") -- HACK
+        <*> obj .: "billableStatus"
+        <*> obj .:? "description"
+        <*> obj .: "dutyType"
+        <*> (getU <$> obj .: "finish")
+        <*> (getU <$$> obj .:? "finishOld")
+        <*> (getU <$$> obj .:? "originalFinish")
+        <*> (getU <$$> obj .:? "originalStart")
+        <*> obj .:? "parent"
+        <*> obj .:? "predecessorTask"
+        <*> obj .:? "priceType"
+        <*> obj .:? "project"
+        <*> (getU <$> obj .: "start")
+        -- <*> obj .: "status"
+        <*> obj .: "targetEffort"
+        <*> (getU <$$> obj .:? "tempFinish")
+        <*> obj .: "type"
+        <*> obj .: "unitPrice"
+        <*> obj .: "wbs"
