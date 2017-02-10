@@ -9,7 +9,7 @@ module Main (main) where
 import Prelude ()
 import Futurice.Prelude
 import Algebra.Lattice                  (top)
-import Control.Exception                (bracket)
+import Control.Exception.Lifted         (bracket)
 import Control.Lens                     (use, _4)
 import Control.Monad.Trans.State.Strict
        (StateT (..), evalState, execStateT, modify')
@@ -39,16 +39,15 @@ main = do
         _    -> putStrLn "Usage: checklist-import data.yaml"
 
 main' :: FilePath -> IO ()
-main' fp = withStderrLogger $ \logger -> do
-    Config {..} <- getConfig logger "CHECKLIST"
-    value <- decodeFileEither fp
+main' fp = withStderrLogger $ \logger -> runLogT "checklist-import" logger $ do
+    Config {..} <- getConfig "CHECKLIST"
+    value <- liftIO $ decodeFileEither fp
     case value of
-        Left exc -> putStrLn $ show exc
+        Left exc -> liftIO $ putStrLn $ show exc
         Right v  -> do
             let cmds = evalState (dataToCommands v) UUID.nil
-            bracket (Postgres.connect cfgPostgresConnInfo) Postgres.close $ \conn -> do
-                runLogT "checklist-import" logger $
-                    for_ cmds $ transactCommand conn "xxxx"
+            bracket (liftIO $ Postgres.connect cfgPostgresConnInfo) (liftIO . Postgres.close) $ \conn -> do
+                for_ cmds $ transactCommand conn "xxxx"
 
 -------------------------------------------------------------------------------
 -- MonadUUID

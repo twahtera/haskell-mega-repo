@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main (main, contrSubject, repoDescription, repoLanguage, repoOwner, repoName, repoStarsCount, statsGithubRepos) where
 
 import Prelude ()
@@ -21,7 +22,7 @@ printStats s = do
 
 main :: IO ()
 main = withStderrLogger $ \logger -> do
-    cfg <- getConfig logger "SPICESTATS"
+    cfg <- runLogT "spicestats-cli" logger $ getConfig "SPICESTATS"
     mgr <- newManager tlsManagerSettings
     msgs <- fetchMessagesLoop (cfgFdOrg cfg) (cfgFdFlow cfg) (cfgFdAuth cfg) mgr
     s <- spiceStats mgr msgs (cfgGhAuth cfg)

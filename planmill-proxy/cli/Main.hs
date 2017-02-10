@@ -1,5 +1,6 @@
-{-# LANGUAGE CPP          #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
 #if __GLASGOW_HASKELL__ >= 800
 {-# OPTIONS_GHC -freduction-depth=0 #-}
 #endif
@@ -26,7 +27,7 @@ import qualified PlanMill.Types.Query as Q
 main :: IO ()
 main = withStderrLogger $ \logger -> do
     -- config
-    (baseUrl, authUser, authPass) <- getConfig' logger "PLANMILLPROXY" $ (,,)
+    (baseUrl, authUser, authPass) <- runLogT "pm-proxy-cli" logger $ getConfig' "PLANMILLPROXY" $ (,,)
         <$> envVar "ENDPOINT"
         <*> envVar "HTTPUSER"
         <*> envVar "HTTPPASS"

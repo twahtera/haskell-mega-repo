@@ -215,8 +215,10 @@ futuriceServerMain
 futuriceServerMain makeCtx (SC t d server middleware (I envpfx)) =
     withStderrLogger $ \logger ->
     handleAll (handler logger) $ do
-        runLogT "futurice-servant" logger $ logInfo_ $ "Hello, " <> t <> " is alive"
-        (cfg, p, ekgP, leToken) <- getConfigWithPorts logger (envpfx ^. from packed)
+        (cfg, p, ekgP, leToken) <- runLogT "futurice-servant" logger $ do
+            logInfo_ $ "Hello, " <> t <> " is alive"
+            getConfigWithPorts (envpfx ^. from packed)
+
         cache          <- newDynMapCache
 
         let main' = main cfg p ekgP cache
