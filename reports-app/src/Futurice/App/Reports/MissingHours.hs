@@ -125,7 +125,7 @@ missingHoursForUser interval uid = do
         $ Map.differenceWith minus uc' tr'
       where
         tr' :: Map Day (NDT 'Hours Centi)
-        tr' = Map.fromList
+        tr' = Map.fromListWith (+)
             . map (\x -> (PM.trStart x, ndtConvert' $ PM.trAmount x))
             . toList
             $ tr
