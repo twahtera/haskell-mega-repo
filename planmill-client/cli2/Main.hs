@@ -62,10 +62,10 @@ optsP = Opts
     <*> O.flag False True (O.long "show-all" <> O.help "Show all entries, default: 10")
 
 main :: IO ()
-main = withStderrLogger $ \logger -> do
-    f <- O.execParser opts
-    cfg <- getConfig logger "PM"
-    f cfg logger
+main = withStderrLogger $ \logger -> runLogT "pm-cli" logger $ do
+    f <- liftIO $ O.execParser opts
+    cfg <- getConfig "PM"
+    f cfg
   where
     opts = O.info (O.helper <*> (execute <$> optsP <*> O.sopCommandParser)) $ mconcat
         [ O.fullDesc
@@ -77,8 +77,8 @@ main = withStderrLogger $ \logger -> do
 -- Execution
 -------------------------------------------------------------------------------
 
-execute :: Opts -> Cmd -> PM.Cfg -> Logger -> IO ()
-execute opts cmd cfg logger = runPlanmillT logger cfg opts $ case cmd of
+execute :: Opts -> Cmd -> PM.Cfg -> LogT IO ()
+execute opts cmd cfg = runPlanmillT cfg opts $ case cmd of
     CmdMe -> do
         x <- PM.planmillAction PM.me
         putPretty x
@@ -103,10 +103,10 @@ execute opts cmd cfg logger = runPlanmillT logger cfg opts $ case cmd of
 -------------------------------------------------------------------------------
 
 -- TODO: this abit of waste as it reinitialises crypto for each request
-newtype PlanmillT m a = PlanmillT { runPlanmillT' :: ReaderT (Logger, PM.Cfg, Opts) m a }
+newtype PlanmillT m a = PlanmillT { runPlanmillT' :: ReaderT (PM.Cfg, Opts) m a }
 
-runPlanmillT :: Logger -> PM.Cfg -> Opts -> PlanmillT m a -> m a
-runPlanmillT logger cfg opts m = runReaderT (runPlanmillT' m) (logger, cfg, opts)
+runPlanmillT :: PM.Cfg -> Opts -> PlanmillT m a -> m a
+runPlanmillT cfg opts m = runReaderT (runPlanmillT' m) (cfg, opts)
 
 instance Functor m => Functor (PlanmillT m) where
     fmap f (PlanmillT x) = PlanmillT $ fmap f x
@@ -137,13 +137,12 @@ instance Monad m => PM.MonadPlanMillConstraint (PlanmillT m) where
     entailMonadPlanMillCVector _ _ = Sub Dict
 
 instance
-    (MonadBase IO m, MonadIO m, MonadThrow m, MonadTime m)
+    (MonadIO m, MonadLog m, MonadThrow m)
     => PM.MonadPlanMill (PlanmillT m)
   where
-    planmillAction planmill = PlanmillT $ ReaderT $ \(logger, cfg, opts) -> do
+    planmillAction planmill = PlanmillT $ ReaderT $ \(cfg, opts) -> do
         g <- mkCryptoGen
         evalHttpT opts $
-            runLogT "PlanmillT" logger $
             flip runReaderT cfg $
             evalCRandTThrow' g $
             evalPlanMill planmill
@@ -176,6 +175,11 @@ instance MonadIO m => MonadHttp (HttpT m) where
         when (optsDumpJson opts) $
             for_ (Aeson.decode (H.responseBody res) :: Maybe Value) putPretty
         pure res
+
+instance MonadTransControl HttpT where
+    type StT HttpT a = a
+    liftWith = defaultLiftWith HttpT runHttpT
+    restoreT = defaultRestoreT HttpT
 
 -------------------------------------------------------------------------------
 -- putPretty

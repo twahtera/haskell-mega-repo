@@ -22,7 +22,7 @@ import qualified Haxl.Core       as H
 main :: IO ()
 main = withStderrLogger $ \logger -> do
     -- config
-    (baseUrl, authUser, authPass) <- getConfig' logger "GITHUBPROXY" $ (,,)
+    (baseUrl, authUser, authPass) <- runLogT "gh-cli" logger $ getConfig' "GITHUBPROXY" $ (,,)
         <$> envVar "ENDPOINT"
         <*> envVar "HTTPUSER"
         <*> envVar "HTTPPASS"

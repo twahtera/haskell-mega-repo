@@ -47,19 +47,23 @@ data EnvVarP a = EnvVar
     , _envVarP    :: String -> Maybe a
     }
 
-getConfig :: Configure cfg => Logger -> String -> IO cfg
-getConfig lgr pfx = getConfig' lgr pfx configure
+-- | Get the configuration from environment variables.
+getConfig :: (MonadLog m, MonadIO m, Configure cfg)
+    => String  -- ^ envvar prefix
+    -> m cfg
+getConfig pfx = getConfig' pfx configure
 
-getConfig' :: Logger -> String -> ConfigParser cfg -> IO cfg
-getConfig' lgr pfx cp = do
-    env <- Map.fromList <$> getEnvironment
+-- | Explicit version of 'getConfig'
+getConfig' :: (MonadLog m, MonadIO m) => String -> ConfigParser cfg -> m cfg
+getConfig' pfx cp = logLocalDomain "env-config" $ do
+    env <- Map.fromList <$> liftIO getEnvironment
     let v = runCP (\x -> f "" env x <!> f (pfx <> "_") env x) cp
     case v of
         Success a -> pure a
         Failure (CNF cs) -> do
-            runLogT ("env-config") lgr $ for_ cs $ \ds ->
+            for_ cs $ \ds ->
                 logAttention_ $ T.intercalate " || " $ toList ds
-            exitFailure
+            liftIO exitFailure
   where
     f :: String -> Map String String -> EnvVarP a -> Validation CNF a
     f pfx' env (EnvVar name p) = eitherToValidation $ do
@@ -149,8 +153,8 @@ optionalEnvVar name = Just <$> envVar name <!> pure Nothing
 envVarWithDefault :: FromEnvVar a => String -> a -> ConfigParser a
 envVarWithDefault name d = envVar name <!> pure d
 
-getConfigWithPorts :: Configure cfg => Logger -> String -> IO (cfg, Int, Int, UUID.UUID)
-getConfigWithPorts logger name = getConfig' logger name $ (,,,)
+getConfigWithPorts :: (MonadLog m, MonadIO m, Configure cfg) => String -> m (cfg, Int, Int, UUID.UUID)
+getConfigWithPorts name = getConfig' name $ (,,,)
     <$> configure
     <*> envVarWithDefault "PORT" defaultPort
     <*> envVarWithDefault "EKGPORT" defaultEkgPort

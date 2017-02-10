@@ -70,6 +70,7 @@ executables:
     ghc-options: -Wall -threaded
     dependencies:
       - checklist-app 
+      - lifted-base
       - transformers
       - yaml
 
