@@ -25,6 +25,7 @@ import Data.Constraint
 import Data.Fixed                  (Centi)
 import Data.Set.Lens               (setOf)
 import Futurice.Time               (NDT, TimeUnit (..), ndtConvert', ndtDivide)
+import Log.Monad (LogT (..))
 import Servant
        (Handler, ServantErr (..), err400, err403, err500)
 
@@ -36,7 +37,7 @@ import qualified FUM
 import qualified PlanMill      as PM
 import qualified PlanMill.Test as PM
 
-import Log.Monad (LogT (..))
+import Futurice.Generics (sopToJSON)
 
 -------------------------------------------------------------------------------
 -- Endpoints
@@ -232,10 +233,19 @@ entryDeleteEndpoint ctx mfum eid =
 -------------------------------------------------------------------------------
 
 -- | Actually we'd like to return 'WithUnit (Hours/Day) Centi'
-workingHours :: MonadLog m => PM.User -> m (NDT 'Hours Centi)
+--
+-- * /TODO/ cache calendars in @ctx@.
+--
+-- * /TODO/ no idea how it works for people with e.g. 30 hours a week calendars
+workingHours
+    :: (MonadLog m, PM.MonadPlanMill m, PM.MonadPlanMillC m PM.CapacityCalendars)
+    => PM.User -> m (NDT 'Hours Centi)
 workingHours pmUser = do
-    logInfo "Capacity calendar" $ show pmUser
-    pure 7.5 -- TODO: hardcoded for now.
+    hours <- for (PM.uCalendars pmUser) $ \cid -> do
+        calendars <- PM.planmillAction PM.capacitycalendars
+        logTrace "calendars" $ fmap sopToJSON calendars
+        pure $ firstOf (folded . filtered (\c -> cid == c ^. PM.identifier) . to PM.ccDefaultDailyWorktime . folded) calendars
+    pure $ maybe 7.5 ndtConvert' (join hours)
 
 authorisedUser
     :: Ctx -> Maybe FUM.UserName

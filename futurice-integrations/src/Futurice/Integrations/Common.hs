@@ -110,8 +110,12 @@ fumPlanmillMap
        )
     => m (HashMap FUM.UserName (FUM.User, PM.User))
 fumPlanmillMap =
-    combine <$> fumEmployeeList <*> PMQ.users
+    combine <$> fumEmployeeList <*> users
   where
+    users = do
+        us <- PMQ.users
+        traverse (PMQ.user . view PM.identifier) us
+
     combine :: Vector FUM.User -> Vector PM.User -> HashMap FUM.UserName (FUM.User, PM.User)
     combine fum pm = HM.fromList $ catMaybes $ map extract $ toList pm
       where
