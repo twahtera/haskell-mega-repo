@@ -15,27 +15,37 @@ module PlanMill.Types.CapacityCalendar (
 
 import PlanMill.Internal.Prelude
 
-import PlanMill.Types.Identifier (Identifier)
+import PlanMill.Types.Identifier (HasIdentifier (..), Identifier)
 
 type CapacityCalendarId = Identifier CapacityCalendar
 type CapacityCalendars = Vector CapacityCalendar
 
 data CapacityCalendar = CapacityCalendar
-    { ccCountry               :: !(Maybe Int)
-    , ccDefaultWeekStartDay   :: !(Maybe Int)
-    , ccDefaultDailyWorktime  :: !(Maybe Int)
-    , ccDefaultDailyStartTime :: !(Maybe Int)
+    { _ccId                    :: !CapacityCalendarId
     , ccName                  :: !(Maybe Text)
+    , ccDefaultDailyWorktime  :: !(Maybe (NDT 'Minutes Int))
+{-
+    , ccCountry               :: !(Maybe Int)
+    , ccDefaultWeekStartDay   :: !(Maybe Int)
+    , ccDefaultDailyStartTime :: !(Maybe Int)
     , ccStart                 :: !UTCTime
     , ccDefaultWeeklyWorkdays :: !(Maybe Int)
     , ccFinish                :: !UTCTime
     , ccActiveUsers           :: !(Maybe Int)
-    , ccId                    :: !CapacityCalendarId
     , ccType                  :: !(Maybe Int)
+-}
     }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
 
+makeLenses ''CapacityCalendar
 deriveGeneric ''CapacityCalendar
+
+instance HasKey CapacityCalendar where
+    type Key CapacityCalendar = CapacityCalendarId
+    key = ccId
+
+instance HasIdentifier CapacityCalendar CapacityCalendar where
+    identifier = ccId
 
 instance Hashable CapacityCalendar
 instance NFData CapacityCalendar
@@ -45,15 +55,17 @@ instance HasStructuralInfo CapacityCalendar where structuralInfo = sopStructural
 instance HasSemanticVersion CapacityCalendar
 
 instance FromJSON CapacityCalendar where
-    parseJSON = withObject "CapacityCalendar" $ \obj ->
-        CapacityCalendar <$> obj .: "country"
-                         <*> obj .: "defaultWeekStartDay"
-                         <*> obj .: "defaultDailyWorktime"
-                         <*> obj .: "defaultDailyStartTime"
-                         <*> obj .: "name"
-                         <*> (getU <$> obj .: "start")
-                         <*> obj .: "defaultWeeklyWorkdays"
-                         <*> (getU <$> obj .: "finish")
-                         <*> obj .: "activeUsers"
-                         <*> obj .: "id"
-                         <*> obj .: "type"
+    parseJSON = withObject "CapacityCalendar" $ \obj -> CapacityCalendar
+        <$> obj .: "id"
+        <*> obj .: "name"
+        <*> obj .: "defaultDailyWorktime"
+{-
+        <*> obj .: "country"
+        <*> obj .: "defaultWeekStartDay"
+        <*> obj .: "defaultDailyStartTime"
+        <*> (getU <$> obj .: "start")
+        <*> obj .: "defaultWeeklyWorkdays"
+        <*> (getU <$> obj .: "finish")
+        <*> obj .: "activeUsers"
+        <*> obj .: "type"
+-}
