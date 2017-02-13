@@ -97,8 +97,8 @@ fillProjects = for projects $ \p -> do
             today <- currentDay
             hrs <- liftIO $ randomRIO (1, 7) :: m Int
             pure $ x
-                { _latestEntryDate  = Just today
-                , _latestEntryHours = Just $ fromIntegral hrs * 0.5
+                { _latestEntryDate  = today
+                , _latestEntryHours = fromIntegral hrs * 0.5
                 }
         hrsRemaining <- case _projectId p /= _projectId internalProject && _projectId p /= _projectId absenceProject of
             True -> do

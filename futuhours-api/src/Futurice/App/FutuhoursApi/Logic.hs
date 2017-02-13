@@ -18,7 +18,7 @@ module Futurice.App.FutuhoursApi.Logic (
 import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM      (readTVarIO)
-import Control.Lens                (contains, filtered, nullOf, sumOf, to)
+import Control.Lens                (Fold, firstOf, contains, filtered, nullOf, sumOf, to)
 import Control.Monad.Trans.Control (defaultLiftWith, defaultRestoreT)
 import Data.Aeson                  (FromJSON)
 import Data.Constraint
@@ -31,6 +31,7 @@ import Servant
 import Futurice.App.FutuhoursApi.Ctx
 import Futurice.App.FutuhoursApi.Types
 
+import qualified Data.Map      as Map
 import qualified FUM
 import qualified PlanMill      as PM
 import qualified PlanMill.Test as PM
@@ -85,20 +86,36 @@ hoursEndpoint ctx mfum start end = do
     let resultInterval = PM.ResultInterval PM.IntervalStart interval
     authorisedUser ctx mfum $ \_fumUser pmUser pmData -> do
         let pmUid = pmUser ^. PM.identifier
+
+        -- entries
         reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
+        let entries = reportToEntry <$> toList reports
+        let latestEntries = Map.fromListWith takeLatestEntry $
+                (\e -> (e ^. entryTaskId, latestEntryFromEntry e)) <$> entries
+
+        -- holiday names
         capacities <- PM.planmillAction $ PM.userCapacity interval pmUid
+        let holidayNames = mkHolidayNames capacities
+
+        -- task ids
         reps <- PM.planmillAction $ PM.reportableAssignments pmUid
         let reportableTaskIds = setOf (folded . to PM.raTask) reps
         let reportedTaskIds   = setOf (folded . to PM.trTask) reports
-        logTrace "reportable" $ show $ reportableTaskIds <> reportedTaskIds
-        let projects = pmData ^..
+
+        -- generate projects
+        let projects = sortBy projectLatestEntryCompare $ pmData ^..
                 planmillProjects
                 . folded
-                . to (projectToProject reportableTaskIds reportedTaskIds)
+                . to (projectToProject latestEntries reportableTaskIds reportedTaskIds)
                 . folded
-        let entries = reportToEntry <$> toList reports
-        let holidayNames = mkHolidayNames capacities
+
+        -- logTrace "latestEntries" latestEntries
+        -- logTrace "projects" $ (\p -> (p ^. projectName, p ^.. projectTasks . folded . taskLatestEntry . folded)) <$> projects
+
+        -- working hours
         wh <- workingHours pmUser
+
+        -- all together
         pure $ HoursResponse
             { _hoursResponseDefaultWorkHours = wh
             , _hoursResponseProjects         = projects
@@ -106,6 +123,21 @@ hoursEndpoint ctx mfum start end = do
             }
   where
     interval'    = (PM....) <$> start <*> end
+
+    takeLatestEntry :: LatestEntry -> LatestEntry -> LatestEntry
+    takeLatestEntry a b
+        | a ^. latestEntryDate > b ^. latestEntryDate = a
+        | otherwise                                   = b
+
+    projectLatestEntryCompare :: Project -> Project -> Ordering
+    projectLatestEntryCompare a b = case (firstOf l a, firstOf l b) of
+        (Just a', Just b') -> compare b' a' -- latest (day is bigger) is smaller
+        (Just _, Nothing)  -> LT
+        (Nothing, Just _)  -> GT
+        (Nothing, Nothing) -> compare (a ^. projectName) (b ^. projectName)
+      where
+        l :: Fold Project Day
+        l = projectTasks . folded . taskLatestEntry . folded . latestEntryDate
 
     mkHolidayNames :: Foldable f => f PM.UserCapacity -> Map Day Text
     mkHolidayNames = toMapOf (folded . to mk . folded . ifolded)
@@ -131,11 +163,12 @@ hoursEndpoint ctx mfum start end = do
         }
 
     projectToProject
-        :: Set PM.TaskId -- ^ reportable
-        -> Set PM.TaskId -- ^ reported
+        :: Map PM.TaskId LatestEntry  -- ^ last entry per task
+        -> Set PM.TaskId              -- ^ reportable
+        -> Set PM.TaskId              -- ^ reported
         -> (PM.Project, [PM.Task])
         -> Maybe Project
-    projectToProject reportable reported (p, ts)
+    projectToProject latestEntries reportable reported (p, ts)
         | null tasks = Nothing
         | otherwise  = Just $ Project
             { _projectId     = p ^. PM.identifier
@@ -146,7 +179,7 @@ hoursEndpoint ctx mfum start end = do
       where
         tasks = ts ^.. folded
             . filtered (\t -> taskIds ^. contains (t ^. PM.identifier))
-            . to taskToTask
+            . to (\t -> taskToTask (latestEntries ^. at (t ^. PM.identifier)) t)
 
         -- Project is closed, if there aren't reportable tasks anymore.
         closed =  flip nullOf ts
@@ -155,9 +188,10 @@ hoursEndpoint ctx mfum start end = do
 
         taskIds = reportable <> reported
 
-    taskToTask :: PM.Task -> Task
-    taskToTask t = mkTask (t ^. PM.identifier) (PM.taskName t)
-        -- TODO: absence, closed, latestEntry, hoursRemaining
+    taskToTask :: Maybe LatestEntry -> PM.Task -> Task
+    taskToTask latestEntry t = mkTask (t ^. PM.identifier) (PM.taskName t)
+        & taskLatestEntry .~ latestEntry
+        -- TODO: absence, closed, hoursRemaining
 
 -- | @POST /entry@
 entryEndpoint

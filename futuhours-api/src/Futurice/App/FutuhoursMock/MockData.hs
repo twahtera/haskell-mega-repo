@@ -22,9 +22,6 @@ import qualified PlanMill as PM
 mkTask' = mkTask . PM.Ident
 mkTask' :: Word64 -> Text -> Task
 
-mkLatestEntry' :: Text -> Maybe LatestEntry
-mkLatestEntry' = Just . mkLatestEntry
-
 projectFirstTaskId :: PM.TaskId -> Getter Project PM.TaskId
 projectFirstTaskId def = to $ \project -> fromMaybe def $
     project ^? projectTasks . traverse . taskId
@@ -37,14 +34,16 @@ projectLatestDescription = to $ \project -> fromMaybe "" $
 -- Mock data:
 -------------------------------------------------------------------------------
 
+-- TODO: add latest entries
+
 internalProject :: Project
 internalProject = Project
     { _projectId = PM.Ident 1
     , _projectName = "Internal Work"
     , _projectClosed = False
     , _projectTasks =
-        [ mkTask' 1 "Things" & taskLatestEntry .~ mkLatestEntry' "Doing things"
-        , mkTask' 2 "Stuff" & taskLatestEntry .~ mkLatestEntry' "Doing stuff"
+        [ mkTask' 1 "Things"
+        , mkTask' 2 "Stuff"
         ]
     }
 
@@ -54,9 +53,9 @@ absenceProject = Project
     , _projectName = "Absences"
     , _projectClosed = False
     , _projectTasks =
-        [ mkTask' 6 "Balance leave" & taskLatestEntry .~ mkLatestEntry' "Balance leave"
-        , mkTask' 7 "Unpaid holiday" & taskLatestEntry .~ mkLatestEntry' "Unpaid holiday"
-        , mkTask' 8 "Sick leave" & taskLatestEntry .~ mkLatestEntry' "Sick leave"
+        [ mkTask' 6 "Balance leave"
+        , mkTask' 7 "Unpaid holiday"
+        , mkTask' 8 "Sick leave"
         ]
     }
 
@@ -66,8 +65,8 @@ customerProject = Project
     , _projectName = "Actual customer work"
     , _projectClosed = False
     , _projectTasks =
-        [ mkTask' 3 "Development" & taskLatestEntry .~ mkLatestEntry' "Development"
-        , mkTask' 4 "Long weekend :()" & taskLatestEntry .~ mkLatestEntry' "On-Call"
+        [ mkTask' 3 "Development"
+        , mkTask' 4 "Long weekend :()"
         ]
     }
 
@@ -77,8 +76,8 @@ inactiveProject = Project
     , _projectName = "Not active project"
     , _projectClosed = True
     , _projectTasks =
-        [ mkTask' 5 "Doing work" & taskLatestEntry .~ mkLatestEntry' "Work"
-        , mkTask' 6 "Designing" & taskLatestEntry .~ mkLatestEntry' "Design"
+        [ mkTask' 5 "Doing work"
+        , mkTask' 6 "Designing"
         ]
     }
 

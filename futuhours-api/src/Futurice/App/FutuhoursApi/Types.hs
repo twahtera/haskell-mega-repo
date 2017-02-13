@@ -92,17 +92,10 @@ entryUtilizationAvg = to $ \entry ->
 -- | Hours UI feature. Previous Entry used as default values when marking new hours.
 data LatestEntry = LatestEntry
     { _latestEntryDescription :: !Text
-    , _latestEntryDate        :: !(Maybe Day)
-    , _latestEntryHours       :: !(Maybe Float)
+    , _latestEntryDate        :: !Day
+    , _latestEntryHours       :: !(NDT 'Hours Centi)
     }
   deriving (Eq, Show, Typeable, Generic)
-
-mkLatestEntry :: Text -> LatestEntry
-mkLatestEntry desc = LatestEntry
-    { _latestEntryDescription=desc
-    , _latestEntryDate=Nothing
-    , _latestEntryHours=Nothing
-    }
 
 -- | When frontend sends closed entry to be updated, API doesn't do anything, just respond ok
 --
@@ -285,6 +278,13 @@ mkHoursMonth interval holidays entries =
         , _dayClosed      = False -- TODO: not correct: andOf (folded . entryClosed) es
           -- day is closed if every entry in it is closed
         }
+
+latestEntryFromEntry :: Entry -> LatestEntry
+latestEntryFromEntry e = LatestEntry
+    { _latestEntryDescription = e ^. entryDescription
+    , _latestEntryDate        = e ^. entryDay
+    , _latestEntryHours       = e ^. entryHours
+    }
 
 -------------------------------------------------------------------------------
 -- Instances
