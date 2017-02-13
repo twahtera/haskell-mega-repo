@@ -14,6 +14,8 @@ module PlanMill.Types.Identifier (
 
 import Prelude ()
 import PlanMill.Internal.Prelude
+import Data.Aeson.Types
+       (FromJSONKey (..), ToJSONKey (..), contramapToJSONKeyFunction)
 import Data.Swagger              (ToParamSchema, ToSchema)
 import Futurice.EnvConfig        (FromEnvVar (..))
 import Test.QuickCheck           (Arbitrary (..))
@@ -28,6 +30,9 @@ import qualified Options.SOP                          as O
 newtype Identifier a = Ident Word64
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
 
+getIdent :: Identifier a -> Word64
+getIdent (Ident i) = i
+
 deriveGeneric ''Identifier
 
 instance NFData (Identifier a)
@@ -41,6 +46,13 @@ instance FromJSON (Identifier a) where
     parseJSON = fmap Ident . parseJSON
 instance ToJSON (Identifier a) where
     toJSON (Ident i) = toJSON i
+
+instance FromJSONKey (Identifier a) where
+    fromJSONKey = fmap Ident fromJSONKey
+    fromJSONKeyList = fmap (fmap Ident) fromJSONKeyList
+
+instance ToJSONKey (Identifier a) where
+    toJSONKey = contramapToJSONKeyFunction getIdent toJSONKey
 
 -- | Identities with identifier.
 class HasIdentifier entity super | entity -> super where
