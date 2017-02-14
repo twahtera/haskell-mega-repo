@@ -11,7 +11,6 @@ packages:
 - favicon-app/
 - flowdock-rest/
 - fum-client/
-- futuhours-api/
 - futurice-foundation/
 - futurice-github/
 - futurice-integrations/
@@ -21,6 +20,7 @@ packages:
 - futurice-servant/
 - github-proxy/
 - haxl-fxtra/
+- hours-api/
 - log-logentries
 - mega-repo-tool/
 - monad-http/
