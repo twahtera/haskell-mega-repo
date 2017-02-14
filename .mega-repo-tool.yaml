@@ -8,8 +8,8 @@ apps:
     executable: contacts-server
   favicon:
     executable: favicon
-  futuhours-api:
-    executable: futuhours-api-server
+  hours-api:
+    executable: hours-api-server
   planmill-proxy:
     executable: planmill-proxy-server
   github-proxy:

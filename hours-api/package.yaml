@@ -1,0 +1,79 @@
+name: hours-api
+version: "0"
+synopsis: Hours API
+description: "Hours API: Actual server and mock"
+author: Oleg Grenrus <oleg.grenrus@iki.fi>, Jussi Vaihia <jussi.vaihia@futurice.com>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/haskell-mega-repo
+category: Web
+tested-with: GHC==7.10.3, GHC==8.0.1
+extra-source-files:
+- README.md
+
+default-extensions:
+  - DeriveDataTypeable
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveGeneric
+  - DeriveTraversable
+  - ScopedTypeVariables
+
+library:
+  source-dirs: src
+  dependencies:
+    - base >= 4.8 && < 4.10
+    - aeson
+    - aeson-compat
+    - constraints
+    - containers
+    - env-config
+    - fum-client
+    - futurice-foundation
+    - futurice-integrations
+    - futurice-prelude
+    - futurice-reports
+    - futurice-servant
+    - generics-sop
+    - http-client
+    - http-client-tls
+    - intervals
+    - monad-control
+    - lens
+    - log-base
+    - lucid
+    - mtl
+    - planmill-client
+    - postgresql-simple
+    - QuickCheck
+    - random
+    - resource-pool
+    - semigroupoids
+    - servant
+    - servant-lucid
+    - servant-server
+    - stm
+    - swagger2
+    - text
+    - time
+    - transformers
+    - unordered-containers
+    - vector
+
+
+executables:
+  hours-api-server:
+    ghc-options: -threaded
+    main: Main.hs
+    source-dirs: srv
+    dependencies:
+      - base
+      - hours-api
+
+  hours-mock-server:
+    ghc-options: -threaded
+    main: Main.hs
+    source-dirs: mock
+    dependencies:
+      - base
+      - hours-api
