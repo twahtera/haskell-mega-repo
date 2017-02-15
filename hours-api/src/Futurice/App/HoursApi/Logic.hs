@@ -37,6 +37,8 @@ import qualified FUM
 import qualified PlanMill      as PM
 import qualified PlanMill.Test as PM
 
+-- import Futurice.Generics
+
 -------------------------------------------------------------------------------
 -- Endpoints
 -------------------------------------------------------------------------------
@@ -87,9 +89,12 @@ hoursEndpoint ctx mfum start end = do
     authorisedUser ctx mfum $ \_fumUser pmUser pmData -> do
         let pmUid = pmUser ^. PM.identifier
 
+        -- TODO: planmillTaskProjects has to be populated with absence tasks
+        -- as well as projects
+
         -- entries
         reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
-        let entries = reportToEntry <$> toList reports
+        let entries = reportToEntry (pmData ^. planmillTaskProjects) <$> toList reports
         let latestEntries = Map.fromListWith takeLatestEntry $
                 (\e -> (e ^. entryTaskId, latestEntryFromEntry e)) <$> entries
 
@@ -101,6 +106,9 @@ hoursEndpoint ctx mfum start end = do
         reps <- PM.planmillAction $ PM.reportableAssignments pmUid
         let reportableTaskIds = setOf (folded . to PM.raTask) reps
         let reportedTaskIds   = setOf (folded . to PM.trTask) reports
+
+        -- logInfo "reported task ids" reportedTaskIds
+        -- logInfo "reported tasks" $ reportedTaskIds ^.. folded . to (\i -> pmData ^? planmillTasks . ix i . to sopToJSON)
 
         -- generate projects
         let projects = sortBy projectLatestEntryCompare $ pmData ^..
@@ -150,17 +158,24 @@ hoursEndpoint ctx mfum start end = do
           where
             day = PM.userCapacityDate uc
 
-    reportToEntry :: PM.Timereport -> Entry
-    reportToEntry tr = Entry
+    reportToEntry :: HashMap PM.TaskId PM.Project -> PM.Timereport -> Entry
+    reportToEntry prs tr = Entry
         { _entryId          = tr ^. PM.identifier
-        , _entryProjectId   = fromMaybe (PM.Ident 0) $ PM.trProject tr -- TODO: maybe case
+        , _entryProjectId   = fromMaybe (PM.Ident 0) $ prs ^? ix (PM.trTask tr) . PM.identifier
         , _entryTaskId      = PM.trTask tr
         , _entryDay         = PM.trStart tr
         , _entryDescription = fromMaybe "" $ PM.trComment tr
         , _entryClosed      = False -- TODO
         , _entryHours       = ndtConvert' $ PM.trAmount tr
-        , _entryBillable    = EntryTypeNotBillable -- TODO, check trBillableStatus
+        , _entryBillable    = billableStatus (PM.trProject tr) (PM.trBillableStatus tr)
         }
+
+    -- TODO: we hard code the non-billable enumeration value.
+    -- TODO: absences should be EntryTypeOther, seems that Nothing projectId is the thing there.
+    billableStatus :: Maybe PM.ProjectId -> Int -> EntryType
+    billableStatus Nothing 3 = EntryTypeOther
+    billableStatus _ 3       = EntryTypeNotBillable
+    billableStatus _ _       = EntryTypeBillable
 
     projectToProject
         :: UTCTime                    -- ^ current timestamp
@@ -178,9 +193,12 @@ hoursEndpoint ctx mfum start end = do
             , _projectClosed = closed
             }
       where
+        -- TODO: use proper enumerations.
+        isAbsence = PM.pCategory p == Just 900
+
         tasks = ts ^.. folded
             . filtered (\t -> taskIds ^. contains (t ^. PM.identifier))
-            . to (\t -> taskToTask now (latestEntries ^. at (t ^. PM.identifier)) t)
+            . to (\t -> taskToTask now isAbsence (latestEntries ^. at (t ^. PM.identifier)) t)
 
         -- Project is closed, if there aren't reportable tasks anymore.
         closed =  flip nullOf ts
@@ -189,11 +207,12 @@ hoursEndpoint ctx mfum start end = do
 
         taskIds = reportable <> reported
 
-    taskToTask :: UTCTime -> Maybe LatestEntry -> PM.Task -> Task
-    taskToTask now latestEntry t = mkTask (t ^. PM.identifier) (PM.taskName t)
+    taskToTask :: UTCTime -> Bool -> Maybe LatestEntry -> PM.Task -> Task
+    taskToTask now isAbsence latestEntry t = mkTask (t ^. PM.identifier) (PM.taskName t)
         & taskLatestEntry .~ latestEntry
         & taskClosed      .~ (now > PM.taskFinish t)
-        -- TODO: absence, hoursRemaining
+        & taskAbsence     .~ isAbsence
+        -- TODO: hoursRemaining
 
 -- | @POST /entry@
 entryEndpoint

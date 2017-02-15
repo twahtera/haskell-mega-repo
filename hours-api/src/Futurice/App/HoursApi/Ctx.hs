@@ -12,12 +12,15 @@ type PlanmillUserLookupMap = HashMap FUM.UserName (FUM.User, PM.User)
 
 -- | A quite stable data, which we update once in a while when service is run.
 data PlanmillData = PlanmillData
-    { _planmillUserLookup :: !(PlanmillUserLookupMap)
-    , _planmillProjects   :: !(HashMap PM.ProjectId (PM.Project, [PM.Task]))
-    , _planmillTasks      :: !(HashMap PM.TaskId PM.Task)
-    , _planmillCalendars  :: !(HashMap PM.CapacityCalendarId PM.CapacityCalendar)
+    { _planmillUserLookup   :: !(PlanmillUserLookupMap)
+    , _planmillProjects     :: !(HashMap PM.ProjectId (PM.Project, [PM.Task]))
+    , _planmillTasks        :: !(HashMap PM.TaskId PM.Task)
+    , _planmillCalendars    :: !(HashMap PM.CapacityCalendarId PM.CapacityCalendar)
+    , _planmillTaskProjects :: !(HashMap PM.TaskId PM.Project)
     }
     -- TODO: add a field "reportable tasks per user"
+
+-- TODO: mkPlanmillData from list of projects & tasks & calendars
 
 data Ctx = Ctx
     { ctxPlanmillData :: !(TVar PlanmillData)
