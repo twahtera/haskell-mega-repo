@@ -46,6 +46,13 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   });
+  $$("input[type=text][data-futu-values]").forEach(function (el) {
+    var values = JSON.parse(el.dataset.futuValues);
+    console.log("Autocomplete", el, values);
+    jQuery(el).autocomplete({
+      source: values,
+    });
+  });
 
   function unknownForm(form) {
     console.warn("Unknown form", form.dataset.futuId, form);

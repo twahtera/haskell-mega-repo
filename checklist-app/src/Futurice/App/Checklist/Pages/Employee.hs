@@ -4,7 +4,10 @@ module Futurice.App.Checklist.Pages.Employee (employeePage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (forOf_, has, re)
+import Control.Lens              (forOf_, has, re, to)
+import Data.Aeson                (ToJSON)
+import Data.Aeson.Text           (encodeToLazyText)
+import Data.Set.Lens             (setOf)
 import Futurice.Lucid.Foundation
 import Servant.API               (safeLink)
 import Web.HttpApiData           (toQueryParam)
@@ -40,15 +43,15 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
         button_
             [ class_ "button"
             , data_ "futu-link-button" $ linkToText
-            $ safeLink checklistApi createEmployeePageEndpoint $ employee ^? identifier
-            ]
-            "Copy into new employee"
-        button_
-            [ class_ "button"
-            , data_ "futu-link-button" $ linkToText
             $ safeLink checklistApi employeeAuditPageEndpoint $ employee ^. identifier
             ]
             "Audit log"
+        button_
+            [ class_ "button"
+            , data_ "futu-link-button" $ linkToText
+            $ safeLink checklistApi createEmployeePageEndpoint $ employee ^? identifier
+            ]
+            "Create employee sing this employee as a template"
 
     -- Edit
     row_ $ large_ 12 $ form_ [ futuId_ "employee-edit", data_ "futu-employee-id" $ employee ^. identifierText ] $ do
@@ -79,10 +82,10 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
             input_ [ futuId_ "employee-starting-day", type_ "date", value_ $ toQueryParam $ employee ^. employeeStartingDay  ]
         row_ $ large_ 12 $ label_ $ do
             "Supervisor"
-            input_ [ futuId_ "employee-supervisor", type_ "text", value_ $ toQueryParam $ employee ^. employeeSupervisor ]
+            input_ [ futuId_ "employee-supervisor", type_ "text", value_ $ toQueryParam $ employee ^. employeeSupervisor, data_ "futu-values" $ encodeToText supervisors ]
         row_ $ large_ 12 $ label_ $ do
             "Tribe"
-            input_ [ futuId_ "employee-tribe", type_ "text", value_ $ employee ^. employeeTribe ]
+            input_ [ futuId_ "employee-tribe", type_ "text", value_ $ employee ^. employeeTribe, data_ "futu-values" $ encodeToText tribes ]
         row_ $ large_ 12 $ label_ $ do
             "Info"
             textarea_ [ futuId_ "employee-info", rows_ "5" ] $ toHtml $ employee ^. employeeInfo
@@ -130,3 +133,12 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
   where
     eid = employee ^. identifier
     mlist = world ^? worldLists . ix (employee ^. employeeChecklist)
+
+    tribes :: [Text]
+    tribes = toList $ setOf (worldEmployees . folded . employeeTribe) world
+
+    supervisors :: [Text]
+    supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . to toQueryParam) world
+
+encodeToText :: ToJSON a => a -> Text
+encodeToText = view strict . encodeToLazyText
