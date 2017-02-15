@@ -119,6 +119,14 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
                 td_ $ taskLink task
                 td_ $ roleHtml mlist (task ^. taskRole)
                 td_ $ taskCheckbox world employee task
+
+    when (authUser ^. _2 == TaskRoleIT) $ row_ $ large_ 12 $ do
+        hr_ []
+        button_
+            [ class_ "button alert"
+            , futuId_ "employee-remove"
+            , data_ "futu-employee-id" $ employee ^. identifierText
+            ] "DELETE EMPLOYEE"
   where
     eid = employee ^. identifier
     mlist = world ^? worldLists . ix (employee ^. employeeChecklist)
