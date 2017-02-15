@@ -37,8 +37,6 @@ import qualified FUM
 import qualified PlanMill      as PM
 import qualified PlanMill.Test as PM
 
-import Futurice.Generics (sopToJSON)
-
 -------------------------------------------------------------------------------
 -- Endpoints
 -------------------------------------------------------------------------------
@@ -55,11 +53,11 @@ userEndpoint
     -> Maybe FUM.UserName
     -> Handler User
 userEndpoint ctx mfum =
-    authorisedUser ctx mfum $ \fumUser pmUser _pmData -> do
+    authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
         let pmUid = pmUser ^. PM.identifier
         balance <- ndtConvert' . view PM.tbMinutes <$>
             PM.planmillAction (PM.userTimeBalance pmUid)
-        wh <- workingHours pmUser
+        let wh = workingHours (pmData ^. planmillCalendars) pmUser
         holidaysLeft <- sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') <$>
             PM.planmillAction (PM.userVacations pmUid)
         -- I wish we could do units properly.
@@ -115,7 +113,7 @@ hoursEndpoint ctx mfum start end = do
         -- logTrace "projects" $ (\p -> (p ^. projectName, p ^.. projectTasks . folded . taskLatestEntry . folded)) <$> projects
 
         -- working hours
-        wh <- workingHours pmUser
+        let wh = workingHours (pmData ^. planmillCalendars) pmUser
 
         -- all together
         pure $ HoursResponse
@@ -241,14 +239,12 @@ entryDeleteEndpoint ctx mfum eid =
 --
 -- * /TODO/ no idea how it works for people with e.g. 30 hours a week calendars
 workingHours
-    :: (MonadLog m, PM.MonadPlanMill m, PM.MonadPlanMillC m PM.CapacityCalendars)
-    => PM.User -> m (NDT 'Hours Centi)
-workingHours pmUser = do
-    hours <- for (PM.uCalendars pmUser) $ \cid -> do
-        calendars <- PM.planmillAction PM.capacitycalendars
-        logTrace "calendars" $ fmap sopToJSON calendars
-        pure $ firstOf (folded . filtered (\c -> cid == c ^. PM.identifier) . to PM.ccDefaultDailyWorktime . folded) calendars
-    pure $ maybe 7.5 ndtConvert' (join hours)
+    :: HashMap PM.CapacityCalendarId PM.CapacityCalendar
+    -> PM.User
+    -> NDT 'Hours Centi
+workingHours calendars pmUser = maybe 7.5 ndtConvert' $ do
+    cid <- PM.uCalendars pmUser
+    firstOf (folded . filtered (\c -> cid == c ^. PM.identifier) . to PM.ccDefaultDailyWorktime . folded) calendars
 
 authorisedUser
     :: Ctx -> Maybe FUM.UserName

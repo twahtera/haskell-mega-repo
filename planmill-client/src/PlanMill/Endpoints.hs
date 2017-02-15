@@ -206,7 +206,7 @@ contacts = planMillGet $ t "contacts"
 
 -- | Get a list of capacitycalendars
 --
--- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#capacitycalendars_get>
+-- See <http://developers.planmill.com/api/#capacitycalendars_get>
 capacitycalendars :: PlanMill CapacityCalendars
 capacitycalendars = planMillGet $ t "capacitycalendars"
 

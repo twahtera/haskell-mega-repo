@@ -54,6 +54,7 @@ class
     , MonadPlanMillC m Absence
     , MonadPlanMillC m Account
     , MonadPlanMillC m Assignment
+    , MonadPlanMillC m CapacityCalendar
     , MonadPlanMillC m Me
     , MonadPlanMillC m Meta
     , MonadPlanMillC m Project

@@ -23,6 +23,7 @@ module PlanMill.Queries (
     projects,
     projectTasks,
     task,
+    capacitycalendars,
     -- * Queries
     usersQuery,
     -- timereportsModifiedQuery,
@@ -37,9 +38,9 @@ import GHC.TypeLits    (KnownSymbol, symbolVal)
 import Control.Monad.PlanMill
 
 import PlanMill.Types
-       (Absences, Account, AccountId, Me, Project, ProjectId, Projects, Task,
-       TaskId, Tasks, Team, TeamId, TimeBalance, Timereports, User,
-       UserCapacities, UserId, Users)
+       (Absences, Account, AccountId, CapacityCalendars, Me, Project,
+       ProjectId, Projects, Task, TaskId, Tasks, Team, TeamId, TimeBalance,
+       Timereports, User, UserCapacities, UserId, Users)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
 import PlanMill.Types.Query       (Query (..), QueryTag (..))
@@ -225,6 +226,14 @@ task :: MonadPlanMillQuery m => TaskId -> m Task
 task pid = planmillQuery
     $ QueryGet QueryTagTask mempty
     $ toUrlParts $ ("tasks" :: Text) // pid
+
+-- | Get a list of capacitycalendars
+--
+-- See <http://developers.planmill.com/api/#capacitycalendars_get>
+capacitycalendars :: MonadPlanMillQuery m => m CapacityCalendars
+capacitycalendars = planmillVectorQuery
+    $ QueryPagedGet QueryTagCalendar mempty
+    $ toUrlParts $ ("capacitycalendars" :: Text)
 
 -------------------------------------------------------------------------------
 -- Duplication from PlanMill.Enumerations

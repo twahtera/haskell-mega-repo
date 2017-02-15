@@ -58,6 +58,7 @@ class (MonadPlanMillC m a, Binary a, HasStructuralInfo a, HasSemanticVersion a)
 instance MonadPlanMillC m Absence              => CachingTC m Absence
 instance MonadPlanMillC m Account              => CachingTC m Account
 instance MonadPlanMillC m Assignment           => CachingTC m Assignment
+instance MonadPlanMillC m CapacityCalendar     => CachingTC m CapacityCalendar
 instance MonadPlanMillC m Me                   => CachingTC m Me
 instance MonadPlanMillC m Meta                 => CachingTC m Meta
 instance MonadPlanMillC m Project              => CachingTC m Project

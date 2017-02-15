@@ -67,10 +67,13 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         let ps'' = HM.fromList ps'
         let ts = HM.fromList $ (\t -> (t ^. PM.identifier, t)) <$>
                 ps' ^.. folded . _2 ._2 . folded
+        cs <- HM.fromList . map (\c -> (c ^. PM.identifier, c)) . toList <$>
+            PMQ.capacitycalendars
         pure $ PlanmillData
             { _planmillUserLookup = pmLookupMap
             , _planmillProjects   = ps''
             , _planmillTasks      = ts
+            , _planmillCalendars  = cs
             }
       where
         mkP p ts = (p ^. PM.identifier, (p, toList ts))
