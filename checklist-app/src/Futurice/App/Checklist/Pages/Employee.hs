@@ -85,7 +85,7 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
             input_ [ futuId_ "employee-tribe", type_ "text", value_ $ employee ^. employeeTribe ]
         row_ $ large_ 12 $ label_ $ do
             "Info"
-            textarea_ [ futuId_ "employee-info" ] $ toHtml $ employee ^. employeeInfo
+            textarea_ [ futuId_ "employee-info", rows_ "5" ] $ toHtml $ employee ^. employeeInfo
         row_ $ large_ 12 $ label_ $ do
             "Phone"
             -- TODO: maybe it's simpler to just define empty value

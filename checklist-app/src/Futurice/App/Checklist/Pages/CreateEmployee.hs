@@ -82,7 +82,7 @@ createEmployeePage world authUser memployee = checklistPage_ ("Create employee")
                 ]
         row_ $ large_ 12 $ label_ $ do
             "Info"
-            textarea_ [ futuId_ "employee-info" ] (pure ())
+            textarea_ [ futuId_ "employee-info", rows_ "5" ] (pure ())
         row_ $ large_ 12 $ label_ $ do
             "Phone"
             input_
