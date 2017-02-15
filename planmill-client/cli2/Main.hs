@@ -41,6 +41,9 @@ data Cmd
     | CmdUsers
     | CmdUser PM.UserId
     | CmdTimereports PM.UserId (PM.Interval Day)
+    | CmdReportableAssignments PM.UserId
+    | CmdTask PM.TaskId
+    | CmdMeta Text
 
 deriveGeneric ''Cmd
 
@@ -97,6 +100,17 @@ execute opts cmd cfg = runPlanmillT cfg opts $ case cmd of
         putPretty $ if optsShowAll opts
             then x ^.. folded
             else x ^.. taking 10 traverse
+    CmdReportableAssignments uid -> do
+        x <- PM.planmillAction $ PM.reportableAssignments uid
+        putPretty $ if optsShowAll opts
+            then x ^.. folded
+            else x ^.. taking 10 traverse
+    CmdTask tid -> do
+        x <- PM.planmillAction $ PM.task tid
+        putPretty x
+    CmdMeta path  -> do
+        x <- PM.planmillAction $ PM.planMillGet path
+        putPretty (x :: PM.Meta)
 
 -------------------------------------------------------------------------------
 -- PlanmillT: TODO move to planmill-client

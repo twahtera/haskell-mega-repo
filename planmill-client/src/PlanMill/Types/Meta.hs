@@ -77,7 +77,7 @@ instance FromJSON MetaField where
 
 instance FromJSON Meta where
     parseJSON = withObject "Meta" $ \obj -> Meta
-        <$> obj .: "fields"
+        <$> obj .:? "fields" .!= mempty
 
 lookupFieldEnum
     :: Meta
