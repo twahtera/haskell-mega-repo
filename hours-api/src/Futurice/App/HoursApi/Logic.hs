@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE OverloadedStrings      #-}
@@ -18,24 +19,29 @@ module Futurice.App.HoursApi.Logic (
 import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM      (readTVarIO)
-import Control.Lens                (Fold, firstOf, contains, filtered, nullOf, sumOf, to)
-import Control.Monad.Trans.Control (defaultLiftWith, defaultRestoreT)
+import Control.Lens
+       (Fold, contains, filtered, firstOf, nullOf, sumOf, to, (<&>))
+import Control.Monad.Trans.Control
+       (ComposeSt, defaultLiftBaseWith, defaultLiftWith, defaultRestoreM,
+       defaultRestoreT)
 import Data.Aeson                  (FromJSON)
 import Data.Constraint
 import Data.Fixed                  (Centi)
 import Data.Set.Lens               (setOf)
+import Futurice.Cache              (cached)
 import Futurice.Time               (NDT, TimeUnit (..), ndtConvert', ndtDivide)
-import Log.Monad (LogT (..))
+import Log.Monad                   (LogT (..))
 import Servant
        (Handler, ServantErr (..), err400, err403, err500)
 
 import Futurice.App.HoursApi.Ctx
 import Futurice.App.HoursApi.Types
 
-import qualified Data.Map      as Map
+import qualified Data.HashMap.Strict as HM
+import qualified Data.Map            as Map
 import qualified FUM
-import qualified PlanMill      as PM
-import qualified PlanMill.Test as PM
+import qualified PlanMill            as PM
+import qualified PlanMill.Test       as PM
 
 -- import Futurice.Generics
 
@@ -89,36 +95,53 @@ hoursEndpoint ctx mfum start end = do
     authorisedUser ctx mfum $ \_fumUser pmUser pmData -> do
         let pmUid = pmUser ^. PM.identifier
 
-        -- TODO: planmillTaskProjects has to be populated with absence tasks
-        -- as well as projects
-
         -- entries
         reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
-        let entries = reportToEntry (pmData ^. planmillTaskProjects) <$> toList reports
+
+        -- Absences have taskId but doesn't have projectId. Let's correct this
+        let missingTaskIds = toList $ setOf
+                (folded . to (\tr -> maybe (Just $ PM.trTask tr) (const Nothing) (PM.trProject tr)) . folded)
+                reports
+
+        missingTasks <- traverse (cachedPlanmillAction . PM.task) missingTaskIds
+        missingProjects <- traverse (cachedPlanmillAction . PM.project)
+            (missingTasks ^.. folded . to PM.taskProject . folded)
+        let missingProjects' = groupProjectsTasks missingProjects missingTasks
+
+        -- taskId -> projectId, for missing sutff
+        let reverseLookup = Map.fromList $ missingTasks <&> \t ->
+                (t ^. PM.identifier, PM.taskProject t)
+
+        -- patch reports, add missing projectIds.
+        -- they can still be Nothing, but it's not so luckily.
+        let reports' = reports <&> \tr -> tr
+              { PM.trProject = PM.trProject tr <|> (reverseLookup ^? ix (PM.trTask tr) . folded)
+              }
+
+        let entries = reportToEntry <$> toList reports'
         let latestEntries = Map.fromListWith takeLatestEntry $
                 (\e -> (e ^. entryTaskId, latestEntryFromEntry e)) <$> entries
+
+        -- task ids, we don't want to show all projects in the list
+        reps <- cachedPlanmillAction $ PM.reportableAssignments pmUid
+        let reportableTaskIds = setOf (folded . to PM.raTask) reps
+        let reportedTaskIds   = setOf (folded . to PM.trTask) reports
+
+        -- Let's take prefetched projects, and add missingProjects'
+        let pmProjects = (pmData ^. planmillProjects) <> HM.fromList (missingProjects' <&> \p -> (p ^. _1 . PM.identifier, p))
+
+        -- generate response projects
+        let projects = sortBy projectLatestEntryCompare $ pmProjects ^..
+              folded
+              . to (projectToProject now latestEntries reportableTaskIds reportedTaskIds)
+              . folded
+
+        -- logTrace "latestEntries" latestEntries
+        -- logTrace "projects" $ (\p -> (p ^. projectName, p ^.. projectTasks . folded . taskLatestEntry . folded)) <$> projects
 
         -- holiday names
         capacities <- PM.planmillAction $ PM.userCapacity interval pmUid
         let holidayNames = mkHolidayNames capacities
-
-        -- task ids
-        reps <- PM.planmillAction $ PM.reportableAssignments pmUid
-        let reportableTaskIds = setOf (folded . to PM.raTask) reps
-        let reportedTaskIds   = setOf (folded . to PM.trTask) reports
-
-        -- logInfo "reported task ids" reportedTaskIds
-        -- logInfo "reported tasks" $ reportedTaskIds ^.. folded . to (\i -> pmData ^? planmillTasks . ix i . to sopToJSON)
-
-        -- generate projects
-        let projects = sortBy projectLatestEntryCompare $ pmData ^..
-                planmillProjects
-                . folded
-                . to (projectToProject now latestEntries reportableTaskIds reportedTaskIds)
-                . folded
-
-        -- logTrace "latestEntries" latestEntries
-        -- logTrace "projects" $ (\p -> (p ^. projectName, p ^.. projectTasks . folded . taskLatestEntry . folded)) <$> projects
 
         -- working hours
         let wh = workingHours (pmData ^. planmillCalendars) pmUser
@@ -132,10 +155,22 @@ hoursEndpoint ctx mfum start end = do
   where
     interval'    = (PM....) <$> start <*> end
 
+    cachedPlanmillAction
+        :: (Typeable a, PM.MonadPlanMill m, PM.MonadPlanMillC m a, MonadBaseControl IO m)
+        => PM.PlanMill a -> m a
+    cachedPlanmillAction pm = cached (ctxCache ctx) 300 {- 5 minutes -} pm $
+        PM.planmillAction pm
+
     takeLatestEntry :: LatestEntry -> LatestEntry -> LatestEntry
     takeLatestEntry a b
         | a ^. latestEntryDate > b ^. latestEntryDate = a
         | otherwise                                   = b
+
+    groupProjectsTasks :: [PM.Project] -> [PM.Task] -> [(PM.Project, [PM.Task])]
+    groupProjectsTasks ps ts = ps <&> \p -> (p, ts' ^. ix (p ^. PM.identifier))
+      where
+        ts' = Map.fromListWith (++) $
+            ts ^.. folded . to (\t -> PM.taskProject t <&> \i -> (i, [t])) . folded
 
     projectLatestEntryCompare :: Project -> Project -> Ordering
     projectLatestEntryCompare a b = case (firstOf l a, firstOf l b) of
@@ -158,10 +193,10 @@ hoursEndpoint ctx mfum start end = do
           where
             day = PM.userCapacityDate uc
 
-    reportToEntry :: HashMap PM.TaskId PM.Project -> PM.Timereport -> Entry
-    reportToEntry prs tr = Entry
+    reportToEntry :: PM.Timereport -> Entry
+    reportToEntry tr = Entry
         { _entryId          = tr ^. PM.identifier
-        , _entryProjectId   = fromMaybe (PM.Ident 0) $ prs ^? ix (PM.trTask tr) . PM.identifier
+        , _entryProjectId   = fromMaybe (PM.Ident 0) $ PM.trProject tr
         , _entryTaskId      = PM.trTask tr
         , _entryDay         = PM.trStart tr
         , _entryDescription = fromMaybe "" $ PM.trComment tr
@@ -307,6 +342,14 @@ instance MonadError e m => MonadError e (PlanmillT m) where
 
 instance MonadIO m => MonadIO (PlanmillT m) where
     liftIO = lift . liftIO
+
+instance MonadBase b m => MonadBase b (PlanmillT m) where
+    liftBase = lift . liftBase
+
+instance MonadBaseControl b m => MonadBaseControl b (PlanmillT m) where
+    type StM (PlanmillT m) a = ComposeSt PlanmillT m a
+    liftBaseWith     = defaultLiftBaseWith
+    restoreM         = defaultRestoreM
 
 instance MonadTransControl PlanmillT where
     type StT PlanmillT a = StT (ReaderT PM.Cfg) a

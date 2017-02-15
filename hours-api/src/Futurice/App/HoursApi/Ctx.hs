@@ -3,6 +3,7 @@ module Futurice.App.HoursApi.Ctx where
 
 import Prelude ()
 import Futurice.Prelude
+import Futurice.Cache (DynMapCache)
 import Control.Concurrent.STM (TVar)
 
 import qualified FUM
@@ -22,9 +23,19 @@ data PlanmillData = PlanmillData
 
 -- TODO: mkPlanmillData from list of projects & tasks & calendars
 
+mkPlanmillData
+    :: PlanmillUserLookupMap
+    -> [PM.Project]
+    -> [PM.Task]
+    -> [PM.CapacityCalendar]
+    -> HashMap PM.UserId (Set PM.TaskId)  -- ^ reportable tasks per user
+    -> PlanmillData
+mkPlanmillData us ps ts cs _rts = undefined us ps ts cs
+
 data Ctx = Ctx
     { ctxPlanmillData :: !(TVar PlanmillData)
     , ctxMockUser     :: !(Maybe FUM.UserName)
+    , ctxCache        :: !DynMapCache
     , ctxLogger       :: !Logger
     , ctxPlanmillCfg  :: !PM.Cfg
     }

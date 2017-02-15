@@ -46,7 +46,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx          .~ "FUTUHOURSAPI"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-    makeCtx config logger _cache = do
+    makeCtx config logger cache = do
         now <- currentTime
         mgr <- newManager tlsManagerSettings
         let integrConfig = makeIntegrationsConfig now logger mgr config
@@ -57,6 +57,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , ctxPlanmillCfg  = cfgPlanmillCfg config
             , ctxMockUser     = cfgMockUser config
             , ctxLogger       = logger
+            , ctxCache        = cache
             }
 
     fetchPlanmillData :: IntegrationsConfig I I Proxy Proxy -> IO PlanmillData
