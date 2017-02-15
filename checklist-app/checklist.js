@@ -13,6 +13,11 @@ document.addEventListener("DOMContentLoaded", function () {
     futuReloadIndicatorEl.style.display = val.total === 0 ? "none" : "";
   });
 
+  // use jQuery datepickers
+  jQuery("input[type=date]").datepicker({
+    dateFormat: "yy-mm-dd",
+  });
+
   $$("form").forEach(function (form) {
     var formId = form.dataset.futuId;
 

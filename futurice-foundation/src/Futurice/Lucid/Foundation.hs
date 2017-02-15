@@ -23,6 +23,7 @@ module Futurice.Lucid.Foundation (
     PageParams,
     pageCss,
     pageJs,
+    pageJQuery,
     defPageParams,
     -- * JavaScript
     JS,
@@ -61,6 +62,12 @@ embeddedLodash_ = toHtml $(embedJS "lodash.js")
 -- | Data-flow library <https://github.com/phadej/menrva menrva>.
 menrvaJS :: JS
 menrvaJS = $(embedJS "menrva.standalone.js")
+
+embedJQuery :: Monad m => HtmlT m ()
+embedJQuery = do
+    toHtml $(embedJS "jquery-3.1.1.min.js")
+    toHtml $(embedJS "jquery-ui.min.js")
+    style_ [type_ "text/css"] ($(embedStringFile "jquery-ui.min.css") :: String)
 
 -------------------------------------------------------------------------------
 -- Lucid
@@ -123,15 +130,15 @@ instance ToHtml (HtmlPage a) where
 -------------------------------------------------------------------------------
 
 data PageParams = PageParams
-    { _pageCss :: [Css]
-    , _pageJs  :: [JS]
+    { _pageCss    :: [Css]
+    , _pageJs     :: [JS]
+    , _pageJQuery :: Bool
     }
 
 defPageParams :: PageParams
-defPageParams = PageParams [] []
+defPageParams = PageParams [] [] False
 
 makeLenses ''PageParams
-
 
 -- | Similar to 'Term' from @lucid@.
 class Page arg result | result -> arg where
@@ -158,5 +165,7 @@ pageImpl t p b = HtmlPage $ doctypehtml_ $ do
         for_ (p ^. pageCss) $ style_ . view strict . render
         -- additional js
         for_ (p ^. pageJs) $ toHtml
+        -- jQuery :S
+        when (p ^. pageJQuery) embedJQuery
     body_ b
 
