@@ -4,7 +4,10 @@ module Futurice.App.Checklist.Pages.Employee (employeePage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (forOf_, has, re)
+import Control.Lens              (forOf_, has, re, to)
+import Data.Aeson                (ToJSON)
+import Data.Aeson.Text           (encodeToLazyText)
+import Data.Set.Lens             (setOf)
 import Futurice.Lucid.Foundation
 import Servant.API               (safeLink)
 import Web.HttpApiData           (toQueryParam)
@@ -40,21 +43,21 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
         button_
             [ class_ "button"
             , data_ "futu-link-button" $ linkToText
-            $ safeLink checklistApi createEmployeePageEndpoint $ employee ^? identifier
-            ]
-            "Copy into new employee"
-        button_
-            [ class_ "button"
-            , data_ "futu-link-button" $ linkToText
             $ safeLink checklistApi employeeAuditPageEndpoint $ employee ^. identifier
             ]
             "Audit log"
+        button_
+            [ class_ "button"
+            , data_ "futu-link-button" $ linkToText
+            $ safeLink checklistApi createEmployeePageEndpoint $ employee ^? identifier
+            ]
+            "Create employee sing this employee as a template"
 
     -- Edit
     row_ $ large_ 12 $ form_ [ futuId_ "employee-edit", data_ "futu-employee-id" $ employee ^. identifierText ] $ do
         row_ $ large_ 12 $ label_ $ do
             "First name"
-            input_ [ futuId_ "employee-firstname", type_ "text", value_ $ employee ^. employeeLastName ]
+            input_ [ futuId_ "employee-firstname", type_ "text", value_ $ employee ^. employeeFirstName ]
         row_ $ large_ 12 $ label_ $ do
             "Last name"
             input_ [ futuId_ "employee-lastname", type_ "text", value_ $ employee ^. employeeLastName ]
@@ -79,13 +82,13 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
             input_ [ futuId_ "employee-starting-day", type_ "date", value_ $ toQueryParam $ employee ^. employeeStartingDay  ]
         row_ $ large_ 12 $ label_ $ do
             "Supervisor"
-            input_ [ futuId_ "employee-supervisor", type_ "text", value_ $ toQueryParam $ employee ^. employeeSupervisor ]
+            input_ [ futuId_ "employee-supervisor", type_ "text", value_ $ toQueryParam $ employee ^. employeeSupervisor, data_ "futu-values" $ encodeToText supervisors ]
         row_ $ large_ 12 $ label_ $ do
             "Tribe"
-            input_ [ futuId_ "employee-tribe", type_ "text", value_ $ employee ^. employeeTribe ]
+            input_ [ futuId_ "employee-tribe", type_ "text", value_ $ employee ^. employeeTribe, data_ "futu-values" $ encodeToText tribes ]
         row_ $ large_ 12 $ label_ $ do
             "Info"
-            textarea_ [ futuId_ "employee-info" ] $ toHtml $ employee ^. employeeInfo
+            textarea_ [ futuId_ "employee-info", rows_ "5" ] $ toHtml $ employee ^. employeeInfo
         row_ $ large_ 12 $ label_ $ do
             "Phone"
             -- TODO: maybe it's simpler to just define empty value
@@ -104,7 +107,7 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
             input_ $ [ futuId_ "employee-hr-number", type_ "text" ] ++
                 catMaybes [ value_ . textShow <$> employee ^. employeeHRNumber ]
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
-            button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Edit"
+            button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Save"
             button_ [ class_ "button", data_ "futu-action" "reset" ] $ "Reset"
 
     -- Tasks
@@ -119,6 +122,23 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
                 td_ $ taskLink task
                 td_ $ roleHtml mlist (task ^. taskRole)
                 td_ $ taskCheckbox world employee task
+
+    when (authUser ^. _2 == TaskRoleIT) $ row_ $ large_ 12 $ do
+        hr_ []
+        button_
+            [ class_ "button alert"
+            , futuId_ "employee-remove"
+            , data_ "futu-employee-id" $ employee ^. identifierText
+            ] "DELETE EMPLOYEE"
   where
     eid = employee ^. identifier
     mlist = world ^? worldLists . ix (employee ^. employeeChecklist)
+
+    tribes :: [Text]
+    tribes = toList $ setOf (worldEmployees . folded . employeeTribe) world
+
+    supervisors :: [Text]
+    supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . to toQueryParam) world
+
+encodeToText :: ToJSON a => a -> Text
+encodeToText = view strict . encodeToLazyText

@@ -257,9 +257,7 @@ data Command f
     | CmdCreateEmployee (f :$ Identifier Employee) (Identifier Checklist) (EmployeeEdit Identity)
     | CmdEditEmployee (Identifier Employee) (EmployeeEdit Maybe)
     | CmdTaskItemToggle (Identifier Employee) (Identifier Task) TaskItem
-
--- CmdEditTaskAppliance
--- CmdArchiveEmployee
+    | CmdArchiveEmployee (Identifier Employee) Bool -- if true, "remove"
 
 deriveGeneric ''Command
 
@@ -291,6 +289,8 @@ traverseCommand _f (CmdEditEmployee e x) =
     pure $ CmdEditEmployee e x
 traverseCommand _ (CmdTaskItemToggle e t x) =
     pure $ CmdTaskItemToggle e t x
+traverseCommand _ (CmdArchiveEmployee cid b) =
+    pure $ CmdArchiveEmployee cid b
 
 -- = operators are the same as ~ lens operators, but modify the state of MonadState.
 --
@@ -329,6 +329,12 @@ applyCommand cmd world = flip execState world $ case cmd of
 
     CmdTaskItemToggle eid tid d ->
         worldTaskItems . ix eid . ix tid Lens..= d
+
+    -- TODO: differentiate between archiving and deleting. Now we delete.
+    CmdArchiveEmployee eid _ -> do
+        worldTaskItems . at eid Lens..= Nothing
+        worldEmployees . at eid Lens..= Nothing
+
   where
     -- tasks are added with both explicit CmdAddTask and during CmdCreateTask
     addTask cid tid app = do
@@ -368,6 +374,8 @@ instance Eq1 f => Eq (Command f) where
         = eid == eid' && x == x'
     CmdTaskItemToggle eid tid d == CmdTaskItemToggle eid' tid' d'
         = eid == eid' && tid == tid' && d == d'
+    CmdArchiveEmployee eid b == CmdArchiveEmployee eid' b'
+        = eid == eid' && b == b'
 
     -- Otherwise false
     _ == _ = False
@@ -400,6 +408,9 @@ instance Show1 f => Show (Command f) where
     showsPrec d (CmdTaskItemToggle e t done) = showsTernaryWith
         showsPrec showsPrec showsPrec
         "CmdTaskItemToggle" d e t done
+    showsPrec d (CmdArchiveEmployee eid b) = showsBinaryWith
+        showsPrec showsPrec
+        "CmdArchiveEmployee" d eid b
 
 instance SOP.All (SOP.Compose Arbitrary f) '[Identifier Checklist, Identifier Task, Identifier Employee]
     => Arbitrary (Command f)
@@ -461,6 +472,11 @@ instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task,
         , "tid"  .= tid
         , "done" .= done
         ]
+    toJSON (CmdArchiveEmployee eid b) = object
+        [ "cmd"    .= ("archive-employee" :: Text)
+        , "eid"    .= eid
+        , "delete" .= b
+        ]
 
     -- toEncoding
 
@@ -500,6 +516,9 @@ instance FromJSONField1 f => FromJSON (Command f)
                 <$> obj .: "eid"
                 <*> obj .: "tid"
                 <*> obj .: "done"
+            "archive-employee" -> CmdArchiveEmployee
+                <$> obj .: "eid"
+                <*> obj .: "delete"
 
             _ -> fail $ "Invalid Command tag " ++ cmd ^. unpacked
 

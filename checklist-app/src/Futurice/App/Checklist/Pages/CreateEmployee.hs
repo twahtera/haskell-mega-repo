@@ -4,7 +4,10 @@ module Futurice.App.Checklist.Pages.CreateEmployee (createEmployeePage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (forOf_, re)
+import Control.Lens              (forOf_, re, to)
+import Data.Aeson                (ToJSON)
+import Data.Aeson.Text           (encodeToLazyText)
+import Data.Set.Lens             (setOf)
 import Futurice.Lucid.Foundation
 import Web.HttpApiData           (toQueryParam)
 
@@ -72,17 +75,19 @@ createEmployeePage world authUser memployee = checklistPage_ ("Create employee")
             "Supervisor"
             input_
                 [ futuId_ "employee-supervisor", type_ "text"
+                , data_ "futu-values" $ encodeToText supervisors
                 , value_ $ maybe "" (toQueryParam . view employeeSupervisor) memployee
                 ]
         row_ $ large_ 12 $ label_ $ do
             "Tribe"
             input_
                 [ futuId_ "employee-tribe", type_ "text"
+                , data_ "futu-values" $ encodeToText tribes
                 , value_ $ maybe "" (toQueryParam . view employeeTribe) memployee
                 ]
         row_ $ large_ 12 $ label_ $ do
             "Info"
-            textarea_ [ futuId_ "employee-info" ] (pure ())
+            textarea_ [ futuId_ "employee-info", rows_ "5" ] (pure ())
         row_ $ large_ 12 $ label_ $ do
             "Phone"
             input_
@@ -91,7 +96,7 @@ createEmployeePage world authUser memployee = checklistPage_ ("Create employee")
                 ]
         row_ $ large_ 12 $ label_ $ do
             "Private email"
-            input_ 
+            input_
                 [ futuId_ "employee-contact-email", type_ "email"
                 , value_ $ fromMaybe "" $ memployee >>= view employeeContactEmail
                 ]
@@ -111,3 +116,12 @@ createEmployeePage world authUser memployee = checklistPage_ ("Create employee")
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Create"
             button_ [ class_ "button", data_ "futu-action" "reset" ] $ "Reset"
+  where
+    tribes :: [Text]
+    tribes = toList $ setOf (worldEmployees . folded . employeeTribe) world
+
+    supervisors :: [Text]
+    supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . to toQueryParam) world
+
+encodeToText :: ToJSON a => a -> Text
+encodeToText = view strict . encodeToLazyText

@@ -13,6 +13,18 @@ document.addEventListener("DOMContentLoaded", function () {
     futuReloadIndicatorEl.style.display = val.total === 0 ? "none" : "";
   });
 
+  // use jQuery datepickers
+  $$("input[type=date]").forEach(function (el) {
+    el.type = "text";
+    jQuery(el). datepicker({
+      dateFormat: "yy-mm-dd",
+      onSelect: function (dateText, inst) {
+        this.value = dateText;
+        this.dispatchEvent(new Event("change"));
+      },
+    });
+  });
+
   $$("form").forEach(function (form) {
     var formId = form.dataset.futuId;
 
@@ -30,6 +42,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   $$("button[data-futu-id=task-remove]").forEach(taskRemoveBtn);
+  $$("button[data-futu-id=employee-remove]").forEach(employeeRemoveBtn);
   $$("input[data-futu-id=task-done-checkbox]").forEach(taskToggleCheckbox);
   $$("button[data-futu-link-button]").forEach(linkButton);
   $$("div[data-futu-id=error-callout] button").forEach(function (btn) {
@@ -38,6 +51,13 @@ document.addEventListener("DOMContentLoaded", function () {
       if (el) {
         el.style.display = "none";
       }
+    });
+  });
+  $$("input[type=text][data-futu-values]").forEach(function (el) {
+    var values = JSON.parse(el.dataset.futuValues);
+    console.log("Autocomplete", el, values);
+    jQuery(el).autocomplete({
+      source: values,
     });
   });
 
@@ -267,6 +287,21 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function employeeRemoveBtn(btn) {
+    buttonOnClick(btn, function () {
+      // prevent dbl-click
+      btn.disabled = true;
+
+      var employeeId = btn.dataset.futuEmployeeId;
+
+      if (employeeId && confirm("Delete employee?")) {
+        cmdRemoveEmployee(employeeId);
+      } else {
+        btn.disabled = false;
+      }
+    });
+  }
+
   function taskToggleCheckbox(chk) {
     var employeeId = chk.dataset.futuEmployee;
     var taskId = chk.dataset.futuTask;
@@ -351,6 +386,15 @@ document.addEventListener("DOMContentLoaded", function () {
     }, true);
   }
 
+  function cmdRemoveEmployee(employeeId) {
+    traceCall(cmdRemoveEmployee, arguments);
+    return command({
+      cmd: "archive-employee",
+      eid: employeeId,
+      delete: true,
+    }, "/");
+  }
+
   function cmdTaskDoneToggle(employeeId, taskId, done) {
     traceCall(cmdTaskDoneToggle, arguments);
     return command({
@@ -396,8 +440,10 @@ document.addEventListener("DOMContentLoaded", function () {
         console.info("command ack", res);
         switch (res.ack) {
           case "ok":
-            if (reload) {
+            if (reload === true) {
               location.reload();
+            } else if (reload) {
+              location.href = reload;
             } else {
               menrva
                 .transaction([futuReloadIndicator$, function (x) {
