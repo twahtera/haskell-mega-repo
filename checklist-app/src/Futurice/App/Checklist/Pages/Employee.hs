@@ -54,7 +54,7 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
     row_ $ large_ 12 $ form_ [ futuId_ "employee-edit", data_ "futu-employee-id" $ employee ^. identifierText ] $ do
         row_ $ large_ 12 $ label_ $ do
             "First name"
-            input_ [ futuId_ "employee-firstname", type_ "text", value_ $ employee ^. employeeLastName ]
+            input_ [ futuId_ "employee-firstname", type_ "text", value_ $ employee ^. employeeFirstName ]
         row_ $ large_ 12 $ label_ $ do
             "Last name"
             input_ [ futuId_ "employee-lastname", type_ "text", value_ $ employee ^. employeeLastName ]
