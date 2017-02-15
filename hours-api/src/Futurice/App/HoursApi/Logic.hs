@@ -83,6 +83,7 @@ hoursEndpoint
     -> Maybe Day
     -> Handler HoursResponse
 hoursEndpoint ctx mfum start end = do
+    now <- currentTime
     interval <- maybe (throwError err400) pure interval'
     let resultInterval = PM.ResultInterval PM.IntervalStart interval
     authorisedUser ctx mfum $ \_fumUser pmUser pmData -> do
@@ -107,7 +108,7 @@ hoursEndpoint ctx mfum start end = do
         let projects = sortBy projectLatestEntryCompare $ pmData ^..
                 planmillProjects
                 . folded
-                . to (projectToProject latestEntries reportableTaskIds reportedTaskIds)
+                . to (projectToProject now latestEntries reportableTaskIds reportedTaskIds)
                 . folded
 
         -- logTrace "latestEntries" latestEntries
@@ -164,12 +165,13 @@ hoursEndpoint ctx mfum start end = do
         }
 
     projectToProject
-        :: Map PM.TaskId LatestEntry  -- ^ last entry per task
+        :: UTCTime                    -- ^ current timestamp
+        -> Map PM.TaskId LatestEntry  -- ^ last entry per task
         -> Set PM.TaskId              -- ^ reportable
         -> Set PM.TaskId              -- ^ reported
         -> (PM.Project, [PM.Task])
         -> Maybe Project
-    projectToProject latestEntries reportable reported (p, ts)
+    projectToProject now latestEntries reportable reported (p, ts)
         | null tasks = Nothing
         | otherwise  = Just $ Project
             { _projectId     = p ^. PM.identifier
@@ -180,7 +182,7 @@ hoursEndpoint ctx mfum start end = do
       where
         tasks = ts ^.. folded
             . filtered (\t -> taskIds ^. contains (t ^. PM.identifier))
-            . to (\t -> taskToTask (latestEntries ^. at (t ^. PM.identifier)) t)
+            . to (\t -> taskToTask now (latestEntries ^. at (t ^. PM.identifier)) t)
 
         -- Project is closed, if there aren't reportable tasks anymore.
         closed =  flip nullOf ts
@@ -189,10 +191,11 @@ hoursEndpoint ctx mfum start end = do
 
         taskIds = reportable <> reported
 
-    taskToTask :: Maybe LatestEntry -> PM.Task -> Task
-    taskToTask latestEntry t = mkTask (t ^. PM.identifier) (PM.taskName t)
+    taskToTask :: UTCTime -> Maybe LatestEntry -> PM.Task -> Task
+    taskToTask now latestEntry t = mkTask (t ^. PM.identifier) (PM.taskName t)
         & taskLatestEntry .~ latestEntry
-        -- TODO: absence, closed, hoursRemaining
+        & taskClosed      .~ (now > PM.taskFinish t)
+        -- TODO: absence, hoursRemaining
 
 -- | @POST /entry@
 entryEndpoint
