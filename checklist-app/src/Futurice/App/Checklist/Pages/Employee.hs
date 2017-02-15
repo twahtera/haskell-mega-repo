@@ -104,7 +104,7 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
             input_ $ [ futuId_ "employee-hr-number", type_ "text" ] ++
                 catMaybes [ value_ . textShow <$> employee ^. employeeHRNumber ]
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
-            button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Edit"
+            button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Save"
             button_ [ class_ "button", data_ "futu-action" "reset" ] $ "Reset"
 
     -- Tasks
