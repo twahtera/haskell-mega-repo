@@ -14,8 +14,15 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // use jQuery datepickers
-  jQuery("input[type=date]").datepicker({
-    dateFormat: "yy-mm-dd",
+  $$("input[type=date]").forEach(function (el) {
+    el.type = "text";
+    jQuery(el). datepicker({
+      dateFormat: "yy-mm-dd",
+      onSelect: function (dateText, inst) {
+        this.value = dateText;
+        this.dispatchEvent(new Event("change"));
+      },
+    });
   });
 
   $$("form").forEach(function (form) {
