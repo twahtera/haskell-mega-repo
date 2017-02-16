@@ -82,8 +82,8 @@ ctxGetCRandom ctx = ctxWithCryptoGen ctx getCRandom
 
 ctxApplyCmd
     :: (MonadLog m, MonadBaseControl IO m, MonadIO m)
-    => FUM.UserName -> Command Identity -> Ctx -> m ()
-ctxApplyCmd fumuser cmd ctx = do
-    liftIO $ atomically $ modifyTVar' (ctxWorld ctx) (applyCommand cmd)
+    => UTCTime -> FUM.UserName -> Command Identity -> Ctx -> m ()
+ctxApplyCmd now fumuser cmd ctx = do
+    liftIO $ atomically $ modifyTVar' (ctxWorld ctx) (applyCommand now fumuser cmd)
     withResource (ctxPostgres ctx) $ \conn -> do
         transactCommand conn fumuser cmd

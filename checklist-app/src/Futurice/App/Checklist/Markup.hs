@@ -264,13 +264,13 @@ checklistNameHtml world mloc i notDone =
 -- TodoCounter
 -------------------------------------------------------------------------------
 
-toTodoCounter :: World -> TaskRole -> Identifier Task -> TaskItem -> TodoCounter
+toTodoCounter :: World -> TaskRole -> Identifier Task -> AnnTaskItem -> TodoCounter
 toTodoCounter world tr tid td =
     case (has (worldTasks . ix tid . taskRole . only tr) world, td) of
-        (True,  TaskItemDone) -> TodoCounter 1 1 1 1
-        (True,  TaskItemTodo) -> TodoCounter 0 1 0 1
-        (False, TaskItemDone) -> TodoCounter 0 0 1 1
-        (False, TaskItemTodo) -> TodoCounter 0 0 0 1
+        (True,  AnnTaskItemDone _ _) -> TodoCounter 1 1 1 1
+        (True,  AnnTaskItemTodo)     -> TodoCounter 0 1 0 1
+        (False, AnnTaskItemDone _ _) -> TodoCounter 0 0 1 1
+        (False, AnnTaskItemTodo)     -> TodoCounter 0 0 0 1
 
 data TodoCounter = TodoCounter !Int !Int !Int !Int
 instance Semigroup TodoCounter where
@@ -298,7 +298,7 @@ taskCheckbox world employee task = do
         $ worldTaskItems
         . ix (employee ^. identifier)
         . ix (task ^. identifier)
-        . _TaskItemDone
+        . _AnnTaskItemDone
 
     megaid :: Text
     megaid =

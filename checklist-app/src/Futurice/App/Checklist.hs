@@ -208,7 +208,8 @@ commandImpl
 commandImpl ctx fu cmd = runLogT "command" (ctxLogger ctx) $
     withAuthUser' (AckErr "forbidden") ctx fu $ \_world (fumUsername, _) -> do
         (cmd', res) <- instantiatedCmd
-        ctxApplyCmd fumUsername cmd' ctx
+        now <- currentTime
+        ctxApplyCmd now fumUsername cmd' ctx
         pure res
   where
     instantiatedCmd = flip runStricterT mempty $ traverseCommand genIdentifier cmd
@@ -304,7 +305,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             cfgMockUser
             emptyWorld
         cmds <- withResource (ctxPostgres ctx) $ \conn ->
-            Postgres.fromOnly <$$> Postgres.query_ conn "SELECT cmddata FROM checklist2.commands ORDER BY cid;"
-        let world0 = foldl' (flip applyCommand) emptyWorld cmds
+            Postgres.query_ conn "SELECT username, updated, cmddata FROM checklist2.commands ORDER BY cid;"
+        let world0 = foldl' (\world (fumuser, now, cmd) -> applyCommand now fumuser cmd world) emptyWorld cmds
         atomically $ writeTVar (ctxWorld ctx) world0
         pure (ctx, [])

@@ -23,6 +23,7 @@ module Futurice.App.Checklist.Types (
     CheckResult(..),
     Checklist(..),
     TaskItem (..),
+    AnnTaskItem (..),
     TaskAppliance(..),
     -- ** Wrappers
     Identifier(..),
@@ -57,9 +58,11 @@ module Futurice.App.Checklist.Types (
     taskRoleToText, taskRoleFromText,
     -- ** Checklist
     checklistName, checklistTasks,
-    -- ** TaskItemDone
+    -- ** TaskItem
     _TaskItem,
     _TaskItemDone, _TaskItemTodo,
+    -- ** AnnTaskItem
+    _AnnTaskItemDone, _AnnTaskItemTodo,
     -- * World
     World,
     emptyWorld,

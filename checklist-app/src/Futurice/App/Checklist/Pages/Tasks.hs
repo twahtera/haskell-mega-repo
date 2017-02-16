@@ -86,5 +86,5 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
                     (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l))
                     checklistLink
  where
-  countUsers TaskItemDone = TodoCounter 0 0 1 1
-  countUsers TaskItemTodo = TodoCounter 0 0 0 1
+  countUsers (AnnTaskItemDone _ _) = TodoCounter 0 0 1 1
+  countUsers AnnTaskItemTodo       = TodoCounter 0 0 0 1

@@ -36,9 +36,9 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
             . taskItemPredicate
 
         -- Single item traversal which we use as a filter in taskPredicate
-        taskItemPredicate :: Traversal' TaskItem ()
+        taskItemPredicate :: Traversal' AnnTaskItem ()
         taskItemPredicate | showAll   = united
-                          | otherwise = _TaskItemTodo
+                          | otherwise = _AnnTaskItemTodo . united
 
     in checklistPage_ "Employees" authUser $ do
         -- Title
@@ -152,9 +152,9 @@ countEmployeesWithTask world task = toHtml' . foldMap f
       "(" *> toHtml (show i) *> "/" *> toHtml (show j) *> ")"
 
     f employee = case world ^? worldTaskItems . ix (employee ^. identifier) . ix (task ^. identifier) of
-        Nothing           -> TodoCounter 0 0 0 0
-        Just TaskItemTodo -> TodoCounter 0 0 0 1
-        Just TaskItemDone -> TodoCounter 0 0 1 1
+        Nothing                    -> TodoCounter 0 0 0 0
+        Just AnnTaskItemTodo       -> TodoCounter 0 0 0 1
+        Just (AnnTaskItemDone _ _) -> TodoCounter 0 0 1 1
 
 viewerItemsHeader :: Monad m => TaskRole -> HtmlT m ()
 viewerItemsHeader TaskRoleIT         = th_ [title_ "IT tasks todo/done"]          "IT items"

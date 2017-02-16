@@ -127,8 +127,8 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
   where
     mlist = Just checklist
 
-    countUsers TaskItemDone = TodoCounter 0 0 1 1
-    countUsers TaskItemTodo = TodoCounter 0 0 0 1
+    countUsers (AnnTaskItemDone _ _) = TodoCounter 0 0 1 1
+    countUsers AnnTaskItemTodo       = TodoCounter 0 0 0 1
 
     employees =  sortOn (view employeeStartingDay)
         $ filter (\e -> e ^. employeeChecklist == checklist ^. identifier)

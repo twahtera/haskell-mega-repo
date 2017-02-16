@@ -295,8 +295,8 @@ traverseCommand _ (CmdArchiveEmployee cid b) =
 -- = operators are the same as ~ lens operators, but modify the state of MonadState.
 --
 -- todo: in error monad, if e.g. identifier don't exist
-applyCommand :: Command Identity -> World -> World
-applyCommand cmd world = flip execState world $ case cmd of
+applyCommand :: UTCTime -> FUM.UserName -> Command Identity -> World -> World
+applyCommand now ssoUser cmd world = flip execState world $ case cmd of
     CmdCreateChecklist (Identity cid) n ->
         worldLists . at cid ?= Checklist cid n mempty
 
@@ -322,13 +322,16 @@ applyCommand cmd world = flip execState world $ case cmd of
         -- add initial tasks
         iforOf_ (worldLists . ix cid . checklistTasks . ifolded) world $ \tid app ->
             when (employeeTaskApplies e app) $
-                worldTaskItems . at eid . non mempty . at tid ?= TaskItemTodo
+                worldTaskItems . at eid . non mempty . at tid ?= AnnTaskItemTodo
 
     CmdEditEmployee eid x -> do
         worldEmployees . ix eid %= applyEmployeeEdit x
 
-    CmdTaskItemToggle eid tid d ->
-        worldTaskItems . ix eid . ix tid Lens..= d
+    CmdTaskItemToggle eid tid d -> do
+        let d' = case d of
+                TaskItemTodo -> AnnTaskItemTodo
+                TaskItemDone -> AnnTaskItemDone ssoUser now
+        worldTaskItems . ix eid . ix tid Lens..= d'
 
     -- TODO: differentiate between archiving and deleting. Now we delete.
     CmdArchiveEmployee eid _ -> do
@@ -343,7 +346,7 @@ applyCommand cmd world = flip execState world $ case cmd of
         for_ es $ \e -> do
             let eid = e ^. identifier
             when (e ^. employeeChecklist == cid && employeeTaskApplies e app) $ do
-                worldTaskItems . at eid . non mempty . at tid %= Just . fromMaybe TaskItemTodo
+                worldTaskItems . at eid . non mempty . at tid %= Just . fromMaybe AnnTaskItemTodo
 
 transactCommand
     :: (MonadLog m, MonadIO m)
