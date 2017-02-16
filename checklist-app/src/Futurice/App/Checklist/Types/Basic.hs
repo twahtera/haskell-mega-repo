@@ -73,6 +73,8 @@ data Task = Task
       -- ^ Some tasks can be done only after some other tasks are done.
     , _taskRole         :: !TaskRole
       -- ^ Tasks can be fullfilled by different roles.
+    , _taskComment      :: !Bool
+      -- ^ Whether we render a comment field for this task.
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
 

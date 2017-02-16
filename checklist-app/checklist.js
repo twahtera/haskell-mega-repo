@@ -205,6 +205,7 @@ document.addEventListener("DOMContentLoaded", function () {
       info: { sel: "input[data-futu-id=task-info]" },
       role: { sel: "select[data-futu-id=task-role]", check: nonEmptyCheck },
       prereqs: { sel: "select[data-futu-id=task-prereqs", check: isArrayCheck },
+      comment: { sel: "input[data-futu-id=task-comment" },
       list1: { sel: "select[data-futu-id=task-checklist-1]" },
       app1:  { sel: "input[data-futu-id=task-checklist-appliance-1]", check: applianceCheck },
       list2: { sel: "select[data-futu-id=task-checklist-2]" },
@@ -242,6 +243,7 @@ document.addEventListener("DOMContentLoaded", function () {
       info: { sel: "input[data-futu-id=task-info]" },
       role: { sel: "select[data-futu-id=task-role]" },
       prereqs: { sel: "select[data-futu-id=task-prereqs", check: isArrayCheck },
+      comment: { sel: "input[data-futu-id=task-comment" },
     };
 
     var actions = initialiseFormDefs(defs, form);
@@ -440,8 +442,10 @@ document.addEventListener("DOMContentLoaded", function () {
         switch (res.ack) {
           case "ok":
             if (reload === true) {
+              console.info("Reloading");
               location.reload();
             } else if (reload) {
+              console.info("Loading", reload);
               location.href = reload;
             } else {
               menrva

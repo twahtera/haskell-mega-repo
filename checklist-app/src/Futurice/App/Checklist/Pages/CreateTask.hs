@@ -39,6 +39,10 @@ createTaskPage world authUser = checklistPage_ ("Create task") authUser $ do
                             [ value_ $ role ^. re _TaskRole ]
                             $ toHtml $ role ^. re _TaskRole
         row_ $ large_ 12 $ label_ $ do
+            "Comment field"
+            br_ []
+            checkbox_ False [ futuId_ "task-comment" ]
+        row_ $ large_ 12 $ label_ $ do
             "Prerequisites"
             br_ []
             small_ $ i_ "Note: Prerequisites must be also added to the checklist"

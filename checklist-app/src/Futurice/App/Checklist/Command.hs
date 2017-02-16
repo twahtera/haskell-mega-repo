@@ -62,6 +62,7 @@ data TaskEdit f = TaskEdit
     , teInfo    :: !(f :$ Text)
     , teRole    :: !(f TaskRole)
     , tePrereqs :: !(f :$ Set :$ Identifier Task)
+    , teComment :: !(f :$ Bool)
     }
 
 deriveGeneric ''TaskEdit
@@ -72,17 +73,18 @@ applyTaskEdit te
     . maybe id (Lens.set taskInfo) (teInfo te)
     . maybe id (Lens.set taskRole) (teRole te)
     . maybe id (Lens.set taskPrereqs) (tePrereqs te)
+    . maybe id (Lens.set taskComment) (teComment te)
 
 instance Eq1 f => Eq (TaskEdit f) where
-    TaskEdit n i r pr == TaskEdit n' i' r' pr' =
-        eq1 n n' && eq1 i i' && eq1 r r' && eq1 pr pr'
+    TaskEdit n i r pr c == TaskEdit n' i' r' pr' c' =
+        eq1 n n' && eq1 i i' && eq1 r r' && eq1 pr pr' && eq1 c c'
 
 instance Show1 f => Show (TaskEdit f) where
-    showsPrec d (TaskEdit n _ r pr) = showsTernaryWith
+    showsPrec d (TaskEdit n _ r pr _) = showsTernaryWith
         showsPrec1 showsPrec1 showsPrec1
         "TaskEdit" d n r pr
 
-type TaskEditTypes = '[Name Task, TaskRole, Set :$ Identifier Task, Text]
+type TaskEditTypes = '[Name Task, TaskRole, Set :$ Identifier Task, Text, Bool]
 
 instance SOP.All (SOP.Compose Arbitrary f) TaskEditTypes
     => Arbitrary (TaskEdit f)
@@ -114,11 +116,13 @@ instance
                 <*> obj .:? "info"
                 <*> obj .:? "role"
                 <*> obj .:? "prereqs"
+                <*> obj .:? "comment"
             Nothing -> TaskEdit
                 <$> obj .: "name"
                 <*> obj .:? "info" .!= pure mempty
                 <*> obj .: "role"
                 <*> obj .:? "prereqs" .!= pure mempty
+                <*> obj .:? "comment" .!= pure False
 
 -------------------------------------------------------------------------------
 -- Employee edit
@@ -300,8 +304,8 @@ applyCommand now ssoUser cmd world = flip execState world $ case cmd of
     CmdCreateChecklist (Identity cid) n ->
         worldLists . at cid ?= Checklist cid n mempty
 
-    CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity i) (Identity role) (Identity pr)) ls -> do
-        worldTasks . at tid ?= Task tid n i pr role
+    CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity i) (Identity role) (Identity pr) (Identity comment)) ls -> do
+        worldTasks . at tid ?= Task tid n i pr role comment
         for_ ls $ \(TaskAddition cid app) -> addTask cid tid app
 
     CmdAddTask cid tid app -> addTask cid tid app
