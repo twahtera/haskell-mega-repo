@@ -62,6 +62,8 @@ module Futurice.App.Checklist.Types (
     _TaskItem,
     _TaskItemDone, _TaskItemTodo,
     -- ** AnnTaskItem
+    annTaskItemTodo,
+    annTaskItemComment,
     _AnnTaskItemDone, _AnnTaskItemTodo,
     -- * World
     World,

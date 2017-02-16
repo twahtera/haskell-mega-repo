@@ -97,10 +97,11 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                 th_ [title_ "Status"]                      "S"
                 th_ [title_ "Location"]                    "Loc"
                 th_ [title_ "Name" ]                       "Name"
-                maybe
-                    (th_ [title_ "Checklist"]                   "List")
-                    (\task -> th_ [title_ "Selected task" ] $ task ^. nameHtml)
-                    mtask
+                mcase mtask
+                    (th_ [title_ "Checklist"]              "List")
+                    $ \task -> do
+                        th_ [title_ "Selected task" ] $ task ^. nameHtml
+                        when (task ^. taskComment) $ th_ "Comment"
                 -- for_ mtask $ \_task -> th_ [ title_ "Additional info for task + employee" ] "Task info"
                 th_ [title_ "Due date"]                    "Due date"
                 th_ [title_ "Confirmed - contract signed"] "Confirmed"
@@ -123,12 +124,11 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                     td_ $ contractTypeHtml $ employee ^. employeeContractType
                     td_ $ locationHtml mlist $ employee ^. employeeLocation
                     td_ $ employeeLink employee
-                    td_ $ maybe
-                        (checklistNameHtml world mloc (employee ^. employeeChecklist) showAll)
-                        (taskCheckbox world employee)
-                        mtask
-                    --for_ mtask $ \task -> td_ $
-                    --    input_ [ type_ "text" ] -- TODO: taskInfoInput world employee
+                    mcase mtask
+                        (td_ $ checklistNameHtml world mloc (employee ^. employeeChecklist) showAll)
+                        $ \task -> do
+                            td_ $ taskCheckbox_ world employee task
+                            when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task
                     td_ $ toHtml $ show startingDay
                     td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
                     td_ $ toHtml $ show (diffDays startingDay today) <> " days"
@@ -152,9 +152,9 @@ countEmployeesWithTask world task = toHtml' . foldMap f
       "(" *> toHtml (show i) *> "/" *> toHtml (show j) *> ")"
 
     f employee = case world ^? worldTaskItems . ix (employee ^. identifier) . ix (task ^. identifier) of
-        Nothing                    -> TodoCounter 0 0 0 0
-        Just AnnTaskItemTodo       -> TodoCounter 0 0 0 1
-        Just (AnnTaskItemDone _ _) -> TodoCounter 0 0 1 1
+        Nothing                 -> TodoCounter 0 0 0 0
+        Just AnnTaskItemTodo {} -> TodoCounter 0 0 0 1
+        Just AnnTaskItemDone {} -> TodoCounter 0 0 1 1
 
 viewerItemsHeader :: Monad m => TaskRole -> HtmlT m ()
 viewerItemsHeader TaskRoleIT         = th_ [title_ "IT tasks todo/done"]          "IT items"

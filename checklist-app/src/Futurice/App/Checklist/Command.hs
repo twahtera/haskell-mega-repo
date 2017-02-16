@@ -262,6 +262,7 @@ data Command f
     | CmdEditEmployee (Identifier Employee) (EmployeeEdit Maybe)
     | CmdTaskItemToggle (Identifier Employee) (Identifier Task) TaskItem
     | CmdArchiveEmployee (Identifier Employee) Bool -- if true, "remove"
+    | CmdTaskEditComment (Identifier Employee) (Identifier Task) Text
 
 deriveGeneric ''Command
 
@@ -295,6 +296,8 @@ traverseCommand _ (CmdTaskItemToggle e t x) =
     pure $ CmdTaskItemToggle e t x
 traverseCommand _ (CmdArchiveEmployee cid b) =
     pure $ CmdArchiveEmployee cid b
+traverseCommand _ (CmdTaskEditComment eid tid c) =
+    pure $ CmdTaskEditComment eid tid c
 
 -- = operators are the same as ~ lens operators, but modify the state of MonadState.
 --
@@ -326,16 +329,19 @@ applyCommand now ssoUser cmd world = flip execState world $ case cmd of
         -- add initial tasks
         iforOf_ (worldLists . ix cid . checklistTasks . ifolded) world $ \tid app ->
             when (employeeTaskApplies e app) $
-                worldTaskItems . at eid . non mempty . at tid ?= AnnTaskItemTodo
+                worldTaskItems . at eid . non mempty . at tid ?= annTaskItemTodo
 
     CmdEditEmployee eid x -> do
         worldEmployees . ix eid %= applyEmployeeEdit x
 
     CmdTaskItemToggle eid tid d -> do
         let d' = case d of
-                TaskItemTodo -> AnnTaskItemTodo
-                TaskItemDone -> AnnTaskItemDone ssoUser now
+                TaskItemTodo -> annTaskItemTodo
+                TaskItemDone -> AnnTaskItemDone "" ssoUser now
         worldTaskItems . ix eid . ix tid Lens..= d'
+
+    CmdTaskEditComment eid tid c -> do
+        worldTaskItems . ix eid . ix tid . annTaskItemComment Lens..= c
 
     -- TODO: differentiate between archiving and deleting. Now we delete.
     CmdArchiveEmployee eid _ -> do
@@ -350,7 +356,7 @@ applyCommand now ssoUser cmd world = flip execState world $ case cmd of
         for_ es $ \e -> do
             let eid = e ^. identifier
             when (e ^. employeeChecklist == cid && employeeTaskApplies e app) $ do
-                worldTaskItems . at eid . non mempty . at tid %= Just . fromMaybe AnnTaskItemTodo
+                worldTaskItems . at eid . non mempty . at tid %= Just . fromMaybe annTaskItemTodo
 
 transactCommand
     :: (MonadLog m, MonadIO m)
@@ -381,6 +387,8 @@ instance Eq1 f => Eq (Command f) where
         = eid == eid' && x == x'
     CmdTaskItemToggle eid tid d == CmdTaskItemToggle eid' tid' d'
         = eid == eid' && tid == tid' && d == d'
+    CmdTaskEditComment eid tid c == CmdTaskEditComment eid' tid' c'
+        = eid == eid' && tid == tid' && c == c'
     CmdArchiveEmployee eid b == CmdArchiveEmployee eid' b'
         = eid == eid' && b == b'
 
@@ -415,6 +423,9 @@ instance Show1 f => Show (Command f) where
     showsPrec d (CmdTaskItemToggle e t done) = showsTernaryWith
         showsPrec showsPrec showsPrec
         "CmdTaskItemToggle" d e t done
+    showsPrec d (CmdTaskEditComment e t c) = showsTernaryWith
+        showsPrec showsPrec showsPrec
+        "CmdTaskItemEditComment" d e t c
     showsPrec d (CmdArchiveEmployee eid b) = showsBinaryWith
         showsPrec showsPrec
         "CmdArchiveEmployee" d eid b
@@ -479,6 +490,12 @@ instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task,
         , "tid"  .= tid
         , "done" .= done
         ]
+    toJSON (CmdTaskEditComment eid tid c) = object
+        [ "cmd"     .= ("task-edit-comment" :: Text)
+        , "eid"     .= eid
+        , "tid"     .= tid
+        , "comment" .= c
+        ]
     toJSON (CmdArchiveEmployee eid b) = object
         [ "cmd"    .= ("archive-employee" :: Text)
         , "eid"    .= eid
@@ -523,6 +540,10 @@ instance FromJSONField1 f => FromJSON (Command f)
                 <$> obj .: "eid"
                 <*> obj .: "tid"
                 <*> obj .: "done"
+            "task-edit-comment" -> CmdTaskEditComment
+                <$> obj .: "eid"
+                <*> obj .: "tid"
+                <*> obj .: "comment"
             "archive-employee" -> CmdArchiveEmployee
                 <$> obj .: "eid"
                 <*> obj .: "delete"

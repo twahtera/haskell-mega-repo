@@ -86,6 +86,7 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
             th_ [title_ "Name" ]                       "Name"
             th_ [title_ "Checklist"]                   "List"
             th_ [title_ "Check"]                       "Check"
+            when (task ^. taskComment) $ th_           "Comment"
             th_ [title_ "Due date"]                    "Due date"
             th_ [title_ "Confirmed - contract signed"] "Confirmed"
             th_ [title_ "Days till start"]             "ETA"
@@ -96,7 +97,8 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
             td_ $ employeeLink employee
             -- TODO: checklist link
             td_ $ checklistNameHtml world Nothing (employee ^. employeeChecklist) defaultShowAll
-            td_ $ taskCheckbox world employee task
+            td_ $ taskCheckbox_ world employee task
+            when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task
             td_ $ toHtml $ show startingDay
             td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
             td_ $ toHtml $ show (diffDays startingDay today) <> " days"

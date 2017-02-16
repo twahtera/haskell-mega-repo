@@ -44,6 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
   $$("button[data-futu-id=task-remove]").forEach(taskRemoveBtn);
   $$("button[data-futu-id=employee-remove]").forEach(employeeRemoveBtn);
   $$("input[data-futu-id=task-done-checkbox]").forEach(taskToggleCheckbox);
+  $$("input[data-futu-id=task-comment-editbox]").forEach(taskCommentEditInput);
   $$("button[data-futu-link-button]").forEach(linkButton);
   $$("div[data-futu-id=error-callout] button").forEach(function (btn) {
     buttonOnClick(btn, function () {
@@ -313,6 +314,51 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function taskCommentEditInput(el) {
+    var employeeId = el.dataset.futuEmployee;
+    var taskId = el.dataset.futuTask;
+
+    var orig = el.value;
+    var state$ = menrva.source("orig");
+
+    state$.onValue(function (state) {
+      switch (state) {
+        case "orig": el.style.border = ""; break;
+        case "dirty": el.style.border = "1px solid blue"; break;
+        case "saving": el.style.border = "1px solid orange"; break;
+        case "saved": el.style.border = "1px solid green"; break;
+        case "error": el.style.border = "1px solid red"; break;
+      }
+    });
+
+    var saveCb = _.debounce(function () {
+      menrva.transaction([state$, "saving"]).commit();
+      var value = el.value;
+      cmdTaskCommentEdit(employeeId, taskId, value)
+        .then(function () {
+            menrva.transaction([state$, "saved"]).commit();
+            orig = value;
+        })
+        .catch(function () {
+            menrva.transaction([state$, "error"]).commit();
+        });
+    }, 1000);
+
+    var cb = function () {
+      var state = state$.value();
+      if ((state === "orig" || state === "saved") && el.value !== orig) {
+        menrva.transaction([state$, "dirty"]).commit();
+        saveCb();
+      } else if (state === "dirty") {
+        saveCb();
+      }
+    };
+
+    el.addEventListener("change", cb);
+    el.addEventListener("blur", cb);
+    el.addEventListener("keyup", cb);
+  }
+
   // Commands
 
   function cmdCreateEmployee(checklistId, edit) {
@@ -406,6 +452,17 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+
+  function cmdTaskCommentEdit(employeeId, taskId, comment) {
+    traceCall(cmdTaskCommentEdit, arguments);
+    return command({
+      cmd: "task-edit-comment",
+      eid: employeeId,
+      tid: taskId,
+      comment: comment,
+    });
+  }
+
   function command(cmd, reload) {
     var url = "/command";
 
@@ -473,6 +530,7 @@ document.addEventListener("DOMContentLoaded", function () {
           errorCalloutContent.innerText = exc;
           errorCallout.style.display = "";
         }
+        throw exc;
       });
   }
 

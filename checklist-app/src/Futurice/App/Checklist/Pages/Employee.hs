@@ -118,14 +118,16 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
             th_ [ title_ "Task" ]  "Task"
             th_ [ title_ "Role" ]  "Role"
             th_ [ title_ "Check" ] "Check"
+            th_ [ title_ "Comment" ] "Comment"
             th_ [ title_ "Who and when have done this task" ] "Audit"
         tbody_ $ forOf_ (worldTasksSorted (authUser ^. authUserTaskRole) . folded) world $ \task -> do
             let tid = task ^. identifier
             for_ (world ^? worldTaskItems . ix eid . ix tid) $ \taskItem -> tr_ $ do
                 td_ $ taskLink task
                 td_ $ roleHtml mlist (task ^. taskRole)
-                td_ $ taskCheckbox world employee task
-                td_ $ forOf_ _AnnTaskItemDone taskItem $ \(fumUser, timestamp) -> do
+                td_ $ taskCheckbox_ world employee task
+                td_ $ taskCommentInput_ world employee task
+                td_ $ forOf_ _AnnTaskItemDone taskItem $ \(_, fumUser, timestamp) -> do
                     toHtml $ fumUser ^. FUM.getUserName
                     " "
                     toHtml $ show $ localDay $ utcToHelsinkiTime timestamp
