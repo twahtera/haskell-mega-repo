@@ -53,7 +53,9 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
 
         row_ $ large_ 12 $
             label_ $ do
-                "Appliance"
+                "Appliance ("
+                a_ [ applianceHelpHref ] "help"
+                ")"
                 input_ [ futuId_ "task-appliance", type_ "text", value_ "", placeholder_ "e.g. helsinki or tampere, permanent or fixed-term, external" ]
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do

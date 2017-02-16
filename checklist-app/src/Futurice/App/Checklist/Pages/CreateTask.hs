@@ -52,21 +52,27 @@ createTaskPage world authUser = checklistPage_ ("Create task") authUser $ do
                 "Checklist 1"
                 checklistSelect "task-checklist-1"
             large_ 6 $ label_ $ do
-                "Appliance"
+                "Appliance ("
+                a_ [ applianceHelpHref ] "help"
+                ")"
                 checklistAppliance "task-checklist-appliance-1"
         row_ $ do
             large_ 6 $ label_ $ do
                 "Checklist 2"
                 checklistSelect "task-checklist-2"
             large_ 6 $ label_ $ do
-                "Appliance"
+                "Appliance ("
+                a_ [ applianceHelpHref ] "help"
+                ")"
                 checklistAppliance "task-checklist-appliance-2"
         row_ $ do
             large_ 6 $ label_ $ do
                 "Checklist 3"
                 checklistSelect "task-checklist-3"
             large_ 6 $ label_ $ do
-                "Appliance"
+                "Appliance ("
+                a_ [ applianceHelpHref ] "help"
+                ")"
                 checklistAppliance "task-checklist-appliance-3"
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do

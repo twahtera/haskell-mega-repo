@@ -29,6 +29,7 @@ import Futurice.App.Checklist.Pages.Employee
 import Futurice.App.Checklist.Pages.EmployeeAudit
 import Futurice.App.Checklist.Pages.Error
        (forbiddedPage, notFoundPage)
+import Futurice.App.Checklist.Pages.HelpAppliance
 import Futurice.App.Checklist.Pages.Index
 import Futurice.App.Checklist.Pages.Task
 import Futurice.App.Checklist.Pages.Tasks
@@ -53,6 +54,7 @@ server ctx = indexPageImpl ctx
     :<|> taskPageImpl ctx
     :<|> employeePageImpl ctx
     :<|> employeeAuditPageImpl ctx
+    :<|> applianceHelpImpl ctx
     :<|> commandImpl ctx
 
 -------------------------------------------------------------------------------
@@ -168,6 +170,13 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
     impl world userInfo = pure $ case world ^? worldEmployees . ix eid of
         Nothing       -> notFoundPage
         Just employee -> employeePage world userInfo employee
+
+applianceHelpImpl
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> Handler (HtmlPage "appliance-help")
+applianceHelpImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
+    pure $ helpAppliancePage world userInfo
 
 -------------------------------------------------------------------------------
 -- Audit

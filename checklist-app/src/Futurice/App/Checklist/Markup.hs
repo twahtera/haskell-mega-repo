@@ -20,6 +20,7 @@ module Futurice.App.Checklist.Markup (
     checklistPageHref,
     taskPageHref,
     employeePageHref,
+    applianceHelpHref,
     -- * Links
     employeeLink,
     checklistLink,
@@ -191,6 +192,9 @@ checklistPageHref
 checklistPageHref l =
     href_ $ linkToText $ safeLink checklistApi checklistPageEndpoint
         (l ^. identifier)
+
+applianceHelpHref :: Attribute
+applianceHelpHref = href_ $ linkToText $ safeLink checklistApi applianceHelpEndpoint
 
 -------------------------------------------------------------------------------
 -- Links
