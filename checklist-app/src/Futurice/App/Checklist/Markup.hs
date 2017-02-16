@@ -20,6 +20,7 @@ module Futurice.App.Checklist.Markup (
     checklistPageHref,
     taskPageHref,
     employeePageHref,
+    applianceHelpHref,
     -- * Links
     employeeLink,
     checklistLink,
@@ -35,7 +36,8 @@ module Futurice.App.Checklist.Markup (
     TodoCounter (..),
     toTodoCounter,
     -- * Tasks
-    taskCheckbox,
+    taskCheckbox_,
+    taskCommentInput_,
     -- * Defaults
     defaultShowAll,
     ) where
@@ -192,6 +194,9 @@ checklistPageHref l =
     href_ $ linkToText $ safeLink checklistApi checklistPageEndpoint
         (l ^. identifier)
 
+applianceHelpHref :: Attribute
+applianceHelpHref = href_ $ linkToText $ safeLink checklistApi applianceHelpEndpoint
+
 -------------------------------------------------------------------------------
 -- Links
 -------------------------------------------------------------------------------
@@ -260,13 +265,13 @@ checklistNameHtml world mloc i notDone =
 -- TodoCounter
 -------------------------------------------------------------------------------
 
-toTodoCounter :: World -> TaskRole -> Identifier Task -> TaskItem -> TodoCounter
+toTodoCounter :: World -> TaskRole -> Identifier Task -> AnnTaskItem -> TodoCounter
 toTodoCounter world tr tid td =
     case (has (worldTasks . ix tid . taskRole . only tr) world, td) of
-        (True,  TaskItemDone) -> TodoCounter 1 1 1 1
-        (True,  TaskItemTodo) -> TodoCounter 0 1 0 1
-        (False, TaskItemDone) -> TodoCounter 0 0 1 1
-        (False, TaskItemTodo) -> TodoCounter 0 0 0 1
+        (True,  AnnTaskItemDone {}) -> TodoCounter 1 1 1 1
+        (True,  AnnTaskItemTodo {}) -> TodoCounter 0 1 0 1
+        (False, AnnTaskItemDone {}) -> TodoCounter 0 0 1 1
+        (False, AnnTaskItemTodo {}) -> TodoCounter 0 0 0 1
 
 data TodoCounter = TodoCounter !Int !Int !Int !Int
 instance Semigroup TodoCounter where
@@ -280,8 +285,8 @@ instance Monoid TodoCounter where
 -- Tasks
 -------------------------------------------------------------------------------
 
-taskCheckbox :: Monad m => World -> Employee -> Task -> HtmlT m ()
-taskCheckbox world employee task = do
+taskCheckbox_ :: Monad m => World -> Employee -> Task -> HtmlT m ()
+taskCheckbox_ world employee task = do
     checkbox_ checked
         [ id_ megaid
         , futuId_ "task-done-checkbox"
@@ -294,7 +299,7 @@ taskCheckbox world employee task = do
         $ worldTaskItems
         . ix (employee ^. identifier)
         . ix (task ^. identifier)
-        . _TaskItemDone
+        . _AnnTaskItemDone
 
     megaid :: Text
     megaid =
@@ -302,6 +307,17 @@ taskCheckbox world employee task = do
         employee ^. identifier . uuid . to UUID.toText <>
         "_" <>
         task ^. identifier . uuid . to UUID.toText
+
+taskCommentInput_ :: Monad m => World -> Employee -> Task -> HtmlT m ()
+taskCommentInput_ world employee task
+    | task ^. taskComment = input_
+        [ type_ "text "
+        , futuId_ "task-comment-editbox"
+        , data_ "futu-employee" $ employee ^. identifierText
+        , data_ "futu-task" $ task ^. identifierText
+        , value_ $ fromMaybe "" $ world ^? worldTaskItems . ix (employee ^. identifier) . ix (task ^. identifier) . annTaskItemComment
+        ]
+    | otherwise           = pure ()
 
 -------------------------------------------------------------------------------
 -- Defaults

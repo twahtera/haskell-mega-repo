@@ -39,11 +39,15 @@ createTaskPage world authUser = checklistPage_ ("Create task") authUser $ do
                             [ value_ $ role ^. re _TaskRole ]
                             $ toHtml $ role ^. re _TaskRole
         row_ $ large_ 12 $ label_ $ do
+            "Comment field"
+            br_ []
+            checkbox_ False [ futuId_ "task-comment" ]
+        row_ $ large_ 12 $ label_ $ do
             "Prerequisites"
             br_ []
             small_ $ i_ "Note: Prerequisites must be also added to the checklist"
             select_ [ futuId_ "task-prereqs", multiple_ "multiple", size_ $ textShow (lengthOf (worldTasks . folded) world) ] $
-                forOf_ (worldTasksSorted . folded) world $ \t -> do
+                forOf_ (worldTasksSortedByName . folded) world $ \t -> do
                     optionSelected_ False
                         [ value_ $ t ^. identifierText ]
                         $ toHtml $ t ^. nameText
@@ -52,21 +56,27 @@ createTaskPage world authUser = checklistPage_ ("Create task") authUser $ do
                 "Checklist 1"
                 checklistSelect "task-checklist-1"
             large_ 6 $ label_ $ do
-                "Appliance"
+                "Appliance ("
+                a_ [ applianceHelpHref ] "help"
+                ")"
                 checklistAppliance "task-checklist-appliance-1"
         row_ $ do
             large_ 6 $ label_ $ do
                 "Checklist 2"
                 checklistSelect "task-checklist-2"
             large_ 6 $ label_ $ do
-                "Appliance"
+                "Appliance ("
+                a_ [ applianceHelpHref ] "help"
+                ")"
                 checklistAppliance "task-checklist-appliance-2"
         row_ $ do
             large_ 6 $ label_ $ do
                 "Checklist 3"
                 checklistSelect "task-checklist-3"
             large_ 6 $ label_ $ do
-                "Appliance"
+                "Appliance ("
+                a_ [ applianceHelpHref ] "help"
+                ")"
                 checklistAppliance "task-checklist-appliance-3"
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do

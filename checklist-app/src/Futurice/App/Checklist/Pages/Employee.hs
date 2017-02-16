@@ -4,7 +4,7 @@ module Futurice.App.Checklist.Pages.Employee (employeePage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (forOf_, has, re, to)
+import Control.Lens              (forOf_, re, to)
 import Data.Aeson                (ToJSON)
 import Data.Aeson.Text           (encodeToLazyText)
 import Data.Set.Lens             (setOf)
@@ -17,6 +17,8 @@ import Futurice.App.Checklist.API
        employeeAuditPageEndpoint)
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
+
+import qualified FUM
 
 -- |
 --
@@ -116,12 +118,19 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
             th_ [ title_ "Task" ]  "Task"
             th_ [ title_ "Role" ]  "Role"
             th_ [ title_ "Check" ] "Check"
-        tbody_ $ forOf_ (worldTasksSorted . folded) world $ \task -> do
+            th_ [ title_ "Comment" ] "Comment"
+            th_ [ title_ "Who and when have done this task" ] "Audit"
+        tbody_ $ forOf_ (worldTasksSorted (authUser ^. authUserTaskRole) . folded) world $ \task -> do
             let tid = task ^. identifier
-            when (has (worldTaskItems . ix eid . ix tid) world) $ tr_ $ do
+            for_ (world ^? worldTaskItems . ix eid . ix tid) $ \taskItem -> tr_ $ do
                 td_ $ taskLink task
                 td_ $ roleHtml mlist (task ^. taskRole)
-                td_ $ taskCheckbox world employee task
+                td_ $ taskCheckbox_ world employee task
+                td_ $ taskCommentInput_ world employee task
+                td_ $ forOf_ _AnnTaskItemDone taskItem $ \(_, fumUser, timestamp) -> do
+                    toHtml $ fumUser ^. FUM.getUserName
+                    " "
+                    toHtml $ show $ localDay $ utcToHelsinkiTime timestamp
 
     when (authUser ^. _2 == TaskRoleIT) $ row_ $ large_ 12 $ do
         hr_ []

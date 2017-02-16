@@ -36,9 +36,9 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
             . taskItemPredicate
 
         -- Single item traversal which we use as a filter in taskPredicate
-        taskItemPredicate :: Traversal' TaskItem ()
+        taskItemPredicate :: Traversal' AnnTaskItem ()
         taskItemPredicate | showAll   = united
-                          | otherwise = _TaskItemTodo
+                          | otherwise = _AnnTaskItemTodo . united
 
     in checklistPage_ "Employees" authUser $ do
         -- Title
@@ -70,7 +70,7 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                 "Task"
                 select_ [ name_ "task" ] $ do
                     option_ [ value_ "" ] $ "Show all"
-                    for_ (world ^.. worldTasks . folded) $ \task ->
+                    for_ (world ^.. worldTasksSortedByName . folded) $ \task ->
                         optionSelected_ (mtask ^? _Just . identifier == Just (task ^. identifier))
                             [ value_ $ task ^. identifier . to identifierToText ] $ do
                                 task ^. nameHtml
@@ -97,10 +97,12 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                 th_ [title_ "Status"]                      "S"
                 th_ [title_ "Location"]                    "Loc"
                 th_ [title_ "Name" ]                       "Name"
-                maybe
-                    (th_ [title_ "Checklist"]                   "List")
-                    (\task -> th_ [title_ "Selected task" ] $ task ^. nameHtml)
-                    mtask
+                mcase mtask
+                    (th_ [title_ "Checklist"]              "List")
+                    $ \task -> do
+                        th_ [title_ "Selected task" ] $ task ^. nameHtml
+                        when (task ^. taskComment) $ th_ "Comment"
+                -- for_ mtask $ \_task -> th_ [ title_ "Additional info for task + employee" ] "Task info"
                 th_ [title_ "Due date"]                    "Due date"
                 th_ [title_ "Confirmed - contract signed"] "Confirmed"
                 th_ [title_ "Days till start"]             "ETA"
@@ -122,10 +124,11 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                     td_ $ contractTypeHtml $ employee ^. employeeContractType
                     td_ $ locationHtml mlist $ employee ^. employeeLocation
                     td_ $ employeeLink employee
-                    td_ $ maybe
-                        (checklistNameHtml world mloc (employee ^. employeeChecklist) showAll)
-                        (taskCheckbox world employee)
-                        mtask
+                    mcase mtask
+                        (td_ $ checklistNameHtml world mloc (employee ^. employeeChecklist) showAll)
+                        $ \task -> do
+                            td_ $ taskCheckbox_ world employee task
+                            when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task
                     td_ $ toHtml $ show startingDay
                     td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
                     td_ $ toHtml $ show (diffDays startingDay today) <> " days"
@@ -149,9 +152,9 @@ countEmployeesWithTask world task = toHtml' . foldMap f
       "(" *> toHtml (show i) *> "/" *> toHtml (show j) *> ")"
 
     f employee = case world ^? worldTaskItems . ix (employee ^. identifier) . ix (task ^. identifier) of
-        Nothing           -> TodoCounter 0 0 0 0
-        Just TaskItemTodo -> TodoCounter 0 0 0 1
-        Just TaskItemDone -> TodoCounter 0 0 1 1
+        Nothing                 -> TodoCounter 0 0 0 0
+        Just AnnTaskItemTodo {} -> TodoCounter 0 0 0 1
+        Just AnnTaskItemDone {} -> TodoCounter 0 0 1 1
 
 viewerItemsHeader :: Monad m => TaskRole -> HtmlT m ()
 viewerItemsHeader TaskRoleIT         = th_ [title_ "IT tasks todo/done"]          "IT items"

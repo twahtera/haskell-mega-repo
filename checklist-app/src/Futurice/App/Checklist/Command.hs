@@ -62,6 +62,7 @@ data TaskEdit f = TaskEdit
     , teInfo    :: !(f :$ Text)
     , teRole    :: !(f TaskRole)
     , tePrereqs :: !(f :$ Set :$ Identifier Task)
+    , teComment :: !(f :$ Bool)
     }
 
 deriveGeneric ''TaskEdit
@@ -72,17 +73,18 @@ applyTaskEdit te
     . maybe id (Lens.set taskInfo) (teInfo te)
     . maybe id (Lens.set taskRole) (teRole te)
     . maybe id (Lens.set taskPrereqs) (tePrereqs te)
+    . maybe id (Lens.set taskComment) (teComment te)
 
 instance Eq1 f => Eq (TaskEdit f) where
-    TaskEdit n i r pr == TaskEdit n' i' r' pr' =
-        eq1 n n' && eq1 i i' && eq1 r r' && eq1 pr pr'
+    TaskEdit n i r pr c == TaskEdit n' i' r' pr' c' =
+        eq1 n n' && eq1 i i' && eq1 r r' && eq1 pr pr' && eq1 c c'
 
 instance Show1 f => Show (TaskEdit f) where
-    showsPrec d (TaskEdit n _ r pr) = showsTernaryWith
+    showsPrec d (TaskEdit n _ r pr _) = showsTernaryWith
         showsPrec1 showsPrec1 showsPrec1
         "TaskEdit" d n r pr
 
-type TaskEditTypes = '[Name Task, TaskRole, Set :$ Identifier Task, Text]
+type TaskEditTypes = '[Name Task, TaskRole, Set :$ Identifier Task, Text, Bool]
 
 instance SOP.All (SOP.Compose Arbitrary f) TaskEditTypes
     => Arbitrary (TaskEdit f)
@@ -114,11 +116,13 @@ instance
                 <*> obj .:? "info"
                 <*> obj .:? "role"
                 <*> obj .:? "prereqs"
+                <*> obj .:? "comment"
             Nothing -> TaskEdit
                 <$> obj .: "name"
                 <*> obj .:? "info" .!= pure mempty
                 <*> obj .: "role"
                 <*> obj .:? "prereqs" .!= pure mempty
+                <*> obj .:? "comment" .!= pure False
 
 -------------------------------------------------------------------------------
 -- Employee edit
@@ -258,6 +262,7 @@ data Command f
     | CmdEditEmployee (Identifier Employee) (EmployeeEdit Maybe)
     | CmdTaskItemToggle (Identifier Employee) (Identifier Task) TaskItem
     | CmdArchiveEmployee (Identifier Employee) Bool -- if true, "remove"
+    | CmdTaskEditComment (Identifier Employee) (Identifier Task) Text
 
 deriveGeneric ''Command
 
@@ -291,17 +296,19 @@ traverseCommand _ (CmdTaskItemToggle e t x) =
     pure $ CmdTaskItemToggle e t x
 traverseCommand _ (CmdArchiveEmployee cid b) =
     pure $ CmdArchiveEmployee cid b
+traverseCommand _ (CmdTaskEditComment eid tid c) =
+    pure $ CmdTaskEditComment eid tid c
 
 -- = operators are the same as ~ lens operators, but modify the state of MonadState.
 --
 -- todo: in error monad, if e.g. identifier don't exist
-applyCommand :: Command Identity -> World -> World
-applyCommand cmd world = flip execState world $ case cmd of
+applyCommand :: UTCTime -> FUM.UserName -> Command Identity -> World -> World
+applyCommand now ssoUser cmd world = flip execState world $ case cmd of
     CmdCreateChecklist (Identity cid) n ->
         worldLists . at cid ?= Checklist cid n mempty
 
-    CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity i) (Identity role) (Identity pr)) ls -> do
-        worldTasks . at tid ?= Task tid n i pr role
+    CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity i) (Identity role) (Identity pr) (Identity comment)) ls -> do
+        worldTasks . at tid ?= Task tid n i pr role comment
         for_ ls $ \(TaskAddition cid app) -> addTask cid tid app
 
     CmdAddTask cid tid app -> addTask cid tid app
@@ -322,13 +329,19 @@ applyCommand cmd world = flip execState world $ case cmd of
         -- add initial tasks
         iforOf_ (worldLists . ix cid . checklistTasks . ifolded) world $ \tid app ->
             when (employeeTaskApplies e app) $
-                worldTaskItems . at eid . non mempty . at tid ?= TaskItemTodo
+                worldTaskItems . at eid . non mempty . at tid ?= annTaskItemTodo
 
     CmdEditEmployee eid x -> do
         worldEmployees . ix eid %= applyEmployeeEdit x
 
-    CmdTaskItemToggle eid tid d ->
-        worldTaskItems . ix eid . ix tid Lens..= d
+    CmdTaskItemToggle eid tid d -> do
+        let d' = case d of
+                TaskItemTodo -> annTaskItemTodo
+                TaskItemDone -> AnnTaskItemDone "" ssoUser now
+        worldTaskItems . ix eid . ix tid Lens..= d'
+
+    CmdTaskEditComment eid tid c -> do
+        worldTaskItems . ix eid . ix tid . annTaskItemComment Lens..= c
 
     -- TODO: differentiate between archiving and deleting. Now we delete.
     CmdArchiveEmployee eid _ -> do
@@ -343,7 +356,7 @@ applyCommand cmd world = flip execState world $ case cmd of
         for_ es $ \e -> do
             let eid = e ^. identifier
             when (e ^. employeeChecklist == cid && employeeTaskApplies e app) $ do
-                worldTaskItems . at eid . non mempty . at tid %= Just . fromMaybe TaskItemTodo
+                worldTaskItems . at eid . non mempty . at tid %= Just . fromMaybe annTaskItemTodo
 
 transactCommand
     :: (MonadLog m, MonadIO m)
@@ -374,6 +387,8 @@ instance Eq1 f => Eq (Command f) where
         = eid == eid' && x == x'
     CmdTaskItemToggle eid tid d == CmdTaskItemToggle eid' tid' d'
         = eid == eid' && tid == tid' && d == d'
+    CmdTaskEditComment eid tid c == CmdTaskEditComment eid' tid' c'
+        = eid == eid' && tid == tid' && c == c'
     CmdArchiveEmployee eid b == CmdArchiveEmployee eid' b'
         = eid == eid' && b == b'
 
@@ -408,6 +423,9 @@ instance Show1 f => Show (Command f) where
     showsPrec d (CmdTaskItemToggle e t done) = showsTernaryWith
         showsPrec showsPrec showsPrec
         "CmdTaskItemToggle" d e t done
+    showsPrec d (CmdTaskEditComment e t c) = showsTernaryWith
+        showsPrec showsPrec showsPrec
+        "CmdTaskItemEditComment" d e t c
     showsPrec d (CmdArchiveEmployee eid b) = showsBinaryWith
         showsPrec showsPrec
         "CmdArchiveEmployee" d eid b
@@ -472,6 +490,12 @@ instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task,
         , "tid"  .= tid
         , "done" .= done
         ]
+    toJSON (CmdTaskEditComment eid tid c) = object
+        [ "cmd"     .= ("task-edit-comment" :: Text)
+        , "eid"     .= eid
+        , "tid"     .= tid
+        , "comment" .= c
+        ]
     toJSON (CmdArchiveEmployee eid b) = object
         [ "cmd"    .= ("archive-employee" :: Text)
         , "eid"    .= eid
@@ -516,6 +540,10 @@ instance FromJSONField1 f => FromJSON (Command f)
                 <$> obj .: "eid"
                 <*> obj .: "tid"
                 <*> obj .: "done"
+            "task-edit-comment" -> CmdTaskEditComment
+                <$> obj .: "eid"
+                <*> obj .: "tid"
+                <*> obj .: "comment"
             "archive-employee" -> CmdArchiveEmployee
                 <$> obj .: "eid"
                 <*> obj .: "delete"

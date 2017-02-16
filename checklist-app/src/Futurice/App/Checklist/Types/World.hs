@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Checklist.Types.World (
     World,
@@ -13,6 +14,7 @@ module Futurice.App.Checklist.Types.World (
     -- * Getters
     worldTaskItems',
     worldTasksSorted,
+    worldTasksSortedByName,
     ) where
 
 -- import Futurice.Generics
@@ -22,18 +24,21 @@ import Control.Lens     (Getter, contains, filtered, ifiltered, to, (<&>))
 import Futurice.Graph   (Graph)
 import Futurice.IdMap   (IdMap)
 
-import qualified Data.Map        as Map
-import qualified Data.Set        as Set
-import qualified Data.Set.Lens   as Set
-import qualified Futurice.Graph  as Graph
-import qualified Futurice.IdMap  as IdMap
-import qualified Test.QuickCheck as QC
+import qualified Data.Set.Lens  as Set
+import qualified Futurice.Graph as Graph
+import qualified Futurice.IdMap as IdMap
 
 import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.Location
 import Futurice.App.Checklist.Types.TaskItem
 import Futurice.App.Checklist.Types.TaskRole
+
+{-
+import qualified Data.Map        as Map
+import qualified Data.Set        as Set
+import qualified Test.QuickCheck as QC
+-}
 
 import qualified FUM
 
@@ -45,10 +50,10 @@ data World = World
     { _worldEmployees  :: !(IdMap Employee)
     , _worldTasks      :: !(Graph Task)
     , _worldLists      :: !(IdMap Checklist)
-    , _worldTaskItems  :: !(Map (Identifier Employee) (Map (Identifier Task) TaskItem))
+    , _worldTaskItems  :: !(Map (Identifier Employee) (Map (Identifier Task) AnnTaskItem))
       -- ^ ACL lookup
     -- lazy fields, updated on need when accessed
-    , _worldTaskItems' :: Map (Identifier Task) (Map (Identifier Employee) TaskItem)
+    , _worldTaskItems' :: Map (Identifier Task) (Map (Identifier Employee) AnnTaskItem)
       -- ^ isomorphic with 'worldTaskItems'
     }
 
@@ -64,15 +69,19 @@ worldLists :: Lens' World (IdMap Checklist)
 worldLists f (World es ts ls is _) = f ls <&>
     \x -> mkWorld es (Graph.toIdMap ts) x is
 
-worldTaskItems :: Lens' World (Map (Identifier Employee) (Map (Identifier Task) TaskItem))
+worldTaskItems :: Lens' World (Map (Identifier Employee) (Map (Identifier Task) AnnTaskItem))
 worldTaskItems f (World es ts ls is _) = f is <&>
     \x -> mkWorld es (Graph.toIdMap ts) ls x
 
-worldTaskItems' :: Getter World (Map (Identifier Task) (Map (Identifier Employee) TaskItem))
+worldTaskItems' :: Getter World (Map (Identifier Task) (Map (Identifier Employee) AnnTaskItem))
 worldTaskItems' = to _worldTaskItems'
 
-worldTasksSorted :: Getter World [Task]
-worldTasksSorted = to $ \world -> Graph.revTopSort (world ^. worldTasks)
+worldTasksSorted :: TaskRole -> Getter World [Task]
+worldTasksSorted tr = to $ \world ->
+    sortOn ((tr /=) . view taskRole) $ Graph.revTopSort (world ^. worldTasks)
+
+worldTasksSortedByName :: Getter World [Task]
+worldTasksSortedByName = to $ \world -> sortOn (view taskName) (world ^.. worldTasks . folded)
 
 emptyWorld :: World
 emptyWorld = mkWorld mempty mempty mempty mempty
@@ -91,7 +100,7 @@ mkWorld
     :: IdMap Employee
     -> IdMap Task
     -> IdMap Checklist
-    -> Map (Identifier Employee) (Map (Identifier Task) TaskItem)
+    -> Map (Identifier Employee) (Map (Identifier Task) AnnTaskItem)
     -> World
 mkWorld es ts ls is =
     let tids            = IdMap.keysSet ts
@@ -116,6 +125,10 @@ mkWorld es ts ls is =
 
         swappedIs = swapMapMap is
     in World es' (Graph.fromIdMap ts') ls' is swappedIs
+
+{-
+
+TODO: AnnTaskItem
 
 -- | Generates consistent worlds.
 instance QC.Arbitrary World where
@@ -161,7 +174,7 @@ instance QC.Arbitrary World where
             pure $ task
                 & taskPrereqs .~ deps
 
-        -- TaskItems
+        -- AnnTaskItems
         -- For all eid, tid pair generate none, todo, done - value
         let is = [ (eid, tid) | eid <- eids ^.. folded , tid <- tids ^.. folded ]
         is' <- traverse (\p -> (,) p <$> QC.arbitrary) is
@@ -171,3 +184,4 @@ instance QC.Arbitrary World where
 
         -- World
         pure $ mkWorld es' ts' cs is''
+-}

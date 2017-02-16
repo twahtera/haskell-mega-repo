@@ -28,6 +28,8 @@ type ChecklistAPI = IndexPageEndpoint
     :<|> TaskPageEndpoint
     :<|> EmployeePageEndpoint
     :<|> EmployeeAuditPageEndpoint
+    -- Help
+    :<|> ApplianceHelpEndpoint
     -- Command
     :<|> "command" :> SSOUser :> ReqBody '[JSON] (Command Proxy) :> Post '[JSON] Ack
 
@@ -111,6 +113,16 @@ type EmployeeAuditPageEndpoint =
     Get '[HTML] (HtmlPage "employee-audit")
 
 -------------------------------------------------------------------------------
+-- Help
+-------------------------------------------------------------------------------
+
+type ApplianceHelpEndpoint =
+    SSOUser :>
+    "help" :>
+    "appliance" :>
+    Get '[HTML] (HtmlPage "appliance-help")
+
+-------------------------------------------------------------------------------
 -- Proxies
 -------------------------------------------------------------------------------
 
@@ -143,3 +155,6 @@ employeePageEndpoint = Proxy
 
 employeeAuditPageEndpoint :: Proxy EmployeeAuditPageEndpoint
 employeeAuditPageEndpoint = Proxy
+
+applianceHelpEndpoint :: Proxy ApplianceHelpEndpoint
+applianceHelpEndpoint = Proxy

@@ -60,11 +60,15 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
                         [ value_ $ role ^. re _TaskRole ]
                         $ toHtml $ role ^. re _TaskRole
         row_ $ large_ 12 $ label_ $ do
+            "Comment field"
+            br_ []
+            checkbox_ (task ^. taskComment) [ futuId_ "task-comment" ]
+        row_ $ large_ 12 $ label_ $ do
             "Prerequisites"
             br_ []
             small_ $ i_ "Note: Prerequisites must be also added to the checklist"
             select_ [ futuId_ "task-prereqs", multiple_ "multiple", size_ $ textShow (lengthOf (worldTasks . folded) world) ] $
-                forOf_ (worldTasksSorted . folded) world $ \t -> do
+                forOf_ (worldTasksSortedByName . folded) world $ \t -> do
                     optionSelected_ (task ^. taskPrereqs . contains (t ^. identifier))
                         [ value_ $ t ^. identifierText ]
                         $ toHtml $ t ^. nameText
@@ -82,6 +86,7 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
             th_ [title_ "Name" ]                       "Name"
             th_ [title_ "Checklist"]                   "List"
             th_ [title_ "Check"]                       "Check"
+            when (task ^. taskComment) $ th_           "Comment"
             th_ [title_ "Due date"]                    "Due date"
             th_ [title_ "Confirmed - contract signed"] "Confirmed"
             th_ [title_ "Days till start"]             "ETA"
@@ -92,7 +97,8 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
             td_ $ employeeLink employee
             -- TODO: checklist link
             td_ $ checklistNameHtml world Nothing (employee ^. employeeChecklist) defaultShowAll
-            td_ $ taskCheckbox world employee task
+            td_ $ taskCheckbox_ world employee task
+            when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task
             td_ $ toHtml $ show startingDay
             td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
             td_ $ toHtml $ show (diffDays startingDay today) <> " days"

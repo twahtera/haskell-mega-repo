@@ -14,6 +14,7 @@ import Servant           (FromHttpApiData (..), ToHttpApiData (..))
 
 import qualified Data.Map  as Map
 import qualified Data.Text as T
+import qualified FUM
 
 -- | States of the tasks
 data TaskItem
@@ -23,6 +24,25 @@ data TaskItem
 
 makePrisms ''TaskItem
 deriveGeneric ''TaskItem
+
+-- | Annotated task item with who and when have done it.
+data AnnTaskItem
+    = AnnTaskItemDone !Text !FUM.UserName !UTCTime
+    | AnnTaskItemTodo !Text
+  deriving (Eq, Ord, Show, Typeable, Generic)
+
+annTaskItemTodo :: AnnTaskItem
+annTaskItemTodo = AnnTaskItemTodo ""
+
+annTaskItemComment :: Lens' AnnTaskItem Text
+annTaskItemComment = lens getter setter
+  where
+    getter (AnnTaskItemDone t _ _) = t
+    getter (AnnTaskItemTodo t)     = t
+    setter (AnnTaskItemDone _ x y) t = AnnTaskItemDone t x y
+    setter (AnnTaskItemTodo _)     t = AnnTaskItemTodo t
+
+makePrisms ''AnnTaskItem
 
 instance Arbitrary TaskItem where
     arbitrary = sopArbitrary

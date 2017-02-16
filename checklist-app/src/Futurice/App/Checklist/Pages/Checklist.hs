@@ -47,13 +47,15 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
                 "Task"
                 select_ [ futuId_ "task-id" ] $ do
                     optionSelected_ True [ value_ "" ] "-"
-                    for_ allTasks $ \task -> option_
+                    forOf_ (worldTasksSortedByName . folded) world $ \task -> option_
                         [ value_ $ task ^. identifierText ]
                         $ task ^. nameHtml
 
         row_ $ large_ 12 $
             label_ $ do
-                "Appliance"
+                "Appliance ("
+                a_ [ applianceHelpHref ] "help"
+                ")"
                 input_ [ futuId_ "task-appliance", type_ "text", value_ "", placeholder_ "e.g. helsinki or tampere, permanent or fixed-term, external" ]
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
@@ -74,7 +76,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
             th_ [ title_ "Other checklists with the task" ] "Other checklists"
             th_ [ title_ "Remove task from the checklist" ] "Remove"
 
-        tbody_ $ forOf_ (worldTasksSorted . folded) world $ \task -> do
+        tbody_ $ forOf_ (worldTasksSorted (authUser ^. authUserTaskRole) . folded) world $ \task -> do
             let tid = task ^. identifier
             for_ (checklist ^? checklistTasks . ix tid) $ \app -> tr_ $ do
                 td_ $ taskLink task
@@ -123,12 +125,10 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
 
 
   where
-    allTasks = world ^.. worldTasksSorted . folded
-
     mlist = Just checklist
 
-    countUsers TaskItemDone = TodoCounter 0 0 1 1
-    countUsers TaskItemTodo = TodoCounter 0 0 0 1
+    countUsers AnnTaskItemDone {} = TodoCounter 0 0 1 1
+    countUsers AnnTaskItemTodo {} = TodoCounter 0 0 0 1
 
     employees =  sortOn (view employeeStartingDay)
         $ filter (\e -> e ^. employeeChecklist == checklist ^. identifier)

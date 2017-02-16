@@ -23,6 +23,7 @@ module Futurice.App.Checklist.Types (
     CheckResult(..),
     Checklist(..),
     TaskItem (..),
+    AnnTaskItem (..),
     TaskAppliance(..),
     -- ** Wrappers
     Identifier(..),
@@ -48,7 +49,7 @@ module Futurice.App.Checklist.Types (
     _LocStockholm, _LocMunich, _LocOther,
     locationToText, locationFromText,
     -- ** Task
-    taskName, taskInfo, taskPrereqs, taskRole,
+    taskName, taskInfo, taskPrereqs, taskRole, taskComment,
     -- ** CheckResult
     _CheckResultSuccess, _CheckResultMaybe, _CheckResultFailure,
     -- ** TaskRole
@@ -57,9 +58,13 @@ module Futurice.App.Checklist.Types (
     taskRoleToText, taskRoleFromText,
     -- ** Checklist
     checklistName, checklistTasks,
-    -- ** TaskItemDone
+    -- ** TaskItem
     _TaskItem,
     _TaskItemDone, _TaskItemTodo,
+    -- ** AnnTaskItem
+    annTaskItemTodo,
+    annTaskItemComment,
+    _AnnTaskItemDone, _AnnTaskItemTodo,
     -- * World
     World,
     emptyWorld,
@@ -71,9 +76,14 @@ module Futurice.App.Checklist.Types (
     worldTaskItems,
     worldTaskItems',
     worldTasksSorted,
+    worldTasksSortedByName,
     -- * Access
     AuthUser,
+    authUserTaskRole,
     ) where
+
+import Prelude ()
+import Futurice.Prelude
 
 import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.ContractType
@@ -87,3 +97,6 @@ import Futurice.App.Checklist.Types.TaskRole
 import qualified FUM (UserName)
 
 type AuthUser = (FUM.UserName, TaskRole)
+
+authUserTaskRole :: Lens' AuthUser TaskRole
+authUserTaskRole = _2

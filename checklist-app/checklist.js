@@ -44,6 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
   $$("button[data-futu-id=task-remove]").forEach(taskRemoveBtn);
   $$("button[data-futu-id=employee-remove]").forEach(employeeRemoveBtn);
   $$("input[data-futu-id=task-done-checkbox]").forEach(taskToggleCheckbox);
+  $$("input[data-futu-id=task-comment-editbox]").forEach(taskCommentEditInput);
   $$("button[data-futu-link-button]").forEach(linkButton);
   $$("div[data-futu-id=error-callout] button").forEach(function (btn) {
     buttonOnClick(btn, function () {
@@ -205,6 +206,7 @@ document.addEventListener("DOMContentLoaded", function () {
       info: { sel: "input[data-futu-id=task-info]" },
       role: { sel: "select[data-futu-id=task-role]", check: nonEmptyCheck },
       prereqs: { sel: "select[data-futu-id=task-prereqs", check: isArrayCheck },
+      comment: { sel: "input[data-futu-id=task-comment" },
       list1: { sel: "select[data-futu-id=task-checklist-1]" },
       app1:  { sel: "input[data-futu-id=task-checklist-appliance-1]", check: applianceCheck },
       list2: { sel: "select[data-futu-id=task-checklist-2]" },
@@ -242,6 +244,7 @@ document.addEventListener("DOMContentLoaded", function () {
       info: { sel: "input[data-futu-id=task-info]" },
       role: { sel: "select[data-futu-id=task-role]" },
       prereqs: { sel: "select[data-futu-id=task-prereqs", check: isArrayCheck },
+      comment: { sel: "input[data-futu-id=task-comment" },
     };
 
     var actions = initialiseFormDefs(defs, form);
@@ -270,7 +273,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function linkButton(btn) {
     buttonOnClick(btn, function () {
-      btn.disabled = true;
       location.href = btn.dataset.futuLinkButton;
     });
   }
@@ -310,6 +312,51 @@ document.addEventListener("DOMContentLoaded", function () {
 
       cmdTaskDoneToggle(employeeId, taskId, done);
     });
+  }
+
+  function taskCommentEditInput(el) {
+    var employeeId = el.dataset.futuEmployee;
+    var taskId = el.dataset.futuTask;
+
+    var orig = el.value;
+    var state$ = menrva.source("orig");
+
+    state$.onValue(function (state) {
+      switch (state) {
+        case "orig": el.style.border = ""; break;
+        case "dirty": el.style.border = "1px solid blue"; break;
+        case "saving": el.style.border = "1px solid orange"; break;
+        case "saved": el.style.border = "1px solid green"; break;
+        case "error": el.style.border = "1px solid red"; break;
+      }
+    });
+
+    var saveCb = _.debounce(function () {
+      menrva.transaction([state$, "saving"]).commit();
+      var value = el.value;
+      cmdTaskCommentEdit(employeeId, taskId, value)
+        .then(function () {
+            menrva.transaction([state$, "saved"]).commit();
+            orig = value;
+        })
+        .catch(function () {
+            menrva.transaction([state$, "error"]).commit();
+        });
+    }, 1000);
+
+    var cb = function () {
+      var state = state$.value();
+      if ((state === "orig" || state === "saved") && el.value !== orig) {
+        menrva.transaction([state$, "dirty"]).commit();
+        saveCb();
+      } else if (state === "dirty") {
+        saveCb();
+      }
+    };
+
+    el.addEventListener("change", cb);
+    el.addEventListener("blur", cb);
+    el.addEventListener("keyup", cb);
   }
 
   // Commands
@@ -405,6 +452,17 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+
+  function cmdTaskCommentEdit(employeeId, taskId, comment) {
+    traceCall(cmdTaskCommentEdit, arguments);
+    return command({
+      cmd: "task-edit-comment",
+      eid: employeeId,
+      tid: taskId,
+      comment: comment,
+    });
+  }
+
   function command(cmd, reload) {
     var url = "/command";
 
@@ -441,8 +499,10 @@ document.addEventListener("DOMContentLoaded", function () {
         switch (res.ack) {
           case "ok":
             if (reload === true) {
+              console.info("Reloading");
               location.reload();
             } else if (reload) {
+              console.info("Loading", reload);
               location.href = reload;
             } else {
               menrva
@@ -470,6 +530,7 @@ document.addEventListener("DOMContentLoaded", function () {
           errorCalloutContent.innerText = exc;
           errorCallout.style.display = "";
         }
+        throw exc;
       });
   }
 

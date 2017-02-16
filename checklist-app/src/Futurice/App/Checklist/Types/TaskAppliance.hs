@@ -71,13 +71,16 @@ instance BoundedLattice TaskAppliance
 -------------------------------------------------------------------------------
 
 negateTaskAppliance :: TaskAppliance -> TaskAppliance
-negateTaskAppliance = cata alg
+negateTaskAppliance (TANot ta) = ta
+negateTaskAppliance ta         = TANot ta
+{-
   where
     alg :: TaskApplianceF TaskAppliance -> TaskAppliance
     alg (TANotF ta)  = ta
     alg (TAAndF x y) = TAAnd x y
     alg (TAOrF  x y) = TAOr x y
     alg ta           = TANot (embed ta)
+-}
 
 -------------------------------------------------------------------------------
 -- normalise

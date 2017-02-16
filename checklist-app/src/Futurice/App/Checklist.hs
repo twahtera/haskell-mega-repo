@@ -29,6 +29,7 @@ import Futurice.App.Checklist.Pages.Employee
 import Futurice.App.Checklist.Pages.EmployeeAudit
 import Futurice.App.Checklist.Pages.Error
        (forbiddedPage, notFoundPage)
+import Futurice.App.Checklist.Pages.HelpAppliance
 import Futurice.App.Checklist.Pages.Index
 import Futurice.App.Checklist.Pages.Task
 import Futurice.App.Checklist.Pages.Tasks
@@ -53,6 +54,7 @@ server ctx = indexPageImpl ctx
     :<|> taskPageImpl ctx
     :<|> employeePageImpl ctx
     :<|> employeeAuditPageImpl ctx
+    :<|> applianceHelpImpl ctx
     :<|> commandImpl ctx
 
 -------------------------------------------------------------------------------
@@ -169,6 +171,13 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
         Nothing       -> notFoundPage
         Just employee -> employeePage world userInfo employee
 
+applianceHelpImpl
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> Handler (HtmlPage "appliance-help")
+applianceHelpImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
+    pure $ helpAppliancePage world userInfo
+
 -------------------------------------------------------------------------------
 -- Audit
 -------------------------------------------------------------------------------
@@ -199,7 +208,8 @@ commandImpl
 commandImpl ctx fu cmd = runLogT "command" (ctxLogger ctx) $
     withAuthUser' (AckErr "forbidden") ctx fu $ \_world (fumUsername, _) -> do
         (cmd', res) <- instantiatedCmd
-        ctxApplyCmd fumUsername cmd' ctx
+        now <- currentTime
+        ctxApplyCmd now fumUsername cmd' ctx
         pure res
   where
     instantiatedCmd = flip runStricterT mempty $ traverseCommand genIdentifier cmd
@@ -295,7 +305,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             cfgMockUser
             emptyWorld
         cmds <- withResource (ctxPostgres ctx) $ \conn ->
-            Postgres.fromOnly <$$> Postgres.query_ conn "SELECT cmddata FROM checklist2.commands ORDER BY cid;"
-        let world0 = foldl' (flip applyCommand) emptyWorld cmds
+            Postgres.query_ conn "SELECT username, updated, cmddata FROM checklist2.commands ORDER BY cid;"
+        let world0 = foldl' (\world (fumuser, now, cmd) -> applyCommand now fumuser cmd world) emptyWorld cmds
         atomically $ writeTVar (ctxWorld ctx) world0
         pure (ctx, [])
