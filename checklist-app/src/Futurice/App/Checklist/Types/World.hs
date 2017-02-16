@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Checklist.Types.World (
     World,
@@ -13,6 +14,7 @@ module Futurice.App.Checklist.Types.World (
     -- * Getters
     worldTaskItems',
     worldTasksSorted,
+    worldTasksSortedByName,
     ) where
 
 -- import Futurice.Generics
@@ -71,8 +73,12 @@ worldTaskItems f (World es ts ls is _) = f is <&>
 worldTaskItems' :: Getter World (Map (Identifier Task) (Map (Identifier Employee) TaskItem))
 worldTaskItems' = to _worldTaskItems'
 
-worldTasksSorted :: Getter World [Task]
-worldTasksSorted = to $ \world -> Graph.revTopSort (world ^. worldTasks)
+worldTasksSorted :: TaskRole -> Getter World [Task]
+worldTasksSorted tr = to $ \world ->
+    sortOn ((tr /=) . view taskRole) $ Graph.revTopSort (world ^. worldTasks)
+
+worldTasksSortedByName :: Getter World [Task]
+worldTasksSortedByName = to $ \world -> sortOn (view taskName) (world ^.. worldTasks . folded)
 
 emptyWorld :: World
 emptyWorld = mkWorld mempty mempty mempty mempty

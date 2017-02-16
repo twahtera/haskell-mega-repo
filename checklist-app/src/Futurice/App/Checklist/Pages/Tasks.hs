@@ -17,7 +17,7 @@ tasksPage
     -> Maybe Checklist
     -> HtmlPage "tasks"
 tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
-    let tasks0 = world ^.. worldTasksSorted . folded
+    let tasks0 = world ^.. worldTasksSortedByName . folded
         tasks1 = maybe id (filter . rolePredicate) mrole tasks0
         tasks2 = maybe id (filter . checklistPredicate) mlist tasks1
         tasks' = tasks2

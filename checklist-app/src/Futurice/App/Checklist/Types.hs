@@ -71,9 +71,14 @@ module Futurice.App.Checklist.Types (
     worldTaskItems,
     worldTaskItems',
     worldTasksSorted,
+    worldTasksSortedByName,
     -- * Access
     AuthUser,
+    authUserTaskRole,
     ) where
+
+import Prelude ()
+import Futurice.Prelude
 
 import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.ContractType
@@ -87,3 +92,6 @@ import Futurice.App.Checklist.Types.TaskRole
 import qualified FUM (UserName)
 
 type AuthUser = (FUM.UserName, TaskRole)
+
+authUserTaskRole :: Lens' AuthUser TaskRole
+authUserTaskRole = _2

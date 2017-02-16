@@ -116,7 +116,7 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
             th_ [ title_ "Task" ]  "Task"
             th_ [ title_ "Role" ]  "Role"
             th_ [ title_ "Check" ] "Check"
-        tbody_ $ forOf_ (worldTasksSorted . folded) world $ \task -> do
+        tbody_ $ forOf_ (worldTasksSorted (authUser ^. authUserTaskRole) . folded) world $ \task -> do
             let tid = task ^. identifier
             when (has (worldTaskItems . ix eid . ix tid) world) $ tr_ $ do
                 td_ $ taskLink task

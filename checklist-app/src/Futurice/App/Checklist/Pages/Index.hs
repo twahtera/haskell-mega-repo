@@ -70,7 +70,7 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                 "Task"
                 select_ [ name_ "task" ] $ do
                     option_ [ value_ "" ] $ "Show all"
-                    for_ (world ^.. worldTasks . folded) $ \task ->
+                    for_ (world ^.. worldTasksSortedByName . folded) $ \task ->
                         optionSelected_ (mtask ^? _Just . identifier == Just (task ^. identifier))
                             [ value_ $ task ^. identifier . to identifierToText ] $ do
                                 task ^. nameHtml
@@ -101,6 +101,7 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                     (th_ [title_ "Checklist"]                   "List")
                     (\task -> th_ [title_ "Selected task" ] $ task ^. nameHtml)
                     mtask
+                -- for_ mtask $ \_task -> th_ [ title_ "Additional info for task + employee" ] "Task info"
                 th_ [title_ "Due date"]                    "Due date"
                 th_ [title_ "Confirmed - contract signed"] "Confirmed"
                 th_ [title_ "Days till start"]             "ETA"
@@ -126,6 +127,8 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                         (checklistNameHtml world mloc (employee ^. employeeChecklist) showAll)
                         (taskCheckbox world employee)
                         mtask
+                    --for_ mtask $ \task -> td_ $
+                    --    input_ [ type_ "text" ] -- TODO: taskInfoInput world employee
                     td_ $ toHtml $ show startingDay
                     td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
                     td_ $ toHtml $ show (diffDays startingDay today) <> " days"
