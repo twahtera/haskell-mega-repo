@@ -270,7 +270,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function linkButton(btn) {
     buttonOnClick(btn, function () {
-      btn.disabled = true;
       location.href = btn.dataset.futuLinkButton;
     });
   }
