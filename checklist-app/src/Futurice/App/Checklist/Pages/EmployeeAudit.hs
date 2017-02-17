@@ -44,8 +44,8 @@ employeeAuditPage world authUser employee cmds = checklistPage_ (view nameText e
             th_ "What"
 
         for_ (processCommands world eid _1 cmds) $ \(cmdHtml, FUM.UserName username, timestamp) -> tr_ $ do
-            td_ $ toHtml $ show $ utcToHelsinkiTime timestamp
             td_ $ toHtml $ username
+            td_ $ toHtml $ formatHumanHelsinkiTime timestamp
             td_ $ cmdHtml
 
 processCommands
@@ -76,6 +76,16 @@ processCommands world eid l = concat . flip evalState False . traverse process
                       b_ $ if d == TaskItemDone then "Task done" else "Task undone"
                       " "
                       taskHtml tid
+                pure [ x & l #~ html ]
+
+            CmdTaskEditComment _ tid comment -> do
+                -- showing always
+                let html = do
+                      b_ "Task commented"
+                      " "
+                      taskHtml tid
+                      ": "
+                      i_ $ toHtml comment
                 pure [ x & l #~ html ]
 
             CmdAddTask _ tid app -> do
