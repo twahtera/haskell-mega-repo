@@ -34,6 +34,7 @@ library
     , aeson-compat
     , constraints
     , containers
+    , dynmap-cache
     , env-config
     , fum-client
     , futurice-foundation
@@ -45,10 +46,10 @@ library
     , http-client
     , http-client-tls
     , intervals
-    , monad-control
     , lens
     , log-base
     , lucid
+    , monad-control
     , mtl
     , planmill-client
     , postgresql-simple

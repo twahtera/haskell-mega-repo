@@ -46,7 +46,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx          .~ "FUTUHOURSAPI"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-    makeCtx config logger _cache = do
+    makeCtx config logger cache = do
         now <- currentTime
         mgr <- newManager tlsManagerSettings
         let integrConfig = makeIntegrationsConfig now logger mgr config
@@ -57,6 +57,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , ctxPlanmillCfg  = cfgPlanmillCfg config
             , ctxMockUser     = cfgMockUser config
             , ctxLogger       = logger
+            , ctxCache        = cache
             }
 
     fetchPlanmillData :: IntegrationsConfig I I Proxy Proxy -> IO PlanmillData
@@ -67,10 +68,16 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         let ps'' = HM.fromList ps'
         let ts = HM.fromList $ (\t -> (t ^. PM.identifier, t)) <$>
                 ps' ^.. folded . _2 ._2 . folded
+        cs <- HM.fromList . map (\c -> (c ^. PM.identifier, c)) . toList <$>
+            PMQ.capacitycalendars
+        let taskProjects = HM.unions $ flip map ps'  $ \(_, (pr, ts')) ->
+                HM.fromList $ flip map ts' $ \t -> (t ^. PM.identifier, pr)
         pure $ PlanmillData
-            { _planmillUserLookup = pmLookupMap
-            , _planmillProjects   = ps''
-            , _planmillTasks      = ts
+            { _planmillUserLookup   = pmLookupMap
+            , _planmillProjects     = ps''
+            , _planmillTasks        = ts
+            , _planmillCalendars    = cs
+            , _planmillTaskProjects = taskProjects
             }
       where
         mkP p ts = (p ^. PM.identifier, (p, toList ts))

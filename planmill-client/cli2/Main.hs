@@ -4,6 +4,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
@@ -32,6 +33,9 @@ import qualified Options.SOP             as O
 
 import qualified PlanMill as PM
 
+import Data.Reflection (reifySymbol)
+import GHC.TypeLits    (KnownSymbol)
+
 -------------------------------------------------------------------------------
 -- Cmd
 -------------------------------------------------------------------------------
@@ -41,6 +45,11 @@ data Cmd
     | CmdUsers
     | CmdUser PM.UserId
     | CmdTimereports PM.UserId (PM.Interval Day)
+    | CmdReportableAssignments PM.UserId
+    | CmdTask PM.TaskId
+    | CmdMeta Text
+    | CmdEnumeration Text
+    | CmdProject PM.ProjectId
 
 deriveGeneric ''Cmd
 
@@ -97,6 +106,23 @@ execute opts cmd cfg = runPlanmillT cfg opts $ case cmd of
         putPretty $ if optsShowAll opts
             then x ^.. folded
             else x ^.. taking 10 traverse
+    CmdReportableAssignments uid -> do
+        x <- PM.planmillAction $ PM.reportableAssignments uid
+        putPretty $ if optsShowAll opts
+            then x ^.. folded
+            else x ^.. taking 10 traverse
+    CmdTask tid -> do
+        x <- PM.planmillAction $ PM.task tid
+        putPretty x
+    CmdMeta path  -> do
+        x <- PM.planmillAction $ PM.planMillGet path
+        putPretty (x :: PM.Meta)
+    CmdProject pid -> do
+        x <- PM.planmillAction $ PM.project pid
+        putPretty x
+    CmdEnumeration enum -> reifyTextSymbol enum $ \p -> do
+        x <- PM.planmillAction $ PM.enumerations p
+        putPretty x
 
 -------------------------------------------------------------------------------
 -- PlanmillT: TODO move to planmill-client
@@ -187,3 +213,10 @@ instance MonadTransControl HttpT where
 
 putPretty :: (MonadIO m, AnsiPretty a) => a -> m ()
 putPretty = liftIO . putDoc . (<> linebreak) . ansiPretty
+
+-------------------------------------------------------------------------------
+-- move to futurice-prelude
+-------------------------------------------------------------------------------
+
+reifyTextSymbol :: forall r. Text -> (forall n. KnownSymbol n => Proxy n -> r) -> r
+reifyTextSymbol t = reifySymbol (t ^. unpacked)
