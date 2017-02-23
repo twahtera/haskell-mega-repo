@@ -132,12 +132,12 @@ mkEntryEndPoint req = do
                 , _entryBillable    = EntryTypeBillable -- wrong
                 }
             }
-    let d = Map.fromList [(date, [md])]
+    let d = Map.fromList [(date, md)]
     let mm = HoursMonthUpdate
               { _hoursMonthUpdateHours=75
             , _hoursMonthUpdateUtilizationRate=70
             , _hoursMonthUpdateDays=d}
-    let months = Map.fromList [(dayToMonth date, [mm])]
+    let months = Map.fromList [(dayToMonth date, mm)]
     let userResponse = User
             { _userFirstName="Test"
             , _userLastName="User"
@@ -204,5 +204,5 @@ entryDeleteEndpoint _ctx _fumUser _id = do
 
 eurHoursDayUpdates :: Traversal' EntryUpdateResponse HoursDayUpdate
 eurHoursDayUpdates
-    = eurHours . hoursUpdateResponseMonths . traverse . traverse
-    . hoursMonthUpdateDays . traverse . traverse
+    = eurHours . hoursUpdateResponseMonths . traverse . hoursMonthUpdateDays
+    . traverse
