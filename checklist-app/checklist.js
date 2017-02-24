@@ -547,7 +547,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Quick 'n' dirty check for appliance
   function applianceCheck(x) {
-    var m = x.match(/^(all|berlin|external|fixed-term|helsinki|london|munich|not|other|part-timer|permanent|stockholm|summer-worker|tampere|and|or| +|\(\))*$/i);
+    var m = x.match(/^(all|berlin|external|fixed-term|helsinki|london|munich|not|other|part-timer|permanent|stockholm|summer-worker|tampere|and|or| +|\(|\))*$/i);
     return m ? x : undefined;
   }
 
