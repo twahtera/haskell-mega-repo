@@ -110,12 +110,17 @@ instance ToHtml MissingHoursParams where
 missingHoursForUser
     :: MonadPlanMillQuery m
     => PM.Interval Day
-    -> PM.UserId
+    -> PM.User
     -> m (Vector MissingHour)
-missingHoursForUser interval uid = do
+missingHoursForUser interval user = do
+    let uid = user ^. PM.identifier
     tr <- PMQ.timereports interval uid
     uc <- PMQ.capacities interval uid
-    pure $ mkMissingHours tr uc
+    -- Show only missing hours after hireDate.
+    -- Contrary to the name, hire date in Planmill isn't always trustworthy,
+    -- but it's good enough for the purpose of this report.
+    let uc' = V.filter (\c -> fromMaybe True $ (PM.userCapacityDate c >=) <$> PM.uHireDate user) uc
+    pure $ mkMissingHours tr uc'
   where
     mkMissingHours :: PM.Timereports -> PM.UserCapacities -> Vector MissingHour
     mkMissingHours tr uc
@@ -156,10 +161,10 @@ missingHoursReport
 missingHoursReport interval = do
     now <- PM.currentTime
     fpm <- snd <$$> fumPlanmillMap
-    fpm' <- traverse (perUser . view PM.identifier) fpm
+    fpm' <- traverse perUser fpm
     pure $ Report (MissingHoursParams now (inf interval) (sup interval)) fpm'
   where
-    perUser :: PM.UserId -> m (StrictPair Employee :$ Vector :$ MissingHour)
-    perUser pmUid = (S.:!:)
-        <$> planmillEmployee pmUid
-        <*> missingHoursForUser interval pmUid
+    perUser :: PM.User -> m (StrictPair Employee :$ Vector :$ MissingHour)
+    perUser pmUser = (S.:!:)
+        <$> planmillEmployee (pmUser ^. PM.identifier)
+        <*> missingHoursForUser interval pmUser

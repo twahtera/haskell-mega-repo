@@ -135,12 +135,13 @@ type BalanceReport = Report
 balanceForUser
     :: MonadPlanMillQuery m
     => PM.Interval Day
-    -> PM.UserId
+    -> PM.User
     -> m Balance
-balanceForUser interval uid = do
+balanceForUser interval user = do
+    let uid = user ^. PM.identifier
     PM.TimeBalance balanceMinutes <- PMQ.userTimebalance uid
     let balanceMinutes' = ndtConvert' balanceMinutes
-    mh <- missingHoursForUser interval uid
+    mh <- missingHoursForUser interval user
     pure $ Balance
         { _balanceHours        = balanceMinutes'
         , _balanceMissingHours = sumOf (folded . missingHourCapacity) mh
@@ -188,7 +189,7 @@ balanceReport interval = do
     perUser svs fumLogin pmUser = mk
         <$> planmillEmployee pmUid
         <*> pure (Supervisor $ fromMaybe "<unknown>" $ HM.lookup fumLogin svs)
-        <*> balanceForUser interval pmUid
+        <*> balanceForUser interval pmUser
       where
         pmUid = pmUser ^. PM.identifier
         mk e s b = e S.:!: (s S.:!: b)
