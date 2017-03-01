@@ -44,6 +44,7 @@ library:
     - lucid
     - monad-control
     - mtl
+    - periocron
     - planmill-client
     - postgresql-simple
     - QuickCheck

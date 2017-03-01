@@ -10,8 +10,9 @@ module Futurice.App.HoursApi (defaultMain) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Concurrent.STM (newTVarIO)
+import Control.Concurrent.STM (atomically, newTVarIO, writeTVar)
 import Futurice.Integrations
+import Futurice.Periocron
 import Futurice.Servant
 import Servant
 
@@ -35,6 +36,7 @@ server ctx = pure "This is futuhours api"
     :<|> entryIdEndpoint ctx
     :<|> entryDeleteEndpoint ctx
 
+
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName            .~ "Futuhours API"
@@ -50,9 +52,19 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         now <- currentTime
         mgr <- newManager tlsManagerSettings
         let integrConfig = makeIntegrationsConfig now logger mgr config
-        pmData <- fetchPlanmillData integrConfig
-        pmDataTVar <- newTVarIO pmData
-        pure $ flip (,) [] $ Ctx
+
+        pmDataTVar <- newTVarIO $ PlanmillData
+            { _planmillUserLookup   = mempty
+            , _planmillProjects     = mempty
+            , _planmillTasks        = mempty
+            , _planmillCalendars    = mempty
+            , _planmillTaskProjects = mempty
+            }
+
+        let action = fetchPlanmillData integrConfig >>= atomically . writeTVar pmDataTVar
+        let job = mkJob "update planmill data" action $ every 600
+
+        pure $ flip (,) [job] $ Ctx
             { ctxPlanmillData = pmDataTVar
             , ctxPlanmillCfg  = cfgPlanmillCfg config
             , ctxMockUser     = cfgMockUser config
