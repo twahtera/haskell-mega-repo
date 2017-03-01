@@ -50,6 +50,8 @@ data Cmd
     | CmdMeta Text
     | CmdEnumeration Text
     | CmdProject PM.ProjectId
+    | CmdAccounts
+    | CmdAccount PM.AccountId
 
 deriveGeneric ''Cmd
 
@@ -98,6 +100,14 @@ execute opts cmd cfg = runPlanmillT cfg opts $ case cmd of
             else x ^.. taking 10 traverse
     CmdUser uid -> do
         x <- PM.planmillAction $ PM.user uid
+        putPretty x
+    CmdAccounts -> do
+        x <- PM.planmillAction PM.accounts
+        putPretty $ if optsShowAll opts
+            then x ^.. folded
+            else x ^.. taking 10 traverse
+    CmdAccount aid -> do
+        x <- PM.planmillAction $ PM.account aid
         putPretty x
     CmdTimereports uid interval -> do
         x <- PM.planmillAction $ PM.timereportsFromIntervalFor

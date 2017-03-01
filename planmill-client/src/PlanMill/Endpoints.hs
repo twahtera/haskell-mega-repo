@@ -10,6 +10,7 @@ module PlanMill.Endpoints (
     absence,
     -- * Accounts
     accounts,
+    account,
     -- * Actions
     actions,
     -- * Assignments
@@ -81,7 +82,13 @@ absence i = planMillGet $ t "absenses" // i
 --
 -- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#accounts_get>
 accounts :: PlanMill Accounts
-accounts = planMillGet $ t "/accounts"
+accounts = planMillGet $ t "accounts"
+
+-- | A single account in PlanMill.
+--
+-- See <http://developers.planmill.com/api/#accounts__account_id__get>
+account :: AccountId -> PlanMill Account
+account aid = planMillGet $ t "accounts" // aid
 
 -- | View details of single me.
 --
