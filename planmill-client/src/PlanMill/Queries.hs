@@ -26,6 +26,7 @@ module PlanMill.Queries (
     capacitycalendars,
     -- * Queries
     usersQuery,
+    absencesQuery,
     -- timereportsModifiedQuery,
     ) where
 
@@ -180,10 +181,10 @@ userTimebalance uid = planmillQuery
 --
 -- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#absences_get>
 absences :: MonadPlanMillQuery m => m Absences
-absences = planmillVectorQuery
-    $ QueryPagedGet QueryTagAbsence mempty
-    $ toUrlParts $ ("absences" :: Text)
+absences = planmillVectorQuery absencesQuery
 
+absencesQuery :: Query Absences
+absencesQuery = QueryPagedGet QueryTagAbsence mempty $ toUrlParts $ ("absences" :: Text)
 
 -- | View details of a single account.
 --

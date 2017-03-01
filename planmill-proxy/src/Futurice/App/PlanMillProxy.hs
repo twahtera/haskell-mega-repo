@@ -6,14 +6,15 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-module Futurice.App.PlanMillProxy (defaultMain, Job) where
+module Futurice.App.PlanMillProxy (defaultMain) where
 
 import Prelude ()
 import Futurice.Prelude
 
-import Data.Pool          (createPool)
+import Data.Pool            (createPool)
 import Futurice.Periocron
 import Futurice.Servant
+import PlanMill.Types.Query (SomeQuery (..))
 import Servant
 
 import qualified Database.PostgreSQL.Simple as Postgres
@@ -25,6 +26,9 @@ import Futurice.App.PlanMillProxy.Logic
        (cleanupCache, haxlEndpoint, updateAllTimereports, updateCache,
        updateCapacities, updateWithoutTimereports)
 import Futurice.App.PlanMillProxy.Types  (Ctx (..))
+
+import qualified PlanMill.Queries as PMQ
+
 
 server :: Ctx -> Server PlanMillProxyAPI
 server ctx = pure "Try /swagger-ui/"
@@ -76,6 +80,16 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
 
                 , mkJob "update without timereports" (updateWithoutTimereports ctx)
                   $ shifted (10 * 60) $ every $ 2 * 60 * 60
+
+                , mkJob "have to be warm" (updateWarmRequests ctx)
+                  $ shifted (2 * 60) $ every $ 30 * 60
                 ]
 
         pure (ctx, jobs)
+
+-- | We'll keep some queries warm.
+updateWarmRequests :: Ctx -> IO ()
+updateWarmRequests ctx = void $ haxlEndpoint ctx
+    [ SomeQuery PMQ.usersQuery
+    , SomeQuery PMQ.absencesQuery
+    ]
