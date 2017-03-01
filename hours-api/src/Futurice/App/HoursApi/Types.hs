@@ -168,7 +168,7 @@ data HoursMonth = HoursMonth
 data HoursMonthUpdate = HoursMonthUpdate
     { _hoursMonthUpdateHours           :: !Float
     , _hoursMonthUpdateUtilizationRate :: !Float
-    , _hoursMonthUpdateDays            :: Map Day [HoursDayUpdate] -- TODO: check invariant on JSON unserialisation
+    , _hoursMonthUpdateDays            :: Map Day HoursDayUpdate -- TODO: check invariant on JSON unserialisation
     }
   deriving (Eq, Show, Typeable, Generic)
 
@@ -182,7 +182,7 @@ data HoursResponse = HoursResponse
 data HoursUpdateResponse = HoursUpdateResponse
     { _hoursUpdateResponseDefaultWorkHours :: !Float
     , _hoursUpdateResponseProjects         :: ![Project]
-    , _hoursUpdateResponseMonths           :: Map Month [HoursMonthUpdate] -- TODO: check invariant on JSON unserialisation
+    , _hoursUpdateResponseMonths           :: Map Month HoursMonthUpdate -- TODO: check invariant on JSON unserialisation
     }
   deriving (Eq, Show, Typeable, Generic)
 
