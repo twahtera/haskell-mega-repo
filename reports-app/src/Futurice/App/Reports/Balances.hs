@@ -114,9 +114,10 @@ instance ToColumns Supervisor where
 
 instance NFData Supervisor
 instance ToJSON Supervisor where
-    toJSON     = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON Supervisor where parseJSON = sopParseJSON
+    toJSON (Supervisor t) = toJSON t
+    toEncoding (Supervisor t) = toEncoding t
+instance FromJSON Supervisor where
+    parseJSON = fmap Supervisor . parseJSON
 instance ToSchema Supervisor where declareNamedSchema = sopDeclareNamedSchema
 
 -------------------------------------------------------------------------------
