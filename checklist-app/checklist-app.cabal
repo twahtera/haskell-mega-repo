@@ -29,6 +29,7 @@ library
       base >= 4.7 && <4.10
     , aeson
     , aeson-compat
+    , ansi-pretty
     , ansi-wl-pprint
     , async
     , clay
@@ -41,6 +42,7 @@ library
     , futurice-prelude
     , futurice-servant
     , generics-sop
+    , generics-sop-lens
     , http-api-data
     , lattices
     , lens
@@ -54,6 +56,7 @@ library
     , servant-lucid
     , servant-server
     , singleton-bool
+    , split
     , stm
     , swagger2
     , text
@@ -87,6 +90,7 @@ library
       Futurice.App.Checklist.Types.Identifier
       Futurice.App.Checklist.Types.Location
       Futurice.App.Checklist.Types.TaskAppliance
+      Futurice.App.Checklist.Types.TaskComment
       Futurice.App.Checklist.Types.TaskItem
       Futurice.App.Checklist.Types.TaskRole
       Futurice.App.Checklist.Types.World
@@ -101,6 +105,7 @@ executable checklist-app-server
       base >= 4.7 && <4.10
     , aeson
     , aeson-compat
+    , ansi-pretty
     , ansi-wl-pprint
     , async
     , clay
@@ -113,6 +118,7 @@ executable checklist-app-server
     , futurice-prelude
     , futurice-servant
     , generics-sop
+    , generics-sop-lens
     , http-api-data
     , lattices
     , lens
@@ -126,6 +132,7 @@ executable checklist-app-server
     , servant-lucid
     , servant-server
     , singleton-bool
+    , split
     , stm
     , swagger2
     , text
@@ -144,6 +151,7 @@ executable checklist-import
       base >= 4.7 && <4.10
     , aeson
     , aeson-compat
+    , ansi-pretty
     , ansi-wl-pprint
     , async
     , clay
@@ -156,6 +164,7 @@ executable checklist-import
     , futurice-prelude
     , futurice-servant
     , generics-sop
+    , generics-sop-lens
     , http-api-data
     , lattices
     , lens
@@ -169,6 +178,7 @@ executable checklist-import
     , servant-lucid
     , servant-server
     , singleton-bool
+    , split
     , stm
     , swagger2
     , text
@@ -191,6 +201,7 @@ test-suite unit-tests
       base >= 4.7 && <4.10
     , aeson
     , aeson-compat
+    , ansi-pretty
     , ansi-wl-pprint
     , async
     , clay
@@ -203,6 +214,7 @@ test-suite unit-tests
     , futurice-prelude
     , futurice-servant
     , generics-sop
+    , generics-sop-lens
     , http-api-data
     , lattices
     , lens
@@ -216,6 +228,7 @@ test-suite unit-tests
     , servant-lucid
     , servant-server
     , singleton-bool
+    , split
     , stm
     , swagger2
     , text

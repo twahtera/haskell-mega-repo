@@ -1,11 +1,13 @@
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE GADTs                #-}
 {-# LANGUAGE KindSignatures       #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE RankNTypes           #-}
 {-# LANGUAGE RecordWildCards      #-}
+{-# LANGUAGE StandaloneDeriving   #-}
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
@@ -34,12 +36,16 @@ import Futurice.Prelude
 import Algebra.Lattice            (top)
 import Control.Lens               (iforOf_, non, use)
 import Control.Monad.State.Strict (execState)
-import Data.Swagger               (NamedSchema (..))
+import Data.Char                  (isUpper, toLower)
+import Data.List                  (intercalate)
+import Data.List.CommonPrefix     (CommonPrefix (..), getCommonPrefix)
+import Data.List.Split            (keepDelimsL, split, whenElt)
 import Data.Singletons.Bool
+import Data.Swagger               (NamedSchema (..))
 import Data.Type.Equality
 import Futurice.Aeson
-       (FromJSONField1, fromJSONField1, object, withObject, (.!=), (.:), (.:?),
-       (.=))
+       (FromJSONField1, fromJSONField1, object, withBool, withObject, (.!=),
+       (.:), (.:?), (.=))
 import Futurice.Generics
 import Futurice.IsMaybe
 
@@ -50,6 +56,7 @@ import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 import qualified FUM
 import qualified Generics.SOP                         as SOP
+import qualified Generics.SOP.Lens                    as SOPL
 
 import Futurice.App.Checklist.Types
 
@@ -75,16 +82,10 @@ applyTaskEdit te
     . maybe id (Lens.set taskPrereqs) (tePrereqs te)
     . maybe id (Lens.set taskComment) (teComment te)
 
-instance Eq1 f => Eq (TaskEdit f) where
-    TaskEdit n i r pr c == TaskEdit n' i' r' pr' c' =
-        eq1 n n' && eq1 i i' && eq1 r r' && eq1 pr pr' && eq1 c c'
-
-instance Show1 f => Show (TaskEdit f) where
-    showsPrec d (TaskEdit n _ r pr _) = showsTernaryWith
-        showsPrec1 showsPrec1 showsPrec1
-        "TaskEdit" d n r pr
-
 type TaskEditTypes = '[Name Task, TaskRole, Set :$ Identifier Task, Text, Bool]
+
+deriving instance SOP.All (SOP.Compose Eq f) TaskEditTypes => Eq (TaskEdit f)
+deriving instance SOP.All (SOP.Compose Show f) TaskEditTypes => Show (TaskEdit f)
 
 instance SOP.All (SOP.Compose Arbitrary f) TaskEditTypes
     => Arbitrary (TaskEdit f)
@@ -186,30 +187,21 @@ applyEmployeeEdit ee
     . Lens.over employeeFUMLogin (eeFumLogin ee <|>)
     . Lens.over employeeHRNumber (eeHrNumber ee <|>)
 
-instance Eq1 f => Eq (EmployeeEdit f) where
-    a == b
-        = eq1 (eeFirstName a) (eeFirstName b)
-        && eq1 (eeLastName a) (eeLastName b)
-        && eq1 (eeContractType a) (eeContractType b)
-
-instance Show1 f => Show (EmployeeEdit f) where
-    showsPrec d EmployeeEdit {..} = showParen (d > 10)
-        $ showString "EmployeeEdit"
-        . showChar ' ' . showsPrec1 11 eeFirstName
-        . showChar ' ' . showsPrec1 11 eeLastName
-
-type EmployeeEditFieldTypes =
+type EmployeeEditTypes =
     '[Text, ContractType, Location, Bool, FUM.UserName, Int, Day]
 
-instance SOP.All (SOP.Compose Arbitrary f) EmployeeEditFieldTypes
+deriving instance SOP.All (SOP.Compose Eq f) EmployeeEditTypes => Eq (EmployeeEdit f)
+deriving instance SOP.All (SOP.Compose Show f) EmployeeEditTypes => Show (EmployeeEdit f)
+
+instance SOP.All (SOP.Compose Arbitrary f) EmployeeEditTypes
     => Arbitrary (EmployeeEdit f)
   where
     arbitrary = sopArbitrary
     shrink = sopShrink
 
 instance
-    ( SOP.All (SOP.Compose ToJSON f) EmployeeEditFieldTypes
-    , SOP.All (SOP.Compose IsMaybe f) EmployeeEditFieldTypes
+    ( SOP.All (SOP.Compose ToJSON f) EmployeeEditTypes
+    , SOP.All (SOP.Compose IsMaybe f) EmployeeEditTypes
     )
     => ToJSON (EmployeeEdit f)
   where
@@ -217,8 +209,8 @@ instance
     toEncoding = sopToEncoding
 
 instance
-    ( SOP.All (SOP.Compose FromJSON f) EmployeeEditFieldTypes
-    , SOP.All (SOP.Compose IsMaybe f) EmployeeEditFieldTypes
+    ( SOP.All (SOP.Compose FromJSON f) EmployeeEditTypes
+    , SOP.All (SOP.Compose IsMaybe f) EmployeeEditTypes
     )
     => FromJSON (EmployeeEdit f)
   where
@@ -261,11 +253,26 @@ data Command f
     | CmdCreateEmployee (f :$ Identifier Employee) (Identifier Checklist) (EmployeeEdit Identity)
     | CmdEditEmployee (Identifier Employee) (EmployeeEdit Maybe)
     | CmdTaskItemToggle (Identifier Employee) (Identifier Task) TaskItem
-    | CmdArchiveEmployee (Identifier Employee) Bool -- if true, "remove"
-    | CmdTaskEditComment (Identifier Employee) (Identifier Task) Text
+    | CmdArchiveEmployee (Identifier Employee) ArchiveOrRemove
+    | CmdTaskEditComment (Identifier Employee) (Identifier Task) TaskComment
+
+data ArchiveOrRemove = Archive | Remove deriving (Eq, Show)
 
 deriveGeneric ''Command
+deriveGeneric ''ArchiveOrRemove
 
+instance ToJSON ArchiveOrRemove where
+    toJSON Archive = toJSON False
+    toJSON Remove  = toJSON True
+instance FromJSON ArchiveOrRemove where
+    parseJSON = withBool "ArchiveOrRemove" $ \b ->
+        pure $ if b then Remove else Archive
+instance Arbitrary ArchiveOrRemove where
+    arbitrary = sopArbitrary
+
+
+
+-- | Command identifier tag.
 data CIT a where
     CITTask      :: CIT Task
     CITEmployee  :: CIT Employee
@@ -340,7 +347,7 @@ applyCommand now ssoUser cmd world = flip execState world $ case cmd of
                 TaskItemDone -> AnnTaskItemDone "" ssoUser now
         worldTaskItems . ix eid . ix tid Lens..= d'
 
-    CmdTaskEditComment eid tid c -> do
+    CmdTaskEditComment eid tid (TaskComment c) -> do
         worldTaskItems . ix eid . ix tid . annTaskItemComment Lens..= c
 
     -- TODO: differentiate between archiving and deleting. Now we delete.
@@ -368,142 +375,103 @@ transactCommand conn ssoUser cmd = do
         (ssoUser, cmd)
     pure ()
 
-instance Eq1 f => Eq (Command f) where
-    CmdCreateChecklist cid n == CmdCreateChecklist cid' n'
-        = eq1 cid cid' && n == n'
-    CmdRenameChecklist cid n == CmdRenameChecklist cid' n'
-        = cid == cid' && n == n'
-    CmdCreateTask tid te ls == CmdCreateTask tid' te' ls'
-        = eq1 tid tid' && te == te' && ls == ls'
-    CmdEditTask tid te == CmdEditTask tid' te'
-        = tid == tid' && te == te'
-    CmdAddTask cid tid app == CmdAddTask cid' tid' app'
-        = cid == cid' && tid == tid' && app == app'
-    CmdRemoveTask cid tid == CmdRemoveTask cid' tid'
-        = cid == cid' && tid == tid'
-    CmdCreateEmployee eid cid x == CmdCreateEmployee eid' cid' x'
-        = eq1 eid eid' && cid == cid' && x == x'
-    CmdEditEmployee eid x == CmdEditEmployee eid' x'
-        = eid == eid' && x == x'
-    CmdTaskItemToggle eid tid d == CmdTaskItemToggle eid' tid' d'
-        = eid == eid' && tid == tid' && d == d'
-    CmdTaskEditComment eid tid c == CmdTaskEditComment eid' tid' c'
-        = eid == eid' && tid == tid' && c == c'
-    CmdArchiveEmployee eid b == CmdArchiveEmployee eid' b'
-        = eid == eid' && b == b'
+-------------------------------------------------------------------------------
+-- Instances
+-------------------------------------------------------------------------------
 
-    -- Otherwise false
-    _ == _ = False
+type CommandIdentifiers =
+    '[Identifier Checklist, Identifier Task, Identifier Employee]
 
-instance Show1 f => Show (Command f) where
-    showsPrec d (CmdCreateChecklist i n) = showsBinaryWith
-        showsPrec1 showsPrec
-        "CmdCreateChecklist" d i n
-    showsPrec d (CmdRenameChecklist i n) = showsBinaryWith
-        showsPrec showsPrec
-        "CmdRenameChecklist" d i n
-    showsPrec d (CmdCreateTask i te ls) = showsTernaryWith
-        showsPrec1 showsPrec showsPrec
-        "CmdCreateTask" d i te ls
-    showsPrec d (CmdEditTask i te) = showsBinaryWith
-        showsPrec showsPrec
-        "CmdEditTask" d i te
-    showsPrec d (CmdAddTask c t a) = showsTernaryWith
-        showsPrec showsPrec showsPrec
-        "CmdAddTask" d c t a
-    showsPrec d (CmdRemoveTask c t) = showsBinaryWith
-        showsPrec showsPrec
-        "CmdRemoveTask" d c t
-    showsPrec d (CmdCreateEmployee e c x) = showsTernaryWith
-        showsPrec1 showsPrec showsPrec
-        "CmdCreateEmployee" d e c x
-    showsPrec d (CmdEditEmployee e x) = showsBinaryWith
-        showsPrec showsPrec
-        "CmdEditEmployee" d e x
-    showsPrec d (CmdTaskItemToggle e t done) = showsTernaryWith
-        showsPrec showsPrec showsPrec
-        "CmdTaskItemToggle" d e t done
-    showsPrec d (CmdTaskEditComment e t c) = showsTernaryWith
-        showsPrec showsPrec showsPrec
-        "CmdTaskItemEditComment" d e t c
-    showsPrec d (CmdArchiveEmployee eid b) = showsBinaryWith
-        showsPrec showsPrec
-        "CmdArchiveEmployee" d eid b
+deriving instance SOP.All (SOP.Compose Eq f) CommandIdentifiers => Eq (Command f)
+deriving instance SOP.All (SOP.Compose Show f) CommandIdentifiers => Show (Command f)
 
-instance SOP.All (SOP.Compose Arbitrary f) '[Identifier Checklist, Identifier Task, Identifier Employee]
-    => Arbitrary (Command f)
+instance SOP.All (SOP.Compose Arbitrary f) CommandIdentifiers => Arbitrary (Command f)
   where
     arbitrary = sopArbitrary
     shrink = sopShrink
 
--- | This and 'ParseJSON' instance is written by hand, as 'sopToJSON' and friends
--- work with records only, and we want field names!
-instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task, Identifier Employee]
-    => ToJSON (Command f)
+-------------------------------------------------------------------------------
+-- ToJSON
+-------------------------------------------------------------------------------
+
+instance SOP.All (SOP.Compose ToJSONField f) CommandIdentifiers => ToJSON (Command f) where
+    toJSON = sumSopToJSON
+
+-- | Class giving each type a key name
+class ToJSON a => ToJSONField a where
+    toJSONField :: a -> Maybe AesonPair
+
+instance ToJSONField a => ToJSONField (Identity a) where
+    toJSONField = toJSONField . runIdentity
+
+instance ToJSONField [TaskAddition] where
+    toJSONField [] = Nothing
+    toJSONField xs = Just $ "lists" .= xs
+
+instance ToJSON (TaskEdit f) => ToJSONField (TaskEdit f) where
+    toJSONField = Just . ("edit" .=)
+instance ToJSON (EmployeeEdit f) => ToJSONField (EmployeeEdit f) where
+    toJSONField = Just . ("edit" .=)
+
+instance ToJSONField (Identifier Task)      where toJSONField = Just . ("tid" .=)
+instance ToJSONField (Identifier Employee)  where toJSONField = Just . ("eid" .=)
+instance ToJSONField (Identifier Checklist) where toJSONField = Just . ("cid" .=)
+instance ToJSONField (Name Checklist)       where toJSONField = Just . ("name" .=)
+instance ToJSONField TaskComment            where toJSONField = Just . ("comment" .=)
+instance ToJSONField ArchiveOrRemove        where toJSONField = Just . ("delete" .=)
+instance ToJSONField TaskItem               where toJSONField = Just . ("done" .=)
+instance ToJSONField TaskAppliance          where toJSONField = Just . ("appliance" .=)
+
+sumSopToJSON
+    :: forall a.
+       (SOP.Generic a, SOP.HasDatatypeInfo a, SOP.All2 ToJSONField (SOP.Code a))
+    => a
+    -> Aeson.Value
+sumSopToJSON
+    = SOP.hcollapse
+    . SOP.hcliftA2 pAllToJSONField f cinfos
+    . SOP.unSOP . SOP.from
   where
-    toJSON (CmdCreateChecklist cid n) = object
-        [ "cmd"  .= ("create-checklist" :: Text)
-        , "cid"  .= cid
-        , "name" .= n
-        ]
-    toJSON (CmdRenameChecklist cid n) = object
-        [ "cmd"  .= ("rename-checklist" :: Text)
-        , "cid"  .= cid
-        , "name" .= n
-        ]
-    toJSON (CmdCreateTask tid te lists) = object
-        [ "cmd"  .= ("create-task" :: Text)
-        , "tid"  .= tid
-        , "edit" .= te
-        , "lists" .= lists
-        ]
-    toJSON (CmdEditTask tid te) = object
-        [ "cmd"  .= ("edit-task" :: Text)
-        , "tid"  .= tid
-        , "edit" .= te
-        ]
-    toJSON (CmdAddTask cid tid app) = object
-        [ "cmd"       .= ("add-task" :: Text)
-        , "cid"       .= cid
-        , "tid"       .= tid
-        , "appliance" .= app
-        ]
-    toJSON (CmdRemoveTask cid tid) = object
-        [ "cmd"       .= ("remove-task" :: Text)
-        , "cid"       .= cid
-        , "tid"       .= tid
-        ]
-    toJSON (CmdCreateEmployee eid cid x) = object
-        [ "cmd"  .= ("create-employee" :: Text)
-        , "eid"  .= eid
-        , "cid"  .= cid
-        , "edit" .= x
-        ]
-    toJSON (CmdEditEmployee eid x) = object
-        [ "cmd"  .= ("edit-employee" :: Text)
-        , "eid"  .= eid
-        , "edit" .= x
-        ]
-    toJSON (CmdTaskItemToggle eid tid done) = object
-        [ "cmd"  .= ("task-item-toggle" :: Text)
-        , "eid"  .= eid
-        , "tid"  .= tid
-        , "done" .= done
-        ]
-    toJSON (CmdTaskEditComment eid tid c) = object
-        [ "cmd"     .= ("task-edit-comment" :: Text)
-        , "eid"     .= eid
-        , "tid"     .= tid
-        , "comment" .= c
-        ]
-    toJSON (CmdArchiveEmployee eid b) = object
-        [ "cmd"    .= ("archive-employee" :: Text)
-        , "eid"    .= eid
-        , "delete" .= b
-        ]
 
-    -- toEncoding
+    f :: SOP.All ToJSONField xs
+      => SOP.ConstructorInfo xs -> NP I xs -> K Value xs
+    f cinfo xs = K $ object $ ("cmd" .= cmd) :
+        catMaybes (SOP.hcollapse . SOP.hcmap pToJSONField (K . toJSONField . unI) $ xs)
+      where
+        cmd = dashify $ drop (length prefix) $ cinfo ^. SOPL.constructorName
 
+    pToJSONField :: Proxy ToJSONField
+    pToJSONField = Proxy
+
+    pAllToJSONField :: Proxy (SOP.All ToJSONField)
+    pAllToJSONField = Proxy
+
+    cinfos :: NP SOP.ConstructorInfo (SOP.Code a)
+    cinfos = SOP.datatypeInfo (Proxy :: Proxy a) ^. SOPL.constructorInfo
+
+    prefix :: String
+    prefix = case cnames of
+        []     -> []
+        [_]    -> []
+        (x:xs) -> getCommonPrefix $ foldMap1 CommonPrefix $ x :| xs
+      where
+        cnames = SOP.hcollapse $ SOP.hmap (K . view SOPL.constructorName) cinfos
+
+    dashify :: String -> String
+    dashify
+        = map toLower
+        . intercalate "-"
+        . filter (not . null)
+        . split (keepDelimsL $ whenElt isUpper)
+
+    -- TODO:toEncoding
+
+-------------------------------------------------------------------------------
+-- FromJSON
+-------------------------------------------------------------------------------
+
+-- | This instance has to be written by hand, as we wan't to be
+-- more lenient, or&and verify that the generic code above works
 instance FromJSONField1 f => FromJSON (Command f)
   where
     parseJSON = withObject "Command" $ \obj -> do
@@ -550,13 +518,14 @@ instance FromJSONField1 f => FromJSON (Command f)
 
             _ -> fail $ "Invalid Command tag " ++ cmd ^. unpacked
 
--- TODO
+-------------------------------------------------------------------------------
+-- Rest
+-------------------------------------------------------------------------------
+
 instance ToSchema (Command p) where
     declareNamedSchema _ = pure $ NamedSchema (Just "Command") mempty
 
-instance SOP.All (SOP.Compose ToJSON f) '[Identifier Checklist, Identifier Task, Identifier Employee]
-    => Postgres.ToField (Command f)
-  where
+instance ToJSON (Command f) => Postgres.ToField (Command f) where
     toField = Postgres.toField . Aeson.encode
 
 instance FromJSONField1 f => Postgres.FromField (Command f) where
