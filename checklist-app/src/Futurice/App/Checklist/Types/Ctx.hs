@@ -23,6 +23,7 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM
 
 import Futurice.App.Checklist.Command
+import Futurice.App.Checklist.Logic
 import Futurice.App.Checklist.Types
 
 data Ctx = Ctx

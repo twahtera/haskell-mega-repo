@@ -72,6 +72,7 @@ module Futurice.App.Checklist.Types (
     mkWorld,
     -- ** Lenses
     worldEmployees,
+    worldArchive,
     worldTasks,
     worldLists,
     worldTaskItems,

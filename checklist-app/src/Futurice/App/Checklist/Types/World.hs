@@ -11,6 +11,7 @@ module Futurice.App.Checklist.Types.World (
     worldTasks,
     worldLists,
     worldTaskItems,
+    worldArchive,
     -- * Getters
     worldTaskItems',
     worldTasksSorted,
@@ -51,6 +52,7 @@ data World = World
     , _worldTasks      :: !(Graph Task)
     , _worldLists      :: !(IdMap Checklist)
     , _worldTaskItems  :: !(Map (Identifier Employee) (Map (Identifier Task) AnnTaskItem))
+    , _worldArchive    :: !(IdMap Employee) -- TODO: we'd need to save the task info
       -- ^ ACL lookup
     -- lazy fields, updated on need when accessed
     , _worldTaskItems' :: Map (Identifier Task) (Map (Identifier Employee) AnnTaskItem)
@@ -58,20 +60,24 @@ data World = World
     }
 
 worldEmployees :: Lens' World (IdMap Employee)
-worldEmployees f (World es ts ls is _) = f es <&>
-    \x -> mkWorld x (Graph.toIdMap ts) ls is
+worldEmployees f (World es ts ls is arc _) = f es <&>
+    \x -> mkWorld x (Graph.toIdMap ts) ls is arc
 
 worldTasks :: Lens' World (Graph Task)
-worldTasks f (World es ts ls is _) = f ts <&>
-    \x -> mkWorld es (Graph.toIdMap x) ls is
+worldTasks f (World es ts ls is arc _) = f ts <&>
+    \x -> mkWorld es (Graph.toIdMap x) ls is arc
 
 worldLists :: Lens' World (IdMap Checklist)
-worldLists f (World es ts ls is _) = f ls <&>
-    \x -> mkWorld es (Graph.toIdMap ts) x is
+worldLists f (World es ts ls is arc _) = f ls <&>
+    \x -> mkWorld es (Graph.toIdMap ts) x is arc
 
 worldTaskItems :: Lens' World (Map (Identifier Employee) (Map (Identifier Task) AnnTaskItem))
-worldTaskItems f (World es ts ls is _) = f is <&>
-    \x -> mkWorld es (Graph.toIdMap ts) ls x
+worldTaskItems f (World es ts ls is arc _) = f is <&>
+    \x -> mkWorld es (Graph.toIdMap ts) ls x arc
+
+worldArchive :: Lens' World (IdMap Employee)
+worldArchive f (World es ts ls is arc _) = f arc <&>
+    \x -> mkWorld es (Graph.toIdMap ts) ls is x
 
 worldTaskItems' :: Getter World (Map (Identifier Task) (Map (Identifier Employee) AnnTaskItem))
 worldTaskItems' = to _worldTaskItems'
@@ -84,7 +90,7 @@ worldTasksSortedByName :: Getter World [Task]
 worldTasksSortedByName = to $ \world -> sortOn (view taskName) (world ^.. worldTasks . folded)
 
 emptyWorld :: World
-emptyWorld = mkWorld mempty mempty mempty mempty
+emptyWorld = mkWorld mempty mempty mempty mempty mempty
 
 -- | Create world from employees, tasks, checklists, and items.
 --
@@ -101,8 +107,9 @@ mkWorld
     -> IdMap Task
     -> IdMap Checklist
     -> Map (Identifier Employee) (Map (Identifier Task) AnnTaskItem)
+    -> IdMap Employee  -- ^ archive
     -> World
-mkWorld es ts ls is =
+mkWorld es ts ls is arc =
     let tids            = IdMap.keysSet ts
         cids            = IdMap.keysSet ls
         -- Validation predicates
@@ -124,7 +131,7 @@ mkWorld es ts ls is =
         -- TODO: validate is
 
         swappedIs = swapMapMap is
-    in World es' (Graph.fromIdMap ts') ls' is swappedIs
+    in World es' (Graph.fromIdMap ts') ls' is arc swappedIs
 
 {-
 

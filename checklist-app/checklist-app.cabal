@@ -70,6 +70,7 @@ library
       Futurice.App.Checklist.Clay
       Futurice.App.Checklist.Command
       Futurice.App.Checklist.Config
+      Futurice.App.Checklist.Logic
       Futurice.App.Checklist.Markup
       Futurice.App.Checklist.Pages.Checklist
       Futurice.App.Checklist.Pages.Checklists

@@ -20,6 +20,7 @@ import Futurice.App.Checklist.Ack
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
+import Futurice.App.Checklist.Logic
 import Futurice.App.Checklist.Pages.Checklist
 import Futurice.App.Checklist.Pages.Checklists
 import Futurice.App.Checklist.Pages.CreateChecklist
