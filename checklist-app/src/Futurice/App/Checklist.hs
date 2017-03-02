@@ -21,6 +21,7 @@ import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Logic
+import Futurice.App.Checklist.Pages.Archive
 import Futurice.App.Checklist.Pages.Checklist
 import Futurice.App.Checklist.Pages.Checklists
 import Futurice.App.Checklist.Pages.CreateChecklist
@@ -55,6 +56,7 @@ server ctx = indexPageImpl ctx
     :<|> taskPageImpl ctx
     :<|> employeePageImpl ctx
     :<|> employeeAuditPageImpl ctx
+    :<|> archivePageImpl ctx
     :<|> applianceHelpImpl ctx
     :<|> commandImpl ctx
 
@@ -171,6 +173,13 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
     impl world userInfo = pure $ case world ^? worldEmployees . ix eid of
         Nothing       -> notFoundPage
         Just employee -> employeePage world userInfo employee
+
+archivePageImpl
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> Handler (HtmlPage "archive")
+archivePageImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
+    pure $ archivePage world userInfo
 
 applianceHelpImpl
     :: Ctx

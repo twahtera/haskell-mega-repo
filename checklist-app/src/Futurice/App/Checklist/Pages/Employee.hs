@@ -54,6 +54,12 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
             $ safeLink checklistApi createEmployeePageEndpoint $ employee ^? identifier
             ]
             "Create employee sing this employee as a template"
+        button_
+            [ class_ "button alert"
+            , futuId_ "employee-archive"
+            , data_ "futu-employee-id" $ employee ^. identifierText
+            ]
+            "Archive employee"
 
     -- Edit
     row_ $ large_ 12 $ form_ [ futuId_ "employee-edit", data_ "futu-employee-id" $ employee ^. identifierText ] $ do

@@ -28,6 +28,8 @@ type ChecklistAPI = IndexPageEndpoint
     :<|> TaskPageEndpoint
     :<|> EmployeePageEndpoint
     :<|> EmployeeAuditPageEndpoint
+    -- Archive
+    :<|> ArchivePageEndpoint
     -- Help
     :<|> ApplianceHelpEndpoint
     -- Command
@@ -113,6 +115,15 @@ type EmployeeAuditPageEndpoint =
     Get '[HTML] (HtmlPage "employee-audit")
 
 -------------------------------------------------------------------------------
+-- Archive
+-------------------------------------------------------------------------------
+
+type ArchivePageEndpoint =
+    SSOUser :>
+    "archive" :>
+    Get '[HTML] (HtmlPage "archive")
+
+-------------------------------------------------------------------------------
 -- Help
 -------------------------------------------------------------------------------
 
@@ -158,3 +169,6 @@ employeeAuditPageEndpoint = Proxy
 
 applianceHelpEndpoint :: Proxy ApplianceHelpEndpoint
 applianceHelpEndpoint = Proxy
+
+archivePageEndpoint :: Proxy ArchivePageEndpoint
+archivePageEndpoint = Proxy

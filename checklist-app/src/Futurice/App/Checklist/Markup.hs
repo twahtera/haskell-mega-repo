@@ -85,6 +85,7 @@ navigation (fu, viewerRole) = do
             li_ $ a_ [ createChecklistPageHref ] "Create List"
             li_ $ a_ [ createTaskPageHref ] "Create Task"
             li_ $ a_ [ createEmployeePageHref Nothing ] "Create Employee"
+            li_ $ a_ [ archivePageHref ] "Archive"
         div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
             li_ [ class_ "menu-text" ] $ do
                 "Hello "
@@ -196,6 +197,9 @@ checklistPageHref l =
 
 applianceHelpHref :: Attribute
 applianceHelpHref = href_ $ linkToText $ safeLink checklistApi applianceHelpEndpoint
+
+archivePageHref :: Attribute
+archivePageHref = href_ $ linkToText $ safeLink checklistApi archivePageEndpoint
 
 -------------------------------------------------------------------------------
 -- Links

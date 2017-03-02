@@ -72,6 +72,7 @@ library
       Futurice.App.Checklist.Config
       Futurice.App.Checklist.Logic
       Futurice.App.Checklist.Markup
+      Futurice.App.Checklist.Pages.Archive
       Futurice.App.Checklist.Pages.Checklist
       Futurice.App.Checklist.Pages.Checklists
       Futurice.App.Checklist.Pages.CreateChecklist
