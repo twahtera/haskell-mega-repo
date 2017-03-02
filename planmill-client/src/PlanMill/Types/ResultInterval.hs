@@ -41,7 +41,7 @@ intervalToQueryString (ResultInterval t i) =
         IntervalCreated  -> "created"
         IntervalModified -> "modified"
 
--- | Result interval. Use 'mkResultInterval' to construct.
+-- | Result interval.
 data ResultInterval = ResultInterval IntervalType (Interval Day)
     deriving (Eq, Ord, Show, Generic, Typeable)
 
