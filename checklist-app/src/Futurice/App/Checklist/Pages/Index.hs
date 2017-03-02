@@ -40,6 +40,9 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
         taskItemPredicate | showAll   = united
                           | otherwise = _AnnTaskItemTodo . united
 
+        taskInChecklist _task Nothing   = True
+        taskInChecklist task (Just cl) = has (checklistTasks . ix (task ^. identifier)) cl
+
     in checklistPage_ "Employees" authUser $ do
         -- Title
         header "Active employees"
@@ -71,11 +74,12 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                 select_ [ name_ "task" ] $ do
                     option_ [ value_ "" ] $ "Show all"
                     for_ (world ^.. worldTasksSortedByName . folded) $ \task ->
-                        optionSelected_ (mtask ^? _Just . identifier == Just (task ^. identifier))
-                            [ value_ $ task ^. identifier . to identifierToText ] $ do
-                                task ^. nameHtml
-                                " "
-                                countEmployeesWithTask world task employees2
+                        when (taskInChecklist task mlist) $
+                            optionSelected_ (mtask ^? _Just . identifier == Just (task ^. identifier))
+                                [ value_ $ task ^. identifier . to identifierToText ] $ do
+                                    task ^. nameHtml
+                                    " "
+                                    countEmployeesWithTask world task employees2
 
             largemed_ 1 $ label_ $ do
                 "all"

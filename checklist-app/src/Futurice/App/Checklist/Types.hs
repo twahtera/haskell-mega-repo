@@ -25,6 +25,7 @@ module Futurice.App.Checklist.Types (
     TaskItem (..),
     AnnTaskItem (..),
     TaskAppliance(..),
+    TaskComment(..),
     -- ** Wrappers
     Identifier(..),
     identifierToText,
@@ -71,6 +72,7 @@ module Futurice.App.Checklist.Types (
     mkWorld,
     -- ** Lenses
     worldEmployees,
+    worldArchive,
     worldTasks,
     worldLists,
     worldTaskItems,
@@ -92,6 +94,7 @@ import Futurice.App.Checklist.Types.Location
 import Futurice.App.Checklist.Types.TaskItem
 import Futurice.App.Checklist.Types.World
 import Futurice.App.Checklist.Types.TaskAppliance
+import Futurice.App.Checklist.Types.TaskComment
 import Futurice.App.Checklist.Types.TaskRole
 
 import qualified FUM (UserName)

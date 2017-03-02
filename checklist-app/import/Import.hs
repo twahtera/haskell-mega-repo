@@ -25,6 +25,7 @@ import qualified Database.PostgreSQL.Simple as Postgres
 
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
+import Futurice.App.Checklist.Logic
 import Futurice.App.Checklist.Types
 
 -------------------------------------------------------------------------------

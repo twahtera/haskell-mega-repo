@@ -43,6 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   $$("button[data-futu-id=task-remove]").forEach(taskRemoveBtn);
   $$("button[data-futu-id=employee-remove]").forEach(employeeRemoveBtn);
+  $$("button[data-futu-id=employee-archive]").forEach(employeeArchiveBtn);
   $$("input[data-futu-id=task-done-checkbox]").forEach(taskToggleCheckbox);
   $$("input[data-futu-id=task-comment-editbox]").forEach(taskCommentEditInput);
   $$("button[data-futu-link-button]").forEach(linkButton);
@@ -304,6 +305,21 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function employeeArchiveBtn(btn) {
+    buttonOnClick(btn, function () {
+      // prevent dbl-click
+      btn.disabled = true;
+
+      var employeeId = btn.dataset.futuEmployeeId;
+
+      if (employeeId && confirm("Archive employee?")) {
+        cmdArchiveEmployee(employeeId);
+      } else {
+        btn.disabled = false;
+      }
+    });
+  }
+
   function taskToggleCheckbox(chk) {
     var employeeId = chk.dataset.futuEmployee;
     var taskId = chk.dataset.futuTask;
@@ -439,6 +455,15 @@ document.addEventListener("DOMContentLoaded", function () {
       cmd: "archive-employee",
       eid: employeeId,
       delete: true,
+    }, "/");
+  }
+
+  function cmdArchiveEmployee(employeeId) {
+    traceCall(cmdArchiveEmployee, arguments);
+    return command({
+      cmd: "archive-employee",
+      eid: employeeId,
+      delete: false,
     }, "/");
   }
 
