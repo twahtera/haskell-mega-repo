@@ -31,8 +31,15 @@ applyCommand now ssoUser cmd world = flip execState world $ case cmd of
 
     CmdAddTask cid tid app -> addTask cid tid app
 
-    CmdRemoveTask cid tid ->
+    CmdRemoveTask cid tid -> do
         worldLists . ix cid . checklistTasks . at tid Lens..= Nothing
+
+        -- Remove this task from employee, if not already done
+        es <- toList <$> use worldEmployees
+        for_ es $ \e -> do
+            let eid = e ^. identifier
+            when (e ^. employeeChecklist == cid) $
+                worldTaskItems . at eid . non mempty . at tid %= removeTodoTask
 
     CmdRenameChecklist cid n ->
          worldLists . ix cid . checklistName Lens..= n
@@ -80,8 +87,15 @@ applyCommand now ssoUser cmd world = flip execState world $ case cmd of
         es <- toList <$> use worldEmployees
         for_ es $ \e -> do
             let eid = e ^. identifier
-            when (e ^. employeeChecklist == cid && employeeTaskApplies e app) $ do
-                worldTaskItems . at eid . non mempty . at tid %= Just . fromMaybe annTaskItemTodo
+            when (e ^. employeeChecklist == cid) $ do
+                if employeeTaskApplies e app
+                    -- if task applies, add it if not already there
+                    then worldTaskItems . at eid . non mempty . at tid %= Just . fromMaybe annTaskItemTodo
+                    -- if task doesn't apply, remove it if not yet done
+                    else worldTaskItems . at eid . non mempty . at tid %= removeTodoTask
+
+    removeTodoTask (Just (AnnTaskItemTodo _)) = Nothing
+    removeTodoTask x                          = x
 
 transactCommand
     :: (MonadLog m, MonadIO m)
