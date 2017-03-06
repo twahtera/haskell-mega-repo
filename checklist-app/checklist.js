@@ -777,14 +777,14 @@ document.addEventListener("DOMContentLoaded", function () {
   function inputValue(el) {
     if (el.tagName === "INPUT" && el.type === "checkbox") {
         return el.checked;
-    } else if (el.tagName === "INPUT") {
+    } else if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
         return el.value.trim();
     } else if (el.tagName === "SELECT" && el.multiple) {
         return $$("option:checked", el).map(function (o) { return o.value.trim(); });
     } else if (el.tagName === "SELECT") {
         return el.value.trim();
     } else {
-        return "";
+        throw new Error("inputValue: how to handle " + el.tagName);
     }
   }
 
