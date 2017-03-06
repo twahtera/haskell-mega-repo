@@ -392,7 +392,7 @@ document.addEventListener("DOMContentLoaded", function () {
       cmd: "edit-employee",
       eid: employeeId,
       edit: edit,
-    });
+    }, true);
   }
 
   function cmdCreateChecklist(name) {
@@ -427,7 +427,7 @@ document.addEventListener("DOMContentLoaded", function () {
       cmd: "edit-task",
       tid:  taskId,
       edit: edit,
-    });
+    }, true);
   }
 
   function cmdAddTask(checklistId, taskId, appliance) {
