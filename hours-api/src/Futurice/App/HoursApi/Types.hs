@@ -180,7 +180,7 @@ data HoursResponse = HoursResponse
   deriving (Eq, Show, Typeable, Generic)
 
 data HoursUpdateResponse = HoursUpdateResponse
-    { _hoursUpdateResponseDefaultWorkHours :: !Float
+    { _hoursUpdateResponseDefaultWorkHours :: !(NDT 'Hours Centi)
     , _hoursUpdateResponseProjects         :: ![Project]
     , _hoursUpdateResponseMonths           :: Map Month HoursMonthUpdate -- TODO: check invariant on JSON unserialisation
     }

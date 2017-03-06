@@ -61,7 +61,14 @@ userEndpoint
     -> Maybe FUM.UserName
     -> Handler User
 userEndpoint ctx mfum =
-    authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
+    authorisedUser ctx mfum userResponse
+
+userResponse
+    :: FUM.User
+    -> PM.User
+    -> PlanmillData
+    -> PlanmillT (LogT Handler) User
+userResponse fumUser pmUser pmData = do
         let pmUid = pmUser ^. PM.identifier
         balance <- ndtConvert' . view PM.tbMinutes <$>
             PM.planmillAction (PM.userTimeBalance pmUid)
@@ -249,16 +256,34 @@ hoursEndpoint ctx mfum start end = do
         & taskAbsence     .~ isAbsence
         -- TODO: hoursRemaining
 
--- | @POST /entry@
+-- | Create new entry: @POST /entry@
 entryEndpoint
     :: Ctx
     -> Maybe FUM.UserName
     -> EntryUpdate
     -> Handler EntryUpdateResponse
 entryEndpoint ctx mfum eu =
-    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
-        logTrace "POST /entry" (fumUser ^. FUM.userName, eu)
-        throwError err500 { errBody = "Not implemented" }
+    authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
+        let task' = pmData ^? planmillTasks . ix (eu ^. euTaskId)
+        task <- maybe (logAttention_ "cannot find task" >> throwError err400 { errBody = "Unknown task" }) pure task'
+
+        {-
+        when (PM.taskProject task /= Just (eu ^. euProjectId)) $ do
+            logAttention "Task and project ids don't match" (PM.taskProject task, eu ^. euProjectId, eu)
+            throwError err400 { errBody = "ProjectId and TaskId don't agree" }
+        -}
+
+        logTrace_ (textShow task)
+        -- TODO: write hour report
+
+        -- Building the response
+        -- TODO: build projects and hours map
+    
+        -- working hours
+        let wh = workingHours (pmData ^. planmillCalendars) pmUser
+        let hur = HoursUpdateResponse wh mempty mempty
+        user <- userResponse fumUser pmUser pmData
+        pure $ EntryUpdateResponse user hur
 
 -- | @PUT /entry/#id@
 entryIdEndpoint
