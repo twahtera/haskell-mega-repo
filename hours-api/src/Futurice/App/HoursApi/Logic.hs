@@ -281,7 +281,7 @@ entryEndpoint ctx mfum eu =
     
         -- working hours
         let wh = workingHours (pmData ^. planmillCalendars) pmUser
-        let hur = HoursUpdateResponse wh mempty mempty
+        let hur = HoursResponse wh mempty mempty
         user <- userResponse fumUser pmUser pmData
         pure $ EntryUpdateResponse user hur
 
