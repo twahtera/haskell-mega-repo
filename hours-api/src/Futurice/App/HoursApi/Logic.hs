@@ -28,7 +28,7 @@ import Data.Aeson                  (FromJSON)
 import Data.Constraint
 import Data.Fixed                  (Centi)
 import Data.Set.Lens               (setOf)
-import Futurice.Cache              (cached)
+import Futurice.Cache              (DynMapCache, cached)
 import Futurice.Time               (NDT, TimeUnit (..), ndtConvert', ndtDivide)
 import Log.Monad                   (LogT (..))
 import Servant
@@ -69,24 +69,24 @@ userResponse
     -> PlanmillData
     -> PlanmillT (LogT Handler) User
 userResponse fumUser pmUser pmData = do
-        let pmUid = pmUser ^. PM.identifier
-        balance <- ndtConvert' . view PM.tbMinutes <$>
-            PM.planmillAction (PM.userTimeBalance pmUid)
-        let wh = workingHours (pmData ^. planmillCalendars) pmUser
-        holidaysLeft <- sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') <$>
-            PM.planmillAction (PM.userVacations pmUid)
-        -- I wish we could do units properly.
-        let holidaysLeft' = pure (ndtDivide holidaysLeft wh) :: NDT 'Days Centi
-        -- TODO: calculate the UTZ (for this month?).
-        let utz = 95
-        pure $ User
-            { _userFirstName       = PM.uFirstName pmUser
-            , _userLastName        = PM.uLastName pmUser
-            , _userBalance         = balance
-            , _userHolidaysLeft    = holidaysLeft'
-            , _userUtilizationRate = utz
-            , _userProfilePicture  = fromMaybe "" $ fumUser ^. FUM.userImageUrl . lazy
-            }
+    let pmUid = pmUser ^. PM.identifier
+    balance <- ndtConvert' . view PM.tbMinutes <$>
+        PM.planmillAction (PM.userTimeBalance pmUid)
+    let wh = workingHours (pmData ^. planmillCalendars) pmUser
+    holidaysLeft <- sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') <$>
+        PM.planmillAction (PM.userVacations pmUid)
+    -- I wish we could do units properly.
+    let holidaysLeft' = pure (ndtDivide holidaysLeft wh) :: NDT 'Days Centi
+    -- TODO: calculate the UTZ (for this month?).
+    let utz = 95
+    pure $ User
+        { _userFirstName       = PM.uFirstName pmUser
+        , _userLastName        = PM.uLastName pmUser
+        , _userBalance         = balance
+        , _userHolidaysLeft    = holidaysLeft'
+        , _userUtilizationRate = utz
+        , _userProfilePicture  = fromMaybe "" $ fumUser ^. FUM.userImageUrl . lazy
+        }
 
 -- | @GET /hours@
 hoursEndpoint
@@ -97,75 +97,85 @@ hoursEndpoint
     -> Handler HoursResponse
 hoursEndpoint ctx mfum start end = do
     now <- currentTime
-    interval <- maybe (throwError err400) pure interval'
-    let resultInterval = PM.ResultInterval PM.IntervalStart interval
-    authorisedUser ctx mfum $ \_fumUser pmUser pmData -> do
-        let pmUid = pmUser ^. PM.identifier
-
-        -- entries
-        reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
-
-        -- Absences have taskId but doesn't have projectId. Let's correct this
-        let missingTaskIds = toList $ setOf
-                (folded . to (\tr -> maybe (Just $ PM.trTask tr) (const Nothing) (PM.trProject tr)) . folded)
-                reports
-
-        missingTasks <- traverse (cachedPlanmillAction . PM.task) missingTaskIds
-        missingProjects <- traverse (cachedPlanmillAction . PM.project)
-            (missingTasks ^.. folded . to PM.taskProject . folded)
-        let missingProjects' = groupProjectsTasks missingProjects missingTasks
-
-        -- taskId -> projectId, for missing sutff
-        let reverseLookup = Map.fromList $ missingTasks <&> \t ->
-                (t ^. PM.identifier, PM.taskProject t)
-
-        -- patch reports, add missing projectIds.
-        -- they can still be Nothing, but it's not so luckily.
-        let reports' = reports <&> \tr -> tr
-              { PM.trProject = PM.trProject tr <|> (reverseLookup ^? ix (PM.trTask tr) . folded)
-              }
-
-        let entries = reportToEntry <$> toList reports'
-        let latestEntries = Map.fromListWith takeLatestEntry $
-                (\e -> (e ^. entryTaskId, latestEntryFromEntry e)) <$> entries
-
-        -- task ids, we don't want to show all projects in the list
-        reps <- cachedPlanmillAction $ PM.reportableAssignments pmUid
-        let reportableTaskIds = setOf (folded . to PM.raTask) reps
-        let reportedTaskIds   = setOf (folded . to PM.trTask) reports
-
-        -- Let's take prefetched projects, and add missingProjects'
-        let pmProjects = (pmData ^. planmillProjects) <> HM.fromList (missingProjects' <&> \p -> (p ^. _1 . PM.identifier, p))
-
-        -- generate response projects
-        let projects = sortBy projectLatestEntryCompare $ pmProjects ^..
-              folded
-              . to (projectToProject now latestEntries reportableTaskIds reportedTaskIds)
-              . folded
-
-        -- logTrace "latestEntries" latestEntries
-        -- logTrace "projects" $ (\p -> (p ^. projectName, p ^.. projectTasks . folded . taskLatestEntry . folded)) <$> projects
-
-        -- holiday names
-        capacities <- PM.planmillAction $ PM.userCapacity interval pmUid
-        let holidayNames = mkHolidayNames capacities
-
-        -- working hours
-        let wh = workingHours (pmData ^. planmillCalendars) pmUser
-
-        -- all together
-        pure $ HoursResponse
-            { _hoursResponseDefaultWorkHours = wh
-            , _hoursResponseProjects         = projects
-            , _hoursResponseMonths           = mkHoursMonth interval holidayNames entries
-            }
+    interval <- maybe (throwError err400 { errBody = "Interval parameters are required" }) pure interval'
+    authorisedUser ctx mfum $ \_fumUser pmUser pmData ->
+        hoursResponse (ctxCache ctx) now interval pmUser pmData
   where
     interval'    = (PM....) <$> start <*> end
 
+hoursResponse
+    :: DynMapCache
+    -> UTCTime
+    -> PM.Interval Day
+    -> PM.User
+    -> PlanmillData
+    -> PlanmillT (LogT Handler) HoursResponse
+hoursResponse cache now interval pmUser pmData = do
+    let resultInterval = PM.ResultInterval PM.IntervalStart interval
+    let pmUid = pmUser ^. PM.identifier
+
+    -- entries
+    reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
+
+    -- Absences have taskId but doesn't have projectId. Let's correct this
+    let missingTaskIds = toList $ setOf
+            (folded . to (\tr -> maybe (Just $ PM.trTask tr) (const Nothing) (PM.trProject tr)) . folded)
+            reports
+
+    missingTasks <- traverse (cachedPlanmillAction . PM.task) missingTaskIds
+    missingProjects <- traverse (cachedPlanmillAction . PM.project)
+        (missingTasks ^.. folded . to PM.taskProject . folded)
+    let missingProjects' = groupProjectsTasks missingProjects missingTasks
+
+    -- taskId -> projectId, for missing sutff
+    let reverseLookup = Map.fromList $ missingTasks <&> \t ->
+            (t ^. PM.identifier, PM.taskProject t)
+
+    -- patch reports, add missing projectIds.
+    -- they can still be Nothing, but it's not so luckily.
+    let reports' = reports <&> \tr -> tr
+          { PM.trProject = PM.trProject tr <|> (reverseLookup ^? ix (PM.trTask tr) . folded)
+          }
+
+    let entries = reportToEntry <$> toList reports'
+    let latestEntries = Map.fromListWith takeLatestEntry $
+            (\e -> (e ^. entryTaskId, latestEntryFromEntry e)) <$> entries
+
+    -- task ids, we don't want to show all projects in the list
+    reps <- cachedPlanmillAction $ PM.reportableAssignments pmUid
+    let reportableTaskIds = setOf (folded . to PM.raTask) reps
+    let reportedTaskIds   = setOf (folded . to PM.trTask) reports
+
+    -- Let's take prefetched projects, and add missingProjects'
+    let pmProjects = (pmData ^. planmillProjects) <> HM.fromList (missingProjects' <&> \p -> (p ^. _1 . PM.identifier, p))
+
+    -- generate response projects
+    let projects = sortBy projectLatestEntryCompare $ pmProjects ^..
+          folded
+          . to (projectToProject now latestEntries reportableTaskIds reportedTaskIds)
+          . folded
+
+    -- logTrace "latestEntries" latestEntries
+    -- logTrace "projects" $ (\p -> (p ^. projectName, p ^.. projectTasks . folded . taskLatestEntry . folded)) <$> projects
+
+    -- holiday names
+    capacities <- PM.planmillAction $ PM.userCapacity interval pmUid
+    let holidayNames = mkHolidayNames capacities
+
+    -- working hours
+    let wh = workingHours (pmData ^. planmillCalendars) pmUser
+
+    -- all together
+    pure $ HoursResponse
+        { _hoursResponseDefaultWorkHours = wh
+        , _hoursResponseProjects         = projects
+        , _hoursResponseMonths           = mkHoursMonth interval holidayNames entries
+        }
+  where
     cachedPlanmillAction
         :: (Typeable a, PM.MonadPlanMill m, PM.MonadPlanMillC m a, MonadBaseControl IO m)
         => PM.PlanMill a -> m a
-    cachedPlanmillAction pm = cached (ctxCache ctx) 300 {- 5 minutes -} pm $
+    cachedPlanmillAction pm = cached cache 300 {- 5 minutes -} pm $
         PM.planmillAction pm
 
     takeLatestEntry :: LatestEntry -> LatestEntry -> LatestEntry
@@ -262,7 +272,8 @@ entryEndpoint
     -> Maybe FUM.UserName
     -> EntryUpdate
     -> Handler EntryUpdateResponse
-entryEndpoint ctx mfum eu =
+entryEndpoint ctx mfum eu = do
+    now <- currentTime
     authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
         let task' = pmData ^? planmillTasks . ix (eu ^. euTaskId)
         task <- maybe (logAttention_ "cannot find task" >> throwError err400 { errBody = "Unknown task" }) pure task'
@@ -277,13 +288,10 @@ entryEndpoint ctx mfum eu =
         -- TODO: write hour report
 
         -- Building the response
-        -- TODO: build projects and hours map
-    
-        -- working hours
-        let wh = workingHours (pmData ^. planmillCalendars) pmUser
-        let hur = HoursResponse wh mempty mempty
+        let interval = let d = eu ^. euDate in d PM.... d
         user <- userResponse fumUser pmUser pmData
-        pure $ EntryUpdateResponse user hur
+        hr <- hoursResponse (ctxCache ctx) now interval pmUser pmData
+        pure $ EntryUpdateResponse user hr
 
 -- | @PUT /entry/#id@
 entryIdEndpoint
@@ -317,6 +325,7 @@ entryDeleteEndpoint ctx mfum eid =
 -- * /TODO/ cache calendars in @ctx@.
 --
 -- * /TODO/ no idea how it works for people with e.g. 30 hours a week calendars
+--
 workingHours
     :: HashMap PM.CapacityCalendarId PM.CapacityCalendar
     -> PM.User

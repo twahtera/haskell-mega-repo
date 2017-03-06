@@ -204,5 +204,5 @@ entryDeleteEndpoint _ctx _fumUser _id = do
     return res'
 
 eurHoursDayUpdates :: Traversal' EntryUpdateResponse HoursDay
-eurHoursDayUpdates
-    = eurHours . hoursResponseMonths . traverse . monthDays . traverse
+eurHoursDayUpdates =
+    eurHours . hoursResponseMonths . traverse . monthDays . traverse
