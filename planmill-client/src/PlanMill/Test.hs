@@ -13,11 +13,13 @@ module PlanMill.Test (
 import Prelude ()
 import Futurice.Prelude
 import PlanMill.Internal.Prelude
-import Control.Monad.Http        (evalHttpT)
+import Control.Monad.Http        (runHttpT)
 import Futurice.CryptoRandom     (evalCRandTThrow', mkCryptoGen)
 import PlanMill.Eval             (evalPlanMill)
 import PlanMill.Types.Cfg        (Cfg)
 import PlanMill.Types.Request    (PlanMill)
+
+import qualified Network.HTTP.Client     as H
 
 -- | Evaluate single PlanMill request
 --
@@ -34,9 +36,14 @@ evalPlanMillIO
     -> IO a
 evalPlanMillIO cfg planmill = do
     g <- mkCryptoGen
+    mgr <- newManager settings
     withStderrLogger $ \logger ->
-        evalHttpT $
+        flip runHttpT mgr $
         runLogT "evalPlanMillIO" logger $
         flip runReaderT cfg $
         evalCRandTThrow' g $
         evalPlanMill planmill
+  where
+    settings = tlsManagerSettings
+        { H.managerResponseTimeout = H.responseTimeoutMicro $ 300 * 1000000
+        }
