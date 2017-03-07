@@ -29,7 +29,7 @@ import Data.Constraint
 import Data.Fixed                  (Centi)
 import Data.Set.Lens               (setOf)
 import Futurice.Cache              (DynMapCache, cached)
-import Futurice.Time               (NDT, TimeUnit (..), ndtConvert', ndtDivide)
+import Futurice.Time               (NDT, TimeUnit (..), ndtConvert, ndtConvert', ndtDivide)
 import Log.Monad                   (LogT (..))
 import Servant
        (Handler, ServantErr (..), err400, err403, err500)
@@ -152,7 +152,7 @@ hoursResponse cache now interval pmUser pmData = do
     -- generate response projects
     let projects = sortBy projectLatestEntryCompare $ pmProjects ^..
           folded
-          . to (projectToProject now latestEntries reportableTaskIds reportedTaskIds)
+          . to (projectToProject latestEntries reportableTaskIds reportedTaskIds)
           . folded
 
     -- logTrace "latestEntries" latestEntries
@@ -230,13 +230,12 @@ hoursResponse cache now interval pmUser pmData = do
     billableStatus _ _       = EntryTypeBillable
 
     projectToProject
-        :: UTCTime                    -- ^ current timestamp
-        -> Map PM.TaskId LatestEntry  -- ^ last entry per task
+        :: Map PM.TaskId LatestEntry  -- ^ last entry per task
         -> Set PM.TaskId              -- ^ reportable
         -> Set PM.TaskId              -- ^ reported
         -> (PM.Project, [PM.Task])
         -> Maybe Project
-    projectToProject now latestEntries reportable reported (p, ts)
+    projectToProject latestEntries reportable reported (p, ts)
         | null tasks = Nothing
         | otherwise  = Just $ Project
             { _projectId     = p ^. PM.identifier
@@ -250,7 +249,7 @@ hoursResponse cache now interval pmUser pmData = do
 
         tasks = ts ^.. folded
             . filtered (\t -> taskIds ^. contains (t ^. PM.identifier))
-            . to (\t -> taskToTask now isAbsence (latestEntries ^. at (t ^. PM.identifier)) t)
+            . to (\t -> taskToTask isAbsence (latestEntries ^. at (t ^. PM.identifier)) t)
 
         -- Project is closed, if there aren't reportable tasks anymore.
         closed =  flip nullOf ts
@@ -259,8 +258,8 @@ hoursResponse cache now interval pmUser pmData = do
 
         taskIds = reportable <> reported
 
-    taskToTask :: UTCTime -> Bool -> Maybe LatestEntry -> PM.Task -> Task
-    taskToTask now isAbsence latestEntry t = mkTask (t ^. PM.identifier) (PM.taskName t)
+    taskToTask ::  Bool -> Maybe LatestEntry -> PM.Task -> Task
+    taskToTask isAbsence latestEntry t = mkTask (t ^. PM.identifier) (PM.taskName t)
         & taskLatestEntry .~ latestEntry
         & taskClosed      .~ (now > PM.taskFinish t)
         & taskAbsence     .~ isAbsence
@@ -284,7 +283,18 @@ entryEndpoint ctx mfum eu = do
             throwError err400 { errBody = "ProjectId and TaskId don't agree" }
         -}
 
+        let newTimeReport = PM.NewTimereport
+              { PM.ntrTask    = eu ^. euTaskId
+              , PM.ntrStart   = eu ^. euDate
+              , PM.ntrAmount  = fmap truncate $ ndtConvert $ eu ^. euHours
+              , PM.ntrComment = fromMaybe "" $ eu ^. euDescription
+              , PM.ntrUser    = pmUser ^. PM.identifier
+              }
+
+        _ <- PM.planmillAction $ PM.addTimereport $ newTimeReport
+
         logTrace_ (textShow task)
+        logTrace_ (textShow newTimeReport)
         -- TODO: write hour report
 
         -- Building the response
