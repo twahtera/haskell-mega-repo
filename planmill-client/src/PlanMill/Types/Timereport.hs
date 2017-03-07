@@ -22,6 +22,7 @@ import PlanMill.Types.Project         (ProjectId)
 import PlanMill.Types.Task            (TaskId)
 import PlanMill.Types.UOffset         (UOffset (..))
 import PlanMill.Types.User            (UserId)
+import Data.Time (defaultTimeLocale, formatTime)
 
 type TimereportId = Identifier Timereport
 type Timereports = Vector Timereport
@@ -79,13 +80,15 @@ instance FromJSON Timereport where
         <*> obj .: "travelComment"
 
 -- | Type used to create new timereports
---
--- TODO: Add UserId
 data NewTimereport = NewTimereport
     { ntrTask    :: !TaskId
+    , ntrProject :: !ProjectId
     , ntrStart   :: !Day
     , ntrAmount  :: !Int
     , ntrComment :: !Text
+    , ntrUser    :: !UserId
+    , ntrDutyType :: !Int
+    , ntrStatus   :: !Int
     }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
 
@@ -101,7 +104,11 @@ instance HasSemanticVersion NewTimereport
 instance ToJSON NewTimereport where
     toJSON NewTimereport {..} = object
         [ "task"    .= ntrTask
-        , "start"   .= UOffset (UTCTime ntrStart 0)
+        , "project" .= ntrProject
+        , "start"   .= formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S.000+0000" (UTCTime ntrStart 0)
         , "amount"  .= ntrAmount
         , "comment" .= ntrComment
+        , "person" .= ntrUser
+        , "dutyType" .= ntrDutyType
+        , "status" .= ntrStatus
         ]
