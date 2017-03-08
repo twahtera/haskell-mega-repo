@@ -30,6 +30,7 @@ import Numeric.Interval.NonEmpty (clamp)
 import PlanMill.Eval             (evalPlanMill)
 
 -- For initDataSourceBatch
+import qualified Codec.Compression.GZip   as GZip
 import           Control.Concurrent.Async (async, waitCatch)
 import qualified Data.Aeson               as Aeson
 import qualified Data.Binary.Tagged       as Binary
@@ -92,7 +93,7 @@ initDataSourceBatch lgr mgr req = QueryFunction queryFunction
     req' = req
         { HTTP.requestHeaders
             = ("Content-Type", "application/json")
-            : ("Accept", "application/binary-tagged")
+            : ("Accept", "application/gzip-binary-tagged")
             : HTTP.requestHeaders req
         , HTTP.method
             = "POST"
@@ -117,7 +118,7 @@ initDataSourceBatch lgr mgr req = QueryFunction queryFunction
                     -- print (BSL.take 1000 $ HTTP.responseBody res)
                     -- print (last $ BSL.toChunks $ HTTP.responseBody res)
                     -- print (BSL.length $ HTTP.responseBody res)
-                    let x = Binary.taggedDecode (HTTP.responseBody res) :: [Either Text SomeResponse]
+                    let x = Binary.taggedDecode (GZip.decompress $ HTTP.responseBody res) :: [Either Text SomeResponse]
 
                     -- return blocked fetches as well.
                     evaluate $!! x

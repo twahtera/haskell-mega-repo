@@ -22,22 +22,23 @@ import Data.Binary.Tagged
        taggedEncode)
 import Servant.API        (Accept (..), MimeRender (..), MimeUnrender (..))
 
-import qualified Network.HTTP.Media as M
+import qualified Codec.Compression.GZip as GZip
+import qualified Network.HTTP.Media     as M
 
 data BINARYTAGGED -- deriving Typeable
 
 -- | @application/x-yaml@
 instance Accept BINARYTAGGED where
-    contentType _ = "application" M.// "binary-tagged"
+    contentType _ = "application" M.// "gzip-binary-tagged"
 
 -- | `taggedEncode`
 instance (HasStructuralInfo a, HasSemanticVersion a, Binary a) => MimeRender BINARYTAGGED a where
-    mimeRender _ = taggedEncode
+    mimeRender _ = GZip.compress . taggedEncode
 
 -- | `taggedDecodeOrFail`
 instance  (HasStructuralInfo a, HasSemanticVersion a, Binary a) => MimeUnrender BINARYTAGGED a where
     -- there might be some trailing data, but we don't care about it atm.
-    mimeUnrender _ = bimap f f. taggedDecodeOrFail
+    mimeUnrender _ = bimap f f. taggedDecodeOrFail . GZip.decompress
       where
         f :: (a, b, c) -> c
         f (_, _, c) = c

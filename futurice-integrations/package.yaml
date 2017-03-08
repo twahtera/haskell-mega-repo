@@ -49,6 +49,7 @@ library:
     - tz
     - unordered-containers
     - vector
+    - zlib
   default-extensions:
     - DeriveDataTypeable
     - DeriveFoldable

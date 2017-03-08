@@ -79,6 +79,7 @@ dependencies:
   - transformers
   - unordered-containers
   - vector
+  - zlib
 
 library:
   source-dirs: src

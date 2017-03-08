@@ -13,11 +13,12 @@ import Control.Concurrent.Async  (async, waitCatch)
 import Data.Type.Equality        ((:~:) (..))
 import Numeric.Interval.NonEmpty (clamp, (...))
 
-import qualified Data.Aeson          as Aeson
-import qualified Data.Binary.Tagged  as Binary
-import qualified Futurice.GitHub     as GH
-import qualified Haxl.Core           as H
-import qualified Network.HTTP.Client as HTTP
+import qualified Codec.Compression.GZip as GZip
+import qualified Data.Aeson             as Aeson
+import qualified Data.Binary.Tagged     as Binary
+import qualified Futurice.GitHub        as GH
+import qualified Haxl.Core              as H
+import qualified Network.HTTP.Client    as HTTP
 
 -- | Init Haxl data source.
 initDataSource :: Logger -> Manager -> HTTP.Request -> H.State GHR
@@ -62,7 +63,7 @@ instance H.DataSource u GHR where
                     -- print (BSL.take 1000 $ HTTP.responseBody res)
                     -- print (last $ BSL.toChunks $ HTTP.responseBody res)
                     -- print (BSL.length $ HTTP.responseBody res)
-                    let x = Binary.taggedDecode (HTTP.responseBody res) :: [Either Text GH.SomeResponse]
+                    let x = Binary.taggedDecode (GZip.decompress $ HTTP.responseBody res) :: [Either Text GH.SomeResponse]
 
                     -- return blocked fetches as well.
                     evaluate $!! x
@@ -87,7 +88,7 @@ instance H.DataSource u GHR where
         baseReq' = baseReq
             { HTTP.requestHeaders
                 = ("Content-Type", "application/json")
-                : ("Accept", "application/binary-tagged")
+                : ("Accept", "application/gzip-binary-tagged")
                 : HTTP.requestHeaders baseReq
             , HTTP.method
                 = "POST"
