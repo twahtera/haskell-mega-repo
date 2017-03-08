@@ -41,8 +41,8 @@ packages:
 - theme-app/
 # https://github.com/aloiscochard/machines-directory/pull/7
 - location:
-    git: https://github.com/phadej/machines-directory.git
-    commit: 5d848a2912e7b4ccc30db4085f290e4899e92b21
+    git: https://github.com/aloiscochard/machines-directory.git
+    commit: ee10b69a7a41ef6792839c2dea24fa5c07b6aeb7
   extra-dep: true
 extra-deps:
 - cassava-0.4.5.1
