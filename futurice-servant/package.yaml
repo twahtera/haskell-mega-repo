@@ -55,4 +55,5 @@ library:
     - wai
     - wai-extra
     - wai-middleware-metrics
-    - warp
+    # https://github.com/yesodweb/wai/issues/613
+    - warp >= 3.2.11.1

@@ -98,4 +98,5 @@ extra-deps:
 - transformers-compat-0.5.1.4
 - trifecta-1.6.1
 - vector-instances-3.4
+- warp-3.2.11.1
 flags: {}

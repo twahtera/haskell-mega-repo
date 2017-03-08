@@ -47,4 +47,5 @@ packages:
 extra-deps:
 - cassava-0.4.5.1
 - servant-cassava-0.8
+- warp-3.2.11.1
 flags: {}
