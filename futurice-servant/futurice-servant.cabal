@@ -62,7 +62,7 @@ library
     , wai
     , wai-extra
     , wai-middleware-metrics
-    , warp
+    , warp >= 3.2.11.1
   exposed-modules:
       Futurice.Servant
   default-language: Haskell2010
