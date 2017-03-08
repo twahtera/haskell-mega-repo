@@ -88,6 +88,7 @@ library
     , transformers
     , unordered-containers
     , vector
+    , zlib
   if impl(ghc >= 8.0)
     ghc-options: -freduction-depth=100
   if impl(ghc < 8.0)
@@ -200,6 +201,7 @@ executable planmill-client
     , transformers
     , unordered-containers
     , vector
+    , zlib
     , planmill-client
     , optparse-applicative
     , SHA
@@ -277,6 +279,7 @@ executable pm-cli
     , transformers
     , unordered-containers
     , vector
+    , zlib
     , monad-control
     , planmill-client
     , transformers-base
@@ -351,6 +354,7 @@ test-suite integration
     , transformers
     , unordered-containers
     , vector
+    , zlib
     , planmill-client
   if impl(ghc >= 8.0)
     ghc-options: -freduction-depth=100
@@ -423,6 +427,7 @@ test-suite test
     , transformers
     , unordered-containers
     , vector
+    , zlib
     , planmill-client
     , tasty
     , tasty-quickcheck
