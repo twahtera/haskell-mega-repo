@@ -118,10 +118,10 @@ mkEntryEndPoint req = do
     usrHL <- liftIO $ randomRIO (0, 24)
     usrUTZ <- liftIO $ randomRIO (0,100)
     newEntryId <- liftIO $ randomRIO (0, 100)
-    let md = HoursDayUpdate
-            { _hoursDayUpdateHolidayName = Nothing
-            , _hoursDayUpdateHours       = _euHours req
-            , _hoursDayUpdateEntry       = Just Entry
+    let md = HoursDay
+            { _dayHolidayName = Nothing
+            , _dayHours       = _euHours req
+            , _dayEntries     = pure $ Entry
                 { _entryId          = PM.Ident newEntryId
                 , _entryDay         = ModifiedJulianDay 0 -- wrong
                 , _entryProjectId   = _euProjectId req
@@ -131,12 +131,13 @@ mkEntryEndPoint req = do
                 , _entryClosed      = fromMaybe False (_euClosed req) -- TODO: is Maybe open or closed?
                 , _entryBillable    = EntryTypeBillable -- wrong
                 }
+            , _dayClosed = False
             }
     let d = Map.fromList [(date, md)]
-    let mm = HoursMonthUpdate
-              { _hoursMonthUpdateHours=75
-            , _hoursMonthUpdateUtilizationRate=70
-            , _hoursMonthUpdateDays=d}
+    let mm = HoursMonth
+              { _monthHours=75
+            , _monthUtilizationRate=70
+            , _monthDays=d}
     let months = Map.fromList [(dayToMonth date, mm)]
     let userResponse = User
             { _userFirstName="Test"
@@ -146,10 +147,10 @@ mkEntryEndPoint req = do
             , _userUtilizationRate=usrUTZ
             , _userProfilePicture="https://raw.githubusercontent.com/futurice/spiceprogram/gh-pages/assets/img/logo/chilicorn_no_text-128.png"
             }
-    let hoursResponse = HoursUpdateResponse
-            { _hoursUpdateResponseDefaultWorkHours = 8
-            , _hoursUpdateResponseProjects         = ps
-            , _hoursUpdateResponseMonths           = months }
+    let hoursResponse = HoursResponse
+            { _hoursResponseDefaultWorkHours = 8
+            , _hoursResponseProjects         = ps
+            , _hoursResponseMonths           = months }
     pure $ EntryUpdateResponse
         { _eurUser=userResponse
         , _eurHours=hoursResponse
@@ -177,7 +178,7 @@ entryIdEndpoint _ctx _fumUser _id req = do
     -- Set every entryId to 1.
     let res' = res
             & eurHoursDayUpdates
-            . hoursDayUpdateEntry . traverse . entryId .~ PM.Ident 1
+            . dayEntries . traverse . entryId .~ PM.Ident 1
     return res'
 
 -- | @DELETE /entry/#id@
@@ -198,11 +199,10 @@ entryDeleteEndpoint _ctx _fumUser _id = do
             }
     res <- liftIO $ mkEntryEndPoint dummyReq
     let res' = res
-            & eurHoursDayUpdates . hoursDayUpdateHours .~ 0
-            & eurHoursDayUpdates . hoursDayUpdateEntry .~ Nothing
+            & eurHoursDayUpdates . dayHours .~ 0
+            & eurHoursDayUpdates . dayEntries .~ []
     return res'
 
-eurHoursDayUpdates :: Traversal' EntryUpdateResponse HoursDayUpdate
-eurHoursDayUpdates
-    = eurHours . hoursUpdateResponseMonths . traverse . hoursMonthUpdateDays
-    . traverse
+eurHoursDayUpdates :: Traversal' EntryUpdateResponse HoursDay
+eurHoursDayUpdates =
+    eurHours . hoursResponseMonths . traverse . monthDays . traverse

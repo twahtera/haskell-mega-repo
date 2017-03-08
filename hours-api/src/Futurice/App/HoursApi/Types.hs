@@ -112,7 +112,7 @@ data EntryUpdate = EntryUpdate
 
 data EntryUpdateResponse = EntryUpdateResponse
     { _eurUser  :: !User
-    , _eurHours :: !HoursUpdateResponse
+    , _eurHours :: !HoursResponse
     }
   deriving (Eq, Show, Typeable, Generic)
 
@@ -132,6 +132,9 @@ data User = User
 -- /Note:/ filling HolidayName marks Day as a Holiday
 --
 -- TODO: is it UI feature?
+--
+-- /Was:/ HoursDayUpdate is HoursDay with dayClosed::Maybe Bool AND *singular* dayEntries :: !Entry
+-- Keep different types now; perhaps refactor UI to lessen Backend types in Future *shrug*
 data HoursDay = HoursDay
     { _dayHolidayName :: !(Maybe Text)
     , _dayHours       :: !(NDT 'Hours Centi)
@@ -148,15 +151,6 @@ defaultHoursDay = HoursDay
     , _dayClosed      = False
     }
 
--- HoursDayUpdate is HoursDay with dayClosed::Maybe Bool AND *singular* dayEntries :: !Entry
--- Keep different types now; perhaps refactor UI to lessen Backend types in Future *shrug*
-data HoursDayUpdate = HoursDayUpdate
-    { _hoursDayUpdateHolidayName :: !(Maybe Text)
-    , _hoursDayUpdateHours       :: !(NDT 'Hours Centi)
-    , _hoursDayUpdateEntry       :: !(Maybe Entry)
-    }
-  deriving (Eq, Show, Typeable, Generic)
-
 -- | TODO: add a '_samples' of Utilisation rate weighted average.
 data HoursMonth = HoursMonth
     { _monthHours           :: !(NDT 'Hours Centi)
@@ -165,24 +159,10 @@ data HoursMonth = HoursMonth
     }
   deriving (Eq, Show, Typeable, Generic)
 
-data HoursMonthUpdate = HoursMonthUpdate
-    { _hoursMonthUpdateHours           :: !Float
-    , _hoursMonthUpdateUtilizationRate :: !Float
-    , _hoursMonthUpdateDays            :: Map Day HoursDayUpdate -- TODO: check invariant on JSON unserialisation
-    }
-  deriving (Eq, Show, Typeable, Generic)
-
 data HoursResponse = HoursResponse
     { _hoursResponseDefaultWorkHours :: !(NDT 'Hours Centi)
     , _hoursResponseProjects         :: ![Project]
     , _hoursResponseMonths           :: Map Month HoursMonth -- invariant contents: 'HoursMonth' contains days of key-month
-    }
-  deriving (Eq, Show, Typeable, Generic)
-
-data HoursUpdateResponse = HoursUpdateResponse
-    { _hoursUpdateResponseDefaultWorkHours :: !Float
-    , _hoursUpdateResponseProjects         :: ![Project]
-    , _hoursUpdateResponseMonths           :: Map Month HoursMonthUpdate -- TODO: check invariant on JSON unserialisation
     }
   deriving (Eq, Show, Typeable, Generic)
 
@@ -217,17 +197,8 @@ deriveGeneric ''HoursDay
 makeLenses ''HoursMonth
 deriveGeneric ''HoursMonth
 
-makeLenses ''HoursDayUpdate
-deriveGeneric ''HoursDayUpdate
-
-makeLenses ''HoursMonthUpdate
-deriveGeneric ''HoursMonthUpdate
-
 makeLenses ''HoursResponse
 deriveGeneric ''HoursResponse
-
-makeLenses ''HoursUpdateResponse
-deriveGeneric ''HoursUpdateResponse
 
 -------------------------------------------------------------------------------
 -- Smart constructors
@@ -394,16 +365,6 @@ instance ToJSON HoursDay where
 instance FromJSON HoursDay where parseJSON = sopParseJSON
 instance ToSchema HoursDay where declareNamedSchema = sopDeclareNamedSchema
 
-instance Arbitrary HoursDayUpdate where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToJSON HoursDayUpdate where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON HoursDayUpdate where parseJSON = sopParseJSON
-instance ToSchema HoursDayUpdate where declareNamedSchema = sopDeclareNamedSchema
-
 instance Arbitrary HoursMonth where
     arbitrary = sopArbitrary
     shrink    = sopShrink
@@ -414,16 +375,6 @@ instance ToJSON HoursMonth where
 instance FromJSON HoursMonth where parseJSON = sopParseJSON
 instance ToSchema HoursMonth where declareNamedSchema = sopDeclareNamedSchema
 
-instance Arbitrary HoursMonthUpdate where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToJSON HoursMonthUpdate where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON HoursMonthUpdate where parseJSON = sopParseJSON
-instance ToSchema HoursMonthUpdate where declareNamedSchema = sopDeclareNamedSchema
-
 instance Arbitrary HoursResponse where
     arbitrary = sopArbitrary
     shrink    = sopShrink
@@ -433,13 +384,3 @@ instance ToJSON HoursResponse where
     toEncoding = sopToEncoding
 instance FromJSON HoursResponse where parseJSON = sopParseJSON
 instance ToSchema HoursResponse where declareNamedSchema = sopDeclareNamedSchema
-
-instance Arbitrary HoursUpdateResponse where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToJSON HoursUpdateResponse where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON HoursUpdateResponse where parseJSON = sopParseJSON
-instance ToSchema HoursUpdateResponse where declareNamedSchema = sopDeclareNamedSchema

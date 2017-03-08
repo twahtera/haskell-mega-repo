@@ -79,13 +79,15 @@ instance FromJSON Timereport where
         <*> obj .: "travelComment"
 
 -- | Type used to create new timereports
---
--- TODO: Add UserId
 data NewTimereport = NewTimereport
-    { ntrTask    :: !TaskId
-    , ntrStart   :: !Day
-    , ntrAmount  :: !Int
-    , ntrComment :: !Text
+    { ntrTask     :: !TaskId
+    -- , ntrProject  :: !ProjectId
+    , ntrStart    :: !Day
+    , ntrAmount   :: !(NDT 'Minutes Int)
+    , ntrComment  :: !Text
+    , ntrUser     :: !UserId
+    -- , ntrDutyType :: !Int
+    -- , ntrStatus   :: !Int
     }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
 
@@ -101,7 +103,11 @@ instance HasSemanticVersion NewTimereport
 instance ToJSON NewTimereport where
     toJSON NewTimereport {..} = object
         [ "task"    .= ntrTask
+        -- , "project" .= ntrProject
         , "start"   .= UOffset (UTCTime ntrStart 0)
         , "amount"  .= ntrAmount
         , "comment" .= ntrComment
+        , "person" .= ntrUser
+        -- , "dutyType" .= ntrDutyType
+        -- , "status" .= ntrStatus
         ]
