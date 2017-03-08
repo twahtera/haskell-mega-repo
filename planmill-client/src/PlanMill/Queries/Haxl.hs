@@ -143,6 +143,8 @@ initDataSourceBatch lgr mgr req = QueryFunction queryFunction
             { HTTP.requestBody
                 = HTTP.RequestBodyLBS $ Aeson.encode
                 $ extractQuery <$> bf
+            , HTTP.queryString
+                = fromString ("?query_count=" ++ show (length bf))
             }
 
     extractQuery :: BlockedFetch Query -> SomeQuery
