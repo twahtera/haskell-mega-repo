@@ -60,8 +60,9 @@ userEndpoint
     :: Ctx
     -> Maybe FUM.UserName
     -> Handler User
-userEndpoint ctx mfum =
-    authorisedUser ctx mfum userResponse
+userEndpoint ctx mfum = do
+    now <- currentTime
+    authorisedUser ctx mfum (userResponse (ctxCache ctx) now)
 
 -- | @GET /hours@
 hoursEndpoint
@@ -112,7 +113,7 @@ entryEndpoint ctx mfum eu = do
 
         -- Building the response
         let interval = let d = eu ^. euDate in d PM.... d
-        user <- userResponse fumUser pmUser pmData
+        user <- userResponse (ctxCache ctx) now fumUser pmUser pmData
         hr <- hoursResponse (ctxCache ctx) now interval pmUser pmData
         pure $ EntryUpdateResponse user hr
 
@@ -143,18 +144,21 @@ entryDeleteEndpoint ctx mfum eid =
 -- Implementation
 -------------------------------------------------------------------------------
 
+--  Note: we might want to not ask the cache for user vacations.
 userResponse
-    :: FUM.User
+    :: DynMapCache
+    -> UTCTime
+    -> FUM.User
     -> PM.User
     -> PlanmillData
     -> PlanmillT (LogT Handler) User
-userResponse fumUser pmUser pmData = do
+userResponse cache _now fumUser pmUser pmData = do
     let pmUid = pmUser ^. PM.identifier
     balance <- ndtConvert' . view PM.tbMinutes <$>
         PM.planmillAction (PM.userTimeBalance pmUid)
     let wh = workingHours (pmData ^. planmillCalendars) pmUser
     holidaysLeft <- sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') <$>
-        PM.planmillAction (PM.userVacations pmUid)
+        cachedPlanmillAction cache (PM.userVacations pmUid)
     -- I wish we could do units properly.
     let holidaysLeft' = pure (ndtDivide holidaysLeft wh) :: NDT 'Days Centi
     -- TODO: calculate the UTZ (for this month?).
