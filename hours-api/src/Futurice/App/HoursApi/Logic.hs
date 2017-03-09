@@ -122,8 +122,8 @@ hoursResponse cache now interval pmUser pmData = do
             (folded . to (\tr -> maybe (Just $ PM.trTask tr) (const Nothing) (PM.trProject tr)) . folded)
             reports
 
-    missingTasks <- traverse (cachedPlanmillAction . PM.task) missingTaskIds
-    missingProjects <- traverse (cachedPlanmillAction . PM.project)
+    missingTasks <- traverse (cachedPlanmillAction cache . PM.task) missingTaskIds
+    missingProjects <- traverse (cachedPlanmillAction cache . PM.project)
         (missingTasks ^.. folded . to PM.taskProject . folded)
     let missingProjects' = groupProjectsTasks missingProjects missingTasks
 
@@ -142,7 +142,7 @@ hoursResponse cache now interval pmUser pmData = do
             (\e -> (e ^. entryTaskId, latestEntryFromEntry e)) <$> entries
 
     -- task ids, we don't want to show all projects in the list
-    reps <- cachedPlanmillAction $ PM.reportableAssignments pmUid
+    reps <- cachedPlanmillAction cache $ PM.reportableAssignments pmUid
     let reportableTaskIds = setOf (folded . to PM.raTask) reps
     let reportedTaskIds   = setOf (folded . to PM.trTask) reports
 
@@ -172,12 +172,6 @@ hoursResponse cache now interval pmUser pmData = do
         , _hoursResponseMonths           = mkHoursMonth interval holidayNames entries
         }
   where
-    cachedPlanmillAction
-        :: (Typeable a, PM.MonadPlanMill m, PM.MonadPlanMillC m a, MonadBaseControl IO m)
-        => PM.PlanMill a -> m a
-    cachedPlanmillAction pm = cached cache 300 {- 5 minutes -} pm $
-        PM.planmillAction pm
-
     takeLatestEntry :: LatestEntry -> LatestEntry -> LatestEntry
     takeLatestEntry a b
         | a ^. latestEntryDate > b ^. latestEntryDate = a
@@ -329,6 +323,14 @@ entryDeleteEndpoint ctx mfum eid =
 -------------------------------------------------------------------------------
 -- Utilities
 -------------------------------------------------------------------------------
+
+cachedPlanmillAction
+    :: (Typeable a, PM.MonadPlanMill m, PM.MonadPlanMillC m a, MonadBaseControl IO m)
+    => DynMapCache
+    -> PM.PlanMill a
+    -> m a
+cachedPlanmillAction cache pm = cached cache 300 {- 5 minutes -} pm $
+    PM.planmillAction pm
 
 -- | Actually we'd like to return 'WithUnit (Hours/Day) Centi'
 --
