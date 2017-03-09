@@ -63,6 +63,86 @@ userEndpoint
 userEndpoint ctx mfum =
     authorisedUser ctx mfum userResponse
 
+-- | @GET /hours@
+hoursEndpoint
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> Maybe Day
+    -> Maybe Day
+    -> Handler HoursResponse
+hoursEndpoint ctx mfum start end = do
+    now <- currentTime
+    interval <- maybe (throwError err400 { errBody = "Interval parameters are required" }) pure interval'
+    authorisedUser ctx mfum $ \_fumUser pmUser pmData ->
+        hoursResponse (ctxCache ctx) now interval pmUser pmData
+  where
+    interval'    = (PM....) <$> start <*> end
+
+-- | Create new entry: @POST /entry@
+entryEndpoint
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> EntryUpdate
+    -> Handler EntryUpdateResponse
+entryEndpoint ctx mfum eu = do
+    now <- currentTime
+    authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
+        let task' = pmData ^? planmillTasks . ix (eu ^. euTaskId)
+        task <- maybe (logAttention_ "cannot find task" >> throwError err400 { errBody = "Unknown task" }) pure task'
+
+        {-
+        when (PM.taskProject task /= Just (eu ^. euProjectId)) $ do
+            logAttention "Task and project ids don't match" (PM.taskProject task, eu ^. euProjectId, eu)
+            throwError err400 { errBody = "ProjectId and TaskId don't agree" }
+        -}
+
+        let newTimeReport = PM.NewTimereport
+              { PM.ntrTask    = eu ^. euTaskId
+              , PM.ntrStart   = eu ^. euDate
+              , PM.ntrAmount  = fmap truncate $ ndtConvert $ eu ^. euHours
+              , PM.ntrComment = fromMaybe "" $ eu ^. euDescription
+              , PM.ntrUser    = pmUser ^. PM.identifier
+              }
+
+        _ <- PM.planmillAction $ PM.addTimereport $ newTimeReport
+
+        logTrace_ (textShow task)
+        logTrace_ (textShow newTimeReport)
+        -- TODO: write hour report
+
+        -- Building the response
+        let interval = let d = eu ^. euDate in d PM.... d
+        user <- userResponse fumUser pmUser pmData
+        hr <- hoursResponse (ctxCache ctx) now interval pmUser pmData
+        pure $ EntryUpdateResponse user hr
+
+-- | @PUT /entry/#id@
+entryIdEndpoint
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> PM.TimereportId
+    -> EntryUpdate
+    -> Handler EntryUpdateResponse
+entryIdEndpoint ctx mfum eid eu =
+    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
+        logTrace "PUT /entry" (fumUser ^. FUM.userName, eid, eu)
+        throwError err500 { errBody = "Not implemented" }
+
+-- | @DELETE /entry/#id@
+entryDeleteEndpoint
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> PM.TimereportId
+    -> Handler EntryUpdateResponse
+entryDeleteEndpoint ctx mfum eid =
+    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
+        logTrace "DELETE /entry" (fumUser ^. FUM.userName, eid)
+        throwError err500 { errBody = "Not implemented" }
+
+-------------------------------------------------------------------------------
+-- Implementation
+-------------------------------------------------------------------------------
+
 userResponse
     :: FUM.User
     -> PM.User
@@ -87,21 +167,6 @@ userResponse fumUser pmUser pmData = do
         , _userUtilizationRate = utz
         , _userProfilePicture  = fromMaybe "" $ fumUser ^. FUM.userImageUrl . lazy
         }
-
--- | @GET /hours@
-hoursEndpoint
-    :: Ctx
-    -> Maybe FUM.UserName
-    -> Maybe Day
-    -> Maybe Day
-    -> Handler HoursResponse
-hoursEndpoint ctx mfum start end = do
-    now <- currentTime
-    interval <- maybe (throwError err400 { errBody = "Interval parameters are required" }) pure interval'
-    authorisedUser ctx mfum $ \_fumUser pmUser pmData ->
-        hoursResponse (ctxCache ctx) now interval pmUser pmData
-  where
-    interval'    = (PM....) <$> start <*> end
 
 hoursResponse
     :: DynMapCache
@@ -258,67 +323,6 @@ hoursResponse cache now interval pmUser pmData = do
         & taskClosed      .~ (now > PM.taskFinish t)
         & taskAbsence     .~ isAbsence
         -- TODO: hoursRemaining
-
--- | Create new entry: @POST /entry@
-entryEndpoint
-    :: Ctx
-    -> Maybe FUM.UserName
-    -> EntryUpdate
-    -> Handler EntryUpdateResponse
-entryEndpoint ctx mfum eu = do
-    now <- currentTime
-    authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
-        let task' = pmData ^? planmillTasks . ix (eu ^. euTaskId)
-        task <- maybe (logAttention_ "cannot find task" >> throwError err400 { errBody = "Unknown task" }) pure task'
-
-        {-
-        when (PM.taskProject task /= Just (eu ^. euProjectId)) $ do
-            logAttention "Task and project ids don't match" (PM.taskProject task, eu ^. euProjectId, eu)
-            throwError err400 { errBody = "ProjectId and TaskId don't agree" }
-        -}
-
-        let newTimeReport = PM.NewTimereport
-              { PM.ntrTask    = eu ^. euTaskId
-              , PM.ntrStart   = eu ^. euDate
-              , PM.ntrAmount  = fmap truncate $ ndtConvert $ eu ^. euHours
-              , PM.ntrComment = fromMaybe "" $ eu ^. euDescription
-              , PM.ntrUser    = pmUser ^. PM.identifier
-              }
-
-        _ <- PM.planmillAction $ PM.addTimereport $ newTimeReport
-
-        logTrace_ (textShow task)
-        logTrace_ (textShow newTimeReport)
-        -- TODO: write hour report
-
-        -- Building the response
-        let interval = let d = eu ^. euDate in d PM.... d
-        user <- userResponse fumUser pmUser pmData
-        hr <- hoursResponse (ctxCache ctx) now interval pmUser pmData
-        pure $ EntryUpdateResponse user hr
-
--- | @PUT /entry/#id@
-entryIdEndpoint
-    :: Ctx
-    -> Maybe FUM.UserName
-    -> PM.TimereportId
-    -> EntryUpdate
-    -> Handler EntryUpdateResponse
-entryIdEndpoint ctx mfum eid eu =
-    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
-        logTrace "PUT /entry" (fumUser ^. FUM.userName, eid, eu)
-        throwError err500 { errBody = "Not implemented" }
-
--- | @DELETE /entry/#id@
-entryDeleteEndpoint
-    :: Ctx
-    -> Maybe FUM.UserName
-    -> PM.TimereportId
-    -> Handler EntryUpdateResponse
-entryDeleteEndpoint ctx mfum eid =
-    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
-        logTrace "DELETE /entry" (fumUser ^. FUM.userName, eid)
-        throwError err500 { errBody = "Not implemented" }
 
 -------------------------------------------------------------------------------
 -- Utilities
