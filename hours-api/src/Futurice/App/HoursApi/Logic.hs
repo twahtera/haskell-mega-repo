@@ -20,7 +20,8 @@ import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM      (readTVarIO)
 import Control.Lens
-       (Fold, contains, filtered, firstOf, nullOf, sumOf, to, (<&>))
+       (Fold, Getter, contains, filtered, firstOf, foldOf, nullOf, sumOf, to,
+       (<&>))
 import Control.Monad.Trans.Control
        (ComposeSt, defaultLiftBaseWith, defaultLiftWith, defaultRestoreM,
        defaultRestoreT)
@@ -28,8 +29,11 @@ import Data.Aeson                  (FromJSON)
 import Data.Constraint
 import Data.Fixed                  (Centi)
 import Data.Set.Lens               (setOf)
+import Data.Time                   (addDays)
 import Futurice.Cache              (DynMapCache, cached)
-import Futurice.Time               (NDT, TimeUnit (..), ndtConvert, ndtConvert', ndtDivide)
+import Futurice.Monoid             (Average (..))
+import Futurice.Time
+       (NDT (..), TimeUnit (..), ndtConvert, ndtConvert', ndtDivide)
 import Log.Monad                   (LogT (..))
 import Servant
        (Handler, ServantErr (..), err400, err403, err500)
@@ -152,17 +156,29 @@ userResponse
     -> PM.User
     -> PlanmillData
     -> PlanmillT (LogT Handler) User
-userResponse cache _now fumUser pmUser pmData = do
+userResponse cache now fumUser pmUser pmData = do
     let pmUid = pmUser ^. PM.identifier
+
+    -- Balance
     balance <- ndtConvert' . view PM.tbMinutes <$>
         PM.planmillAction (PM.userTimeBalance pmUid)
+
+    -- Holidays
     let wh = workingHours (pmData ^. planmillCalendars) pmUser
     holidaysLeft <- sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') <$>
         cachedPlanmillAction cache (PM.userVacations pmUid)
     -- I wish we could do units properly.
     let holidaysLeft' = pure (ndtDivide holidaysLeft wh) :: NDT 'Days Centi
-    -- TODO: calculate the UTZ (for this month?).
-    let utz = 95
+
+    -- UTZ
+    let end = localDay $ utcToHelsinkiTime now
+    let start = addDays (-30) end
+    let interval = start PM.... end
+    let resultInterval = PM.ResultInterval PM.IntervalStart interval
+    reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
+    let Average _hours utz = foldOf (folded . reportUtilizationAvg) reports
+
+    -- Result user
     pure $ User
         { _userFirstName       = PM.uFirstName pmUser
         , _userLastName        = PM.uLastName pmUser
@@ -171,6 +187,14 @@ userResponse cache _now fumUser pmUser pmData = do
         , _userUtilizationRate = utz
         , _userProfilePicture  = fromMaybe "" $ fumUser ^. FUM.userImageUrl . lazy
         }
+  where
+    reportUtilizationAvg :: Getter PM.Timereport (Average Float)
+    reportUtilizationAvg = to $ \tr ->
+        let NDT hours = ndtConvert' (PM.trAmount tr) :: NDT 'Hours Float
+        in case billableStatus (PM.trProject tr) (PM.trBillableStatus tr) of
+            EntryTypeBillable    -> Average hours 100
+            EntryTypeNotBillable -> Average hours 0
+            EntryTypeOther       -> mempty
 
 hoursResponse
     :: DynMapCache
@@ -285,13 +309,6 @@ hoursResponse cache now interval pmUser pmData = do
         , _entryBillable    = billableStatus (PM.trProject tr) (PM.trBillableStatus tr)
         }
 
-    -- TODO: we hard code the non-billable enumeration value.
-    -- TODO: absences should be EntryTypeOther, seems that Nothing projectId is the thing there.
-    billableStatus :: Maybe PM.ProjectId -> Int -> EntryType
-    billableStatus Nothing 3 = EntryTypeOther
-    billableStatus _ 3       = EntryTypeNotBillable
-    billableStatus _ _       = EntryTypeBillable
-
     projectToProject
         :: Map PM.TaskId LatestEntry  -- ^ last entry per task
         -> Set PM.TaskId              -- ^ reportable
@@ -331,6 +348,13 @@ hoursResponse cache now interval pmUser pmData = do
 -------------------------------------------------------------------------------
 -- Utilities
 -------------------------------------------------------------------------------
+
+-- TODO: we hard code the non-billable enumeration value.
+-- TODO: absences should be EntryTypeOther, seems that Nothing projectId is the thing there.
+billableStatus :: Maybe PM.ProjectId -> Int -> EntryType
+billableStatus Nothing 3 = EntryTypeOther
+billableStatus _ 3       = EntryTypeNotBillable
+billableStatus _ _       = EntryTypeBillable
 
 cachedPlanmillAction
     :: (Typeable a, PM.MonadPlanMill m, PM.MonadPlanMillC m a, MonadBaseControl IO m)
