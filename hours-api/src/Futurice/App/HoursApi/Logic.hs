@@ -109,7 +109,7 @@ entryEndpoint ctx mfum eu = do
               , PM.ntrUser    = pmUser ^. PM.identifier
               }
 
-        _ <- PM.planmillAction $ PM.addTimereport $ newTimeReport
+        _ <- PM.planmillAction $ PM.addTimereport newTimeReport
 
         logTrace_ (textShow task)
         logTrace_ (textShow newTimeReport)
@@ -128,10 +128,28 @@ entryIdEndpoint
     -> PM.TimereportId
     -> EntryUpdate
     -> Handler EntryUpdateResponse
-entryIdEndpoint ctx mfum eid eu =
-    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
-        logTrace "PUT /entry" (fumUser ^. FUM.userName, eid, eu)
-        throwError err500 { errBody = "Not implemented" }
+entryIdEndpoint ctx mfum eid eu = do
+    now <- currentTime
+    authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
+        let task' = pmData ^? planmillTasks . ix (eu ^. euTaskId)
+        _  <- maybe (logAttention_ "cannot find task" >> throwError err400 { errBody = "Unknown task" }) pure task'
+
+        let editTimereport = PM.EditTimereport
+              { PM._etrId     = eid
+              , PM.etrTask    = eu ^. euTaskId
+              , PM.etrStart   = eu ^. euDate
+              , PM.etrAmount  = fmap truncate $ ndtConvert $ eu ^. euHours
+              , PM.etrComment = fromMaybe "" $ eu ^. euDescription
+              , PM.etrUser    = pmUser ^. PM.identifier
+              }
+
+        _ <- PM.planmillAction $ PM.editTimereport editTimereport
+
+        -- Building the response
+        let interval = let d = eu ^. euDate in d PM.... d
+        user <- userResponse (ctxCache ctx) now fumUser pmUser pmData
+        hr <- hoursResponse (ctxCache ctx) now interval pmUser pmData
+        pure $ EntryUpdateResponse user hr
 
 -- | @DELETE /entry/#id@
 entryDeleteEndpoint
