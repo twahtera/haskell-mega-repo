@@ -113,7 +113,7 @@ instance
       where
         path = cacheFile ("get-paged", qs, ps)
 
-    planmillAction p@(PlanMillPost _ _) =
+    planmillAction p@(PlanMillPost _ _ _) =
         CachingT $ planmillAction p
 
 cacheFile :: Binary a => a -> FilePath

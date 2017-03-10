@@ -1,6 +1,7 @@
 {-# LANGUAGE ConstraintKinds    #-}
 {-# LANGUAGE GADTs              #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeOperators      #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
 -- License   : BSD3
@@ -14,6 +15,7 @@ module PlanMill.Types.Request (
     planMillPagedGet,
     planMillPagedGetQs,
     planMillPost,
+    planMillPostNoResponse,
     -- * Helpers
     QueryString,
     requestUrlParts,
@@ -32,11 +34,13 @@ type QueryString = Map Text Text
 --
 -- We can have different constraints on result type,
 -- for example to be able to cache responses.
+--
+-- First argument in 'PlanMillPost' is for empty outputs
 data PlanMill a where
     PlanMillGet         :: QueryString -> UrlParts -> PlanMill a
     -- TODO: add "max iteration" or "max size" limit
     PlanMillPagedGet    :: QueryString -> UrlParts -> PlanMill (Vector a)
-    PlanMillPost        :: LBS.ByteString -> UrlParts -> PlanMill a
+    PlanMillPost        :: Maybe (a :~: ()) -> LBS.ByteString -> UrlParts -> PlanMill a
 
 deriving instance Eq (PlanMill a)
 deriving instance Ord (PlanMill a)
@@ -53,8 +57,10 @@ instance Show (PlanMill a) where
             . showsPrec (appPrec + 1) qs
             . showString " "
             . showsPrec (appPrec + 1) ps
-        PlanMillPost body ps -> showParen (d > appPrec)
+        PlanMillPost em body ps -> showParen (d > appPrec)
             $ showString "PlanMillPost "
+            . showsPrec (appPrec + 1) em
+            . showString " "
             . showsPrec (appPrec + 1) body
             . showString " "
             . showsPrec (appPrec + 1) ps
@@ -70,15 +76,15 @@ instance Hashable (PlanMill a) where
         salt `hashWithSalt` (1 :: Int)
              `hashWithSalt` qs
              `hashWithSalt` ps
-    hashWithSalt salt (PlanMillPost body ps) =
+    hashWithSalt salt (PlanMillPost _ body ps) =
         salt `hashWithSalt` (2 :: Int)
              `hashWithSalt` body
              `hashWithSalt` ps
 
 instance NFData (PlanMill a) where
-    rnf (PlanMillGet qs ps)                = rnf qs `seq` rnf ps
-    rnf (PlanMillPagedGet qs ps)           = rnf qs `seq` rnf ps
-    rnf (PlanMillPost body ps)             = rnf body `seq` rnf ps
+    rnf (PlanMillGet qs ps)      = rnf qs `seq` rnf ps
+    rnf (PlanMillPagedGet qs ps) = rnf qs `seq` rnf ps
+    rnf (PlanMillPost e body ps) = rnf e `seq` rnf body `seq` rnf ps
 
 -------------------------------------------------------------------------------
 -- Smart constructors
@@ -101,14 +107,15 @@ planMillPagedGetQs :: (ToUrlParts p)
 planMillPagedGetQs qs = PlanMillPagedGet qs . toUrlParts
 
 planMillPost :: (ToJSON d, ToUrlParts p) => d -> p -> PlanMill a
-planMillPost d = PlanMillPost (encode d) . toUrlParts
+planMillPost d = PlanMillPost Nothing (encode d) . toUrlParts
+
+planMillPostNoResponse :: (ToJSON d, ToUrlParts p) => d -> p -> PlanMill ()
+planMillPostNoResponse d = PlanMillPost (Just Refl) (encode d) . toUrlParts
 
 -- | Get an path part as 'UrlParts' of the request
 --
 -- > req <- parseUrlThrow $ baseUrl <> fromUrlParts (requestUrlParts planmillRequest)
 requestUrlParts :: PlanMill a -> UrlParts
-requestUrlParts (PlanMillGet _ ps)                 = ps
-requestUrlParts (PlanMillPagedGet _ ps)            = ps
-requestUrlParts (PlanMillPost _ ps)                = ps
-
--- instance NFData a => NFData (Interval a)
+requestUrlParts (PlanMillGet _ ps)      = ps
+requestUrlParts (PlanMillPagedGet _ ps) = ps
+requestUrlParts (PlanMillPost _ _ ps)   = ps

@@ -13,6 +13,7 @@ module PlanMill.Types.Timereport (
     Timereports,
     TimereportId,
     NewTimereport(..),
+    EditTimereport(..),
     ) where
 
 import PlanMill.Internal.Prelude
@@ -107,7 +108,47 @@ instance ToJSON NewTimereport where
         , "start"   .= UOffset (UTCTime ntrStart 0)
         , "amount"  .= ntrAmount
         , "comment" .= ntrComment
-        , "person" .= ntrUser
+        , "person"  .= ntrUser
         -- , "dutyType" .= ntrDutyType
         -- , "status" .= ntrStatus
         ]
+
+-- | Type used to create new timereports
+data EditTimereport = EditTimereport
+    { _etrId      :: !TimereportId
+    , etrTask     :: !TaskId
+    -- , etrProject  :: !ProjectId
+    , etrStart    :: !Day
+    , etrAmount   :: !(NDT 'Minutes Int)
+    , etrComment  :: !Text
+    , etrUser     :: !UserId
+    -- , etrDutyType :: !Int
+    -- , etrStatus   :: !Int
+    }
+    deriving (Eq, Ord, Show, Read, Generic, Typeable)
+
+makeLenses ''EditTimereport
+deriveGeneric ''EditTimereport
+
+instance Hashable EditTimereport
+instance NFData EditTimereport
+instance AnsiPretty EditTimereport
+instance Binary EditTimereport
+instance HasStructuralInfo EditTimereport where structuralInfo = sopStructuralInfo
+instance HasSemanticVersion EditTimereport
+
+instance ToJSON EditTimereport where
+    toJSON EditTimereport {..} = object
+        [ "id"      .= _etrId
+        , "task"    .= etrTask
+        -- , "project" .= etrProject
+        , "start"   .= UOffset (UTCTime etrStart 0)
+        , "amount"  .= etrAmount
+        , "comment" .= etrComment
+        , "person"  .= etrUser
+        -- , "dutyType" .= etrDutyType
+        -- , "status" .= etrStatus
+        ]
+
+instance HasIdentifier EditTimereport Timereport where
+    identifier = etrId

@@ -43,6 +43,7 @@ module PlanMill.Endpoints (
     timereportsFromInterval,
     timereportsFromIntervalFor,
     addTimereport,
+    editTimereport,
     -- * Users
     user,
     users,
@@ -145,6 +146,14 @@ userTimeBalance i = planMillGet $ t "users" // i // t "timebalance"
 -- TODO: separate /create/ and /update/
 addTimereport :: NewTimereport -> PlanMill (Inserted Timereport)
 addTimereport tr = planMillPost tr $ t "timereports"
+
+-- | Update an existing resource timereport to PlanMill. See timereports/meta
+-- for list of filters, columns and formats
+--
+-- See <http://developers.planmill.com/api/#timereports__timereport_id__post>
+--
+editTimereport :: EditTimereport -> PlanMill ()
+editTimereport tr = planMillPostNoResponse tr $ t "timereports" // tr ^. identifier
 
 -- | A single timereport in PlanMill.
 --

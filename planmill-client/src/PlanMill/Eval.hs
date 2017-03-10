@@ -46,10 +46,12 @@ evalPlanMill pm = Log.localDomain "evalPlanMill" $ do
             singleReq baseReq qs (throwM emptyError)
         PlanMillPagedGet qs _ ->
             pagedReq baseReq qs
-        PlanMillPost body _ ->
+        PlanMillPost e body _ -> do
             let req = addHeader ("Content-Type", "application/json;charset=UTF-8") $
                     baseReq { method = "POST", requestBody = RequestBodyLBS body }
-            in singleReq req mempty (throwM emptyError)
+            singleReq req mempty $ case e of
+                Nothing   -> throwM emptyError
+                Just Refl -> pure ()
   where
     mkBaseReq :: forall b. PlanMill b -> m Request
     mkBaseReq planmill = do

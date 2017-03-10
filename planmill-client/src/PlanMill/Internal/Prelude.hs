@@ -1,3 +1,4 @@
+{-# LANGUAGE ExplicitNamespaces #-}
 module PlanMill.Internal.Prelude (
     module Futurice.Prelude,
     module Futurice.Time,
@@ -20,6 +21,8 @@ module PlanMill.Internal.Prelude (
     utcTimeToInteger,
     -- * HasKey
     HasKey (..),
+    -- * Type
+    type (:~:) (..),
     -- * Misc
     bsShow,
     ) where
@@ -34,6 +37,7 @@ import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo (..), sopStructuralInfo)
 import Data.Time                 (ZonedTime, zonedTimeToLocalTime)
 import Data.Time.Clock.POSIX     (utcTimeToPOSIXSeconds)
+import Data.Type.Equality
 import Futurice.Aeson            (getParsedAsIntegral, getParsedAsText)
 import Futurice.IdMap            (HasKey (..))
 import Futurice.Time
