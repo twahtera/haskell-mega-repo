@@ -35,7 +35,6 @@ import           Control.Concurrent.Async (async, waitCatch)
 import qualified Data.Aeson               as Aeson
 import qualified Data.Binary.Tagged       as Binary
 import           Data.GADT.Compare        (GEq (..))
-import           Data.Type.Equality       ((:~:) (..))
 import qualified Network.HTTP.Client      as HTTP
 import qualified Network.HTTP.Client.TLS  as HTTP
 

@@ -20,7 +20,8 @@ import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM      (readTVarIO)
 import Control.Lens
-       (Fold, contains, filtered, firstOf, nullOf, sumOf, to, (<&>))
+       (Fold, Getter, contains, filtered, firstOf, foldOf, nullOf, sumOf, to,
+       (<&>))
 import Control.Monad.Trans.Control
        (ComposeSt, defaultLiftBaseWith, defaultLiftWith, defaultRestoreM,
        defaultRestoreT)
@@ -28,8 +29,11 @@ import Data.Aeson                  (FromJSON)
 import Data.Constraint
 import Data.Fixed                  (Centi)
 import Data.Set.Lens               (setOf)
+import Data.Time                   (addDays)
 import Futurice.Cache              (DynMapCache, cached)
-import Futurice.Time               (NDT, TimeUnit (..), ndtConvert, ndtConvert', ndtDivide)
+import Futurice.Monoid             (Average (..))
+import Futurice.Time
+       (NDT (..), TimeUnit (..), ndtConvert, ndtConvert', ndtDivide)
 import Log.Monad                   (LogT (..))
 import Servant
        (Handler, ServantErr (..), err400, err403, err500)
@@ -60,33 +64,9 @@ userEndpoint
     :: Ctx
     -> Maybe FUM.UserName
     -> Handler User
-userEndpoint ctx mfum =
-    authorisedUser ctx mfum userResponse
-
-userResponse
-    :: FUM.User
-    -> PM.User
-    -> PlanmillData
-    -> PlanmillT (LogT Handler) User
-userResponse fumUser pmUser pmData = do
-    let pmUid = pmUser ^. PM.identifier
-    balance <- ndtConvert' . view PM.tbMinutes <$>
-        PM.planmillAction (PM.userTimeBalance pmUid)
-    let wh = workingHours (pmData ^. planmillCalendars) pmUser
-    holidaysLeft <- sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') <$>
-        PM.planmillAction (PM.userVacations pmUid)
-    -- I wish we could do units properly.
-    let holidaysLeft' = pure (ndtDivide holidaysLeft wh) :: NDT 'Days Centi
-    -- TODO: calculate the UTZ (for this month?).
-    let utz = 95
-    pure $ User
-        { _userFirstName       = PM.uFirstName pmUser
-        , _userLastName        = PM.uLastName pmUser
-        , _userBalance         = balance
-        , _userHolidaysLeft    = holidaysLeft'
-        , _userUtilizationRate = utz
-        , _userProfilePicture  = fromMaybe "" $ fumUser ^. FUM.userImageUrl . lazy
-        }
+userEndpoint ctx mfum = do
+    now <- currentTime
+    authorisedUser ctx mfum (userResponse (ctxCache ctx) now)
 
 -- | @GET /hours@
 hoursEndpoint
@@ -102,6 +82,137 @@ hoursEndpoint ctx mfum start end = do
         hoursResponse (ctxCache ctx) now interval pmUser pmData
   where
     interval'    = (PM....) <$> start <*> end
+
+-- | Create new entry: @POST /entry@
+entryEndpoint
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> EntryUpdate
+    -> Handler EntryUpdateResponse
+entryEndpoint ctx mfum eu = do
+    now <- currentTime
+    authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
+        let task' = pmData ^? planmillTasks . ix (eu ^. euTaskId)
+        task <- maybe (logAttention_ "cannot find task" >> throwError err400 { errBody = "Unknown task" }) pure task'
+
+        {-
+        when (PM.taskProject task /= Just (eu ^. euProjectId)) $ do
+            logAttention "Task and project ids don't match" (PM.taskProject task, eu ^. euProjectId, eu)
+            throwError err400 { errBody = "ProjectId and TaskId don't agree" }
+        -}
+
+        let newTimeReport = PM.NewTimereport
+              { PM.ntrTask    = eu ^. euTaskId
+              , PM.ntrStart   = eu ^. euDate
+              , PM.ntrAmount  = fmap truncate $ ndtConvert $ eu ^. euHours
+              , PM.ntrComment = fromMaybe "" $ eu ^. euDescription
+              , PM.ntrUser    = pmUser ^. PM.identifier
+              }
+
+        _ <- PM.planmillAction $ PM.addTimereport newTimeReport
+
+        logTrace_ (textShow task)
+        logTrace_ (textShow newTimeReport)
+        -- TODO: write hour report
+
+        -- Building the response
+        let interval = let d = eu ^. euDate in d PM.... d
+        user <- userResponse (ctxCache ctx) now fumUser pmUser pmData
+        hr <- hoursResponse (ctxCache ctx) now interval pmUser pmData
+        pure $ EntryUpdateResponse user hr
+
+-- | @PUT /entry/#id@
+entryIdEndpoint
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> PM.TimereportId
+    -> EntryUpdate
+    -> Handler EntryUpdateResponse
+entryIdEndpoint ctx mfum eid eu = do
+    now <- currentTime
+    authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
+        let task' = pmData ^? planmillTasks . ix (eu ^. euTaskId)
+        _  <- maybe (logAttention_ "cannot find task" >> throwError err400 { errBody = "Unknown task" }) pure task'
+
+        let editTimereport = PM.EditTimereport
+              { PM._etrId     = eid
+              , PM.etrTask    = eu ^. euTaskId
+              , PM.etrStart   = eu ^. euDate
+              , PM.etrAmount  = fmap truncate $ ndtConvert $ eu ^. euHours
+              , PM.etrComment = fromMaybe "" $ eu ^. euDescription
+              , PM.etrUser    = pmUser ^. PM.identifier
+              }
+
+        _ <- PM.planmillAction $ PM.editTimereport editTimereport
+
+        -- Building the response
+        let interval = let d = eu ^. euDate in d PM.... d
+        user <- userResponse (ctxCache ctx) now fumUser pmUser pmData
+        hr <- hoursResponse (ctxCache ctx) now interval pmUser pmData
+        pure $ EntryUpdateResponse user hr
+
+-- | @DELETE /entry/#id@
+entryDeleteEndpoint
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> PM.TimereportId
+    -> Handler EntryUpdateResponse
+entryDeleteEndpoint ctx mfum eid =
+    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
+        logTrace "DELETE /entry" (fumUser ^. FUM.userName, eid)
+        throwError err500 { errBody = "Not implemented" }
+
+-------------------------------------------------------------------------------
+-- Implementation
+-------------------------------------------------------------------------------
+
+--  Note: we might want to not ask the cache for user vacations.
+userResponse
+    :: DynMapCache
+    -> UTCTime
+    -> FUM.User
+    -> PM.User
+    -> PlanmillData
+    -> PlanmillT (LogT Handler) User
+userResponse cache now fumUser pmUser pmData = do
+    let pmUid = pmUser ^. PM.identifier
+
+    -- Balance
+    balance <- ndtConvert' . view PM.tbMinutes <$>
+        PM.planmillAction (PM.userTimeBalance pmUid)
+
+    -- Holidays
+    let wh = workingHours (pmData ^. planmillCalendars) pmUser
+    holidaysLeft <- sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') <$>
+        cachedPlanmillAction cache (PM.userVacations pmUid)
+    -- I wish we could do units properly.
+    let holidaysLeft' = pure (ndtDivide holidaysLeft wh) :: NDT 'Days Centi
+
+    -- UTZ
+    let end = localDay $ utcToHelsinkiTime now
+    let start = addDays (-30) end
+    let interval = start PM.... end
+    let resultInterval = PM.ResultInterval PM.IntervalStart interval
+    reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
+    let Average _hours utz = foldOf (folded . reportUtilizationAvg) reports
+
+    -- Result user
+    pure $ User
+        { _userFirstName       = PM.uFirstName pmUser
+        , _userLastName        = PM.uLastName pmUser
+        , _userBalance         = balance
+        , _userHolidaysLeft    = holidaysLeft'
+        , _userUtilizationRate = utz
+        , _userProfilePicture  = fromMaybe "" $ fumUser ^. FUM.userImageUrl . lazy
+        }
+  where
+    reportUtilizationAvg :: Getter PM.Timereport (Average Float)
+    reportUtilizationAvg = to $ \tr ->
+        let NDT hours = ndtConvert' (PM.trAmount tr) :: NDT 'Hours Float
+        in case billableStatus (PM.trProject tr) (PM.trBillableStatus tr) of
+            EntryTypeBillable    -> Average hours 100
+            EntryTypeNotBillable -> Average hours 0
+            EntryTypeOther       -> mempty
 
 hoursResponse
     :: DynMapCache
@@ -122,8 +233,8 @@ hoursResponse cache now interval pmUser pmData = do
             (folded . to (\tr -> maybe (Just $ PM.trTask tr) (const Nothing) (PM.trProject tr)) . folded)
             reports
 
-    missingTasks <- traverse (cachedPlanmillAction . PM.task) missingTaskIds
-    missingProjects <- traverse (cachedPlanmillAction . PM.project)
+    missingTasks <- traverse (cachedPlanmillAction cache . PM.task) missingTaskIds
+    missingProjects <- traverse (cachedPlanmillAction cache . PM.project)
         (missingTasks ^.. folded . to PM.taskProject . folded)
     let missingProjects' = groupProjectsTasks missingProjects missingTasks
 
@@ -142,7 +253,7 @@ hoursResponse cache now interval pmUser pmData = do
             (\e -> (e ^. entryTaskId, latestEntryFromEntry e)) <$> entries
 
     -- task ids, we don't want to show all projects in the list
-    reps <- cachedPlanmillAction $ PM.reportableAssignments pmUid
+    reps <- cachedPlanmillAction cache $ PM.reportableAssignments pmUid
     let reportableTaskIds = setOf (folded . to PM.raTask) reps
     let reportedTaskIds   = setOf (folded . to PM.trTask) reports
 
@@ -172,12 +283,6 @@ hoursResponse cache now interval pmUser pmData = do
         , _hoursResponseMonths           = mkHoursMonth interval holidayNames entries
         }
   where
-    cachedPlanmillAction
-        :: (Typeable a, PM.MonadPlanMill m, PM.MonadPlanMillC m a, MonadBaseControl IO m)
-        => PM.PlanMill a -> m a
-    cachedPlanmillAction pm = cached cache 300 {- 5 minutes -} pm $
-        PM.planmillAction pm
-
     takeLatestEntry :: LatestEntry -> LatestEntry -> LatestEntry
     takeLatestEntry a b
         | a ^. latestEntryDate > b ^. latestEntryDate = a
@@ -222,13 +327,6 @@ hoursResponse cache now interval pmUser pmData = do
         , _entryBillable    = billableStatus (PM.trProject tr) (PM.trBillableStatus tr)
         }
 
-    -- TODO: we hard code the non-billable enumeration value.
-    -- TODO: absences should be EntryTypeOther, seems that Nothing projectId is the thing there.
-    billableStatus :: Maybe PM.ProjectId -> Int -> EntryType
-    billableStatus Nothing 3 = EntryTypeOther
-    billableStatus _ 3       = EntryTypeNotBillable
-    billableStatus _ _       = EntryTypeBillable
-
     projectToProject
         :: Map PM.TaskId LatestEntry  -- ^ last entry per task
         -> Set PM.TaskId              -- ^ reportable
@@ -265,70 +363,24 @@ hoursResponse cache now interval pmUser pmData = do
         & taskAbsence     .~ isAbsence
         -- TODO: hoursRemaining
 
--- | Create new entry: @POST /entry@
-entryEndpoint
-    :: Ctx
-    -> Maybe FUM.UserName
-    -> EntryUpdate
-    -> Handler EntryUpdateResponse
-entryEndpoint ctx mfum eu = do
-    now <- currentTime
-    authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
-        let task' = pmData ^? planmillTasks . ix (eu ^. euTaskId)
-        task <- maybe (logAttention_ "cannot find task" >> throwError err400 { errBody = "Unknown task" }) pure task'
-
-        {-
-        when (PM.taskProject task /= Just (eu ^. euProjectId)) $ do
-            logAttention "Task and project ids don't match" (PM.taskProject task, eu ^. euProjectId, eu)
-            throwError err400 { errBody = "ProjectId and TaskId don't agree" }
-        -}
-
-        let newTimeReport = PM.NewTimereport
-              { PM.ntrTask    = eu ^. euTaskId
-              , PM.ntrStart   = eu ^. euDate
-              , PM.ntrAmount  = fmap truncate $ ndtConvert $ eu ^. euHours
-              , PM.ntrComment = fromMaybe "" $ eu ^. euDescription
-              , PM.ntrUser    = pmUser ^. PM.identifier
-              }
-
-        _ <- PM.planmillAction $ PM.addTimereport $ newTimeReport
-
-        logTrace_ (textShow task)
-        logTrace_ (textShow newTimeReport)
-        -- TODO: write hour report
-
-        -- Building the response
-        let interval = let d = eu ^. euDate in d PM.... d
-        user <- userResponse fumUser pmUser pmData
-        hr <- hoursResponse (ctxCache ctx) now interval pmUser pmData
-        pure $ EntryUpdateResponse user hr
-
--- | @PUT /entry/#id@
-entryIdEndpoint
-    :: Ctx
-    -> Maybe FUM.UserName
-    -> PM.TimereportId
-    -> EntryUpdate
-    -> Handler EntryUpdateResponse
-entryIdEndpoint ctx mfum eid eu =
-    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
-        logTrace "PUT /entry" (fumUser ^. FUM.userName, eid, eu)
-        throwError err500 { errBody = "Not implemented" }
-
--- | @DELETE /entry/#id@
-entryDeleteEndpoint
-    :: Ctx
-    -> Maybe FUM.UserName
-    -> PM.TimereportId
-    -> Handler EntryUpdateResponse
-entryDeleteEndpoint ctx mfum eid =
-    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
-        logTrace "DELETE /entry" (fumUser ^. FUM.userName, eid)
-        throwError err500 { errBody = "Not implemented" }
-
 -------------------------------------------------------------------------------
 -- Utilities
 -------------------------------------------------------------------------------
+
+-- TODO: we hard code the non-billable enumeration value.
+-- TODO: absences should be EntryTypeOther, seems that Nothing projectId is the thing there.
+billableStatus :: Maybe PM.ProjectId -> Int -> EntryType
+billableStatus Nothing 3 = EntryTypeOther
+billableStatus _ 3       = EntryTypeNotBillable
+billableStatus _ _       = EntryTypeBillable
+
+cachedPlanmillAction
+    :: (Typeable a, PM.MonadPlanMill m, PM.MonadPlanMillC m a, MonadBaseControl IO m)
+    => DynMapCache
+    -> PM.PlanMill a
+    -> m a
+cachedPlanmillAction cache pm = cached cache 300 {- 5 minutes -} pm $
+    PM.planmillAction pm
 
 -- | Actually we'd like to return 'WithUnit (Hours/Day) Centi'
 --
