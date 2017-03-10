@@ -173,7 +173,7 @@ instance Monad m => PM.MonadPlanMillConstraint (PlanmillT m) where
     entailMonadPlanMillCVector _ _ = Sub Dict
 
 instance
-    (MonadIO m, MonadLog m, MonadThrow m)
+    (MonadIO m, MonadClock m, MonadLog m, MonadThrow m)
     => PM.MonadPlanMill (PlanmillT m)
   where
     planmillAction planmill = PlanmillT $ ReaderT $ \(cfg, opts) -> do
@@ -200,6 +200,9 @@ instance MonadTrans HttpT where
 
 instance MonadBase b m => MonadBase b (HttpT m) where
     liftBase = liftBaseDefault
+
+instance MonadIO m => MonadIO (HttpT m) where
+    liftIO = HttpT . liftIO
 
 instance MonadIO m => MonadHttp (HttpT m) where
     httpLbs req = HttpT $ do

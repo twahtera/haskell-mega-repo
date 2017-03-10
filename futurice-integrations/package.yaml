@@ -24,6 +24,7 @@ library:
     - cassava
     - constraints
     - containers
+    - env-config
     - flowdock-rest
     - fum-client
     - futurice-github
