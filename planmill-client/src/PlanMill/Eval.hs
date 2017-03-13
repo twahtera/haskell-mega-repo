@@ -6,13 +6,15 @@ module PlanMill.Eval (evalPlanMill) where
 
 import PlanMill.Internal.Prelude
 
-import Control.Monad.Http  (MonadHttp (..), httpLbs)
-import Data.Aeson.Compat   (eitherDecode)
+import Control.Monad.Http   (MonadHttp (..), httpLbs)
+import Data.Aeson.Compat    (eitherDecode)
+import Data.TDigest.Metrics (MonadMetrics (..))
+import Data.Unique          (hashUnique, newUnique)
 import Network.HTTP.Client
        (Request, RequestBody (..), method, parseRequest, path, queryString,
        requestBody, requestHeaders, responseBody, responseStatus,
        setQueryString)
-import Network.HTTP.Types  (Header, statusIsSuccessful)
+import Network.HTTP.Types   (Header, statusIsSuccessful)
 
 -- Qualified imports
 import qualified Data.ByteString.Base64 as Base64
@@ -34,6 +36,9 @@ evalPlanMill
         ( MonadHttp m, MonadThrow m, MonadLog m -- MonadTime m implied by MonadLog
         , MonadReader env m, HasPlanMillBaseUrl env, HasCredentials env
         , MonadCRandom' m
+        , MonadIO m  -- newUnique
+        , MonadClock m -- clocked
+        , MonadMetrics m
         , FromJSON a
         )
     => PlanMill a -> m a
@@ -68,20 +73,24 @@ evalPlanMill pm = Log.localDomain "evalPlanMill" $ do
     singleReq req qs d = do
         -- We need to generate auth (nonce) at each req
         auth <- getAuth
+        uniqId <- liftIO (textShow . hashUnique <$> newUnique)
         let req' = setQueryString' qs (addHeader (authHeader auth) req)
         let url = BS8.unpack (path req') <> BS8.unpack (queryString req')
-        logTrace_ $ T.pack $ "request: " <> url
-        res <- httpLbs req'
-        logTrace_ $ "response status: " <> textShow (responseStatus res)
-        if isn't _Empty (responseBody res)
-            then
-                -- logTrace_ $ "response body: " <> TE.decodeUtf8 (responseBody res ^. strict)
-                if statusIsSuccessful (responseStatus res)
-                    then parseResult url $ responseBody res
-                    else throwM $ parseError url $ responseBody res
-            else do
-                logTrace_ "empty response"
-                d
+        logLocalDomain ("req-" <> uniqId) $ do
+            logTrace_ $ T.pack $ "request: " <> url
+            (dur, res) <- clocked $ httpLbs req'
+            let dur' = timeSpecToSecondsD dur
+            logTrace_ $ "response status: " <> textShow (responseStatus res) <> ", took " <> textShow dur'
+            writeMetric "pmreq" dur'
+            if isn't _Empty (responseBody res)
+                then
+                    -- logTrace_ $ "response body: " <> TE.decodeUtf8 (responseBody res ^. strict)
+                    if statusIsSuccessful (responseStatus res)
+                        then parseResult url $ responseBody res
+                        else throwM $ parseError url $ responseBody res
+                else do
+                    logTrace_ "empty response"
+                    d
 
     setQueryString' :: QueryString -> Request -> Request
     setQueryString' qs = setQueryString (f <$> Map.toList qs)

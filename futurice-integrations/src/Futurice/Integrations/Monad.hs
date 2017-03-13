@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -9,6 +10,7 @@ module Futurice.Integrations.Monad (
     Env,
     runIntegrations,
     IntegrationsConfig (..),
+    loadIntegrationConfig,
     ) where
 
 import Prelude ()
@@ -16,9 +18,11 @@ import Futurice.Prelude
 import Control.Monad.PlanMill    (MonadPlanMillConstraint (..))
 import Data.Constraint
 import Futurice.Constraint.Unit1 (Unit1)
+import Futurice.EnvConfig
 import Futurice.Has              (FlipIn)
 import Generics.SOP.Lens         (uni)
-import Network.HTTP.Client       (Request)
+import Network.HTTP.Client
+       (Request, responseTimeout, responseTimeoutMicro)
 import PlanMill.Queries.Haxl     (initDataSourceBatch)
 
 import qualified Chat.Flowdock.REST           as FD
@@ -71,6 +75,26 @@ data IntegrationsConfig pm fum gh fd = MkIntegrationsConfig
     , integrCfgFlowdockToken            :: !(fd FD.AuthToken)
     , integrCfgFlowdockOrgName          :: !(fd :$ FD.ParamName FD.Organisation)
     }
+
+-- | A helper useful in REPL.
+loadIntegrationConfig :: Logger -> IO (IntegrationsConfig I I I I)
+loadIntegrationConfig lgr = do
+    now <- currentTime
+    mgr <- newManager tlsManagerSettings
+    runLogT "loadIntegrationConfig" lgr $
+        getConfig' "REPL" $ MkIntegrationsConfig mgr lgr now
+            <$> (f <$$> envVar' "PLANMILLPROXY_HAXLURL")
+            <*> envVar' "FUM_TOKEN"
+            <*> envVar' "FUM_BASEURL"
+            <*> envVar' "FUM_LISTNAME"
+            <*> (f <$$> envVar' "GITHUBPROXY_HAXLURL")
+            <*> envVar' "GH_ORG"
+            <*> envVar' "FD_AUTH_TOKEN"
+            <*> envVar' "FD_ORGANISATION"
+  where
+    f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }
+    envVar' :: FromEnvVar a => String -> ConfigParser (I a)
+    envVar' = fmap I . envVar
 
 runIntegrations
     :: (SFunctorI pm, SFunctorI fum, SFunctorI gh, SFunctorI fd)

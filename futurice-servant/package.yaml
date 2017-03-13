@@ -50,6 +50,7 @@ library:
     - servant-swagger-ui == 0.2.*
     - stm
     - swagger2
+    - tdigest-ekg
     - text
     - uuid-types
     - wai

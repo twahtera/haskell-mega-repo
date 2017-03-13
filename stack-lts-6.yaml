@@ -37,6 +37,7 @@ packages:
 - spice-stats/
 - tdigest/tdigest/
 - tdigest/tdigest-Chart/
+- tdigest-ekg/
 - theme-app/
 # https://github.com/aloiscochard/machines-directory/pull/7
 - location:

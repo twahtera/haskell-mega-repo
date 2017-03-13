@@ -72,6 +72,7 @@ dependencies:
   - semigroups
   - singleton-bool >= 0.1.2.0 # We need sboolEqRefl
   - swagger2
+  - tdigest-ekg
   - text
   - time
   - time-locale-compat

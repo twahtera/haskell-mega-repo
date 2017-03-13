@@ -25,7 +25,6 @@ import Control.Concurrent.STM      (atomically)
 import Control.Concurrent.STM.TSem (TSem, newTSem, signalTSem, waitTSem)
 import Control.Exception.Lifted    (bracket)
 import Data.Ratio                  ((%))
-import System.Clock                (TimeSpec)
 import System.Metrics              (Store, createDistribution)
 import System.Timeout              (timeout)
 

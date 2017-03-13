@@ -38,6 +38,8 @@ import Log.Monad                   (LogT (..))
 import Servant
        (Handler, ServantErr (..), err400, err403, err500)
 
+import Control.Concurrent.Async.Lifted (Concurrently (..))
+
 import Futurice.App.HoursApi.Ctx
 import Futurice.App.HoursApi.Types
 
@@ -116,10 +118,7 @@ entryEndpoint ctx mfum eu = do
         -- TODO: write hour report
 
         -- Building the response
-        let interval = let d = eu ^. euDate in d PM.... d
-        user <- userResponse (ctxCache ctx) now fumUser pmUser pmData
-        hr <- hoursResponse (ctxCache ctx) now interval pmUser pmData
-        pure $ EntryUpdateResponse user hr
+        entryUpdateResponse (ctxCache ctx) now fumUser pmUser pmData (eu ^. euDate)
 
 -- | @PUT /entry/#id@
 entryIdEndpoint
@@ -146,10 +145,7 @@ entryIdEndpoint ctx mfum eid eu = do
         _ <- PM.planmillAction $ PM.editTimereport editTimereport
 
         -- Building the response
-        let interval = let d = eu ^. euDate in d PM.... d
-        user <- userResponse (ctxCache ctx) now fumUser pmUser pmData
-        hr <- hoursResponse (ctxCache ctx) now interval pmUser pmData
-        pure $ EntryUpdateResponse user hr
+        entryUpdateResponse (ctxCache ctx) now fumUser pmUser pmData (eu ^. euDate)
 
 -- | @DELETE /entry/#id@
 entryDeleteEndpoint
@@ -166,6 +162,20 @@ entryDeleteEndpoint ctx mfum eid =
 -- Implementation
 -------------------------------------------------------------------------------
 
+entryUpdateResponse
+    :: DynMapCache
+    -> UTCTime
+    -> FUM.User
+    -> PM.User
+    -> PlanmillData
+    -> Day
+    -> PlanmillT (LogT Handler) EntryUpdateResponse
+entryUpdateResponse cache now fumUser pmUser pmData d = do
+    let interval = d PM.... d
+    let user = Concurrently $ userResponse cache now fumUser pmUser pmData
+    let hr = Concurrently $ hoursResponse cache now interval pmUser pmData
+    runConcurrently $ EntryUpdateResponse <$> user <*> hr
+
 --  Note: we might want to not ask the cache for user vacations.
 userResponse
     :: DynMapCache
@@ -174,38 +184,45 @@ userResponse
     -> PM.User
     -> PlanmillData
     -> PlanmillT (LogT Handler) User
-userResponse cache now fumUser pmUser pmData = do
-    let pmUid = pmUser ^. PM.identifier
-
-    -- Balance
-    balance <- ndtConvert' . view PM.tbMinutes <$>
-        PM.planmillAction (PM.userTimeBalance pmUid)
-
-    -- Holidays
-    let wh = workingHours (pmData ^. planmillCalendars) pmUser
-    holidaysLeft <- sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') <$>
-        cachedPlanmillAction cache (PM.userVacations pmUid)
-    -- I wish we could do units properly.
-    let holidaysLeft' = pure (ndtDivide holidaysLeft wh) :: NDT 'Days Centi
-
-    -- UTZ
-    let end = localDay $ utcToHelsinkiTime now
-    let start = addDays (-30) end
-    let interval = start PM.... end
-    let resultInterval = PM.ResultInterval PM.IntervalStart interval
-    reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
-    let Average _hours utz = foldOf (folded . reportUtilizationAvg) reports
-
-    -- Result user
-    pure $ User
+userResponse cache now fumUser pmUser pmData = runConcurrently $ mkUser
+    <$> balanceResponse
+    <*> holidaysLeftResponse
+    <*> utzResponse
+  where
+    mkUser balance holidaysLeft utz = User
         { _userFirstName       = PM.uFirstName pmUser
         , _userLastName        = PM.uLastName pmUser
         , _userBalance         = balance
-        , _userHolidaysLeft    = holidaysLeft'
+        , _userHolidaysLeft    = holidaysLeft
         , _userUtilizationRate = utz
         , _userProfilePicture  = fromMaybe "" $ fumUser ^. FUM.userImageUrl . lazy
         }
-  where
+
+    balanceResponse :: Concurrently (PlanmillT (LogT Handler)) (NDT 'Hours Centi)
+    balanceResponse = Concurrently $
+        ndtConvert' . view PM.tbMinutes <$>
+            PM.planmillAction (PM.userTimeBalance pmUid)
+
+    holidaysLeftResponse :: Concurrently (PlanmillT (LogT Handler)) (NDT 'Days Centi)
+    holidaysLeftResponse = Concurrently $ do
+        let wh = workingHours (pmData ^. planmillCalendars) pmUser
+        holidaysLeft <- sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') <$>
+            cachedPlanmillAction cache (PM.userVacations pmUid)
+        -- I wish we could do units properly.
+        pure $ NDT $ ndtDivide holidaysLeft wh
+
+    utzResponse :: Concurrently (PlanmillT (LogT Handler)) Float
+    utzResponse = Concurrently $ do
+        let end = localDay $ utcToHelsinkiTime now
+        let start = addDays (-30) end
+        let interval = start PM.... end
+        let resultInterval = PM.ResultInterval PM.IntervalStart interval
+        reports <- PM.planmillAction $ PM.timereportsFromIntervalFor resultInterval pmUid
+        let Average _hours utz = foldOf (folded . reportUtilizationAvg) reports
+        pure utz
+
+    pmUid = pmUser ^. PM.identifier
+
     reportUtilizationAvg :: Getter PM.Timereport (Average Float)
     reportUtilizationAvg = to $ \tr ->
         let NDT hours = ndtConvert' (PM.trAmount tr) :: NDT 'Hours Float
