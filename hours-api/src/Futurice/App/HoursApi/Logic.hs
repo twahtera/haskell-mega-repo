@@ -35,8 +35,7 @@ import Futurice.Monoid             (Average (..))
 import Futurice.Time
        (NDT (..), TimeUnit (..), ndtConvert, ndtConvert', ndtDivide)
 import Log.Monad                   (LogT (..))
-import Servant
-       (Handler, ServantErr (..), err400, err403, err500)
+import Servant                     (Handler, ServantErr (..), err400, err403)
 
 import Control.Concurrent.Async.Lifted (Concurrently (..))
 
@@ -153,10 +152,15 @@ entryDeleteEndpoint
     -> Maybe FUM.UserName
     -> PM.TimereportId
     -> Handler EntryUpdateResponse
-entryDeleteEndpoint ctx mfum eid =
-    authorisedUser ctx mfum $ \fumUser _pmUser _pmData -> do
-        logTrace "DELETE /entry" (fumUser ^. FUM.userName, eid)
-        throwError err500 { errBody = "Not implemented" }
+entryDeleteEndpoint ctx mfum eid = do
+    now <- currentTime
+    authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
+        tr <- PM.planmillAction $ PM.timereport eid
+        let d = PM.trStart tr
+
+        -- TODO: remove
+
+        entryUpdateResponse (ctxCache ctx) now fumUser pmUser pmData d
 
 -------------------------------------------------------------------------------
 -- Implementation
