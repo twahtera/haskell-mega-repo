@@ -18,6 +18,7 @@ import Control.Monad.Base          (liftBaseDefault)
 import Control.Monad.Http          (MonadHttp (..))
 import Control.Monad.Trans.Control (defaultLiftWith, defaultRestoreT)
 import Data.Constraint
+import Data.TDigest.Metrics        (MonadMetrics)
 import Futurice.CryptoRandom       (evalCRandTThrow', mkCryptoGen)
 import Futurice.EnvConfig          (getConfig)
 import PlanMill.Eval               (evalPlanMill)
@@ -173,7 +174,7 @@ instance Monad m => PM.MonadPlanMillConstraint (PlanmillT m) where
     entailMonadPlanMillCVector _ _ = Sub Dict
 
 instance
-    (MonadIO m, MonadClock m, MonadLog m, MonadThrow m)
+    (MonadIO m, MonadClock m, MonadLog m, MonadThrow m, MonadMetrics m)
     => PM.MonadPlanMill (PlanmillT m)
   where
     planmillAction planmill = PlanmillT $ ReaderT $ \(cfg, opts) -> do

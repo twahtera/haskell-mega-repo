@@ -81,6 +81,7 @@ library
     , semigroups
     , singleton-bool >= 0.1.2.0
     , swagger2
+    , tdigest-ekg
     , text
     , time
     , time-locale-compat
@@ -194,6 +195,7 @@ executable planmill-client
     , semigroups
     , singleton-bool >= 0.1.2.0
     , swagger2
+    , tdigest-ekg
     , text
     , time
     , time-locale-compat
@@ -272,6 +274,7 @@ executable pm-cli
     , semigroups
     , singleton-bool >= 0.1.2.0
     , swagger2
+    , tdigest-ekg
     , text
     , time
     , time-locale-compat
@@ -347,6 +350,7 @@ test-suite integration
     , semigroups
     , singleton-bool >= 0.1.2.0
     , swagger2
+    , tdigest-ekg
     , text
     , time
     , time-locale-compat
@@ -420,6 +424,7 @@ test-suite test
     , semigroups
     , singleton-bool >= 0.1.2.0
     , swagger2
+    , tdigest-ekg
     , text
     , time
     , time-locale-compat

@@ -6,15 +6,15 @@ module PlanMill.Eval (evalPlanMill) where
 
 import PlanMill.Internal.Prelude
 
-import Control.Monad.Http  (MonadHttp (..), httpLbs)
-import Data.Aeson.Compat   (eitherDecode)
+import Control.Monad.Http   (MonadHttp (..), httpLbs)
+import Data.Aeson.Compat    (eitherDecode)
+import Data.TDigest.Metrics (MonadMetrics (..))
+import Data.Unique          (hashUnique, newUnique)
 import Network.HTTP.Client
        (Request, RequestBody (..), method, parseRequest, path, queryString,
        requestBody, requestHeaders, responseBody, responseStatus,
        setQueryString)
-import Network.HTTP.Types  (Header, statusIsSuccessful)
-
-import Data.Unique
+import Network.HTTP.Types   (Header, statusIsSuccessful)
 
 -- Qualified imports
 import qualified Data.ByteString.Base64 as Base64
@@ -38,6 +38,7 @@ evalPlanMill
         , MonadCRandom' m
         , MonadIO m  -- newUnique
         , MonadClock m -- clocked
+        , MonadMetrics m
         , FromJSON a
         )
     => PlanMill a -> m a
@@ -78,7 +79,9 @@ evalPlanMill pm = Log.localDomain "evalPlanMill" $ do
         logLocalDomain ("req-" <> uniqId) $ do
             logTrace_ $ T.pack $ "request: " <> url
             (dur, res) <- clocked $ httpLbs req'
-            logTrace_ $ "response status: " <> textShow (responseStatus res) <> ", took " <> textShow (timeSpecToSecondsD dur)
+            let dur' = timeSpecToSecondsD dur
+            logTrace_ $ "response status: " <> textShow (responseStatus res) <> ", took " <> textShow dur'
+            writeMetric "pmreq" dur'
             if isn't _Empty (responseBody res)
                 then
                     -- logTrace_ $ "response body: " <> TE.decodeUtf8 (responseBody res ^. strict)

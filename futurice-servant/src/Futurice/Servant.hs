@@ -65,6 +65,7 @@ import Control.Lens                         (LensLike)
 import Control.Monad.Catch                  (fromException, handleAll)
 import Data.Char                            (isAlpha)
 import Data.Swagger                         hiding (port)
+import Data.TDigest.Metrics                 (registerTDigest)
 import Development.GitRev                   (gitCommitDate, gitHash)
 import Futurice.Cache
        (CachePolicy (..), DynMapCache, cachedIO, genCachedIO)
@@ -233,8 +234,12 @@ futuriceServerMain makeCtx (SC t d server middleware (I envpfx)) =
         let server'    =  futuriceServer t d cache proxyApi (server ctx)
                        :: Server (FuturiceAPI api colour)
 
+        -- ekg metrics
         store      <- serverMetricStore <$> forkServer "localhost" ekgP
         waiMetrics <- registerWaiMetrics store
+        -- planmill metric
+        -- TODO: we register for all, make configurable
+        registerTDigest "pmreq" [0.5, 0.9, 0.99] store
 
         let jobs' = mkJob "stats" (ekgJob logger store) (every $ 5 * 60)
                   : jobs
