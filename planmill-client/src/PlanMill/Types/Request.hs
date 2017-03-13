@@ -16,6 +16,7 @@ module PlanMill.Types.Request (
     planMillPagedGetQs,
     planMillPost,
     planMillPostNoResponse,
+    planMillDeleteNoResponse,
     -- * Helpers
     QueryString,
     requestUrlParts,
@@ -41,6 +42,7 @@ data PlanMill a where
     -- TODO: add "max iteration" or "max size" limit
     PlanMillPagedGet    :: QueryString -> UrlParts -> PlanMill (Vector a)
     PlanMillPost        :: Maybe (a :~: ()) -> LBS.ByteString -> UrlParts -> PlanMill a
+    PlanMillDelete      :: UrlParts -> PlanMill ()
 
 deriving instance Eq (PlanMill a)
 deriving instance Ord (PlanMill a)
@@ -64,6 +66,9 @@ instance Show (PlanMill a) where
             . showsPrec (appPrec + 1) body
             . showString " "
             . showsPrec (appPrec + 1) ps
+        PlanMillDelete ps -> showParen (d > appPrec)
+            $ showString "PlanMillDelete "
+            . showsPrec (appPrec + 1) ps
       where
         appPrec = 10 :: Int
 
@@ -80,11 +85,15 @@ instance Hashable (PlanMill a) where
         salt `hashWithSalt` (2 :: Int)
              `hashWithSalt` body
              `hashWithSalt` ps
+    hashWithSalt salt (PlanMillDelete ps) =
+        salt `hashWithSalt` (3 :: Int)
+             `hashWithSalt` ps
 
 instance NFData (PlanMill a) where
     rnf (PlanMillGet qs ps)      = rnf qs `seq` rnf ps
     rnf (PlanMillPagedGet qs ps) = rnf qs `seq` rnf ps
     rnf (PlanMillPost e body ps) = rnf e `seq` rnf body `seq` rnf ps
+    rnf (PlanMillDelete ps)      = rnf ps
 
 -------------------------------------------------------------------------------
 -- Smart constructors
@@ -112,6 +121,9 @@ planMillPost d = PlanMillPost Nothing (encode d) . toUrlParts
 planMillPostNoResponse :: (ToJSON d, ToUrlParts p) => d -> p -> PlanMill ()
 planMillPostNoResponse d = PlanMillPost (Just Refl) (encode d) . toUrlParts
 
+planMillDeleteNoResponse :: (ToUrlParts p) => p -> PlanMill ()
+planMillDeleteNoResponse = PlanMillDelete . toUrlParts
+
 -- | Get an path part as 'UrlParts' of the request
 --
 -- > req <- parseUrlThrow $ baseUrl <> fromUrlParts (requestUrlParts planmillRequest)
@@ -119,3 +131,4 @@ requestUrlParts :: PlanMill a -> UrlParts
 requestUrlParts (PlanMillGet _ ps)      = ps
 requestUrlParts (PlanMillPagedGet _ ps) = ps
 requestUrlParts (PlanMillPost _ _ ps)   = ps
+requestUrlParts (PlanMillDelete ps)     = ps

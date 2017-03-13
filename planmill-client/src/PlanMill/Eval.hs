@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 module PlanMill.Eval (evalPlanMill) where
 
 import PlanMill.Internal.Prelude
@@ -14,7 +15,7 @@ import Network.HTTP.Client
        (Request, RequestBody (..), method, parseRequest, path, queryString,
        requestBody, requestHeaders, responseBody, responseStatus,
        setQueryString)
-import Network.HTTP.Types   (Header, statusIsSuccessful)
+import Network.HTTP.Types   (Header, Status (..), statusIsSuccessful)
 
 -- Qualified imports
 import qualified Data.ByteString.Base64 as Base64
@@ -24,7 +25,6 @@ import qualified Data.Map               as Map
 import qualified Data.Text              as T
 import qualified Data.Text.Encoding     as TE
 import qualified Data.Vector            as V
-import qualified Log
 
 -- PlanMill import
 import PlanMill.Auth    (Auth (..), getAuth)
@@ -42,7 +42,7 @@ evalPlanMill
         , FromJSON a
         )
     => PlanMill a -> m a
-evalPlanMill pm = Log.localDomain "evalPlanMill" $ do
+evalPlanMill pm = do
     baseReq <- mkBaseReq pm
     let url = BS8.unpack (path baseReq <> queryString baseReq)
     let emptyError = DecodeError url "empty input"
@@ -57,6 +57,9 @@ evalPlanMill pm = Log.localDomain "evalPlanMill" $ do
             singleReq req mempty $ case e of
                 Nothing   -> throwM emptyError
                 Just Refl -> pure ()
+        PlanMillDelete _ -> do
+            let req = baseReq { method = "DELETE" }
+            singleReq req mempty (pure ())
   where
     mkBaseReq :: forall b. PlanMill b -> m Request
     mkBaseReq planmill = do
@@ -75,12 +78,14 @@ evalPlanMill pm = Log.localDomain "evalPlanMill" $ do
         auth <- getAuth
         uniqId <- liftIO (textShow . hashUnique <$> newUnique)
         let req' = setQueryString' qs (addHeader (authHeader auth) req)
+        let m = BS8.unpack (method req')
         let url = BS8.unpack (path req') <> BS8.unpack (queryString req')
         logLocalDomain ("req-" <> uniqId) $ do
-            logTrace_ $ T.pack $ "request: " <> url
+            logTrace_ $ T.pack $ "req " <> m <> " " <> url
             (dur, res) <- clocked $ httpLbs req'
             let dur' = timeSpecToSecondsD dur
-            logTrace_ $ "response status: " <> textShow (responseStatus res) <> ", took " <> textShow dur'
+            let Status {..} = responseStatus res
+            logTrace_ $ "res " <> textShow statusCode <> " " <> textShow statusMessage <> "; took " <> textShow dur'
             writeMetric "pmreq" dur'
             if isn't _Empty (responseBody res)
                 then

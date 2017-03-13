@@ -61,15 +61,15 @@ registerTDigest name qs store = for_ qs $ \q ->
 
     action q = atomically $ do
         td <- StmMap.lookup name globalMap
-        pure $ mkStats $ fromMaybe 0.0 $ td >>= TD.quantile q
+        pure $ mkStats q $ fromMaybe mempty td
 
-    mkStats x = Ekg.Stats
-        { Ekg.mean     = x
+    mkStats q td = Ekg.Stats
+        { Ekg.mean     = fromMaybe 0.0 $ TD.quantile q td
         , Ekg.variance = 0
-        , Ekg.sum      = x
-        , Ekg.count    = 1
-        , Ekg.min      = x
-        , Ekg.max      = x
+        , Ekg.sum      = 0
+        , Ekg.count    = truncate (TD.totalWeight td)
+        , Ekg.min      = TD.minimumValue td
+        , Ekg.max      = TD.maximumValue td
         }
 
 -------------------------------------------------------------------------------
