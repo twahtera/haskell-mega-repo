@@ -158,7 +158,7 @@ entryDeleteEndpoint ctx mfum eid = do
         tr <- PM.planmillAction $ PM.timereport eid
         let d = PM.trStart tr
 
-        -- TODO: remove
+        _ <- PM.planmillAction $ PM.deleteTimereport eid
 
         entryUpdateResponse (ctxCache ctx) now fumUser pmUser pmData d
 
