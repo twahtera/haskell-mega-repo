@@ -57,7 +57,7 @@ instance MonadTrans CachingT where
 class (MonadPlanMillC m a, Binary a, HasStructuralInfo a, HasSemanticVersion a)
      => CachingTC m a
 
--- Unfortunate boilerplate 
+-- Unfortunate boilerplate
 instance MonadPlanMillC m Absence              => CachingTC m Absence
 instance MonadPlanMillC m Account              => CachingTC m Account
 instance MonadPlanMillC m Assignment           => CachingTC m Assignment
@@ -83,7 +83,7 @@ instance
     instFSymbol :: forall k. KnownSymbol k => Dict (CachingTC m (EnumDesc k))
     instFSymbol = case instFSymbol :: Dict (MonadPlanMillC m (EnumDesc k)) of
         Dict -> Dict
-          
+
 instance
     (Applicative m, MonadPlanMillConstraint m)
   => MonadPlanMillConstraint (CachingT m) where
@@ -93,7 +93,7 @@ instance
     entailMonadPlanMillCVector
         :: forall a. Proxy (CachingT m) -> Proxy a
         -> MonadPlanMillC (CachingT m) a :- MonadPlanMillC (CachingT m) (Vector a)
-    entailMonadPlanMillCVector _ p = Sub dict 
+    entailMonadPlanMillCVector _ p = Sub dict
       where
         dict :: CachingTC m a => Dict (CachingTC m (Vector a))
         dict = Dict \\ entailMonadPlanMillCVector (Proxy :: Proxy m) p
@@ -114,6 +114,9 @@ instance
         path = cacheFile ("get-paged", qs, ps)
 
     planmillAction p@(PlanMillPost _ _ _) =
+        CachingT $ planmillAction p
+
+    planmillAction p@PlanMillDelete {} =
         CachingT $ planmillAction p
 
 cacheFile :: Binary a => a -> FilePath

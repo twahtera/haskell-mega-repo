@@ -44,6 +44,7 @@ module PlanMill.Endpoints (
     timereportsFromIntervalFor,
     addTimereport,
     editTimereport,
+    deleteTimereport,
     -- * Users
     user,
     users,
@@ -154,6 +155,12 @@ addTimereport tr = planMillPost tr $ t "timereports"
 --
 editTimereport :: EditTimereport -> PlanMill ()
 editTimereport tr = planMillPostNoResponse tr $ t "timereports" // tr ^. identifier
+
+-- | Remove a timereport from PlanMill.
+--
+-- See <http://developers.planmill.com/api/#timereports__timereport_id__delete>
+deleteTimereport :: TimereportId -> PlanMill ()
+deleteTimereport tid = planMillDeleteNoResponse $ t "timereports" // tid
 
 -- | A single timereport in PlanMill.
 --
