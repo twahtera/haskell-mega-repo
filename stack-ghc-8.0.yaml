@@ -38,6 +38,8 @@ packages:
 - servant-status/
 - spice-stats/
 - tdigest/tdigest/
+- tdigest/tdigest-Chart/
+- tdigest/tdigest-bench/
 - tdigest-ekg/
 - theme-app/
 # https://github.com/aloiscochard/machines-directory/pull/7
@@ -47,6 +49,11 @@ packages:
   extra-dep: true
 extra-deps:
 - cassava-0.4.5.1
+- Chart-1.8.2
+- Chart-diagrams-1.8.2
+- SVGFonts-1.6.0.1
 - servant-cassava-0.8
+- blaze-svg-0.3.6.1
+- cereal-vector-0.2.0.1
 - warp-3.2.11.1
 flags: {}
