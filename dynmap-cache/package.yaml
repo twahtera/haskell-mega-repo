@@ -39,7 +39,7 @@ tests:
   unit-tests:
     main: Tests.hs
     source-dirs: test
-    ghc-options: -threaded
+    ghc-options: -threaded -rtsopts
     dependencies:
       - dynmap-cache
       - tasty

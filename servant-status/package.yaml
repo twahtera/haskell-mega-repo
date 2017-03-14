@@ -46,7 +46,7 @@ tests:
   example:
     main: Main.hs
     source-dirs: example
-    ghc-options: -threaded -with-rtsopts=-T
+    ghc-options: -threaded -rtsopts -with-rtsopts=-T
     dependencies:
       - servant-status
       - wai            >=3.0.3.0  && <3.3

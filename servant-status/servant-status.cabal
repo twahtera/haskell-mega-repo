@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.16.0.
+-- This file has been generated from package.yaml by hpack version 0.17.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -63,7 +63,7 @@ test-suite example
   main-is: Main.hs
   hs-source-dirs:
       example
-  ghc-options: -Wall -threaded -with-rtsopts=-T
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-T
   build-depends:
       base                  >=4.7      && <4.10
     , base-compat           >=0.6.0    && <0.10

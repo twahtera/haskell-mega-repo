@@ -88,7 +88,7 @@ executable hours-api-server
   hs-source-dirs:
       srv
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -threaded
+  ghc-options: -threaded -rtsopts
   build-depends:
       base
     , hours-api
@@ -99,7 +99,7 @@ executable hours-mock-server
   hs-source-dirs:
       mock
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -threaded
+  ghc-options: -threaded -rtsopts
   build-depends:
       base
     , hours-api

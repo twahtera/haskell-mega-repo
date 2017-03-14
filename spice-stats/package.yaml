@@ -68,6 +68,6 @@ executables:
   spice-stats-server:
     main: Main.hs
     source-dirs: srv
-    ghc-options: -Wall -threaded
+    ghc-options: -Wall -threaded -rtsopts
     dependencies:
       - spice-stats

@@ -34,9 +34,11 @@ packages:
 - reports-app/
 - servant-binary-tagged/
 - servant-status/
+- sms-proxy/
 - spice-stats/
 - tdigest/tdigest/
 - tdigest/tdigest-Chart/
+- tdigest/tdigest-bench/
 - tdigest-ekg/
 - theme-app/
 # https://github.com/aloiscochard/machines-directory/pull/7

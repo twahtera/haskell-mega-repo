@@ -5,8 +5,6 @@
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE UndecidableInstances   #-}
--- Temp: https://github.com/scrive/log/pull/28
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Futurice.App.HoursApi.Logic (
     projectEndpoint,
     userEndpoint,
@@ -34,7 +32,6 @@ import Futurice.Cache              (DynMapCache, cached)
 import Futurice.Monoid             (Average (..))
 import Futurice.Time
        (NDT (..), TimeUnit (..), ndtConvert, ndtConvert', ndtDivide)
-import Log.Monad                   (LogT (..))
 import Servant                     (Handler, ServantErr (..), err400, err403)
 
 import Control.Concurrent.Async.Lifted (Concurrently (..))
@@ -480,7 +477,3 @@ instance Monad m => PM.MonadPlanMillConstraint (PlanmillT m) where
 instance MonadIO m => PM.MonadPlanMill (PlanmillT m) where
     planmillAction planmill = PlanmillT $ ReaderT $ \cfg ->
         liftIO $ PM.evalPlanMillIO cfg planmill
-
-instance MonadError e m => MonadError e (LogT m) where
-    throwError = lift . throwError
-    catchError m h = LogT $ unLogT m `catchError` (unLogT . h)

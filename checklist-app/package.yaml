@@ -63,14 +63,14 @@ executables:
   checklist-app-server:
     main: Main.hs
     source-dirs: srv
-    ghc-options: -Wall -threaded
+    ghc-options: -Wall -threaded -rtsopts
     dependencies:
       - checklist-app 
 
   checklist-import:
     main: Import.hs
     source-dirs: import
-    ghc-options: -Wall -threaded
+    ghc-options: -Wall -threaded -rtsopts
     dependencies:
       - checklist-app 
       - lifted-base
