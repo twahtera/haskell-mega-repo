@@ -119,7 +119,7 @@ dockerfile exe = T.unlines $
     , "ADD " <> exe <> " /app"
     , "RUN chown -R app:app /app"
     , "USER app"
-    , "CMD [\"/app/" <> exe <> "\", \"+RTS\", \"-N\", \"-T\"]"
+    , "CMD [\"/app/" <> exe <> "\", \"+RTS\", \"-N4\", \"-A32m\", \"-T\"]"
     ]
   where
     debs =
