@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.1.
+-- This file has been generated from package.yaml by hpack version 0.17.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -62,7 +62,7 @@ executable proxy-mgmt-app-server
   hs-source-dirs:
       srv
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -threaded
+  ghc-options: -threaded -rtsopts
   build-depends:
       base
     , proxy-mgmt-app

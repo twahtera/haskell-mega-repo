@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.1.
+-- This file has been generated from package.yaml by hpack version 0.17.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -81,7 +81,7 @@ executable proxy-app-server
   main-is: Main.hs
   hs-source-dirs:
       srv
-  ghc-options: -Wall -threaded
+  ghc-options: -Wall -threaded -rtsopts
   build-depends:
       base
     , proxy-app

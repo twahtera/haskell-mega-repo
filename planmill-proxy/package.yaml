@@ -70,14 +70,14 @@ library:
 
 executables:
   planmill-proxy-client:
-    ghc-options: -threaded
+    ghc-options: -threaded -rtsopts
     main: Main.hs
     source-dirs: cli
     dependencies:
       - ansi-pretty
 
   planmill-proxy-server:
-    ghc-options: -threaded
+    ghc-options: -threaded -rtsopts
     main: Main.hs
     source-dirs: srv
     dependencies:

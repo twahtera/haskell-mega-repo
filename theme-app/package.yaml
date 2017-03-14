@@ -40,6 +40,6 @@ executables:
   theme-app-server:
     main: Main.hs
     source-dirs: srv
-    ghc-options: -Wall -threaded
+    ghc-options: -Wall -threaded -rtsopts
     dependencies:
       - theme-app 

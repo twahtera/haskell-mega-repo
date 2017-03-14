@@ -60,7 +60,7 @@ library:
 
 executables:
   proxy-app-server:
-    ghc-options: -threaded
+    ghc-options: -threaded -rtsopts
     main: Main.hs
     source-dirs: srv
     dependencies:

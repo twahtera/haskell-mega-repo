@@ -37,5 +37,5 @@ dependencies:
 executables:
   favicon:
     main: Main.hs
-    ghc-options: -threaded
+    ghc-options: -threaded -rtsopts
     source-dirs: src/

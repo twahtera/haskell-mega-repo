@@ -102,7 +102,7 @@ executable checklist-app-server
   main-is: Main.hs
   hs-source-dirs:
       srv
-  ghc-options: -Wall -Wall -threaded
+  ghc-options: -Wall -Wall -threaded -rtsopts
   build-depends:
       base >= 4.7 && <4.10
     , aeson
@@ -148,7 +148,7 @@ executable checklist-import
   main-is: Import.hs
   hs-source-dirs:
       import
-  ghc-options: -Wall -Wall -threaded
+  ghc-options: -Wall -Wall -threaded -rtsopts
   build-depends:
       base >= 4.7 && <4.10
     , aeson
