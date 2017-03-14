@@ -34,6 +34,7 @@ packages:
 - reports-app/
 - servant-binary-tagged/
 - servant-status/
+- sms-proxy/
 - spice-stats/
 - tdigest/tdigest/
 - tdigest/tdigest-Chart/
