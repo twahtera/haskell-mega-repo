@@ -35,6 +35,13 @@ library
     , futurice-prelude
     , futurice-servant
     , servant-server
+    , http-client
+    , http-client-tls
+    , http-types
+    , aeson
+    , aeson-compat
+    , aeson-extra
+    , text
   exposed-modules:
       Futurice.App.SmsProxy
       Futurice.App.SmsProxy.API

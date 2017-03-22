@@ -21,19 +21,22 @@ import Futurice.App.SmsProxy.Logic
 
 server :: Ctx -> Server SmsProxyAPI
 server ctx = pure "This is sms proxy" 
-    :<|> (\a b -> nt $ sendSms' a b)
-    :<|> (nt . sendSms)
+    :<|> (\a b -> nt $ sendSms' ctx a b)
+    :<|> (nt . (sendSms ctx))
   where
     nt :: forall x. LogT Handler x -> Handler x
     nt = runLogT "smsproxy" (ctxLogger ctx)
 
 sendSms'
-    :: (MonadIO m, MonadLog m, MonadError ServantErr m)
-    => Maybe Text -> Maybe Text -> m Res
-sendSms' to msg = do
+    :: (MonadIO m, MonadLog m, MonadThrow m, MonadError ServantErr m)
+    => Ctx
+    -> Maybe Text
+    -> Maybe Text
+    -> m Res
+sendSms' ctx to msg = do
     to' <- maybe (throwError $ err400 { errBody = "'to' is required" }) pure to
     msg' <- maybe (throwError $ err400 { errBody = "'msg' is required" }) pure msg
-    sendSms (Req to' msg')
+    sendSms ctx (Req to' msg')
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
@@ -44,5 +47,5 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx          .~ "SMSPROXY"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-    makeCtx _cfg logger _cache = do
-        return (Ctx logger, [])
+    makeCtx cfg logger _cache = do
+        return (Ctx logger cfg, [])
