@@ -3,16 +3,13 @@ module Futurice.App.SmsProxy.Config where
 import Prelude ()
 import Futurice.Prelude
 import Futurice.EnvConfig
+import Network.HTTP.Client (Request)
 
 data Config = Config
-    { cfgTwilioUrl :: !String
-      -- ^ Twilio API endpoint
-    , cfgTwilioUser :: !Text
-      -- ^ API SID
-    , cfgTwilioPass :: !Text
-      -- ^ API Secret
-    , cfgTwilioSender :: !Text
-      -- ^ SMS Sender ID (or phonenumber)
+    { cfgTwilioBaseReq :: !Request  -- ^ Twilio API endpoint
+    , cfgTwilioUser    :: !Text     -- ^ API SID
+    , cfgTwilioPass    :: !Text     -- ^ API Secret
+    , cfgTwilioSender  :: !Text     -- ^ SMS Sender ID (or phonenumber)
     }
     deriving (Show)
 

@@ -11,21 +11,22 @@ import Futurice.App.SmsProxy.Config
 import Futurice.App.SmsProxy.Ctx
 
 import qualified Network.HTTP.Client as H
-import qualified Data.Text.Encoding as TE (encodeUtf8, decodeUtf8)
 import Network.HTTP.Types.Status as S
 
-sendSms :: (MonadIO m, MonadLog m, MonadThrow m, MonadError ServantErr m) => Ctx -> Req -> m Res
+sendSms :: (MonadIO m, MonadLog m, MonadError ServantErr m) => Ctx -> Req -> m Res
 sendSms ctx req = do
     let cfg = ctxConfig ctx
-    request0 <- H.parseRequest (cfgTwilioUrl cfg)
-    let request = H.applyBasicAuth (TE.encodeUtf8 $ cfgTwilioUser cfg) (TE.encodeUtf8 $ cfgTwilioPass cfg) $
-                    H.urlEncodedBody [("To", TE.encodeUtf8 $ _reqTo req),
-                                      ("From", TE.encodeUtf8 $ cfgTwilioSender cfg),
-                                      ("Body", TE.encodeUtf8 $ _reqText req)] request0
-    manager <- liftIO $ newManager tlsManagerSettings
-    res <- liftIO $ H.httpLbs request manager
+    let request = cfgTwilioBaseReq cfg
+            & (\r -> r { H.method = "POST" })
+            & H.applyBasicAuth (encodeUtf8 $ cfgTwilioUser cfg) (encodeUtf8 $ cfgTwilioPass cfg)
+            & H.urlEncodedBody
+                [ ("To", encodeUtf8 $ req ^. reqTo)
+                , ("From", encodeUtf8 $ cfgTwilioSender cfg)
+                , ("Body", encodeUtf8 $ req ^. reqText)
+                ]
+    res <- liftIO $ H.httpLbs request (ctxManager ctx)
 
     pure $ Res
         { _resTo     = req ^. reqTo
-        , _resStatus = TE.decodeUtf8 $ S.statusMessage $ H.responseStatus res
+        , _resStatus = decodeUtf8Lenient $ S.statusMessage $ H.responseStatus res
         }

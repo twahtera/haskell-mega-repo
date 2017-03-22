@@ -39,8 +39,6 @@ import Futurice.List      (Append, TMap, splitAppend, tmapToNSComp)
 import Generics.SOP
        ((:.:) (..), All, SList (..), SListI (..), hcollapse, hcpure)
 
-import qualified Data.Text.Encoding                   as TE
-import qualified Data.Text.Encoding.Error             as TE
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 
@@ -280,16 +278,13 @@ instance ToSchema SomeResponse where
 -- Utilities
 -------------------------------------------------------------------------------
 
-decodeUtf8Lenient :: ByteString -> Text
-decodeUtf8Lenient = TE.decodeUtf8With TE.lenientDecode
-
 queryStringToText :: QueryString -> [(Text, Text)]
 queryStringToText = mapMaybe f
   where
     f (k, v) = (,) (decodeUtf8Lenient k) . decodeUtf8Lenient <$> v
 
 textToQueryString :: [(Text, Text)] -> QueryString
-textToQueryString = fmap (bimap TE.encodeUtf8 (Just . TE.encodeUtf8))
+textToQueryString = fmap (bimap encodeUtf8 (Just . encodeUtf8))
 
 fetchCountToJSON :: FetchCount -> Maybe Word
 fetchCountToJSON (FetchAtLeast n) = Just n

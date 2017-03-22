@@ -44,7 +44,7 @@ library
       Futurice.App.EmailProxy.Types
   default-language: Haskell2010
 
-executable sms-proxy-server
+executable email-proxy-server
   main-is: Main.hs
   hs-source-dirs:
       srv

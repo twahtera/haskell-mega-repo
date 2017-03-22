@@ -24,7 +24,7 @@ library:
     - servant-server
 
 executables:
-  sms-proxy-server:
+  email-proxy-server:
     ghc-options: -threaded -rtsopts
     main: Main.hs
     source-dirs: srv

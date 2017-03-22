@@ -6,6 +6,7 @@ import Futurice.Prelude
 import Futurice.App.SmsProxy.Config
 
 data Ctx = Ctx
-    { ctxLogger :: Logger
-    , ctxConfig :: Config
+    { ctxLogger  :: !Logger
+    , ctxConfig  :: !Config
+    , ctxManager :: !Manager
     }
