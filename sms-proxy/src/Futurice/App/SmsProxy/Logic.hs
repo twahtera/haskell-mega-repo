@@ -4,7 +4,6 @@ module Futurice.App.SmsProxy.Logic (sendSms) where
 
 import Prelude ()
 import Futurice.Prelude
-import Servant
 
 import Futurice.App.SmsProxy.Types
 import Futurice.App.SmsProxy.Config
