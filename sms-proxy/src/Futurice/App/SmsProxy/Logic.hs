@@ -13,8 +13,11 @@ import Futurice.App.SmsProxy.Ctx
 import qualified Network.HTTP.Client as H
 import Network.HTTP.Types.Status as S
 
-sendSms :: (MonadIO m, MonadLog m, MonadError ServantErr m) => Ctx -> Req -> m Res
+sendSms :: (MonadIO m, MonadLog m) => Ctx -> Req -> m Res
 sendSms ctx req = do
+    -- Log "metadata"
+    logInfo_ $ "Sending message to " <> req ^. reqTo
+
     let cfg = ctxConfig ctx
     let request = cfgTwilioBaseReq cfg
             & (\r -> r { H.method = "POST" })
