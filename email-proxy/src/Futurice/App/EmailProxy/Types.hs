@@ -17,12 +17,12 @@ data Res = Res
 type EmailAddress = Text
 
 data Req = Req
-    { _resTo      :: !(NonEmpty EmailAddress)
-    , _resBcc     :: !(Maybe (NonEmpty EmailAddress)) -- maybe to make generic derivation work as we want it to.
-    , _resFrom    :: !EmailAddress
-    , _resReplyTo :: !(Maybe EmailAddress)
-    , _resSubject :: !Text
-    , _resBody    :: !Text
+    { _reqTo      :: !(NonEmpty EmailAddress)
+    , _reqBcc     :: !(Maybe (NonEmpty EmailAddress)) -- maybe to make generic derivation work as we want it to.
+    , _reqFrom    :: !EmailAddress
+    , _reqReplyTo :: !(Maybe EmailAddress)
+    , _reqSubject :: !Text
+    , _reqBody    :: !Text
     }
   deriving (Show)
 

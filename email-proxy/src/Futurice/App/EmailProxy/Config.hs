@@ -3,11 +3,17 @@ module Futurice.App.EmailProxy.Config where
 import Prelude ()
 import Futurice.Prelude
 import Futurice.EnvConfig
+import Network.HTTP.Client (Request)
 
 data Config = Config
-    { -- TODO: add integration data
+    { cfgAwsSecretKey :: !Text
+    , cfgAwsAccessKey :: !Text
+    , cfgAwsSESUrl :: !Request
     }
     deriving (Show)
 
 instance Configure Config where
-    configure = pure Config
+    configure = Config
+        <$> envVar "AWS_SECRET_KEY"
+        <*> envVar "AWS_ACCESS_KEY"
+        <*> envVar "AWS_SES_URL"
