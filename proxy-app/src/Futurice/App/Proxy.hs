@@ -168,11 +168,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
     makeCtx Config {..} _logger _cache = do
         mgr                  <- newManager tlsManagerSettings
-        reportsAppBaseurl    <- parseBaseUrl cfgReportsAppBaseurl
-        planmillProxyBaseUrl <- parseBaseUrl cfgPlanmillProxyBaseurl
-        githubProxyBaseurl   <- parseBaseUrl cfgGithubProxyBaseurl
-        fumBaseurl           <- parseBaseUrl cfgFumBaseurl
-        powerBaseurl         <- parseBaseUrl cfgPowerBaseurl
         postgresPool         <- createPool
             (Postgres.connect cfgPostgresConnInfo)
             Postgres.close
@@ -180,12 +175,12 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         pure $ flip (,) [] $ Ctx
             { ctxManager              = mgr
             , ctxPostgresPool         = postgresPool
-            , ctxReportsAppBaseurl    = reportsAppBaseurl
-            , ctxPlanmillProxyBaseurl = planmillProxyBaseUrl
-            , ctxGithubProxyBaseurl   = githubProxyBaseurl
-            , ctxFumBaseurl           = fumBaseurl
+            , ctxReportsAppBaseurl    = cfgReportsAppBaseurl
+            , ctxPlanmillProxyBaseurl = cfgPlanmillProxyBaseurl
+            , ctxGithubProxyBaseurl   = cfgGithubProxyBaseurl
+            , ctxFumBaseurl           = cfgFumBaseurl
             , ctxFumAuthToken         = cfgFumAuthToken
-            , ctxPowerBaseurl         = powerBaseurl
+            , ctxPowerBaseurl         = cfgPowerBaseurl
             }
 
 checkCreds :: Ctx -> Request -> ByteString -> ByteString -> IO Bool

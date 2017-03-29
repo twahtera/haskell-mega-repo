@@ -30,6 +30,7 @@ import Data.Semigroup.Foldable        (asum1)
 import Database.PostgreSQL.Simple     (ConnectInfo (..))
 import Database.PostgreSQL.Simple.URL (parseDatabaseUrl)
 import Network.HTTP.Client            (Request, parseUrlThrow)
+import Servant.Client                 (BaseUrl, parseBaseUrl)
 import System.Environment             (getEnvironment)
 import System.Exit                    (exitFailure)
 
@@ -217,6 +218,9 @@ instance FromEnvVar Bool where
 instance FromEnvVar Request where
     -- TODO: change to parseRequest
     fromEnvVar s = fromEnvVar s >>= parseUrlThrow
+
+instance FromEnvVar BaseUrl where
+    fromEnvVar s = fromEnvVar s >>= parseBaseUrl
 
 -------------------------------------------------------------------------------
 -- FUM

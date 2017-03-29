@@ -6,17 +6,18 @@ import Prelude ()
 import Futurice.Prelude
 import Database.PostgreSQL.Simple (ConnectInfo)
 import Futurice.EnvConfig
+import Servant.Client             (BaseUrl)
 
 import qualified FUM
 
 data Config = Config
     { cfgPostgresConnInfo     :: !ConnectInfo
-    , cfgReportsAppBaseurl    :: !String
-    , cfgPlanmillProxyBaseurl :: !String
-    , cfgGithubProxyBaseurl   :: !String
-    , cfgFumBaseurl           :: !String
+    , cfgReportsAppBaseurl    :: !BaseUrl
+    , cfgPlanmillProxyBaseurl :: !BaseUrl
+    , cfgGithubProxyBaseurl   :: !BaseUrl
+    , cfgFumBaseurl           :: !BaseUrl
     , cfgFumAuthToken         :: !FUM.AuthToken
-    , cfgPowerBaseurl         :: !String
+    , cfgPowerBaseurl         :: !BaseUrl
     }
 
 instance Configure Config where

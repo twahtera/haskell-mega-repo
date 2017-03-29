@@ -53,6 +53,7 @@ envs:
     REPORTSAPP_BASEURL: http://localhost:8807
     PLANMILLPROXY_BASEURL: http://localhost:8808
     GITHUBPROXY_BASEURL: http://localhost:8811
+    POWER_BASEURL: http://localhost:8000
 
     # spice stats
     FD_FLOW: "open-source"
