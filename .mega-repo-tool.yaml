@@ -22,3 +22,5 @@ apps:
     executable: spice-stats-server
   theme-app:
     executable: theme-app-server
+  sms-proxy:
+    executable: sms-proxy-server
