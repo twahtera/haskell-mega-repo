@@ -28,8 +28,9 @@ library:
     - monad-logger
     - postgresql-simple
     - postgresql-simple-url
-    - semigroups
     - semigroupoids
+    - semigroups
+    - servant-client
     - text
     - uuid-types
   default-extensions:
