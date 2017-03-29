@@ -16,6 +16,7 @@ data Config = Config
     , cfgGithubProxyBaseurl   :: !String
     , cfgFumBaseurl           :: !String
     , cfgFumAuthToken         :: !FUM.AuthToken
+    , cfgPowerBaseurl         :: !String
     }
 
 instance Configure Config where
@@ -26,3 +27,4 @@ instance Configure Config where
         <*> envVar "GITHUBPROXY_BASEURL"
         <*> envVar "FUM_BASEURL"
         <*> envVar "FUM_TOKEN"
+        <*> envVar "POWER_BASEURL"

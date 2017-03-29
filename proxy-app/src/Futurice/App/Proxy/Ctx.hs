@@ -18,6 +18,7 @@ data Ctx = Ctx
     , ctxGithubProxyBaseurl   :: !BaseUrl
     , ctxFumBaseurl           :: !BaseUrl
     , ctxFumAuthToken         :: !FUM.AuthToken
+    , ctxPowerBaseurl         :: !BaseUrl
     }
 
 instance HasHttpManager Ctx where

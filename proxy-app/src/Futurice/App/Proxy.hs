@@ -45,6 +45,7 @@ data ReportsAppService
 data PlanmillProxyService
 data GithubProxyService
 data FumService
+data PowerService
 
 instance HasClientBaseurl Ctx ReportsAppService where
     clientBaseurl _ = lens ctxReportsAppBaseurl $ \ctx x ->
@@ -61,6 +62,10 @@ instance HasClientBaseurl Ctx GithubProxyService where
 instance HasClientBaseurl Ctx FumService where
     clientBaseurl _ = lens ctxFumBaseurl $ \ctx x ->
         ctx { ctxFumBaseurl = x }
+
+instance HasClientBaseurl Ctx PowerService where
+    clientBaseurl _ = lens ctxPowerBaseurl $ \ctx x ->
+        ctx { ctxPowerBaseurl = x }
 
 -------------------------------------------------------------------------------
 -- Endpoints
@@ -102,6 +107,12 @@ type FumUserEndpoint = ProxyPair
     FumService
     (WithFumAuthToken :> "users" :> Capture "uid" Text :> Get '[JSON] Value)
 
+-- Power
+type PowerReportXEndpoint = ProxyPair
+    ("power" :> "report-x" :> Get '[JSON] Value)
+    PowerService
+    ("ui" :> "powerhead" :> Get '[JSON] Value)
+
 -- | Whole proxy definition
 type ProxyDefinition =
     '[ MissingReportsEndpoint
@@ -109,6 +120,7 @@ type ProxyDefinition =
     , GithubProxyEndpoint
     , FumEmployeesEndpoint
     , FumUserEndpoint
+    , PowerReportXEndpoint
     ]
 
 type ProxyAPI  = Get '[JSON] Text :<|> ProxyServer ProxyDefinition
@@ -142,6 +154,7 @@ server ctx = give (ctxFumAuthToken ctx) $ pure "P-R-O-X-Y"
     :<|> makeProxy (Proxy :: Proxy GithubProxyEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy FumEmployeesEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy FumUserEndpoint) ctx
+    :<|> makeProxy (Proxy :: Proxy PowerReportXEndpoint) ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
@@ -159,6 +172,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         planmillProxyBaseUrl <- parseBaseUrl cfgPlanmillProxyBaseurl
         githubProxyBaseurl   <- parseBaseUrl cfgGithubProxyBaseurl
         fumBaseurl           <- parseBaseUrl cfgFumBaseurl
+        powerBaseurl         <- parseBaseUrl cfgPowerBaseurl
         postgresPool         <- createPool
             (Postgres.connect cfgPostgresConnInfo)
             Postgres.close
@@ -171,6 +185,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , ctxGithubProxyBaseurl   = githubProxyBaseurl
             , ctxFumBaseurl           = fumBaseurl
             , ctxFumAuthToken         = cfgFumAuthToken
+            , ctxPowerBaseurl         = powerBaseurl
             }
 
 checkCreds :: Ctx -> Request -> ByteString -> ByteString -> IO Bool
