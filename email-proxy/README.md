@@ -1,1 +1,1 @@
-# SMS Proxy
+# Email Proxy

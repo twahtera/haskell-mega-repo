@@ -24,3 +24,5 @@ apps:
     executable: theme-app-server
   sms-proxy:
     executable: sms-proxy-server
+  email-proxy:
+    executable: email-proxy-server

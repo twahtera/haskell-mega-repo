@@ -20,7 +20,7 @@ import Futurice.App.EmailProxy.Logic
 
 server :: Ctx -> Server EmailProxyAPI
 server ctx = pure "This is email proxy" 
-    :<|> (nt . sendEmail)
+    :<|> (nt . sendEmail ctx)
   where
     nt :: forall x. LogT Handler x -> Handler x
     nt = runLogT "emailproxy" (ctxLogger ctx)
@@ -34,5 +34,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx            .~ "EMAILPROXY"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-    makeCtx _cfg logger _cache = do
-        return (Ctx logger, [])
+    makeCtx cfg logger _cache = do
+        mgr <- newManager tlsManagerSettings
+        return (Ctx logger cfg mgr, [])
