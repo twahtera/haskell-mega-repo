@@ -44,6 +44,8 @@ import Futurice.App.Reports.GithubUsers
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, missingHoursReport)
+import Futurice.App.Reports.PlanmillEmployees
+       (PlanmillEmployeesReport, planmillEmployeesReport)
 import Futurice.App.Reports.PowerAbsences
        (PowerAbsenceReport, powerAbsenceReport)
 import Futurice.App.Reports.PowerUser         (PowerUserReport, powerUserReport)
@@ -131,6 +133,13 @@ serveTimereportsByTaskReport ctx = cachedIO' ctx () $ do
         (ctxToIntegrationsConfig now ctx)
         timereportsByTaskReport
 
+servePlanmillEmployeesReport :: Ctx -> IO PlanmillEmployeesReport
+servePlanmillEmployeesReport ctx = cachedIO' ctx () $ do
+    now <- currentTime
+    runIntegrations
+        (ctxToIntegrationsConfig now ctx)
+        planmillEmployeesReport
+
 cachedIO' :: (Eq k, Hashable k, Typeable k, Typeable v) => Ctx -> k -> IO v -> IO v
 cachedIO' (cache, _, logger, _) = cachedIO logger cache 600
 
@@ -145,6 +154,7 @@ reports =
     ReportEndpoint serveMissingHoursReport :*
     ReportEndpoint serveBalancesReport :*
     ReportEndpoint serveTimereportsByTaskReport :*
+    ReportEndpoint servePlanmillEmployeesReport :*
     Nil
 
 makeServer :: Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)

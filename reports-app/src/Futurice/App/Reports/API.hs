@@ -22,6 +22,7 @@ import Futurice.App.Reports.FumGithub         (FumGitHubReport)
 import Futurice.App.Reports.GithubIssues      (IssueReport)
 import Futurice.App.Reports.GithubUsers       (GithubUsersReport)
 import Futurice.App.Reports.MissingHours      (MissingHoursReport)
+import Futurice.App.Reports.PlanmillEmployees (PlanmillEmployeesReport)
 import Futurice.App.Reports.PowerAbsences     (PowerAbsenceReport)
 import Futurice.App.Reports.PowerUser         (PowerUserReport)
 import Futurice.App.Reports.TimereportsByTask (TimereportsByTaskReport)
@@ -31,13 +32,14 @@ type ReportTypes = '[HTML, CSV, JSON]
 data R (path :: Symbol) (report :: *)
 
 type Reports =
-    '[ R "issues"        IssueReport
-    , R "fum-github"     FumGitHubReport
-    , R "fum-flowdock"   FumFlowdockReport
-    , R "github-users"   GithubUsersReport
-    , R "missing-hours"  MissingHoursReport
-    , R "balances"       BalanceReport
-    , R "hours-by-task" TimereportsByTaskReport
+    '[ R "issues"             IssueReport
+    , R "fum-github"          FumGitHubReport
+    , R "fum-flowdock"        FumFlowdockReport
+    , R "github-users"        GithubUsersReport
+    , R "missing-hours"       MissingHoursReport
+    , R "balances"            BalanceReport
+    , R "hours-by-task"       TimereportsByTaskReport
+    , R "planmill-employees"  PlanmillEmployeesReport
     ]
 
 -- | This, 'RReport' and 'RName', type families are needed to make 'FoldReportsAPI' reduce
