@@ -17,20 +17,10 @@ module Futurice.App.Reports.PlanmillEmployees (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (sumOf)
-import Data.Fixed                (Centi)
-import Data.Ord                  (comparing)
 import Futurice.Generics
 import Futurice.Integrations
-import Futurice.Lucid.Foundation
 import Futurice.Report.Columns
-import Futurice.Time
 
-import qualified Data.Csv            as Csv
-import qualified Data.HashMap.Strict as HM
-import qualified Data.Tuple.Strict   as S
-import qualified Data.Vector         as V
-import qualified FUM                 as FUM
 import qualified PlanMill            as PM
 import qualified PlanMill.Queries    as PMQ
 
@@ -93,4 +83,24 @@ planmillEmployeesReport
     => m PlanmillEmployeesReport
 planmillEmployeesReport = do
     now <- currentTime
-    pure $ Report (ReportGenerated now) mempty
+    users <- PMQ.users
+    users' <- traverse mk users
+    pure $ Report
+        (ReportGenerated now)
+        (introsortBy (compare `on` sortKey) users')
+  where
+    mk :: PM.User -> m PlanmillEmployee
+    mk u = do
+        contract <- PMQ.enumerationValue (PM.uContractType u) "Unknown contract"
+        pure $ PlanmillEmployee
+            { _pmeFirstName = PM.uFirstName u
+            , _pmeLastName  = PM.uLastName u
+            , _pmeTitle     = "TODO: get from FUM"
+            , _pmeSuperior  = "TODO: get from FUM"
+            , _pmeTeam      = fromMaybe "?" (PM.uTeamName u) -- TODO
+            , _pmeContract  = contract
+            , _pmePhone     = "TODO: get from FUM"
+            , _pmeEmail     = "TODO: " <> fromMaybe "" (PM.uEmail u)
+            }
+
+    sortKey = (,) <$> _pmeLastName <*> _pmeFirstName
