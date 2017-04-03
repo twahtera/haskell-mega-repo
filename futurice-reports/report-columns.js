@@ -457,7 +457,7 @@ window.addEventListener("load", function () {
 
             var rows = _.map(contents, function (entry) {
                 return dom("tr", _.map(entry, function (cell, colIdx) {
-                    return dom("td", [ renderCellContents(cell) ]); // to apply function
+                    return dom("td", [ renderCellContents(cell, data.types[colIdx]) ]); // to apply function
                 }));
             });
 
@@ -469,10 +469,18 @@ window.addEventListener("load", function () {
         });
 
         /* Cell rendering */
-        function renderCellContents(contents) {
+        function renderCellContents(contents, type) {
             if (contents === null) return dom("i", "???");
-
-            return "" + contents;
+            switch (type) {
+                case "fumUser":
+                    return dom("a", { href: data.params.fumPublicUrl + "fum/users/" + contents }, [ contents ]);
+                case "hourDiff":
+                    return "" + contents + " h";
+                case "dayDiff":
+                    return "" + contents + " days";
+                default:
+                    return "" + contents;
+            }
         }
 
         /* Bind quick controls */

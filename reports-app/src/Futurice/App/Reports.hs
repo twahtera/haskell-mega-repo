@@ -198,6 +198,8 @@ ctxToIntegrationsConfig now (_cache, mgr, lgr, Config {..}) = MkIntegrationsConf
     { integrCfgManager                  = mgr
     , integrCfgNow                      = now
     , integrCfgLogger                   = lgr
+    -- Public FUM
+    , integrCfgFumPublicUrl             = cfgFumPubUrl
     -- Planmill
     , integrCfgPlanmillProxyBaseRequest = I cfgPlanmillProxyBaseRequest
     -- FUM

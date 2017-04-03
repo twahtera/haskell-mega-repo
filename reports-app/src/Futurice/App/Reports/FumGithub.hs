@@ -23,7 +23,7 @@ module Futurice.App.Reports.FumGithub (
     -- * Lenses
     ghUserName, ghUserLogin,
     fumUserName, fumUserLogin, fumGhLogin,
-    fumGithubReportGenerated, fumGithubReportFUMBaseUrl,
+    fumGithubReportGenerated, fumGithubReportFumPublicUrl,
     ) where
 
 import Prelude ()
@@ -53,7 +53,7 @@ data GitHubUser = GitHubUser
 
 data FUMUser = FUMUser
     { _fumUserName  :: !Text
-    , _fumUserLogin :: !Text
+    , _fumUserLogin :: !FUM.UserName
     , _fumGhLogin   :: !Text
     }
     deriving (Eq, Ord, Show, Typeable, Generic)
@@ -85,8 +85,8 @@ instance ToColumns GitHubUser
 instance ToColumns FUMUser
 
 data FumGithubReportParams = FumGithubReportParams
-    { _fumGithubReportGenerated  :: !UTCTime
-    , _fumGithubReportFUMBaseUrl :: !Text
+    { _fumGithubReportGenerated    :: !UTCTime
+    , _fumGithubReportFumPublicUrl :: !Text
     }
     deriving (Typeable, Generic)
 
@@ -137,20 +137,8 @@ instance ToColumns TheseGhFumUser where
                 "Case mismatch"
             _ -> ""
 
--- | *TODO:* move to @futurice-integrations@ package
-
-{-
-TODO: fum links
-
-class HasFUMPublicURL env where
-    fumPublicUrl :: Lens' env Text
-
 instance HasFUMPublicURL FumGithubReportParams where
-    fumPublicUrl = lens t f
-      where
-        t (FumGithubReportParams _ x) = x
-        f (FumGithubReportParams y _) = FumGithubReportParams y
--}
+    fumPublicUrl = fumGithubReportFumPublicUrl
 
 -------------------------------------------------------------------------------
 -- Logic
@@ -160,13 +148,14 @@ fumGithubReport
     :: forall m env.
        ( MonadTime m, MonadFUM m, MonadGitHub m
        , MonadReader env m
-       , HasGithubOrgName env, HasFUMEmployeeListName env
+       , HasGithubOrgName env, HasFUMEmployeeListName env, HasFUMPublicURL env
        )
     => m FumGitHubReport
 fumGithubReport = do
     now <- currentTime
+    fumPubUrl <- view fumPublicUrl
     report <- makeReport <$> githubUsers <*> fumUsers
-    return $ Report (FumGithubReportParams now "") report
+    return $ Report (FumGithubReportParams now fumPubUrl) report
   where
     fumUsers :: m (Vector FUMUser)
     fumUsers = V.fromList . mapMaybe mk . V.toList <$> fumEmployeeList
@@ -175,7 +164,7 @@ fumGithubReport = do
             Nothing -> Nothing
             Just ghLogin -> Just $ FUMUser
                 { _fumUserName  = u ^. FUM.userFirst <> " " <> u ^. FUM.userLast
-                , _fumUserLogin = u ^. FUM.userName ^. FUM.getUserName
+                , _fumUserLogin = u ^. FUM.userName
                 , _fumGhLogin   = ghLogin
                 }
 

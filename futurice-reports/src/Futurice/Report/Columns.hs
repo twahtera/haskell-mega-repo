@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DefaultSignatures     #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -6,10 +7,14 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# LANGUAGE UndecidableSuperClasses #-}
+#endif
 module Futurice.Report.Columns (
     -- * Report
     Report (..),
@@ -22,15 +27,19 @@ module Futurice.Report.Columns (
     -- * Class
     ToColumns (..),
     DefaultColumns,
+    -- * Helper classes
+    HasFUMPublicURL (..),
     ) where
 
 import Prelude ()
 import Futurice.Prelude
 import Data.Aeson                (encode, pairs, (.=))
 import Data.Aeson.Encoding       (encodingToLazyByteString, list, pair)
+import Data.Constraint           (Constraint)
 import Data.Swagger              (NamedSchema (..))
-import Futurice.IsMaybe
+import Futurice.Constraint.Unit1 (Unit1)
 import Futurice.Generics
+import Futurice.IsMaybe
 import Futurice.List
 import Futurice.Lucid.Foundation
 import Futurice.Time
@@ -51,6 +60,12 @@ import qualified PlanMill           as PM
 import qualified Chat.Flowdock.REST as FD
 import qualified FUM
 import qualified GitHub             as GH
+
+-------------------------------------------------------------------------------
+-- Reader Html
+-------------------------------------------------------------------------------
+
+type ReaderHtml env = HtmlT ((->) env)
 
 -------------------------------------------------------------------------------
 -- Report
@@ -117,10 +132,13 @@ instance (ToColumns a, All Csv.ToField (Columns a), EncodeOpts opt)
 -- Report + lucid
 -------------------------------------------------------------------------------
 
+class (ReportValue a, ReportValueC a env) => ReportValue' env a
+instance (ReportValue a, ReportValueC a env) => ReportValue' env a
+
 columnControl
-    :: forall a. ReportValue a
+    :: forall env a. ReportValue' env a
     => ColumnData a
-    -> Html ()
+    -> ReaderHtml env ()
 columnControl (ColumnData colname xs) = largemed_ 6 $ div_ [ class_ "futu-report-control" ] $ do
     h3_ $ toHtml colname
     -- sort
@@ -152,9 +170,12 @@ columnControl (ColumnData colname xs) = largemed_ 6 $ div_ [ class_ "futu-report
     xs'        = Set.fromList $ xs
     showValues = length xs' < 20
 
+
+
 instance
     ( ToColumns a
     , SOP.All ReportValue (Columns a)
+    , SOP.All (ReportValue' params) (Columns a)
     , SOP.All ToJSON (Columns a) -- Redundant, but GHC isn't smart enough.
     , KnownSymbol name, ToHtml params, ToJSON params
     ) => ToHtml (Report name params a)
@@ -165,7 +186,7 @@ instance
     toHtml report@(Report params d) = toHtml $ page_ (fromString title) pageParams $ do
         row_ $ large_ 12 $ h1_ $ fromString title
         row_ $ large_ 12 $ div_ [class_ "callout"] $ toHtml params
-        div_ [class_ "futu-report-wrapper" ] $ do
+        hoist (\m -> return (m params)) $ div_ [class_ "futu-report-wrapper" ] $ do
             -- Data: hidden div with report data in tabular json format
             div_ [class_ "futu-report-data", style_ "display: none" ] $ toHtml $
                 reportToTabularEncoding report
@@ -177,7 +198,12 @@ instance
                 div_ [ class_ "futu-report-toggleable-controls" ] $ do
                     hr_ []
                     sequenceA_ $ SOP.hcollapse $
-                        SOP.hcmap proxyReportValue (K . columnControl) colData
+                        -- GHC doesn't believe this expression is well-typed
+                        -- without very strong conveniencing
+                        ((SOP.hcmap proxyReportValue) ::
+                            ((forall x. ReportValue' params x => ColumnData x -> K (ReaderHtml params ()) x)
+                                -> NP ColumnData (Columns a) -> NP (K (ReaderHtml params ())) (Columns a)))
+                            (K . columnControl) colData
 
                 -- Query string
                 hr_ []
@@ -209,7 +235,11 @@ instance
                         a_ [ href_ "#", data_ "futu-report-link-control" "group-by", title_ "group by this column" ] $ toHtmlRaw ("G" :: Text)
                 tbody_ $ for_ columns $ \r -> tr_ {- todo: class -} $
                     sequenceA $ SOP.hcollapse $
-                        SOP.hcmap proxyReportValue (K . renderCell . unI) r
+                        -- See note above
+                        ((SOP.hcmap proxyReportValue) ::
+                            ((forall x. ReportValue' params x => I x -> K (ReaderHtml params ()) x)
+                                -> NP I (Columns a) -> NP (K (ReaderHtml params ())) (Columns a)))
+                        (K . renderCell . unI) r
 
       where
         -- Data
@@ -230,10 +260,10 @@ instance
                 ]
 
         -- Proxies
-        proxyReportValue = Proxy :: Proxy ReportValue
+        proxyReportValue = Proxy :: Proxy (ReportValue' params)
 
         -- Rener value
-        renderCell :: forall v. ReportValue v => v -> Html ()
+        renderCell :: forall v. ReportValue' params v => v -> ReaderHtml params ()
         renderCell v = td_ $ reportValueHtml v
 
         -- Column data to render controls
@@ -466,6 +496,7 @@ data ColumnType
     | CTDay      -- ^ day: @2016-10-25@
     | CTDayDiff  -- ^ day difference: @5 days"
     | CTHourDiff -- ^ hour difference: @5 hours"
+    | CTFumUser  -- ^ FUM user (e.g. abcd)
   deriving (Eq, Ord, Enum, Bounded, Generic, Typeable)
 
 instance ToJSON ColumnType where
@@ -475,6 +506,7 @@ instance ToJSON ColumnType where
     toJSON CTDay      = "day"
     toJSON CTDayDiff  = "dayDiff"
     toJSON CTHourDiff = "hourDiff"
+    toJSON CTFumUser  = "fumUser"
 
 -- | Various aggregates
 data Aggregate
@@ -491,6 +523,8 @@ data Aggregate
 
 columnTypeAggregate :: ColumnType -> [Aggregate]
 columnTypeAggregate CTText =
+    [ AggFirst, AggCount, AggCountDistinct, AggCollect, AggCollectDistinct ]
+columnTypeAggregate CTFumUser =
     [ AggFirst, AggCount, AggCountDistinct, AggCollect, AggCollectDistinct ]
 columnTypeAggregate CTNumber =
     [ minBound .. maxBound ]
@@ -518,15 +552,17 @@ aggregateMeta AggCollectDistinct = ("∀!", "collectDistinct", "Collect all dist
 
 -- |
 --
--- * /TODO/ add ReaderT and env
 class (ToJSON a, Ord a) => ReportValue a where
+    type ReportValueC a :: * -> Constraint
+    type ReportValueC a = Unit1
+
     -- | Render value to HTML
     --
     -- The value is shown only in static view, i.e. usually not for long.
     --
-    reportValueHtml :: a -> Html ()
-    default reportValueHtml :: ToHtml a => a -> Html ()
-    reportValueHtml = toHtml
+    reportValueHtml :: ReportValueC a env => a -> ReaderHtml env ()
+    default reportValueHtml :: ReportValueC a env => ToHtml a => a -> ReaderHtml env ()
+    reportValueHtml = hoist (\m _env -> runIdentity m) . toHtml
 
     -- | How JS frontend should handle / pretty-print the value
     --
@@ -559,6 +595,7 @@ instance ReportValue UTCTime where
     reportValueHtml = fromString . show
 
 instance ReportValue a => ReportValue (Maybe a) where
+    type ReportValueC (Maybe a) = ReportValueC a
     reportValueType _ = reportValueType (Proxy :: Proxy a)
     reportValueHtml   = maybe (pure ()) reportValueHtml
 
@@ -566,10 +603,19 @@ instance ReportValue Bool where
     reportValueType _ = CTBool
     reportValueHtml   = bool "no" "yes"
 
+class HasFUMPublicURL env where
+    fumPublicUrl :: Lens' env Text
+
 instance ReportValue FUM.UserName where
-    reportValueHtml = toHtml . FUM._getUserName
+    reportValueType _ = CTFumUser
+    type ReportValueC FUM.UserName = HasFUMPublicURL
+    reportValueHtml u = do
+        fumPub <- view fumPublicUrl
+        let u' = FUM._getUserName u
+        a_ [ href_ $ fumPub <> "fum/users/" <> u' ] $ toHtml u'
 
 instance ReportValue a => ReportValue (FD.Identifier a res) where
+    type ReportValueC (FD.Identifier a res) = ReportValueC a
     reportValueHtml   = reportValueHtml . FD.getIdentifier
     reportValueType _ = reportValueType (Proxy :: Proxy a)
 

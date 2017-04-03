@@ -42,6 +42,8 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                 { integrCfgManager                  = mgr
                 , integrCfgLogger                   = logger
                 , integrCfgNow                      = now
+                -- Public FUM
+                , integrCfgFumPublicUrl             = "" -- TODO: would be useful in UI
                 -- Planmill
                 , integrCfgPlanmillProxyBaseRequest = I cfgPmBaseReq
                 -- FUM

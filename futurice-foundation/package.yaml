@@ -23,7 +23,6 @@ library:
     - language-javascript >= 0.6.0.8 && <0.7 # For embedJS
     - lens
     - lucid
-    - mmorph
     - swagger2
     - template-haskell
     - text

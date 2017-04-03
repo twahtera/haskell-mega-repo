@@ -42,7 +42,6 @@ import Futurice.Prelude
 import Data.Swagger (ToSchema (..), NamedSchema (..))
 import Clay                   (Css, render)
 import Futurice.Lucid.Style   (css)
-import Control.Monad.Morph    (hoist)
 import Data.FileEmbed         (embedStringFile)
 import Futurice.JavaScript
 import Futurice.JavaScript.TH
