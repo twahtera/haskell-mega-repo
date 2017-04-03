@@ -119,7 +119,7 @@ buildDocker appnames = do
             callProcess "docker" ["build", "-t", T.unpack fullimage, "-f", fp, directory]
 
             -- accumulate image names
-            pure (appname, fullimage, image)
+            pure (appname, fullimage, "futurice/" <> image)
 
     T.putStrLn "Upload images by:"
     for_ images $ \(_, image, _) ->
