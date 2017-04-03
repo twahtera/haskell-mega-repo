@@ -104,6 +104,7 @@ library
       Futurice.App.Reports.GithubUsers
       Futurice.App.Reports.Markup
       Futurice.App.Reports.MissingHours
+      Futurice.App.Reports.PlanmillEmployees
       Futurice.App.Reports.PowerAbsences
       Futurice.App.Reports.PowerUser
       Futurice.App.Reports.TimereportsByTask
