@@ -29,6 +29,7 @@ before_install:
 # Version infos
 - stack +RTS -N1 -RTS --version
 - ghc --version
+- du -hs .stack-work/
 
 install:
 - JOB_CURR_TIME=$(date +%s)
