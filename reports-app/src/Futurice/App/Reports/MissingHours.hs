@@ -19,6 +19,10 @@ module Futurice.App.Reports.MissingHours (
     -- * Lenses
     missingHourDay,
     missingHourCapacity,
+    -- ** Params
+    mhpGenerated,
+    mhpFromDay,
+    mhpToDay,
     ) where
 
 import Prelude ()
@@ -73,13 +77,18 @@ type MissingHoursReport = Report
     (HashMap FUM.UserName :$ StrictPair Employee :$ Vector :$ MissingHour)
 
 data MissingHoursParams = MissingHoursParams
-    { mhpGenerated :: !UTCTime
-    , mhbFromDay   :: !Day
-    , mhbToDay     :: !Day
+    { _mhpGenerated    :: !UTCTime
+    , _mhpFromDay      :: !Day
+    , _mhpToDay        :: !Day
+    , _mhpFUMPublicUrl :: !Text
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 deriveGeneric ''MissingHoursParams
+makeLenses ''MissingHoursParams
+
+instance HasFUMPublicURL MissingHoursParams where
+    fumPublicUrl = mhpFUMPublicUrl
 
 instance NFData MissingHoursParams
 instance ToSchema MissingHoursParams where declareNamedSchema = sopDeclareNamedSchema
@@ -95,10 +104,10 @@ instance ToHtml MissingHoursParams where
         dd_ $ do
             "Generated at "
             i_ ("(Note: data is pulled from caches, so it is few hours old at worst)")
-        dt_ $ toHtml $ show mhpGenerated
+        dt_ $ toHtml $ formatHumanHelsinkiTime _mhpGenerated
 
         dd_ "Interval"
-        dt_ $ toHtmlRaw $ show mhbFromDay <> " &mdash; " <> show mhbToDay
+        dt_ $ toHtmlRaw $ show _mhpFromDay <> " &mdash; " <> show _mhpToDay
 
 -------------------------------------------------------------------------------
 -- Logic
@@ -154,15 +163,16 @@ missingHoursForUser interval user = do
 missingHoursReport
     :: forall m env.
         ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m
-        , MonadReader env m, HasFUMEmployeeListName env
+        , MonadReader env m, HasFUMEmployeeListName env, HasFUMPublicURL env
         )
     => PM.Interval Day
     -> m MissingHoursReport
 missingHoursReport interval = do
+    fumPubUrl <- view fumPublicUrl
     now <- PM.currentTime
     fpm <- snd <$$> fumPlanmillMap
     fpm' <- traverse perUser fpm
-    pure $ Report (MissingHoursParams now (inf interval) (sup interval)) fpm'
+    pure $ Report (MissingHoursParams now (inf interval) (sup interval) fumPubUrl) fpm'
   where
     perUser :: PM.User -> m (StrictPair Employee :$ Vector :$ MissingHour)
     perUser pmUser = (S.:!:)

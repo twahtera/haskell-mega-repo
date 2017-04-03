@@ -20,6 +20,7 @@ import Data.Constraint
 import Futurice.Constraint.Unit1 (Unit1)
 import Futurice.EnvConfig
 import Futurice.Has              (FlipIn)
+import Futurice.Report.Columns   (HasFUMPublicURL (..))
 import Generics.SOP.Lens         (uni)
 import Network.HTTP.Client
        (Request, responseTimeout, responseTimeoutMicro)
@@ -45,6 +46,7 @@ data Env fum gh fd = Env
     , _envFlowdockOrgName     :: !(fd :$ FD.ParamName FD.Organisation)
     , _envGithubOrgName       :: !(gh :$ GH.Name GH.Organization)
     , _envNow                 :: !UTCTime
+    , _envFumPubUrl           :: !Text
     }
 
 makeLenses ''Env
@@ -62,6 +64,8 @@ data IntegrationsConfig pm fum gh fd = MkIntegrationsConfig
     , integrCfgLogger                   :: !Logger
     -- Time
     , integrCfgNow                      :: !UTCTime
+    -- Public FUM
+    , integrCfgFumPublicUrl             :: !Text
     -- Planmill
     , integrCfgPlanmillProxyBaseRequest :: !(pm Request)
     -- FUM
@@ -83,7 +87,8 @@ loadIntegrationConfig lgr = do
     mgr <- newManager tlsManagerSettings
     runLogT "loadIntegrationConfig" lgr $
         getConfig' "REPL" $ MkIntegrationsConfig mgr lgr now
-            <$> (f <$$> envVar' "PLANMILLPROXY_HAXLURL")
+            <$> envVar "FUM_PUBLICURL"
+            <*> (f <$$> envVar' "PLANMILLPROXY_HAXLURL")
             <*> envVar' "FUM_TOKEN"
             <*> envVar' "FUM_BASEURL"
             <*> envVar' "FUM_LISTNAME"
@@ -107,6 +112,7 @@ runIntegrations cfg (Integr m) = do
             , _envNow                 = integrCfgNow cfg
             , _envFlowdockOrgName     = integrCfgFlowdockOrgName cfg
             , _envGithubOrgName       = integrCfgGithubOrgName cfg
+            , _envFumPubUrl           = integrCfgFumPublicUrl cfg
             }
     let haxl = runReaderT m env
     let stateStore
@@ -220,3 +226,6 @@ instance fd ~ I => HasFlowdockOrgName (Env fum gh fd) where
 
 instance (gh ~ I) => HasGithubOrgName (Env fum gh fd) where
     githubOrganisationName = envGithubOrgName . uni
+
+instance HasFUMPublicURL (Env fum gh fd) where
+    fumPublicUrl = envFumPubUrl

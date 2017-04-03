@@ -101,6 +101,8 @@ makeIntegrationsConfig now lgr mgr Config {..} = MkIntegrationsConfig
     { integrCfgManager                  = mgr
     , integrCfgNow                      = now
     , integrCfgLogger                   = lgr
+    -- Public FUM
+    , integrCfgFumPublicUrl             = ""
     -- Planmill
     , integrCfgPlanmillProxyBaseRequest = I cfgPlanmillProxyReq
     -- FUM
