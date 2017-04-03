@@ -29,7 +29,15 @@ WORK_DIR=.stack-work-docker
 stack --no-terminal --system-ghc --work-dir $WORK_DIR update
 stack --no-terminal --system-ghc --work-dir $WORK_DIR build -j2 --pedantic --allow-different-user --only-snapshot
 stack --no-terminal --system-ghc --work-dir $WORK_DIR build -j1 --pedantic --allow-different-user
-cp $(stack --system-ghc --work-dir $WORK_DIR path --local-install-root)/bin/* /app/bin
+
+# Copy binaries to ./build/exe/exe
+# We put binaries in separate directories to speed-up docker image creation
+mkdir -p $ROOTDIR/build
+for fullexe in $(stack --work-dir $WORK_DIR path --local-install-root)/bin/*; do
+    exe=$(basename $fullexe)
+    mkdir -p  $ROOTDIR/build/$exe
+    cp $fullexe $ROOTDIR/build/$exe/$exe
+done
 
 # write current git hash, so we know where we are
 GITHASH=$(git log --pretty=format:'%h' -n 1)

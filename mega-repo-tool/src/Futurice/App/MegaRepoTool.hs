@@ -17,7 +17,7 @@ textArgument m = fromString <$> O.strArgument m
 
 data Cmd
     = ListSnapshotDependencies 
-    | BuildDocker [ImageName]
+    | BuildDocker [AppName]
     | Action (IO ())
 
 listSnapshotDependenciesOptions :: O.Parser Cmd
@@ -25,7 +25,7 @@ listSnapshotDependenciesOptions = pure ListSnapshotDependencies
 
 buildDockerOptions :: O.Parser Cmd
 buildDockerOptions = BuildDocker
-    <$> many (textArgument $ mconcat [ O.metavar ":component", O.help "Component/image to build" ])
+    <$> some (textArgument $ mconcat [ O.metavar ":component", O.help "Component/image to build" ])
 
 packdepsOptions :: O.Parser Cmd
 packdepsOptions = pure $ Action packdepsScript

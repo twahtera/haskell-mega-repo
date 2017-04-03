@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.MegaRepoTool.Command.BuildDocker (
     buildDocker,
-    ImageName,
+    AppName,
     ) where
 
 import Prelude ()
@@ -13,28 +14,34 @@ import System.IO        (hClose, hFlush)
 import System.IO.Temp   (withTempFile)
 import System.Process   (callProcess, readProcess)
 
-import qualified Data.Map      as Map
-import qualified Data.Text     as T
-import qualified Data.Text.IO  as T
+import qualified Data.Map     as Map
+import qualified Data.Text    as T
+import qualified Data.Text.IO as T
 
 -------------------------------------------------------------------------------
 -- Types
 -------------------------------------------------------------------------------
 
-type ImageName = Text
+type AppName = Text
 
-newtype ImageDefinition = ImageDefinition Text
+data ImageDefinition = ImageDefinition
+    { _idDockerImage :: !Text
+    , _idExecutable  :: !Text
+    }
   deriving (Show)
 
 instance FromJSON ImageDefinition where
     parseJSON = withObject "ImageDefinition" $ \obj -> ImageDefinition
-        <$> obj .: "executable"
+        <$> obj .: "docker"
+        <*> obj .: "executable"
 
 data MRTConfig = MRTConfig
     { mrtDockerBaseImage :: !Text
-    , mrtApps            :: !(Map ImageName ImageDefinition)
+    , _mrtApps            :: !(Map AppName ImageDefinition)
     }
   deriving (Show)
+
+makeLenses ''MRTConfig
 
 instance FromJSON MRTConfig where
     parseJSON = withObject "MRTConfig" $ \obj -> MRTConfig
@@ -61,14 +68,23 @@ buildCmd buildImage = T.unwords
 -------------------------------------------------------------------------------
 -- Command
 
-buildDocker :: [ImageName] -> IO ()
-buildDocker imgs = do
+buildDocker :: [AppName] -> IO ()
+buildDocker appnames = do
     -- Read config
-    cfg <- either throwM pure =<< decodeFileEither ".mega-repo-tool.yaml"
+    cfg <- either throwM pure =<< decodeFileEither "mega-repo-tool.yaml"
+
+    -- `some` verifies images aren't empty
+    when (null appnames) $ do
+        putStrLn "Image names are required"
+        exitFailure
 
     -- What apps to build?
-    let apps | null imgs = mrtApps cfg
-             | otherwise = Map.filterWithKey (\k _ -> k `elem` imgs) $ mrtApps cfg
+    apps <- fmap Map.fromList $ for appnames $ \appname -> do
+        case cfg ^? mrtApps . ix appname of
+            Nothing -> do
+                putStrLn $ "Unknown app: " <> appname ^. unpacked
+                exitFailure
+            Just app -> pure (appname, app)
 
     -- Get the hash of current commit
     githash' <- readProcess "git" ["log", "--pretty=format:%h", "-n", "1"] ""
@@ -89,24 +105,32 @@ buildDocker imgs = do
         exitFailure
 
     -- Build docker images
-    images <- ifor apps $ \image (ImageDefinition exe) -> do
+    images <- ifor apps $ \appname (ImageDefinition image exe) -> do
         -- Write Dockerfile
         let dockerfile' = dockerfile exe
-        withTempFile "build" "Dockerfile." $ \fp handle -> do
+        let directory = "build/" <> exe ^. unpacked
+        withTempFile directory "Dockerfile." $ \fp handle -> do
             T.hPutStrLn handle dockerfile'
             hFlush handle
             hClose handle
 
             -- Build an image
             let fullimage = "futurice/" <> image <> ":" <> githash
-            callProcess "docker" ["build", "-t", T.unpack fullimage, "-f", fp, "build" ]
+            callProcess "docker" ["build", "-t", T.unpack fullimage, "-f", fp, directory]
 
             -- accumulate image names
-            pure fullimage
+            pure (appname, fullimage, image)
 
     T.putStrLn "Upload images by:"
-    for_ images $ \image ->
+    for_ images $ \(_, image, _) ->
         T.putStrLn $ "  docker push " <> image
+
+    T.putStrLn "Deploy iamges by:"
+    for_ images $ \(appname, _, image) ->
+        T.putStrLn $ "  futuswarm app:deploy"
+            <> " --name " <> appname
+            <> " --image " <> image
+            <> " --tag " <> githash
 
 dockerfile :: Text -> Text
 dockerfile exe = T.unlines $
