@@ -1,28 +1,44 @@
 docker-base-image: futurice/base-images:haskell-lts-6-2
 apps:
+  # key is the name of the app (in the hostname)
+  # docker: the name of docker image created
+  # executable: the name of the executable to put into the image
   avatar:
+    docker: avatar
     executable: avatar-server
-  checklist2:
+  checklist:
+    docker: checklist2
     executable: checklist-app-server
   contacts-api:
+    docker: contacts-api
     executable: contacts-server
   favicon:
+    docker: favicon
     executable: favicon
   hours-api:
+    docker: hours-api
     executable: hours-api-server
   planmill-proxy:
+    docker: planmill-proxy
     executable: planmill-proxy-server
   github-proxy:
+    docker: github-proxy
     executable: github-proxy-server
-  proxy-app:
+  prox:
+    docker: proxy-app
     executable: proxy-app-server
-  reports-app:
+  reports:
+    docker: reports-app
     executable: reports-app-server
   spice-stats:
+    docker: spice-stats
     executable: spice-stats-server
-  theme-app:
+  theme:
+    docker: theme-app
     executable: theme-app-server
   sms-proxy:
+    docker: sms-proxy
     executable: sms-proxy-server
   email-proxy:
+    docker: email-proxy
     executable: email-proxy-server
