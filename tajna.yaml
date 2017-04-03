@@ -44,10 +44,8 @@ envs:
     # reports-app
     REPORTS_GH_REPOSURL:
       secret: reports-gh-repos
-    PLANMILLPROXY_HAXLURL:
-      # secret: prod-planmill-proxy-haxl
-      http://localhost:8808/planmill-haxl
-    GITHUBPROXY_HAXLURL: http://localhost:8811/github-haxl
+    PLANMILLPROXY_HAXLURL: "http://localhost:8808/planmill-haxl"
+    GITHUBPROXY_HAXLURL: "http://localhost:8811/github-haxl"
 
     # proxy-app
     REPORTSAPP_BASEURL: http://localhost:8807
