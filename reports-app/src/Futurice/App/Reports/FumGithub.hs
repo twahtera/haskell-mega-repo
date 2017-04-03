@@ -36,6 +36,7 @@ import Futurice.Lucid.Foundation
 import Futurice.Report.Columns
 
 import qualified Data.HashMap.Strict as HM
+import qualified Data.Text           as T
 import qualified Data.Vector         as V
 import qualified FUM
 import qualified GitHub              as GH
@@ -113,12 +114,33 @@ instance ToHtml FumGithubReportParams where
 type FumGitHubReport = Report
     "Users in FUM ↔ GitHub"
     FumGithubReportParams
-    (Vector (These GitHubUser FUMUser))
+    (Vector TheseGhFumUser)
+
+newtype TheseGhFumUser = TheseGhFumUser (These GitHubUser FUMUser)
+  deriving (Eq, Ord, Show, Generic)
+
+instance NFData TheseGhFumUser
+instance ToJSON TheseGhFumUser
+instance ToSchema TheseGhFumUser
+
+instance ToColumns TheseGhFumUser where
+    type Columns TheseGhFumUser = Text ': Columns (These GitHubUser FUMUser)
+
+    columnNames _ =
+        K "extra" :*
+        columnNames (Proxy :: Proxy (These GitHubUser FUMUser))
+
+    toColumns (TheseGhFumUser u) = (I extra :*) <$> toColumns u
+      where
+        extra = case u of
+            These gh fum | gh ^. ghUserLogin /= fum ^. fumGhLogin ->
+                "Case mismatch"
+            _ -> ""
 
 -- | *TODO:* move to @futurice-integrations@ package
 
 {-
-TODO: fum links 
+TODO: fum links
 
 class HasFUMPublicURL env where
     fumPublicUrl :: Lens' env Text
@@ -168,12 +190,12 @@ fumGithubReport = do
     -- | Align on `
     makeReport
         :: Vector GitHubUser -> Vector FUMUser
-        -> Vector (These GitHubUser FUMUser)
+        -> Vector TheseGhFumUser
     makeReport gs fs =
         -- Create 'HashMap FUMLogin a' maps, and 'align' them
-        let gs' = HM.fromList . map (_ghUserLogin &&& id) . V.toList $ gs
-            fs' = HM.fromList . map (_fumGhLogin &&& id) . V.toList $ fs
-            hm  = align gs' fs'
+        let gs' = HM.fromList . map (T.toLower . _ghUserLogin &&& id) . V.toList $ gs
+            fs' = HM.fromList . map (T.toLower . _fumGhLogin &&& id) . V.toList $ fs
+            hm  = alignWith TheseGhFumUser gs' fs'
         in V.fromList . sort . HM.elems $ hm
 
 githubDetailedMembers
