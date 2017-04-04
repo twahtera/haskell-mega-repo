@@ -54,6 +54,8 @@ instance ToSchema TimereportsStats where declareNamedSchema = sopDeclareNamedSch
 instance ToJSON TimereportsStats where
     toJSON = sopToJSON
     toEncoding = sopToEncoding
+instance FromJSON TimereportsStats where
+    parseJSON = sopParseJSON
 
 
 data TimereportsByTask = TimereportsByTask
@@ -74,6 +76,8 @@ instance ToSchema TimereportsByTask where declareNamedSchema = sopDeclareNamedSc
 instance ToJSON TimereportsByTask where
     toJSON = sopToJSON
     toEncoding = sopToEncoding
+instance FromJSON TimereportsByTask where
+    parseJSON = sopParseJSON
 
 instance ToColumns TimereportsByTask where
     type Columns TimereportsByTask =
@@ -128,6 +132,8 @@ instance ToSchema TimereportsByTaskParams where declareNamedSchema = sopDeclareN
 instance ToJSON TimereportsByTaskParams where
     toJSON = sopToJSON
     toEncoding = sopToEncoding
+instance FromJSON TimereportsByTaskParams where
+    parseJSON = sopParseJSON
 
 instance ToHtml TimereportsByTaskParams where
     toHtmlRaw = toHtml
