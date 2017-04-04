@@ -35,7 +35,8 @@ import qualified PlanMill.Types.Query       as PM (SomeQuery, SomeResponse)
 
 import Futurice.App.Proxy.Config
 import Futurice.App.Proxy.Ctx
-import Futurice.App.Reports.MissingHours (MissingHoursReport)
+import Futurice.App.Reports.MissingHours      (MissingHoursReport)
+import Futurice.App.Reports.TimereportsByTask (TimereportsByTaskReport)
 
 -------------------------------------------------------------------------------
 -- Services
@@ -77,6 +78,11 @@ type MissingReportsEndpoint = ProxyPair
     ReportsAppService
     ("missing-hours" :> Get '[JSON] MissingHoursReport)
 
+type TimereportsByTaskReportEndpoint = ProxyPair
+    ("reports" :> "hours-by-task" :> Get '[CSV, JSON] TimereportsByTaskReport)
+    ReportsAppService
+    ("hours-by-task" :> Get '[JSON] TimereportsByTaskReport)
+
 -- Planmill
 -- TODO: we actually decode/encode when proxying.
 -- Is this bad?
@@ -116,6 +122,7 @@ type PowerReportXEndpoint = ProxyPair
 -- | Whole proxy definition
 type ProxyDefinition =
     '[ MissingReportsEndpoint
+    , TimereportsByTaskReportEndpoint
     , PlanmillProxyEndpoint
     , GithubProxyEndpoint
     , FumEmployeesEndpoint
@@ -150,6 +157,7 @@ instance (Given FUM.AuthToken, HasClient api)
 server :: Ctx -> Server ProxyAPI
 server ctx = give (ctxFumAuthToken ctx) $ pure "P-R-O-X-Y"
     :<|> makeProxy (Proxy :: Proxy MissingReportsEndpoint) ctx
+    :<|> makeProxy (Proxy :: Proxy TimereportsByTaskReportEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy PlanmillProxyEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy GithubProxyEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy FumEmployeesEndpoint) ctx
