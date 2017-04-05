@@ -12,23 +12,27 @@ import Futurice.App.SmsProxy.Ctx
 import qualified Network.HTTP.Client as H
 import Network.HTTP.Types.Status as S
 
+import Text.Regex (subRegex, mkRegex)
+import qualified Data.Text as T
+
 sendSms :: (MonadIO m, MonadLog m) => Ctx -> Req -> m Res
 sendSms ctx req = do
-    -- Log "metadata"
     logInfo_ $ "Sending message to " <> req ^. reqTo
+
+    let number = T.pack $ subRegex (mkRegex "^00") (T.unpack $ req ^. reqTo) "+"
 
     let cfg = ctxConfig ctx
     let request = cfgTwilioBaseReq cfg
             & (\r -> r { H.method = "POST" })
             & H.applyBasicAuth (encodeUtf8 $ cfgTwilioUser cfg) (encodeUtf8 $ cfgTwilioPass cfg)
             & H.urlEncodedBody
-                [ ("To", encodeUtf8 $ req ^. reqTo)
+                [ ("To", encodeUtf8 $ number)
                 , ("From", encodeUtf8 $ cfgTwilioSender cfg)
                 , ("Body", encodeUtf8 $ req ^. reqText)
                 ]
     res <- liftIO $ H.httpLbs request (ctxManager ctx)
 
     pure $ Res
-        { _resTo     = req ^. reqTo
+        { _resTo     = number
         , _resStatus = decodeUtf8Lenient $ S.statusMessage $ H.responseStatus res
         }
