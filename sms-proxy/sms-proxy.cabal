@@ -30,17 +30,17 @@ library
   ghc-options: -Wall
   build-depends:
       base                  >=4.7   && <4.10
+    , aeson
+    , aeson-compat
+    , aeson-extra
     , base-compat
     , env-config
     , futurice-prelude
     , futurice-servant
-    , servant-server
     , http-client
     , http-client-tls
     , http-types
-    , aeson
-    , aeson-compat
-    , aeson-extra
+    , servant-server
     , text
   exposed-modules:
       Futurice.App.SmsProxy
