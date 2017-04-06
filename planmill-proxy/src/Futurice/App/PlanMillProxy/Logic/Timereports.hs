@@ -9,6 +9,7 @@ module Futurice.App.PlanMillProxy.Logic.Timereports (
 import Prelude ()
 import Futurice.Prelude
 import Data.Binary.Tagged        (taggedDecode, taggedEncode)
+import Futurice.PostgresPool
 import Numeric.Interval.NonEmpty (inf, sup, (...))
 import PlanMill.Queries          (usersQuery)
 import PlanMill.Types.Query      (Query (..))
@@ -21,7 +22,6 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import qualified PlanMill                   as PM
 
 import Futurice.App.PlanMillProxy.Logic.Common
-import Futurice.App.PlanMillProxy.PostgresPool
 import Futurice.App.PlanMillProxy.Types        (Ctx (..))
 
 -- | Select timereports
