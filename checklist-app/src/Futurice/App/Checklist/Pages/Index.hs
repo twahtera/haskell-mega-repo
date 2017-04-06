@@ -101,6 +101,7 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                 th_ [title_ "Status"]                      "S"
                 th_ [title_ "Location"]                    "Loc"
                 th_ [title_ "Name" ]                       "Name"
+                th_ [title_ "Tribe" ]                      "Tribe"
                 mcase mtask
                     (th_ [title_ "Checklist"]              "List")
                     $ \task -> do
@@ -128,6 +129,7 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                     td_ $ contractTypeHtml $ employee ^. employeeContractType
                     td_ $ locationHtml mlist $ employee ^. employeeLocation
                     td_ $ employeeLink employee
+                    td_ $ toHtml $ employee ^. employeeTribe
                     mcase mtask
                         (td_ $ checklistNameHtml world mloc (employee ^. employeeChecklist) showAll)
                         $ \task -> do
