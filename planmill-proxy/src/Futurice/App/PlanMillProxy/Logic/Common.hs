@@ -15,7 +15,6 @@ import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, SemanticVersion, Version,
        structuralInfo, structuralInfoSha1ByteStringDigest)
 import Data.Constraint
-import Data.Pool              (withResource)
 import Futurice.Servant       (CachePolicy (..), genCachedIO)
 import GHC.TypeLits           (natVal)
 
@@ -46,8 +45,8 @@ capacityAge = "'12 hours'"
 
 type LIO = LogT IO
 
-runLIO :: Ctx -> (Postgres.Connection -> LIO a) -> IO a
-runLIO ctx f = withResource (ctxPostgresPool ctx) $ \conn -> runLogT' ctx $ f conn
+runLIO :: Ctx -> LIO a -> IO a
+runLIO ctx =  runLogT' ctx 
 
 -------------------------------------------------------------------------------
 -- Utiltities

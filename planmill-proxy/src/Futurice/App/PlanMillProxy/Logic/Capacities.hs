@@ -7,9 +7,9 @@ module Futurice.App.PlanMillProxy.Logic.Capacities (
 import Prelude ()
 import Futurice.Prelude
 import Data.Binary.Tagged        (taggedDecode, taggedEncode)
+import Data.Time                 (addDays)
 import Numeric.Interval.NonEmpty (inf, sup, (...))
 import PlanMill.Types.Query      (Query (..))
-import Data.Time                 (addDays)
 
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.Vector                as V
@@ -18,14 +18,15 @@ import qualified Numeric.Interval.NonEmpty  as Interval
 import qualified PlanMill                   as PM
 
 import Futurice.App.PlanMillProxy.Logic.Common
+import Futurice.App.PlanMillProxy.PostgresPool
 import Futurice.App.PlanMillProxy.Types        (Ctx (..))
 
 -- | /TODO/ make fallback do async. Return zero capacities instead
 selectCapacities
-    :: Ctx -> Postgres.Connection
+    :: Ctx
     -> PM.UserId -> PM.Interval Day -> LIO PM.UserCapacities
-selectCapacities ctx conn uid interval = do
-    res <- handleSqlError [] $ Postgres.query conn selectQuery (uid, inf interval, sup interval)
+selectCapacities ctx uid interval = do
+    res <- handleSqlError [] $ poolQuery ctx selectQuery (uid, inf interval, sup interval)
     if (length res /= intervalLength)
         then do
             logInfo_ $
@@ -44,7 +45,7 @@ selectCapacities ctx conn uid interval = do
     fallback = do
         -- We get an extended interval
         x <- fetchFromPlanMill ctx q
-        i <- handleSqlError 0 $ Postgres.executeMany conn insertQuery (transformForInsert x)
+        i <- handleSqlError 0 $ poolExecuteMany ctx insertQuery (transformForInsert x)
         when (fromIntegral i /= length x) $
             logAttention_ $ "Inserted less capacities than we got from planmill"
         -- ... so we trim the result
@@ -89,10 +90,10 @@ selectCapacities ctx conn uid interval = do
         ]
 
 updateCapacities :: Ctx -> IO ()
-updateCapacities ctx = runLIO ctx $ \conn -> do
-    old <- liftIO $ Postgres.query_ conn selectQuery
+updateCapacities ctx = runLIO ctx $ do
+    old <- liftIO $ poolQuery_ ctx selectQuery
     for_ old $ \(uid, mi, ma) ->
-        void $ selectCapacities ctx conn uid (mi ... ma)
+        void $ selectCapacities ctx uid (mi ... ma)
   where
     -- select intervals which are 6...12 hours old data
     -- clamp the max date to be in current-day + (1 month ... 6 month) interval

@@ -21,7 +21,7 @@ module Futurice.App.PlanMillProxy.Logic (
 
 import Prelude ()
 import Futurice.Prelude
-import Data.Aeson.Compat         (object, (.=))
+import Data.Aeson.Compat    (object, (.=))
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, taggedDecode, taggedEncode)
 import Data.Constraint
@@ -35,6 +35,7 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import Futurice.App.PlanMillProxy.Logic.Capacities
 import Futurice.App.PlanMillProxy.Logic.Common
 import Futurice.App.PlanMillProxy.Logic.Timereports
+import Futurice.App.PlanMillProxy.PostgresPool
 import Futurice.App.PlanMillProxy.Types             (Ctx (..))
 
 -------------------------------------------------------------------------------
@@ -53,12 +54,12 @@ lookupCache ps = HM.fromList (Postgres.fromBinary <$$> ps)
 
 -- | The haxl endpoint. We take list of 'Query', and return list of results
 haxlEndpoint :: Ctx -> [SomeQuery] -> IO [Either Text SomeResponse]
-haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
+haxlEndpoint ctx qs = runLIO ctx $ do
     -- Optimistically update view counts
-    _ <- handleSqlError 0 $ Postgres.execute conn viewQuery postgresQs
+    _ <- handleSqlError 0 $ poolExecute ctx viewQuery postgresQs
 
     -- Hit the cache for non-primitive queries
-    cacheResult <- liftIO $ lookupCache <$> Postgres.query conn selectQuery postgresQs
+    cacheResult <- liftIO $ lookupCache <$> poolQuery ctx selectQuery postgresQs
 
     -- Info about cache success
     logInfo_ $ "Found "
@@ -68,7 +69,7 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
 
     -- go thru each request
     -- primitive requests are handled one by one, that could be optimised.
-    res <- traverse (fetch cacheResult conn) qs
+    res <- traverse (fetch cacheResult) qs
 
     -- Log the first errorneous response
     case (res ^? folded . _Left) of
@@ -88,15 +89,15 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
 
     -- Fetch provides context for fetch', i.e. this is boilerplate :(
     fetch
-        :: CacheLookup -> Postgres.Connection -> SomeQuery
+        :: CacheLookup -> SomeQuery
         -> LIO (Either Text SomeResponse)
-    fetch _cacheResult conn (SomeQuery q@(QueryCapacities i u)) =
-        Right . MkSomeResponse q <$> selectCapacities ctx conn u i
-    fetch _cacheResult conn (SomeQuery q@(QueryTimereports i u)) =
-        Right . MkSomeResponse q <$> selectTimereports ctx conn u i
-    fetch cacheResult conn (SomeQuery q) =
+    fetch _cacheResult (SomeQuery q@(QueryCapacities i u)) =
+        Right . MkSomeResponse q <$> selectCapacities ctx u i
+    fetch _cacheResult (SomeQuery q@(QueryTimereports i u)) =
+        Right . MkSomeResponse q <$> selectTimereports ctx u i
+    fetch cacheResult (SomeQuery q) =
         case (binaryDict, semVerDict, structDict, nfdataDict) of
-            (Dict, Dict, Dict, Dict) -> fetch' cacheResult conn q
+            (Dict, Dict, Dict, Dict) -> fetch' cacheResult q
       where
         binaryDict = queryDict (Proxy :: Proxy Binary) q
         semVerDict = queryDict (Proxy :: Proxy HasSemanticVersion) q
@@ -105,9 +106,9 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
 
     fetch'
         :: forall a. (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a)
-        => CacheLookup  -> Postgres.Connection -> Query a
+        => CacheLookup  -> Query a
         -> LIO (Either Text SomeResponse)
-    fetch' cacheResult conn q = case HM.lookup (SomeQuery q) cacheResult of
+    fetch' cacheResult q = case HM.lookup (SomeQuery q) cacheResult of
         Just bs -> do
             -- we only check tags, the rest of the response is decoded lazily
             -- Hopefully when the end result is constructed.
@@ -116,18 +117,18 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
                 else do
                     logAttention_ $ "Borked cache content for " <> textShow q
                     _ <- handleSqlError 0 $
-                        Postgres.execute conn deleteQuery (Postgres.Only q)
+                        poolExecute ctx deleteQuery (Postgres.Only q)
                     return $ Left $ "structure tags don't match"
-        Nothing -> MkSomeResponse q <$$> fetch'' conn q
+        Nothing -> MkSomeResponse q <$$> fetch'' q
 
     -- Fetch and store
     fetch''
         :: (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a)
-        => Postgres.Connection -> Query a -> LIO (Either Text a)
-    fetch'' conn q = do
+        => Query a -> LIO (Either Text a)
+    fetch'' q = do
         res <- liftIO $ tryDeep $ runLogT' ctx $ do
             x <- fetchFromPlanMill ctx q
-            storeInPostgres conn q x
+            storeInPostgres ctx q x
             pure $! x
         -- liftIO $ print (res ^? _Left, q)
         return $ first (\x -> ("non-primitive query failure " <> show q <> " " <> show x) ^. packed) res
@@ -151,21 +152,21 @@ haxlEndpoint ctx qs = runLIO ctx $ \conn -> do
 -- | Update cache, we look what's viewed the most and update these entries.
 -- This means that we never delete items from cache
 updateCache :: Ctx -> IO ()
-updateCache ctx = runLIO ctx $ \conn -> do
-    qs <- handleSqlError [] $ Postgres.query_ conn selectQuery
+updateCache ctx = runLIO ctx $ do
+    qs <- handleSqlError [] $ poolQuery_ ctx selectQuery
     logInfo_ $ "Updating " <> textShow (length qs) <> " cache items"
     for_ qs $ \(Postgres.Only (SomeQuery q)) -> do
-        res <- fetch conn q
+        res <- fetch q
         case res of
             Right () -> pure ()
             Left exc -> do
                 logAttention "Update failed" $ object [ "query" .= q, "exc" .= show exc ]
-                void $ handleSqlError 0 $ Postgres.execute conn deleteQuery (Postgres.Only q)
+                void $ handleSqlError 0 $ poolExecute ctx deleteQuery (Postgres.Only q)
   where
-    fetch :: Postgres.Connection -> Query a -> LIO (Either SomeException ())
-    fetch conn q =
+    fetch :: Query a -> LIO (Either SomeException ())
+    fetch q =
         case (binaryDict, semVerDict, structDict, nfdataDict) of
-            (Dict, Dict, Dict, Dict) -> fetch' conn q
+            (Dict, Dict, Dict, Dict) -> fetch' q
       where
         binaryDict = queryDict (Proxy :: Proxy Binary) q
         semVerDict = queryDict (Proxy :: Proxy HasSemanticVersion) q
@@ -174,10 +175,10 @@ updateCache ctx = runLIO ctx $ \conn -> do
 
     fetch'
         :: (Binary a, HasStructuralInfo a, HasSemanticVersion a)
-        => Postgres.Connection -> Query a -> LIO (Either SomeException ())
-    fetch' conn q = liftIO $ tryDeep $ runLogT' ctx $ do
+        => Query a -> LIO (Either SomeException ())
+    fetch' q = liftIO $ tryDeep $ runLogT' ctx $ do
         x <- fetchFromPlanMill ctx q
-        storeInPostgres conn q x
+        storeInPostgres ctx q x
 
     -- Fetch queries which are old enough, and viewed at least once
     selectQuery :: Postgres.Query
@@ -198,8 +199,8 @@ updateCache ctx = runLIO ctx $ \conn -> do
 
 -- | Cleanup cache
 cleanupCache :: Ctx -> IO ()
-cleanupCache ctx = runLIO ctx $ \conn -> do
-    i <- handleSqlError 0 $ Postgres.execute_ conn cleanupQuery
+cleanupCache ctx = runLIO ctx $ do
+    i <- handleSqlError 0 $ poolExecute_ ctx cleanupQuery
     logInfo_ $  "cleaned up " <> textShow i <> " cache items"
   where
     cleanupQuery :: Postgres.Query
@@ -210,12 +211,12 @@ cleanupCache ctx = runLIO ctx $ \conn -> do
         ]
 
 storeInPostgres
-    :: (Binary a, HasSemanticVersion a, HasStructuralInfo a)
-    => Postgres.Connection -> Query a -> a -> LIO ()
-storeInPostgres conn q x = do
+    :: (Binary a, HasSemanticVersion a, HasStructuralInfo a, HasPostgresPool ctx)
+    => ctx -> Query a -> a -> LIO ()
+storeInPostgres ctx q x = do
     -- -- logInfo_ $ "Storing in postgres" <> textShow q
     i <- handleSqlError 0 $
-        Postgres.execute conn postgresQuery (q, Postgres.Binary $ taggedEncode x)
+        poolExecute ctx postgresQuery (q, Postgres.Binary $ taggedEncode x)
     when (i == 0) $
         logAttention_ $ "Storing in postgres failed: " <> textShow q
   where

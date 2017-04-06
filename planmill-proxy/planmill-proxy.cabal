@@ -76,6 +76,7 @@ library
       Futurice.App.PlanMillProxy.Logic.Capacities
       Futurice.App.PlanMillProxy.Logic.Common
       Futurice.App.PlanMillProxy.Logic.Timereports
+      Futurice.App.PlanMillProxy.PostgresPool
       Futurice.App.PlanMillProxy.Types
   default-language: Haskell2010
 
