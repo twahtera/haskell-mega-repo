@@ -21,10 +21,11 @@ module Futurice.App.PlanMillProxy.Logic (
 
 import Prelude ()
 import Futurice.Prelude
-import Data.Aeson.Compat    (object, (.=))
+import Data.Aeson.Compat     (object, (.=))
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, taggedDecode, taggedEncode)
 import Data.Constraint
+import Futurice.PostgresPool
 import PlanMill.Types.Query
        (Query (..), SomeQuery (..), SomeResponse (..), queryDict)
 
@@ -35,7 +36,6 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import Futurice.App.PlanMillProxy.Logic.Capacities
 import Futurice.App.PlanMillProxy.Logic.Common
 import Futurice.App.PlanMillProxy.Logic.Timereports
-import Futurice.App.PlanMillProxy.PostgresPool
 import Futurice.App.PlanMillProxy.Types             (Ctx (..))
 
 -------------------------------------------------------------------------------

@@ -9,6 +9,7 @@ import Prelude ()
 import Futurice.Prelude
 import Data.Pool                  (Pool)
 import Database.PostgreSQL.Simple (Connection)
+import Futurice.PostgresPool
 import Futurice.Servant           (DynMapCache)
 import GitHub.Auth                (Auth)
 
@@ -22,3 +23,6 @@ data Ctx = Ctx
     , ctxPostgresPool :: !(Pool Connection)  -- TODO: write a lib to handle these
     , ctxLogger       :: !Logger
     }
+
+instance HasPostgresPool Ctx where
+    postgresPool = ctxPostgresPool

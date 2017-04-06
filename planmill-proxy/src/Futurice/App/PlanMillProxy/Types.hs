@@ -7,11 +7,11 @@ module Futurice.App.PlanMillProxy.Types (
 
 import Prelude ()
 import Futurice.Prelude
-import Data.Pool                               (Pool)
-import Database.PostgreSQL.Simple              (Connection)
-import Futurice.App.PlanMillProxy.PostgresPool
-import Futurice.Servant                        (DynMapCache)
-import PlanMill                                (Cfg)
+import Data.Pool                  (Pool)
+import Database.PostgreSQL.Simple (Connection)
+import Futurice.PostgresPool
+import Futurice.Servant           (DynMapCache)
+import PlanMill                   (Cfg)
 
 -------------------------------------------------------------------------------
 -- Context

@@ -8,6 +8,7 @@ import Prelude ()
 import Futurice.Prelude
 import Data.Binary.Tagged        (taggedDecode, taggedEncode)
 import Data.Time                 (addDays)
+import Futurice.PostgresPool
 import Numeric.Interval.NonEmpty (inf, sup, (...))
 import PlanMill.Types.Query      (Query (..))
 
@@ -18,7 +19,6 @@ import qualified Numeric.Interval.NonEmpty  as Interval
 import qualified PlanMill                   as PM
 
 import Futurice.App.PlanMillProxy.Logic.Common
-import Futurice.App.PlanMillProxy.PostgresPool
 import Futurice.App.PlanMillProxy.Types        (Ctx (..))
 
 -- | /TODO/ make fallback do async. Return zero capacities instead
