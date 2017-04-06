@@ -48,7 +48,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         postgresPool <- createPool
             (Postgres.connect connectionInfo)
             Postgres.close
-            1 10 5
+            2 (10 :: NominalDiffTime) 20 -- stripes, ttl, resources
         let ctx = Ctx
                 { ctxCache        = cache
                 , ctxPlanmillCfg  = cfg
