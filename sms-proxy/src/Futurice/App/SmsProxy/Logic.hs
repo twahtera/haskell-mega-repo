@@ -12,14 +12,16 @@ import Futurice.App.SmsProxy.Ctx
 import qualified Network.HTTP.Client as H
 import Network.HTTP.Types.Status as S
 
-import Text.Regex (subRegex, mkRegex)
 import qualified Data.Text as T
 
 sendSms :: (MonadIO m, MonadLog m) => Ctx -> Req -> m Res
 sendSms ctx req = do
     logInfo_ $ "Sending message to " <> req ^. reqTo
 
-    let number = T.pack $ subRegex (mkRegex "^00") (T.unpack $ req ^. reqTo) "+"
+    let number = let num = req ^. reqTo
+                     res = T.isPrefixOf "00" num
+                 in case res of True  -> ("+" <>) . T.drop 2 $ num
+                                False -> num
 
     let cfg = ctxConfig ctx
     let request = cfgTwilioBaseReq cfg

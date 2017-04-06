@@ -27,7 +27,6 @@ library:
     - http-client
     - http-client-tls
     - http-types
-    - regex-compat
     - servant-server
     - text
 
