@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Futurice.App.SmsProxy.Logic (sendSms) where
+module Futurice.App.SmsProxy.Logic (sendLegacySms, sendSms) where
 
 import Prelude ()
 import Futurice.Prelude
@@ -13,9 +13,10 @@ import qualified Network.HTTP.Client as H
 import Network.HTTP.Types.Status as S
 
 import qualified Data.Text as T
+import qualified Data.ByteString.Lazy as LBS
 
-sendSms :: (MonadIO m, MonadLog m) => Ctx -> Req -> m Res
-sendSms ctx req = do
+sendTwilioSms :: (MonadIO m, MonadLog m) => Ctx -> Req -> m (H.Response LBS.ByteString)
+sendTwilioSms ctx req = do
     logInfo_ $ "Sending message to " <> req ^. reqTo
 
     let number = let num = req ^. reqTo
@@ -33,8 +34,22 @@ sendSms ctx req = do
                 , ("Body", encodeUtf8 $ req ^. reqText)
                 ]
     res <- liftIO $ H.httpLbs request (ctxManager ctx)
+    pure $ res
+
+sendLegacySms :: (MonadIO m, MonadLog m) => Ctx -> Req -> m Text
+sendLegacySms ctx req = do
+    res <- sendTwilioSms ctx req
+
+    -- Legacy Kannel response
+    pure $ decodeUtf8Lenient $ case S.statusMessage $ H.responseStatus res of
+      "CREATED" -> "0: Accepted for delivery"
+      _         -> S.statusMessage $ H.responseStatus res
+
+sendSms :: (MonadIO m, MonadLog m) => Ctx -> Req -> m Res
+sendSms ctx req = do
+    res <- sendTwilioSms ctx req
 
     pure $ Res
-        { _resTo     = number
-        , _resStatus = decodeUtf8Lenient $ S.statusMessage $ H.responseStatus res
-        }
+            { _resTo     = req ^. reqTo
+            , _resStatus = decodeUtf8Lenient $ S.statusMessage $ H.responseStatus res
+            }

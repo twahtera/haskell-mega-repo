@@ -21,6 +21,7 @@ library:
     - aeson-compat
     - aeson-extra
     - base-compat
+    - bytestring
     - env-config
     - futurice-prelude
     - futurice-servant

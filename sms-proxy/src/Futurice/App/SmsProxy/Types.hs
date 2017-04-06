@@ -7,7 +7,6 @@ import Prelude ()
 import Futurice.Prelude
 import Futurice.Generics
 
--- | TODO, what we want to return?
 data Res = Res
     { _resTo     :: !Text
     , _resStatus :: !Text
