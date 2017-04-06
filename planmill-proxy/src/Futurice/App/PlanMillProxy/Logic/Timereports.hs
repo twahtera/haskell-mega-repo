@@ -21,26 +21,27 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import qualified PlanMill                   as PM
 
 import Futurice.App.PlanMillProxy.Logic.Common
+import Futurice.App.PlanMillProxy.PostgresPool
 import Futurice.App.PlanMillProxy.Types        (Ctx (..))
 
 -- | Select timereports
 --
 -- If data in cache is invalid, we prune it, and return zero timereports.
 selectTimereports
-    :: Ctx -> Postgres.Connection
+    :: HasPostgresPool ctx => ctx
     -> PM.UserId -> Maybe (PM.Interval Day) -> LIO PM.Timereports
-selectTimereports _ctx conn uid minterval = do
+selectTimereports ctx uid minterval = do
     res <- handleSqlError [] $ case minterval of
-        Nothing       -> Postgres.query conn selectQueryWithoutInterval (Postgres.Only uid)
-        Just interval -> Postgres.query conn selectQueryWithInterval (uid, inf interval, sup interval)
+        Nothing       -> poolQuery ctx selectQueryWithoutInterval (Postgres.Only uid)
+        Just interval -> poolQuery ctx selectQueryWithInterval (uid, inf interval, sup interval)
     res' <- liftIO $ tryDeep $ return $ V.fromList $ map selectTransform res
     case res' of
         Right x -> return x
         Left exc -> do
             logAttention_ $ "selectTimereports: " <> textShow exc
             _ <- handleSqlError 0 $ case minterval of
-                Nothing       -> Postgres.execute conn deleteQueryWithoutInterval (Postgres.Only uid)
-                Just interval -> Postgres.execute conn deleteQueryWithInterval (uid, inf interval, sup interval)
+                Nothing       -> poolExecute ctx deleteQueryWithoutInterval (Postgres.Only uid)
+                Just interval -> poolExecute ctx deleteQueryWithInterval (uid, inf interval, sup interval)
             return mempty
   where
     selectTransform
@@ -79,16 +80,16 @@ selectTimereports _ctx conn uid minterval = do
 -- | Update timereports for people without any timereports
 updateWithoutTimereports
     :: Ctx -> IO ()
-updateWithoutTimereports ctx = runLIO ctx $ \conn -> do
+updateWithoutTimereports ctx = runLIO ctx $ do
     logInfo_ $ "Selecting timereports for users without any"
 
     allUsers <- fetchFromPlanMill ctx usersQuery
     let allUidsSet = Set.fromList $ allUsers ^.. traverse . PM.identifier
 
-    uids <- Postgres.fromOnly <$$> handleSqlError [] (Postgres.query_ conn selectUsersQuery)
+    uids <- Postgres.fromOnly <$$> handleSqlError [] (poolQuery_ ctx selectUsersQuery)
     let uidsSet = Set.fromList uids
 
-    for_ (Set.difference allUidsSet uidsSet) (updateTimereportsForUser ctx conn)
+    for_ (Set.difference allUidsSet uidsSet) (updateTimereportsForUser ctx)
   where
     selectUsersQuery :: Postgres.Query
     selectUsersQuery = fromString $ unwords $
@@ -98,15 +99,15 @@ updateWithoutTimereports ctx = runLIO ctx $ \conn -> do
 -- | Update timereports.
 updateAllTimereports
     :: Ctx -> IO ()
-updateAllTimereports ctx = runLIO ctx $ \conn -> do
+updateAllTimereports ctx = runLIO ctx $ do
     logInfo_ $ "Updating timereports for users"
 
     -- Select uids with oldest updated time reports
-    uids <- Postgres.fromOnly <$$> handleSqlError [] (Postgres.query_ conn selectUsersQuery)
+    uids <- Postgres.fromOnly <$$> handleSqlError [] (poolQuery_ ctx selectUsersQuery)
     logInfo_ $ "Updating timereports for users: " <>
         T.intercalate ", " (textShow . getIdent <$> uids)
 
-    for_ uids (updateTimereportsForUser ctx conn)
+    for_ uids (updateTimereportsForUser ctx)
   where
     getIdent (PM.Ident a) = a
 
@@ -118,8 +119,8 @@ updateAllTimereports ctx = runLIO ctx $ \conn -> do
         , ";"
         ]
 
-updateTimereportsForUser :: Ctx -> Postgres.Connection -> PM.UserId -> LIO ()
-updateTimereportsForUser ctx conn uid = do
+updateTimereportsForUser :: Ctx -> PM.UserId -> LIO ()
+updateTimereportsForUser ctx uid = do
     let interval = $(mkDay "2015-01-01") ... $(mkDay "2017-12-31")
     let q = QueryTimereports (Just interval) uid
     --
@@ -129,7 +130,7 @@ updateTimereportsForUser ctx conn uid = do
     -- Check what timereports we have stored, remove ones not in planmill anymore
     let planmillTrids = Set.fromList (tr ^.. traverse . PM.identifier)
     postgresTrids <- toTrids <$> handleSqlError []
-        (Postgres.query conn selectQuery $ Postgres.Only uid)
+        (poolQuery ctx selectQuery $ Postgres.Only uid)
 
     let notInPlanmill = Set.difference postgresTrids planmillTrids
     when (not $ Set.null notInPlanmill) $ do
@@ -137,7 +138,7 @@ updateTimereportsForUser ctx conn uid = do
         logInfo_ $
             "Found " <> textShow notInPlanmillCount <>
             " timereports not in planmill anymore"
-        i <- handleSqlError 0 $ Postgres.execute conn deleteQuery
+        i <- handleSqlError 0 $ poolExecute ctx deleteQuery
             (Postgres.Only $ Postgres.In $ Set.toList notInPlanmill)
         when (fromIntegral i /= notInPlanmillCount) $
             logAttention_ $
@@ -145,7 +146,7 @@ updateTimereportsForUser ctx conn uid = do
                 " out of " <> textShow notInPlanmillCount <> " timereports"
 
     -- Insert timereports
-    _ <- handleSqlError 0 $ insertTimereports conn tr
+    _ <- handleSqlError 0 $ insertTimereports ctx tr
 
     -- Done
     pure ()
@@ -171,7 +172,7 @@ updateRecentTimereports ctx = runLIO ctx $ \conn -> do
 
     -- For each user...
     for_ uids $ \uid -> do
-        [(mi, ma)] <- liftIO $ Postgres.query conn selectQuery (Postgres.Only uid)
+        [(mi, ma)] <- liftIO $ poolQuery ctx selectQuery (Postgres.Only uid)
         logInfo_ $ "Last updated timereports at " <> textShow (mi :: UTCTime)
 
         let q = timereportsModifiedQuery uid mi ma
@@ -190,12 +191,12 @@ updateRecentTimereports ctx = runLIO ctx $ \conn -> do
 
 -- Helper function to insert timereports
 insertTimereports
-    :: Foldable f
-    => Postgres.Connection
+    :: (Foldable f, HasPostgresPool ctx)
+    => ctx
     -> f PM.Timereport
     -> IO Int64
-insertTimereports conn trs =
-    Postgres.executeMany conn insertQuery $ transformForInsert <$> toList trs
+insertTimereports ctx trs =
+    poolExecuteMany ctx insertQuery $ transformForInsert <$> toList trs
   where
     transformForInsert
         :: PM.Timereport

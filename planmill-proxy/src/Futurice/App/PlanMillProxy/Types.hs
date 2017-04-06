@@ -7,10 +7,11 @@ module Futurice.App.PlanMillProxy.Types (
 
 import Prelude ()
 import Futurice.Prelude
-import Data.Pool                  (Pool)
-import Database.PostgreSQL.Simple (Connection)
-import Futurice.Servant           (DynMapCache)
-import PlanMill                   (Cfg)
+import Data.Pool                               (Pool)
+import Database.PostgreSQL.Simple              (Connection)
+import Futurice.App.PlanMillProxy.PostgresPool
+import Futurice.Servant                        (DynMapCache)
+import PlanMill                                (Cfg)
 
 -------------------------------------------------------------------------------
 -- Context
@@ -22,3 +23,6 @@ data Ctx = Ctx
     , ctxPostgresPool :: !(Pool Connection)  -- TODO: write a lib to handle these
     , ctxLogger       :: !Logger
     }
+
+instance HasPostgresPool Ctx where
+    postgresPool = ctxPostgresPool
