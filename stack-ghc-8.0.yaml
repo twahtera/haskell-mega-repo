@@ -1,4 +1,4 @@
-resolver: nightly-2017-03-01
+resolver: nightly-2017-04-01
 packages:
 - ansi-pretty/
 - avar/
@@ -44,19 +44,5 @@ packages:
 - tdigest/tdigest-bench/
 - tdigest-ekg/
 - theme-app/
-# https://github.com/aloiscochard/machines-directory/pull/7
-- location:
-    git: https://github.com/aloiscochard/machines-directory.git
-    commit: ee10b69a7a41ef6792839c2dea24fa5c07b6aeb7
-  extra-dep: true
-extra-deps:
-- blaze-svg-0.3.6.1
-- cassava-0.4.5.1
-- cereal-vector-0.2.0.1
-- Chart-1.8.2
-- Chart-diagrams-1.8.2
-- log-base-0.7.1
-- servant-cassava-0.8
-- SVGFonts-1.6.0.1
-- warp-3.2.11.1
+extra-deps: []
 flags: {}

@@ -42,11 +42,6 @@ packages:
 - tdigest/tdigest-bench/
 - tdigest-ekg/
 - theme-app/
-# https://github.com/aloiscochard/machines-directory/pull/7
-- location:
-    git: https://github.com/aloiscochard/machines-directory.git
-    commit: ee10b69a7a41ef6792839c2dea24fa5c07b6aeb7
-  extra-dep: true
 extra-deps:
 - active-0.2.0.12
 - aeson-1.1.0.0
@@ -79,6 +74,7 @@ extra-deps:
 - lens-4.15.1
 - log-base-0.7.1
 - machines-0.6.1
+- machines-directory-0.2.1.0
 - natural-transformation-0.4
 - optparse-applicative-0.13.0.0
 - pointed-5
