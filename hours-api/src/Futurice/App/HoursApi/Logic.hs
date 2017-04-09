@@ -16,22 +16,28 @@ module Futurice.App.HoursApi.Logic (
 
 import Prelude ()
 import Futurice.Prelude
+import Control.Concurrent.MVar     (MVar)
 import Control.Concurrent.STM      (readTVarIO)
 import Control.Lens
        (Fold, Getter, contains, filtered, firstOf, foldOf, nullOf, sumOf, to,
        (<&>))
+import Control.Monad.Http          (runHttpT)
 import Control.Monad.Trans.Control
        (ComposeSt, defaultLiftBaseWith, defaultLiftWith, defaultRestoreM,
        defaultRestoreT)
 import Data.Aeson                  (FromJSON)
 import Data.Constraint
 import Data.Fixed                  (Centi)
+import Data.Pool                   (Pool)
 import Data.Set.Lens               (setOf)
+import Data.TDigest.Metrics        (MonadMetrics)
 import Data.Time                   (addDays)
 import Futurice.Cache              (DynMapCache, cached)
+import Futurice.CryptoRandom       (CryptoGen, runPoolCRandT)
 import Futurice.Monoid             (Average (..))
 import Futurice.Time
        (NDT (..), TimeUnit (..), ndtConvert, ndtConvert', ndtDivide)
+import PlanMill.Eval               (evalPlanMill)
 import Servant                     (Handler, ServantErr (..), err400, err403)
 
 import Control.Concurrent.Async.Lifted (Concurrently (..))
@@ -43,7 +49,6 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.Map            as Map
 import qualified FUM
 import qualified PlanMill            as PM
-import qualified PlanMill.Test       as PM
 
 -- import Futurice.Generics
 
@@ -64,7 +69,9 @@ userEndpoint
     -> Handler User
 userEndpoint ctx mfum = do
     now <- currentTime
-    authorisedUser ctx mfum (userResponse (ctxCache ctx) now)
+    -- liftIO $ threadDelay 1000000
+    authorisedUser ctx mfum $
+        (userResponse (ctxCache ctx) now)
 
 -- | @GET /hours@
 hoursEndpoint
@@ -109,9 +116,9 @@ entryEndpoint ctx mfum eu = do
 
         _ <- PM.planmillAction $ PM.addTimereport newTimeReport
 
+        -- TODO: remove
         logTrace_ (textShow task)
         logTrace_ (textShow newTimeReport)
-        -- TODO: write hour report
 
         -- Building the response
         entryUpdateResponse (ctxCache ctx) now fumUser pmUser pmData (eu ^. euDate)
@@ -418,13 +425,13 @@ authorisedUser
     :: Ctx -> Maybe FUM.UserName
     -> (FUM.User -> PM.User -> PlanmillData -> PlanmillT (LogT Handler) a)
     -> Handler a
-authorisedUser ctx mfum f =
+authorisedUser ctx mfum f = do
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
         pmData <- liftIO $ readTVarIO $ ctxPlanmillData ctx
         (fumUser, pmUser) <- maybe (throwError err403) pure $
             pmData ^. planmillUserLookup . at fumUsername
         f fumUser pmUser pmData
-            & runPlanmillT (ctxPlanmillCfg ctx)
+            & runPlanmillT (ctxPlanmillCfg ctx) (ctxCryptoGenPool ctx) (ctxManager ctx)
             & runLogT "endpoint" (ctxLogger ctx)
 
 
@@ -433,10 +440,12 @@ authorisedUser ctx mfum f =
 -------------------------------------------------------------------------------
 
 -- TODO: this abit of waste as it reinitialises crypto for each request
-newtype PlanmillT m a = PlanmillT { runPlanmillT' :: ReaderT PM.Cfg m a }
+newtype PlanmillT m a = PlanmillT
+    { runPlanmillT' :: ReaderT (PM.Cfg, Pool (MVar CryptoGen), Manager) m a
+    }
 
-runPlanmillT :: PM.Cfg -> PlanmillT m a -> m a
-runPlanmillT cfg m = runReaderT (runPlanmillT' m) cfg
+runPlanmillT :: PM.Cfg -> Pool (MVar CryptoGen) -> Manager -> PlanmillT m a -> m a
+runPlanmillT cfg gpool mgr m = runReaderT (runPlanmillT' m) (cfg, gpool, mgr)
 
 instance Functor m => Functor (PlanmillT m) where
     fmap f (PlanmillT x) = PlanmillT $ fmap f x
@@ -474,6 +483,12 @@ instance Monad m => PM.MonadPlanMillConstraint (PlanmillT m) where
     type MonadPlanMillC (PlanmillT m) = FromJSON
     entailMonadPlanMillCVector _ _ = Sub Dict
 
-instance MonadIO m => PM.MonadPlanMill (PlanmillT m) where
-    planmillAction planmill = PlanmillT $ ReaderT $ \cfg ->
-        liftIO $ PM.evalPlanMillIO cfg planmill
+instance
+    (MonadIO m, MonadBaseControl IO m, MonadClock m, MonadLog m, MonadThrow m, MonadMetrics m)
+    => PM.MonadPlanMill (PlanmillT m)
+  where
+    planmillAction planmill = PlanmillT $ ReaderT $ \(cfg, gpool, mgr) -> do
+        flip runHttpT mgr $
+            flip runReaderT cfg $
+            runPoolCRandT gpool $
+            evalPlanMill planmill

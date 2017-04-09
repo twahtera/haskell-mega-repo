@@ -119,8 +119,12 @@ executables:
 
   pm-cli:
     main: Main.hs
+    ghc-options: -rtsopts -threaded
     source-dirs: cli2
     dependencies:
+      - lifted-async
+      - lifted-base
       - monad-control
       - planmill-client
+      - resource-pool
       - transformers-base

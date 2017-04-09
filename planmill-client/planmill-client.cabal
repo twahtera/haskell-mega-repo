@@ -221,7 +221,7 @@ executable pm-cli
   main-is: Main.hs
   hs-source-dirs:
       cli2
-  ghc-options: -Wall
+  ghc-options: -Wall -rtsopts -threaded
   build-depends:
       base >=4.8 && <4.10
     , aeson
@@ -283,8 +283,11 @@ executable pm-cli
     , unordered-containers
     , vector
     , zlib
+    , lifted-async
+    , lifted-base
     , monad-control
     , planmill-client
+    , resource-pool
     , transformers-base
   if impl(ghc >= 8.0)
     ghc-options: -freduction-depth=100

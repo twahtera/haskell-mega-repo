@@ -53,6 +53,7 @@ library
     , monad-control
     , mtl
     , periocron
+    , monad-http
     , planmill-client
     , postgresql-simple
     , QuickCheck
@@ -64,6 +65,7 @@ library
     , servant-server
     , stm
     , swagger2
+    , tdigest-ekg
     , text
     , time
     , transformers

@@ -34,6 +34,7 @@ library
     , ekg-core
     , focus
     , futurice-prelude
+    , servant-server
     , stm
     , stm-containers
     , tdigest

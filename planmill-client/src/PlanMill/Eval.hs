@@ -74,15 +74,16 @@ evalPlanMill pm = do
         -> m b           -- ^ Action to return in case of empty response
         -> m b
     singleReq req qs d = do
-        -- We need to generate auth (nonce) at each req
-        auth <- getAuth
-        uniqId <- liftIO (textShow . hashUnique <$> newUnique)
-        let req' = setQueryString' qs (addHeader (authHeader auth) req)
+        let req' = setQueryString' qs req
         let m = BS8.unpack (method req')
         let url = BS8.unpack (path req') <> BS8.unpack (queryString req')
+        uniqId <- liftIO (textShow . hashUnique <$> newUnique)
         logLocalDomain ("req-" <> uniqId) $ do
             logTrace_ $ T.pack $ "req " <> m <> " " <> url
-            (dur, res) <- clocked $ httpLbs req'
+            -- We need to generate auth (nonce) at each req
+            auth <- getAuth
+            let req'' = addHeader (authHeader auth) req'
+            (dur, res) <- clocked $ httpLbs req''
             let dur' = timeSpecToSecondsD dur
             let Status {..} = responseStatus res
             logTrace_ $ "res " <> textShow statusCode <> " " <> textShow statusMessage <> "; took " <> textShow dur'

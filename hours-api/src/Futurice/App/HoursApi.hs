@@ -10,10 +10,14 @@ module Futurice.App.HoursApi (defaultMain) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Concurrent.STM (atomically, newTVarIO, writeTVar)
+import Control.Concurrent.MVar (newMVar)
+import Control.Concurrent.STM  (atomically, newTVarIO, writeTVar)
+import Data.Pool               (createPool)
+import Futurice.CryptoRandom   (mkCryptoGen)
 import Futurice.Integrations
 import Futurice.Periocron
 import Futurice.Servant
+import Network.HTTP.Client     (managerConnCount)
 import Servant
 
 import Futurice.App.HoursApi.API
@@ -51,8 +55,11 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     makeCtx config logger cache = do
         now <- currentTime
         mgr <- newManager tlsManagerSettings
+            { managerConnCount = 100
+            }
         let integrConfig = makeIntegrationsConfig now logger mgr config
 
+        -- We start with empty planmill data
         pmDataTVar <- newTVarIO $ PlanmillData
             { _planmillUserLookup   = mempty
             , _planmillProjects     = mempty
@@ -61,15 +68,26 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , _planmillTaskProjects = mempty
             }
 
+        -- pool of crypto prngs
+        cryptoGenPool <- createPool
+            (mkCryptoGen >>= newMVar)
+            (\_ -> pure ())
+            2 (3600 :: NominalDiffTime) 2
+
+        -- http manager
+        manager <- newManager tlsManagerSettings
+
         let action = fetchPlanmillData integrConfig >>= atomically . writeTVar pmDataTVar
         let job = mkJob "update planmill data" action $ every 600
 
         pure $ flip (,) [job] $ Ctx
-            { ctxPlanmillData = pmDataTVar
-            , ctxPlanmillCfg  = cfgPlanmillCfg config
-            , ctxMockUser     = cfgMockUser config
-            , ctxLogger       = logger
-            , ctxCache        = cache
+            { ctxPlanmillData  = pmDataTVar
+            , ctxPlanmillCfg   = cfgPlanmillCfg config
+            , ctxMockUser      = cfgMockUser config
+            , ctxManager       = manager
+            , ctxLogger        = logger
+            , ctxCache         = cache
+            , ctxCryptoGenPool = cryptoGenPool
             }
 
     fetchPlanmillData :: IntegrationsConfig I I Proxy Proxy -> IO PlanmillData
