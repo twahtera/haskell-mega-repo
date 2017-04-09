@@ -5,7 +5,6 @@ language: c
 cache:
   directories:
   - $HOME/.stack
-  - .stack-work
   - $HOME/.local/bin
 
 before_install:
@@ -29,7 +28,6 @@ before_install:
 # Version infos
 - stack +RTS -N1 -RTS --version
 - ghc --version
-- du -hs .stack-work/
 
 install:
 - JOB_CURR_TIME=$(date +%s)
