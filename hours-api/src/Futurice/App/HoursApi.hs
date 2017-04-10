@@ -18,6 +18,7 @@ import Futurice.Integrations
 import Futurice.Periocron
 import Futurice.Servant
 import Network.HTTP.Client     (managerConnCount)
+import Futurice.Trans.PureT
 import Servant
 
 import Futurice.App.HoursApi.API
@@ -52,12 +53,12 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx          .~ "FUTUHOURSAPI"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-    makeCtx config logger cache = do
+    makeCtx config lgr cache = do
         now <- currentTime
         mgr <- newManager tlsManagerSettings
             { managerConnCount = 100
             }
-        let integrConfig = makeIntegrationsConfig now logger mgr config
+        let integrConfig = makeIntegrationsConfig now lgr mgr config
 
         -- We start with empty planmill data
         pmDataTVar <- newTVarIO $ PlanmillData
@@ -74,20 +75,17 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             (\_ -> pure ())
             2 (3600 :: NominalDiffTime) 2
 
-        -- http manager
-        manager <- newManager tlsManagerSettings
-
         let action = fetchPlanmillData integrConfig >>= atomically . writeTVar pmDataTVar
         let job = mkJob "update planmill data" action $ every 600
 
         pure $ flip (,) [job] $ Ctx
-            { ctxPlanmillData  = pmDataTVar
-            , ctxPlanmillCfg   = cfgPlanmillCfg config
-            , ctxMockUser      = cfgMockUser config
-            , ctxManager       = manager
-            , ctxLogger        = logger
-            , ctxCache         = cache
-            , ctxCryptoGenPool = cryptoGenPool
+            { ctxPlanmillData = pmDataTVar
+            , ctxPlanmillCfg  = cfgPlanmillCfg config
+            , ctxMockUser     = cfgMockUser config
+            , ctxManager      = mgr
+            , ctxLoggerEnv    = mkLoggerEnv "hours-api" lgr
+            , ctxCache        = cache
+            , ctxCryptoPool   = cryptoGenPool
             }
 
     fetchPlanmillData :: IntegrationsConfig I I Proxy Proxy -> IO PlanmillData
@@ -134,5 +132,3 @@ makeIntegrationsConfig now lgr mgr Config {..} = MkIntegrationsConfig
     , integrCfgFlowdockToken            = Proxy
     , integrCfgFlowdockOrgName          = Proxy
     }
-
-

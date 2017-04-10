@@ -19,6 +19,7 @@ packages:
 - futurice-integrations/
 - futurice-logo/
 - futurice-prelude/
+- futurice-pure-trans/
 - futurice-reports/
 - futurice-servant/
 - github-proxy/
@@ -45,6 +46,3 @@ packages:
 - tdigest-ekg/
 - theme-app/
 extra-deps: []
-flags:
-  futurice-prelude:
-    monad-http: true

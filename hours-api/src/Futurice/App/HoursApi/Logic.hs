@@ -16,26 +16,20 @@ module Futurice.App.HoursApi.Logic (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Concurrent.MVar     (MVar)
-import Control.Concurrent.STM      (readTVarIO)
+import Control.Concurrent.STM (readTVarIO)
 import Control.Lens
        (Fold, Getter, contains, filtered, firstOf, foldOf, nullOf, sumOf, to,
        (<&>))
-import Control.Monad.Http          (runHttpT)
-import Data.Aeson                  (FromJSON)
-import Data.Constraint
-import Data.Fixed                  (Centi)
-import Data.Pool                   (Pool)
-import Data.Set.Lens               (setOf)
-import Data.TDigest.Metrics        (MonadMetrics)
-import Data.Time                   (addDays)
-import Futurice.Cache              (DynMapCache, cached)
-import Futurice.CryptoRandom       (CryptoGen, runPoolCRandT)
-import Futurice.Monoid             (Average (..))
+import Data.Fixed             (Centi)
+import Data.Set.Lens          (setOf)
+import Data.Time              (addDays)
+import Futurice.Cache         (DynMapCache, cached)
+import Futurice.CryptoRandom  (CryptoGenError)
+import Futurice.Monoid        (Average (..))
 import Futurice.Time
        (NDT (..), TimeUnit (..), ndtConvert, ndtConvert', ndtDivide)
-import PlanMill.Eval               (evalPlanMill)
-import Servant                     (Handler, ServantErr (..), err400, err403)
+import Futurice.Trans.PureT
+import Servant                (Handler, ServantErr (..), err400, err403)
 
 import Control.Concurrent.Async.Lifted (Concurrently (..))
 
@@ -95,7 +89,7 @@ entryEndpoint ctx mfum eu = do
     now <- currentTime
     authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
         let task' = pmData ^? planmillTasks . ix (eu ^. euTaskId)
-        task <- maybe (logAttention_ "cannot find task" >> throwError err400 { errBody = "Unknown task" }) pure task'
+        task <- maybe (logAttention_ "cannot find task" >> lift (throwError err400 { errBody = "Unknown task" })) pure task'
 
         {-
         when (PM.taskProject task /= Just (eu ^. euProjectId)) $ do
@@ -131,7 +125,7 @@ entryIdEndpoint ctx mfum eid eu = do
     now <- currentTime
     authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
         let task' = pmData ^? planmillTasks . ix (eu ^. euTaskId)
-        _  <- maybe (logAttention_ "cannot find task" >> throwError err400 { errBody = "Unknown task" }) pure task'
+        _  <- maybe (logAttention_ "cannot find task" >> lift (throwError err400 { errBody = "Unknown task" })) pure task'
 
         let editTimereport = PM.EditTimereport
               { PM._etrId     = eid
@@ -167,6 +161,8 @@ entryDeleteEndpoint ctx mfum eid = do
 -- Implementation
 -------------------------------------------------------------------------------
 
+type ImplM = PureT CryptoGenError Ctx Handler
+
 entryUpdateResponse
     :: DynMapCache
     -> UTCTime
@@ -174,7 +170,7 @@ entryUpdateResponse
     -> PM.User
     -> PlanmillData
     -> Day
-    -> PlanmillT (LogT Handler) EntryUpdateResponse
+    -> ImplM EntryUpdateResponse
 entryUpdateResponse cache now fumUser pmUser pmData d = do
     let interval = d PM.... d
     let user = Concurrently $ userResponse cache now fumUser pmUser pmData
@@ -188,7 +184,7 @@ userResponse
     -> FUM.User
     -> PM.User
     -> PlanmillData
-    -> PlanmillT (LogT Handler) User
+    -> ImplM User
 userResponse cache now fumUser pmUser pmData = runConcurrently $ mkUser
     <$> balanceResponse
     <*> holidaysLeftResponse
@@ -203,12 +199,12 @@ userResponse cache now fumUser pmUser pmData = runConcurrently $ mkUser
         , _userProfilePicture  = fromMaybe "" $ fumUser ^. FUM.userImageUrl . lazy
         }
 
-    balanceResponse :: Concurrently (PlanmillT (LogT Handler)) (NDT 'Hours Centi)
+    balanceResponse :: Concurrently ImplM (NDT 'Hours Centi)
     balanceResponse = Concurrently $
         ndtConvert' . view PM.tbMinutes <$>
             PM.planmillAction (PM.userTimeBalance pmUid)
 
-    holidaysLeftResponse :: Concurrently (PlanmillT (LogT Handler)) (NDT 'Days Centi)
+    holidaysLeftResponse :: Concurrently ImplM (NDT 'Days Centi)
     holidaysLeftResponse = Concurrently $ do
         let wh = workingHours (pmData ^. planmillCalendars) pmUser
         holidaysLeft <- sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') <$>
@@ -216,7 +212,7 @@ userResponse cache now fumUser pmUser pmData = runConcurrently $ mkUser
         -- I wish we could do units properly.
         pure $ NDT $ ndtDivide holidaysLeft wh
 
-    utzResponse :: Concurrently (PlanmillT (LogT Handler)) Float
+    utzResponse :: Concurrently ImplM Float
     utzResponse = Concurrently $ do
         let end = localDay $ utcToHelsinkiTime now
         let start = addDays (-30) end
@@ -242,7 +238,7 @@ hoursResponse
     -> PM.Interval Day
     -> PM.User
     -> PlanmillData
-    -> PlanmillT (LogT Handler) HoursResponse
+    -> ImplM HoursResponse
 hoursResponse cache now interval pmUser pmData = do
     let resultInterval = PM.ResultInterval PM.IntervalStart interval
     let pmUid = pmUser ^. PM.identifier
@@ -420,7 +416,7 @@ workingHours calendars pmUser = maybe 7.5 ndtConvert' $ do
 
 authorisedUser
     :: Ctx -> Maybe FUM.UserName
-    -> (FUM.User -> PM.User -> PlanmillData -> PlanmillT (LogT Handler) a)
+    -> (FUM.User -> PM.User -> PlanmillData -> ImplM a)
     -> Handler a
 authorisedUser ctx mfum f = do
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
@@ -428,64 +424,4 @@ authorisedUser ctx mfum f = do
         (fumUser, pmUser) <- maybe (throwError err403) pure $
             pmData ^. planmillUserLookup . at fumUsername
         f fumUser pmUser pmData
-            & runPlanmillT (ctxPlanmillCfg ctx) (ctxCryptoGenPool ctx) (ctxManager ctx)
-            & runLogT "endpoint" (ctxLogger ctx)
-
-
--------------------------------------------------------------------------------
--- PlanmillT: TODO move to planmill-client
--------------------------------------------------------------------------------
-
--- TODO: this abit of waste as it reinitialises crypto for each request
-newtype PlanmillT m a = PlanmillT
-    { runPlanmillT' :: ReaderT (PM.Cfg, Pool (MVar CryptoGen), Manager) m a
-    }
-
-runPlanmillT :: PM.Cfg -> Pool (MVar CryptoGen) -> Manager -> PlanmillT m a -> m a
-runPlanmillT cfg gpool mgr m = runReaderT (runPlanmillT' m) (cfg, gpool, mgr)
-
-instance Functor m => Functor (PlanmillT m) where
-    fmap f (PlanmillT x) = PlanmillT $ fmap f x
-instance Applicative m => Applicative (PlanmillT m) where
-    pure = PlanmillT . pure
-    PlanmillT f <*> PlanmillT x = PlanmillT (f <*> x)
-instance Monad m => Monad (PlanmillT m) where
-    return = pure
-    m >>= k = PlanmillT $ runPlanmillT' m >>= runPlanmillT' . k
-
-instance MonadTrans PlanmillT where
-    lift = PlanmillT . lift
-
-instance MonadError e m => MonadError e (PlanmillT m) where
-    throwError = lift . throwError
-    catchError m h = PlanmillT $ runPlanmillT' m `catchError` (runPlanmillT' . h)
-
-instance MonadIO m => MonadIO (PlanmillT m) where
-    liftIO = lift . liftIO
-
-instance MonadBase b m => MonadBase b (PlanmillT m) where
-    liftBase = lift . liftBase
-
-instance MonadBaseControl b m => MonadBaseControl b (PlanmillT m) where
-    type StM (PlanmillT m) a = ComposeSt PlanmillT m a
-    liftBaseWith     = defaultLiftBaseWith
-    restoreM         = defaultRestoreM
-
-instance MonadTransControl PlanmillT where
-    type StT PlanmillT a = StT (ReaderT PM.Cfg) a
-    liftWith = defaultLiftWith PlanmillT runPlanmillT'
-    restoreT = defaultRestoreT PlanmillT
-
-instance Monad m => PM.MonadPlanMillConstraint (PlanmillT m) where
-    type MonadPlanMillC (PlanmillT m) = FromJSON
-    entailMonadPlanMillCVector _ _ = Sub Dict
-
-instance
-    (MonadIO m, MonadBaseControl IO m, MonadClock m, MonadLog m, MonadThrow m, MonadMetrics m)
-    => PM.MonadPlanMill (PlanmillT m)
-  where
-    planmillAction planmill = PlanmillT $ ReaderT $ \(cfg, gpool, mgr) -> do
-        flip runHttpT mgr $
-            flip runReaderT cfg $
-            runPoolCRandT gpool $
-            evalPlanMill planmill
+            & flip runPureT ctx

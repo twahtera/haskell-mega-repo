@@ -32,10 +32,10 @@ import PlanMill.Classes
 import PlanMill.Types
 
 evalPlanMill
-    :: forall m env a.
+    :: forall m env e a.
         ( MonadHttp m, MonadThrow m, MonadLog m -- MonadTime m implied by MonadLog
-        , MonadReader env m, HasPlanMillBaseUrl env, HasCredentials env
-        , MonadCRandom' m
+        , MonadReader env m, HasPlanMillCfg env
+        , MonadCRandom e m, ContainsCryptoGenError e
         , MonadIO m  -- newUnique
         , MonadClock m -- clocked
         , MonadMetrics m
@@ -63,8 +63,7 @@ evalPlanMill pm = do
   where
     mkBaseReq :: forall b. PlanMill b -> m Request
     mkBaseReq planmill = do
-        cfg <- askCfg
-        let baseUrl = getPlanMillBaseUrl cfg
+        baseUrl <- view planmillCfgBaseUrl
         parseRequest $ baseUrl <> fromUrlParts (requestUrlParts planmill)
 
     singleReq

@@ -5,45 +5,33 @@
 --
 -- Various classes, and re-exports of often used ones.
 module PlanMill.Classes (
-    HasCredentials(..),
-    HasPlanMillBaseUrl(..),
+    HasPlanMillCfg (..),
     MonadCRandom(..),
-    MonadCRandom',
+    ContainsCryptoGenError,
     CRandT,
     evalCRandT,
     MonadTime(..),
-    askCfg,
     ) where
 
 import PlanMill.Internal.Prelude
 import Futurice.CryptoRandom
-       (CRandT, MonadCRandom (..), MonadCRandom', evalCRandT)
+       (CRandT, ContainsCryptoGenError, MonadCRandom (..), evalCRandT)
 import PlanMill.Types
 
--- | User operating with API
-class HasCredentials env where
-    getUserId :: env -> UserId
-    getApiKey :: env -> ApiKey
+class HasPlanMillCfg a where
+    planmillCfg :: Lens' a Cfg
 
-instance HasCredentials Cfg where
-    getUserId = cfgUserId
-    getApiKey = cfgApiKey
+    planmillCfgUserId :: Lens' a UserId
+    planmillCfgUserId = planmillCfg
+        . lens cfgUserId (\c x -> c { cfgUserId = x })
 
--- | API endpoint.
-class HasPlanMillBaseUrl env where
-    getPlanMillBaseUrl :: env -> String
+    planmillCfgApiKey :: Lens' a ApiKey
+    planmillCfgApiKey = planmillCfg
+        . lens cfgApiKey (\c x -> c { cfgApiKey = x })
 
-instance HasPlanMillBaseUrl Cfg where
-    getPlanMillBaseUrl = cfgBaseUrl
+    planmillCfgBaseUrl :: Lens' a String
+    planmillCfgBaseUrl = planmillCfg
+        . lens cfgBaseUrl (\c x -> c { cfgBaseUrl = x })
 
--- | Ask for'Cfg'
-askCfg
-    :: (MonadReader env m, HasPlanMillBaseUrl env, HasCredentials env)
-    => m Cfg
-askCfg = do
-    env <- ask
-    return Cfg
-        { cfgUserId  = getUserId env
-        , cfgApiKey  = getApiKey env
-        , cfgBaseUrl = getPlanMillBaseUrl env
-        }
+instance HasPlanMillCfg Cfg where
+    planmillCfg = id

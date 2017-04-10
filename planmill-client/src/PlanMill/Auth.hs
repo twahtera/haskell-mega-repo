@@ -50,22 +50,21 @@ auth :: UserId -> ApiKey -> UTCTime -> Nonce -> Auth
 auth u k t n = Auth u n t (signature u k t n)
 
 -- | Create new authentication data for new request.
-getAuth :: ( MonadCRandom' m
+getAuth :: ( MonadCRandom e m, ContainsCryptoGenError e
+           , MonadReader env m, HasPlanMillCfg env
            , MonadTime m
-           , MonadReader env m
-           , HasCredentials env
            )
         => m Auth
 getAuth = auth
-    <$> fmap getUserId ask
-    <*> fmap getApiKey ask
+    <$> view planmillCfgUserId
+    <*> view planmillCfgApiKey
     <*> currentTime
     <*> getNonce
 
 -- | Generate new fresh nonce.
 --
 -- Uniqueness isn't checked.
-getNonce :: MonadCRandom' m => m Nonce
+getNonce :: (MonadCRandom e m, ContainsCryptoGenError e) => m Nonce
 getNonce = Nonce . fromString . mkNonce <$> getBytes (4 * 8)
   where
     mkNonce :: ByteString -> String

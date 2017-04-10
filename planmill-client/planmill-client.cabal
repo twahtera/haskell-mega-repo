@@ -56,6 +56,7 @@ library
     , env-config
     , exceptions
     , futurice-prelude
+    , futurice-pure-trans
     , generics-sop
     , hashable
     , hashable-time
@@ -170,6 +171,7 @@ executable planmill-client
     , env-config
     , exceptions
     , futurice-prelude
+    , futurice-pure-trans
     , generics-sop
     , hashable
     , hashable-time
@@ -249,6 +251,7 @@ executable pm-cli
     , env-config
     , exceptions
     , futurice-prelude
+    , futurice-pure-trans
     , generics-sop
     , hashable
     , hashable-time
@@ -328,6 +331,7 @@ test-suite integration
     , env-config
     , exceptions
     , futurice-prelude
+    , futurice-pure-trans
     , generics-sop
     , hashable
     , hashable-time
@@ -402,6 +406,7 @@ test-suite test
     , env-config
     , exceptions
     , futurice-prelude
+    , futurice-pure-trans
     , generics-sop
     , hashable
     , hashable-time
