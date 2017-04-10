@@ -22,9 +22,6 @@ import Control.Lens
        (Fold, Getter, contains, filtered, firstOf, foldOf, nullOf, sumOf, to,
        (<&>))
 import Control.Monad.Http          (runHttpT)
-import Control.Monad.Trans.Control
-       (ComposeSt, defaultLiftBaseWith, defaultLiftWith, defaultRestoreM,
-       defaultRestoreT)
 import Data.Aeson                  (FromJSON)
 import Data.Constraint
 import Data.Fixed                  (Centi)

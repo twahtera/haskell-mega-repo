@@ -16,9 +16,6 @@ import Futurice.Prelude
 import Control.Lens                (taking)
 import Control.Monad.Base          (liftBaseDefault)
 import Control.Monad.Http          (MonadHttp (..))
-import Control.Monad.Trans.Control
-       (ComposeSt, defaultLiftBaseWith, defaultLiftWith, defaultRestoreM,
-       defaultRestoreT)
 import Data.Constraint
 import Data.Pool                   (Pool, createPool)
 import Data.TDigest.Metrics        (MonadMetrics)
