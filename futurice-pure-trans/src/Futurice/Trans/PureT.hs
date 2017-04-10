@@ -20,31 +20,26 @@ module Futurice.Trans.PureT (
     -- ** Http
     H.HasHttpManager (..),
     -- ** Crypto
-    CryptoPool, 
     HasCryptoPool (..),
-    -- ** PlanMill
-    PM.HasPlanMillCfg (..),
+    CryptoPool, 
+    mkCryptoPool,
     ) where
 
 import Prelude ()
 import Futurice.Prelude
 import Futurice.CryptoRandom
 
-import Control.Concurrent.MVar.Lifted (MVar, modifyMVar)
+import Control.Concurrent.MVar.Lifted (MVar, modifyMVar, newMVar)
 import Control.Lens                   (ASetter', to)
 import Control.Monad.CryptoRandom     (ContainsGenError, GenError)
 import Control.Monad.Http             (MonadHttp (..))
-import Data.Aeson                     (FromJSON, Value (Object), object)
-import Data.Constraint
-import Data.Pool                      (Pool, withResource)
-import Data.TDigest.Metrics           (MonadMetrics (..))
+import Data.Aeson                     (Value (Object), object)
+import Data.Pool                      (Pool, createPool, withResource)
 import Log
        (LogMessage (..), LoggerEnv (..), MonadLog (..), execLogger)
-import PlanMill.Eval                  (evalPlanMill)
 
 import qualified Data.HashMap.Strict as HM
 import qualified Network.HTTP.Client as H
-import qualified PlanMill            as PM
 
 -------------------------------------------------------------------------------
 -- Transformer
@@ -244,21 +239,6 @@ instance (MonadBaseControl IO m, ContainsCryptoGenError e, MonadThrow m, HasCryp
     getBytesWithEntropy n entr = embedCRandT (getBytesWithEntropy n entr)
     doReseed seed              = embedCRandT (doReseed seed)
 
--------------------------------------------------------------------------------
--- PlanMill
--------------------------------------------------------------------------------
-
-instance Monad m => PM.MonadPlanMillConstraint (PureT e r m) where
-    type MonadPlanMillC (PureT e r m) = FromJSON
-    entailMonadPlanMillCVector _ _    = Sub Dict
-
-instance
-    ( Monad m, MonadIO m, MonadBaseControl IO m
-    , MonadThrow m
-    , MonadTime m, MonadClock m, MonadMetrics m
-    , ContainsGenError e, H.HasHttpManager r, HasCryptoPool r, HasLoggerEnv r
-    , PM.HasPlanMillCfg r
-    )
-    => PM.MonadPlanMill (PureT e r m)
-  where
-    planmillAction = evalPlanMill
+mkCryptoPool :: MonadIO m => Int -> NominalDiffTime -> Int -> m CryptoPool
+mkCryptoPool a b c = liftIO $ createPool (mkCryptoGen >>= newMVar) (\_ -> pure ())
+    a b c

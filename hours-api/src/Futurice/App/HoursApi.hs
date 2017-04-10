@@ -132,5 +132,3 @@ makeIntegrationsConfig now lgr mgr Config {..} = MkIntegrationsConfig
     , integrCfgFlowdockToken            = Proxy
     , integrCfgFlowdockOrgName          = Proxy
     }
-
-

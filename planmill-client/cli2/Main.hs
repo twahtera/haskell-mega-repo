@@ -13,27 +13,24 @@ module Main (main) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens                (taking)
-import Control.Monad.Base          (liftBaseDefault)
-import Control.Monad.Http          (MonadHttp (..))
+import Control.Lens          (taking)
+import Control.Monad.Http    (MonadHttp (..))
 import Data.Constraint
-import Data.Pool                   (Pool, createPool)
-import Data.TDigest.Metrics        (MonadMetrics)
-import Futurice.CryptoRandom       (mkCryptoGen, runPoolCRandT)
-import Futurice.EnvConfig          (getConfig)
-import PlanMill.Eval               (evalPlanMill)
+import Data.TDigest.Metrics  (MonadMetrics)
+import Futurice.CryptoRandom (CryptoGenError)
+import Futurice.EnvConfig    (getConfig)
+import Futurice.Trans.PureT
+import Log.Class             (MonadLog (..))
+import PlanMill.Eval         (evalPlanMill)
 
 import Control.Concurrent.Async.Lifted.Safe    (Concurrently (..))
-import Control.Concurrent.MVar.Lifted          (MVar, newMVar)
-import Futurice.CryptoRandom                   (CryptoGen)
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty
        (AnsiPretty (..), linebreak, putDoc)
 
-import qualified Data.Aeson              as Aeson
-import qualified Data.ByteString.Lazy    as LBS
-import qualified Network.HTTP.Client     as H
-import qualified Network.HTTP.Client.TLS as H
-import qualified Options.SOP             as O
+import qualified Data.Aeson           as Aeson
+import qualified Data.ByteString.Lazy as LBS
+import qualified Network.HTTP.Client  as H
+import qualified Options.SOP          as O
 
 import qualified PlanMill as PM
 
@@ -61,7 +58,7 @@ data Cmd
 deriveGeneric ''Cmd
 
 -------------------------------------------------------------------------------
--- Cli
+-- Opts
 -------------------------------------------------------------------------------
 
 data Opts = Opts
@@ -71,6 +68,30 @@ data Opts = Opts
     }
   deriving Show
 
+defaultOpts :: Opts
+defaultOpts = Opts False False False
+
+-------------------------------------------------------------------------------
+-- Ctx
+-------------------------------------------------------------------------------
+
+data Ctx = Ctx
+    { _ctxCryptoPool  :: !CryptoPool
+    , _ctxPlanmillCfg :: !PM.Cfg
+    , _ctxHttpManager :: !Manager
+    , _ctxOpts        :: !Opts
+    }
+
+makeLenses ''Ctx
+
+instance HasHttpManager Ctx where getHttpManager = view ctxHttpManager
+instance PM.HasPlanMillCfg Ctx where planmillCfg = ctxPlanmillCfg
+instance HasCryptoPool Ctx where cryptoPool = ctxCryptoPool
+
+-------------------------------------------------------------------------------
+-- Cli
+-------------------------------------------------------------------------------
+
 optsP :: O.Parser Opts
 optsP = Opts
     <$> O.flag False True (O.long "dump-json" <> O.help "Print json")
@@ -78,12 +99,17 @@ optsP = Opts
     <*> O.flag False True (O.long "show-all" <> O.help "Show all entries, default: 10")
 
 main :: IO ()
-main = withStderrLogger $ \logger -> runLogT "pm-cli" logger $ do
+main = withStderrLogger $ \lgr -> runLogT "pm-cli" lgr $ do
     f <- liftIO $ O.execParser opts
     cfg <- getConfig "PM"
-    gpool <- liftIO $ createPool (mkCryptoGen >>= newMVar) (\_ -> pure ())
-        2 (120 :: NominalDiffTime) 2
-    f cfg gpool
+    gpool <- mkCryptoPool 2 (120 :: NominalDiffTime) 2
+    mgr <- liftIO $ newManager tlsManagerSettings
+    f $ Ctx
+        { _ctxPlanmillCfg = cfg
+        , _ctxCryptoPool  = gpool
+        , _ctxOpts        = defaultOpts
+        , _ctxHttpManager = mgr
+        }
   where
     opts = O.info (O.helper <*> (execute <$> optsP <*> O.sopCommandParser)) $ mconcat
         [ O.fullDesc
@@ -95,8 +121,8 @@ main = withStderrLogger $ \logger -> runLogT "pm-cli" logger $ do
 -- Execution
 -------------------------------------------------------------------------------
 
-execute :: Opts -> Cmd -> PM.Cfg -> Pool (MVar CryptoGen) -> LogT IO ()
-execute opts cmd cfg gpool = runPlanmillT cfg gpool opts $ case cmd of
+execute :: Opts -> Cmd -> Ctx -> LogT IO ()
+execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd of
     CmdMe -> do
         x <- PM.planmillAction PM.me
         putPretty x
@@ -152,93 +178,39 @@ execute opts cmd cfg gpool = runPlanmillT cfg gpool opts $ case cmd of
         putPretty x
 
 -------------------------------------------------------------------------------
--- PlanmillT: TODO move to planmill-client
+-- M - monad with custom instances
 -------------------------------------------------------------------------------
 
--- TODO: this abit of waste as it reinitialises crypto for each request
-newtype PlanmillT m a = PlanmillT { runPlanmillT' :: ReaderT (PM.Cfg, Pool (MVar CryptoGen), Opts) m a }
+newtype M a = M { runM :: PureT CryptoGenError Ctx (LogT IO) a }
+  deriving
+    ( Functor, Applicative, Monad
+    , MonadThrow, MonadTime, MonadError CryptoGenError, MonadMetrics, MonadClock
+    , PM.MonadCRandom CryptoGenError
+    , MonadReader Ctx
+    )
 
-runPlanmillT :: PM.Cfg -> Pool (MVar CryptoGen) -> Opts -> PlanmillT m a -> m a
-runPlanmillT cfg gpool opts m = runReaderT (runPlanmillT' m) (cfg, gpool, opts)
+instance MonadIO M where
+    liftIO = liftBase
 
-instance Functor m => Functor (PlanmillT m) where
-    fmap f (PlanmillT x) = PlanmillT $ fmap f x
-instance Applicative m => Applicative (PlanmillT m) where
-    pure = PlanmillT . pure
-    PlanmillT f <*> PlanmillT x = PlanmillT (f <*> x)
-instance Monad m => Monad (PlanmillT m) where
-    return = pure
-    m >>= k = PlanmillT $ runPlanmillT' m >>= runPlanmillT' . k
+instance MonadBase IO M where
+    liftBase = M . lift . lift
 
-instance MonadTrans PlanmillT where
-    lift = PlanmillT . lift
+instance MonadBaseControl IO M where
+    type StM M a = a
+    liftBaseWith f = M (liftBaseWith (\g -> f (g . runM)))
+    restoreM st  = M (restoreM st)
 
-instance MonadError e m => MonadError e (PlanmillT m) where
-    throwError = lift . throwError
-    catchError m h = PlanmillT $ runPlanmillT' m `catchError` (runPlanmillT' . h)
+instance PM.MonadPlanMillConstraint M where
+    type MonadPlanMillC M = Aeson.FromJSON
+    entailMonadPlanMillCVector _ _    = Sub Dict
 
-instance MonadIO m => MonadIO (PlanmillT m) where
-    liftIO = lift . liftIO
+instance PM.MonadPlanMill M where
+    planmillAction = evalPlanMill
 
-instance MonadBase b m => MonadBase b (PlanmillT m) where
-    liftBase = lift . liftBase
-
-instance MonadBaseControl b m => MonadBaseControl b (PlanmillT m) where
-    type StM (PlanmillT m) a = ComposeSt PlanmillT m a
-    liftBaseWith     = defaultLiftBaseWith
-    restoreM         = defaultRestoreM
-
-instance MonadTransControl PlanmillT where
-    type StT PlanmillT a = StT (ReaderT PM.Cfg) a
-    liftWith = defaultLiftWith PlanmillT runPlanmillT'
-    restoreT = defaultRestoreT PlanmillT
-
-instance Monad m => PM.MonadPlanMillConstraint (PlanmillT m) where
-    type MonadPlanMillC (PlanmillT m) = Aeson.FromJSON
-    entailMonadPlanMillCVector _ _ = Sub Dict
-
-instance
-    (MonadIO m, MonadBaseControl IO m, MonadClock m, MonadLog m, MonadThrow m, MonadMetrics m)
-    => PM.MonadPlanMill (PlanmillT m)
-  where
-    planmillAction planmill = PlanmillT $ ReaderT $ \(cfg, gpool, opts) -> do
-        evalHttpT opts $
-            flip runReaderT cfg $
-            runPoolCRandT gpool $
-            evalPlanMill planmill
-
--------------------------------------------------------------------------------
--- HttpT
--------------------------------------------------------------------------------
-
-newtype HttpT m a = HttpT { runHttpT :: ReaderT (H.Manager, Opts) m a }
-  deriving (Functor, Applicative, Monad, MonadThrow, MonadTime)
-
-evalHttpT :: MonadIO m => Opts -> HttpT m a -> m a
-evalHttpT opts m = do
-    mgr <- liftIO $ H.newManager H.tlsManagerSettings
-        { H.managerConnCount = 10
-        }
-    runReaderT (runHttpT m) (mgr, opts)
-
-instance MonadTrans HttpT where
-    lift = HttpT . lift
-
-instance MonadBase b m => MonadBase b (HttpT m) where
-    liftBase = liftBaseDefault
-
-instance MonadBaseControl b m => MonadBaseControl b (HttpT m) where
-    type StM (HttpT m) a = ComposeSt HttpT m a
-    liftBaseWith = defaultLiftBaseWith
-    restoreM     = defaultRestoreM
-
-instance MonadIO m => MonadIO (HttpT m) where
-    liftIO = HttpT . liftIO
-
-instance MonadIO m => MonadHttp (HttpT m) where
-    httpLbs req = HttpT $ do
-        (mgr, opts) <- ask
-        res <- liftIO $ H.httpLbs req mgr
+instance MonadHttp M where
+    httpLbs req = M $ do
+        opts <- view ctxOpts
+        res <- httpLbs req
         when (optsDumpRaw opts) $ liftIO $ do
             LBS.putStr (H.responseBody res)
             putChar '\n'
@@ -246,10 +218,12 @@ instance MonadIO m => MonadHttp (HttpT m) where
             for_ (Aeson.decode (H.responseBody res) :: Maybe Value) putPretty
         pure res
 
-instance MonadTransControl HttpT where
-    type StT HttpT a = a
-    liftWith = defaultLiftWith HttpT runHttpT
-    restoreT = defaultRestoreT HttpT
+-- | not necessary to do this way;
+-- we can be PureT _ _ IO directly, with bigger Ctx
+instance MonadLog M where
+    logMessage t x l d = M (lift (logMessage t x l d))
+    localData d (M (PureT m)) = M (PureT $ \r -> localData d (m r))
+    localDomain d (M (PureT m)) = M (PureT $ \r -> localDomain d (m r))
 
 -------------------------------------------------------------------------------
 -- putPretty

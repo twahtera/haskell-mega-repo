@@ -47,6 +47,7 @@ dependencies:
   - env-config
   - exceptions
   - futurice-prelude
+  - futurice-pure-trans
   - generics-sop
   - hashable
   - hashable-time

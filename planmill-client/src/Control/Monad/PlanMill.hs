@@ -25,16 +25,19 @@ module Control.Monad.PlanMill (
     MonadPlanMillConstraint(..),
     ) where
 
-import PlanMill.Internal.Prelude
 import Prelude ()
+import PlanMill.Internal.Prelude
 
 import Data.Constraint                  (Constraint, Dict (..), type (:-)(..), (\\))
+import Data.TDigest.Metrics             (MonadMetrics (..))
 import Futurice.Constraint.ForallSymbol (ForallFSymbol (..))
+import Futurice.Trans.PureT
 
 import PlanMill.Classes
+import PlanMill.Eval
+import PlanMill.Test        (evalPlanMillIO)
 import PlanMill.Types
 import PlanMill.Types.Query (Query, queryToRequest)
-import PlanMill.Test (evalPlanMillIO)
 
 -- | Types 'MonadPlanMillC' should be satisfied to define 'MonadPlanMill' instance.
 --
@@ -46,7 +49,7 @@ type MonadPlanMillTypes =
 -- Note: to update do:
 -- intercalate ", " $ sort $ splitOn ", " "User, Team"
 
--- | Superclass for providing constraints for 'MonadPlanMill' and 
+-- | Superclass for providing constraints for 'MonadPlanMill' and
 -- 'MonadPlanMillQuery'.
 class
     ( Monad m
@@ -58,7 +61,7 @@ class
     , MonadPlanMillC m Me
     , MonadPlanMillC m Meta
     , MonadPlanMillC m Project
-    , MonadPlanMillC m ReportableAssignment 
+    , MonadPlanMillC m ReportableAssignment
     , MonadPlanMillC m Task
     , MonadPlanMillC m TimeBalance
     , MonadPlanMillC m Timereport
@@ -109,15 +112,15 @@ planmillVectorQuery
 planmillVectorQuery = planmillQuery \\  -- hello CPP
     entailMonadPlanMillCVector (Proxy :: Proxy m) (Proxy :: Proxy a)
 
+-------------------------------------------------------------------------------
+-- Simple instance for "IO"
+-------------------------------------------------------------------------------
+
 instance Monad m
     => MonadPlanMillConstraint (ReaderT env m)
   where
     type MonadPlanMillC (ReaderT env m) = FromJSON
     entailMonadPlanMillCVector _ _ = Sub Dict
-
--------------------------------------------------------------------------------
--- Simple instance for "IO"
--------------------------------------------------------------------------------
 
 instance (MonadIO m, HasPlanMillCfg env)
     => MonadPlanMill (ReaderT env m)
@@ -130,3 +133,22 @@ instance (MonadIO m , HasPlanMillCfg env)
     => MonadPlanMillQuery (ReaderT env m)
   where
     planmillQuery = planmillAction . queryToRequest
+
+-------------------------------------------------------------------------------
+-- More fancy instance for "PureT"
+-------------------------------------------------------------------------------
+
+instance Monad m => MonadPlanMillConstraint (PureT e r m) where
+    type MonadPlanMillC (PureT e r m) = FromJSON
+    entailMonadPlanMillCVector _ _    = Sub Dict
+
+instance
+    ( Monad m, MonadIO m, MonadBaseControl IO m
+    , MonadThrow m
+    , MonadTime m, MonadClock m, MonadMetrics m
+    , ContainsCryptoGenError e, HasHttpManager r, HasCryptoPool r, HasLoggerEnv r
+    , HasPlanMillCfg r
+    )
+    => MonadPlanMill (PureT e r m)
+  where
+    planmillAction = evalPlanMill

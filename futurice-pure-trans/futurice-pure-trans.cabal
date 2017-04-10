@@ -32,8 +32,6 @@ library
   build-depends:
       base                  >=4.7   && <4.10
     , aeson
-    , constraints
-    , tdigest-ekg
     , futurice-prelude
     , http-client
     , lens
@@ -41,7 +39,6 @@ library
     , log-base
     , monad-http
     , monadcryptorandom
-    , planmill-client
     , resource-pool
     , unordered-containers
   exposed-modules:
