@@ -17,6 +17,7 @@ packages:
 - futurice-integrations/
 - futurice-logo/
 - futurice-prelude/
+- futurice-pure-trans/
 - futurice-reports/
 - futurice-servant/
 - github-proxy/

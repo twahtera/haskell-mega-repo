@@ -119,14 +119,14 @@ instance Monad m
 -- Simple instance for "IO"
 -------------------------------------------------------------------------------
 
-instance (MonadIO m, HasPlanMillBaseUrl env, HasCredentials env)
+instance (MonadIO m, HasPlanMillCfg env)
     => MonadPlanMill (ReaderT env m)
   where
     planmillAction planmill = do
-        cfg <- askCfg
+        cfg <- view planmillCfg
         liftIO $ evalPlanMillIO cfg planmill
 
-instance (MonadIO m , HasPlanMillBaseUrl env, HasCredentials env)
+instance (MonadIO m , HasPlanMillCfg env)
     => MonadPlanMillQuery (ReaderT env m)
   where
     planmillQuery = planmillAction . queryToRequest

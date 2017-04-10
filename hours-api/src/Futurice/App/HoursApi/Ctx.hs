@@ -3,11 +3,9 @@ module Futurice.App.HoursApi.Ctx where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Concurrent.MVar (MVar)
 import Control.Concurrent.STM  (TVar)
-import Data.Pool               (Pool)
 import Futurice.Cache          (DynMapCache)
-import Futurice.CryptoRandom   (CryptoGen)
+import Futurice.Trans.PureT
 
 import qualified FUM
 import qualified PlanMill as PM
@@ -46,11 +44,29 @@ makeLenses ''PlanmillData
 -------------------------------------------------------------------------------
 
 data Ctx = Ctx
-    { ctxPlanmillData  :: !(TVar PlanmillData)
-    , ctxMockUser      :: !(Maybe FUM.UserName)
-    , ctxCache         :: !DynMapCache
-    , ctxLogger        :: !Logger
-    , ctxManager       :: !Manager
-    , ctxPlanmillCfg   :: !PM.Cfg
-    , ctxCryptoGenPool :: !(Pool (MVar CryptoGen))
+    { ctxPlanmillData :: !(TVar PlanmillData)
+    , ctxMockUser     :: !(Maybe FUM.UserName)
+    , ctxCache        :: !DynMapCache
+    , ctxLoggerEnv    :: !LoggerEnv
+    , ctxManager      :: !Manager
+    , ctxPlanmillCfg  :: !PM.Cfg
+    , ctxCryptoPool   :: !CryptoPool
     }
+
+instance PM.HasPlanMillCfg Ctx where
+    planmillCfg = lens ctxPlanmillCfg $ \ctx x ->
+        ctx { ctxPlanmillCfg = x }
+
+instance HasLoggerEnv Ctx where
+    loggerEnv = lens ctxLoggerEnv $ \ctx x ->
+        ctx { ctxLoggerEnv = x }
+
+instance HasLogger Ctx where
+    logger = loggerEnvLogger
+
+instance HasCryptoPool Ctx where
+    cryptoPool = lens ctxCryptoPool $ \ctx x ->
+        ctx { ctxCryptoPool = x }
+
+instance HasHttpManager Ctx where
+    getHttpManager = ctxManager 

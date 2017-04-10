@@ -33,6 +33,7 @@ library:
     - futurice-foundation
     - futurice-integrations
     - futurice-prelude
+    - futurice-pure-trans
     - futurice-reports
     - futurice-servant
     - generics-sop
