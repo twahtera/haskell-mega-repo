@@ -15,14 +15,12 @@ module PlanMill.Auth (
 
 import PlanMill.Internal.Prelude
 
--- Almost standard imports
-import Control.Monad   (replicateM)
-
-import qualified Data.Vector as V
-
--- 3rd party imports
 import Crypto.Hash   (HMAC (..), SHA256, hmac)
+import Data.Bits     (shiftL, (.|.))
 import Data.Byteable (toBytes)
+
+import qualified Data.ByteString as BS
+import qualified Data.Vector     as V
 
 -- Local imports
 import PlanMill.Classes
@@ -58,22 +56,36 @@ getAuth :: ( MonadCRandom' m
            , HasCredentials env
            )
         => m Auth
-getAuth = auth <$> fmap getUserId ask
-               <*> fmap getApiKey ask
-               <*> currentTime
-               <*> getNonce
+getAuth = auth
+    <$> fmap getUserId ask
+    <*> fmap getApiKey ask
+    <*> currentTime
+    <*> getNonce
 
 -- | Generate new fresh nonce.
 --
 -- Uniqueness isn't checked.
 getNonce :: MonadCRandom' m => m Nonce
-getNonce = Nonce . fromString <$> replicateM 8 randomNonceChar
+getNonce = Nonce . fromString . mkNonce <$> getBytes (4 * 8)
   where
-    randomNonceChar = do
-        n <- (fromIntegral :: Word8 -> Int) <$> getCRandom
-        if n >= 0 && n < validNonceCharsLength
-            then pure $ validNonceChars V.! n
-            else randomNonceChar
+    mkNonce :: ByteString -> String
+    mkNonce = map mapChar . toWord32s . BS.unpack
+
+    toWord32s :: [Word8] -> [Word32]
+    toWord32s (a:b:c:d:ws) = w : toWord32s ws
+      where
+        w = fromIntegral a `shiftL` 24 .|.
+            fromIntegral b `shiftL` 16 .|.
+            fromIntegral c `shiftL` 8  .|.
+            fromIntegral d `shiftL` 0
+    toWord32s _ = []
+
+    mapChar :: Word32 -> Char
+    mapChar w = validNonceChars V.! truncate n
+      where
+        n = (fromIntegral w :: Double)
+            * (fromIntegral validNonceCharsLength)
+            / (fromIntegral (maxBound :: Word32) + 1)
 
 validNonceChars :: V.Vector Char
 validNonceChars =

@@ -12,6 +12,7 @@ module Data.TDigest.Metrics
 import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM (atomically)
+import Servant (Handler)
 
 import qualified Data.TDigest                         as TD
 import qualified Focus
@@ -43,6 +44,9 @@ instance MonadMetrics IO where
       where
         s Nothing   = pure $ ((), Focus.Replace $ TD.singleton v)
         s (Just td) = pure $ ((), Focus.Replace $ TD.insert v td)
+
+instance MonadMetrics Handler where
+    writeMetric k v = liftIO (writeMetric k v)
 
 -- | Register 'TDigest' from global t-digest store to 'Ekg.Store'.
 registerTDigest

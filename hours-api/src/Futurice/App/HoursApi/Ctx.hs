@@ -3,11 +3,18 @@ module Futurice.App.HoursApi.Ctx where
 
 import Prelude ()
 import Futurice.Prelude
-import Futurice.Cache (DynMapCache)
-import Control.Concurrent.STM (TVar)
+import Control.Concurrent.MVar (MVar)
+import Control.Concurrent.STM  (TVar)
+import Data.Pool               (Pool)
+import Futurice.Cache          (DynMapCache)
+import Futurice.CryptoRandom   (CryptoGen)
 
 import qualified FUM
 import qualified PlanMill as PM
+
+-------------------------------------------------------------------------------
+-- Planmill data
+-------------------------------------------------------------------------------
 
 type PlanmillUserLookupMap = HashMap FUM.UserName (FUM.User, PM.User)
 
@@ -32,12 +39,18 @@ mkPlanmillData
     -> PlanmillData
 mkPlanmillData us ps ts cs _rts = undefined us ps ts cs
 
-data Ctx = Ctx
-    { ctxPlanmillData :: !(TVar PlanmillData)
-    , ctxMockUser     :: !(Maybe FUM.UserName)
-    , ctxCache        :: !DynMapCache
-    , ctxLogger       :: !Logger
-    , ctxPlanmillCfg  :: !PM.Cfg
-    }
-
 makeLenses ''PlanmillData
+
+-------------------------------------------------------------------------------
+-- Context
+-------------------------------------------------------------------------------
+
+data Ctx = Ctx
+    { ctxPlanmillData  :: !(TVar PlanmillData)
+    , ctxMockUser      :: !(Maybe FUM.UserName)
+    , ctxCache         :: !DynMapCache
+    , ctxLogger        :: !Logger
+    , ctxManager       :: !Manager
+    , ctxPlanmillCfg   :: !PM.Cfg
+    , ctxCryptoGenPool :: !(Pool (MVar CryptoGen))
+    }

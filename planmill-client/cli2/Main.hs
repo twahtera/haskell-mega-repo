@@ -16,13 +16,19 @@ import Futurice.Prelude
 import Control.Lens                (taking)
 import Control.Monad.Base          (liftBaseDefault)
 import Control.Monad.Http          (MonadHttp (..))
-import Control.Monad.Trans.Control (defaultLiftWith, defaultRestoreT)
+import Control.Monad.Trans.Control
+       (ComposeSt, defaultLiftBaseWith, defaultLiftWith, defaultRestoreM,
+       defaultRestoreT)
 import Data.Constraint
+import Data.Pool                   (Pool, createPool)
 import Data.TDigest.Metrics        (MonadMetrics)
-import Futurice.CryptoRandom       (evalCRandTThrow', mkCryptoGen)
+import Futurice.CryptoRandom       (mkCryptoGen, runPoolCRandT)
 import Futurice.EnvConfig          (getConfig)
 import PlanMill.Eval               (evalPlanMill)
 
+import Control.Concurrent.Async.Lifted.Safe    (Concurrently (..))
+import Control.Concurrent.MVar.Lifted          (MVar, newMVar)
+import Futurice.CryptoRandom                   (CryptoGen)
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty
        (AnsiPretty (..), linebreak, putDoc)
 
@@ -45,6 +51,7 @@ data Cmd
     = CmdMe
     | CmdUsers
     | CmdUser PM.UserId
+    | CmdUserMany PM.UserId Int
     | CmdTimereports PM.UserId (PM.Interval Day)
     | CmdReportableAssignments PM.UserId
     | CmdTask PM.TaskId
@@ -77,7 +84,9 @@ main :: IO ()
 main = withStderrLogger $ \logger -> runLogT "pm-cli" logger $ do
     f <- liftIO $ O.execParser opts
     cfg <- getConfig "PM"
-    f cfg
+    gpool <- liftIO $ createPool (mkCryptoGen >>= newMVar) (\_ -> pure ())
+        2 (120 :: NominalDiffTime) 2
+    f cfg gpool
   where
     opts = O.info (O.helper <*> (execute <$> optsP <*> O.sopCommandParser)) $ mconcat
         [ O.fullDesc
@@ -89,8 +98,8 @@ main = withStderrLogger $ \logger -> runLogT "pm-cli" logger $ do
 -- Execution
 -------------------------------------------------------------------------------
 
-execute :: Opts -> Cmd -> PM.Cfg -> LogT IO ()
-execute opts cmd cfg = runPlanmillT cfg opts $ case cmd of
+execute :: Opts -> Cmd -> PM.Cfg -> Pool (MVar CryptoGen) -> LogT IO ()
+execute opts cmd cfg gpool = runPlanmillT cfg gpool opts $ case cmd of
     CmdMe -> do
         x <- PM.planmillAction PM.me
         putPretty x
@@ -102,6 +111,16 @@ execute opts cmd cfg = runPlanmillT cfg opts $ case cmd of
     CmdUser uid -> do
         x <- PM.planmillAction $ PM.user uid
         putPretty x
+    CmdUserMany uid n -> do
+        -- xs <- for [1..n] $ \_ -> PM.planmillAction $ PM.user uid
+        xs <- runConcurrently $ for [1..n] $ \_ -> Concurrently $ do
+            PM.planmillAction $ PM.user uid
+        case xs of
+            [] -> pure ()
+            (x:_) -> do
+                putPretty x
+                -- Check that all are the same:
+                liftIO $ print $ all (==x) xs
     CmdAccounts -> do
         x <- PM.planmillAction PM.accounts
         putPretty $ if optsShowAll opts
@@ -140,10 +159,10 @@ execute opts cmd cfg = runPlanmillT cfg opts $ case cmd of
 -------------------------------------------------------------------------------
 
 -- TODO: this abit of waste as it reinitialises crypto for each request
-newtype PlanmillT m a = PlanmillT { runPlanmillT' :: ReaderT (PM.Cfg, Opts) m a }
+newtype PlanmillT m a = PlanmillT { runPlanmillT' :: ReaderT (PM.Cfg, Pool (MVar CryptoGen), Opts) m a }
 
-runPlanmillT :: PM.Cfg -> Opts -> PlanmillT m a -> m a
-runPlanmillT cfg opts m = runReaderT (runPlanmillT' m) (cfg, opts)
+runPlanmillT :: PM.Cfg -> Pool (MVar CryptoGen) -> Opts -> PlanmillT m a -> m a
+runPlanmillT cfg gpool opts m = runReaderT (runPlanmillT' m) (cfg, gpool, opts)
 
 instance Functor m => Functor (PlanmillT m) where
     fmap f (PlanmillT x) = PlanmillT $ fmap f x
@@ -164,6 +183,14 @@ instance MonadError e m => MonadError e (PlanmillT m) where
 instance MonadIO m => MonadIO (PlanmillT m) where
     liftIO = lift . liftIO
 
+instance MonadBase b m => MonadBase b (PlanmillT m) where
+    liftBase = lift . liftBase
+
+instance MonadBaseControl b m => MonadBaseControl b (PlanmillT m) where
+    type StM (PlanmillT m) a = ComposeSt PlanmillT m a
+    liftBaseWith     = defaultLiftBaseWith
+    restoreM         = defaultRestoreM
+
 instance MonadTransControl PlanmillT where
     type StT PlanmillT a = StT (ReaderT PM.Cfg) a
     liftWith = defaultLiftWith PlanmillT runPlanmillT'
@@ -174,14 +201,13 @@ instance Monad m => PM.MonadPlanMillConstraint (PlanmillT m) where
     entailMonadPlanMillCVector _ _ = Sub Dict
 
 instance
-    (MonadIO m, MonadClock m, MonadLog m, MonadThrow m, MonadMetrics m)
+    (MonadIO m, MonadBaseControl IO m, MonadClock m, MonadLog m, MonadThrow m, MonadMetrics m)
     => PM.MonadPlanMill (PlanmillT m)
   where
-    planmillAction planmill = PlanmillT $ ReaderT $ \(cfg, opts) -> do
-        g <- mkCryptoGen
+    planmillAction planmill = PlanmillT $ ReaderT $ \(cfg, gpool, opts) -> do
         evalHttpT opts $
             flip runReaderT cfg $
-            evalCRandTThrow' g $
+            runPoolCRandT gpool $
             evalPlanMill planmill
 
 -------------------------------------------------------------------------------
@@ -193,7 +219,9 @@ newtype HttpT m a = HttpT { runHttpT :: ReaderT (H.Manager, Opts) m a }
 
 evalHttpT :: MonadIO m => Opts -> HttpT m a -> m a
 evalHttpT opts m = do
-    mgr <- liftIO (H.newManager H.tlsManagerSettings)
+    mgr <- liftIO $ H.newManager H.tlsManagerSettings
+        { H.managerConnCount = 10
+        }
     runReaderT (runHttpT m) (mgr, opts)
 
 instance MonadTrans HttpT where
@@ -201,6 +229,11 @@ instance MonadTrans HttpT where
 
 instance MonadBase b m => MonadBase b (HttpT m) where
     liftBase = liftBaseDefault
+
+instance MonadBaseControl b m => MonadBaseControl b (HttpT m) where
+    type StM (HttpT m) a = ComposeSt HttpT m a
+    liftBaseWith = defaultLiftBaseWith
+    restoreM     = defaultRestoreM
 
 instance MonadIO m => MonadIO (HttpT m) where
     liftIO = HttpT . liftIO

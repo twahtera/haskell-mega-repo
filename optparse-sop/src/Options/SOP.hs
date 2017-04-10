@@ -33,6 +33,9 @@ class FromOptions a where
 instance FromOptions Text where
     optionsParser = view packed <$> strArgument (metavar ":???")
 
+instance FromOptions Int where
+    optionsParser = argument auto (metavar ":int")
+
 instance FromOptions Day where
     optionsParser = argument (eitherReader r) (metavar ":day")
       where
