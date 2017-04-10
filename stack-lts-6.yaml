@@ -100,6 +100,3 @@ extra-deps:
 - trifecta-1.6.1
 - vector-instances-3.4
 - warp-3.2.11.1
-flags:
-  futurice-prelude:
-    monad-http: true
