@@ -37,6 +37,8 @@ import Futurice.App.Reports.Config
 import Futurice.App.Reports.FumFlowdock
        (FumFlowdockReport, fumFlowdockReport)
 import Futurice.App.Reports.FumGithub         (FumGitHubReport, fumGithubReport)
+import Futurice.App.Reports.FumPlanmill
+       (FumPlanmillReport, fumPlanmillReport)
 import Futurice.App.Reports.GithubIssues
        (GitHubRepo (..), IssueReport, issueReport)
 import Futurice.App.Reports.GithubUsers
@@ -92,6 +94,13 @@ serveFumFlowdockReport ctx = cachedIO' ctx () $ do
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
         fumFlowdockReport
+
+serveFumPlanmillReport :: Ctx -> IO FumPlanmillReport
+serveFumPlanmillReport ctx = cachedIO' ctx () $ do
+    now <- currentTime
+    runIntegrations
+        (ctxToIntegrationsConfig now ctx)
+        fumPlanmillReport
 
 serveMissingHoursReport :: Ctx -> IO MissingHoursReport
 serveMissingHoursReport ctx = cachedIO' ctx () $ do
@@ -150,6 +159,7 @@ reports =
     ReportEndpoint serveIssues :*
     ReportEndpoint serveFumGitHubReport :*
     ReportEndpoint serveFumFlowdockReport :*
+    ReportEndpoint serveFumPlanmillReport :*
     ReportEndpoint serveGithubUsersReport :*
     ReportEndpoint serveMissingHoursReport :*
     ReportEndpoint serveBalancesReport :*

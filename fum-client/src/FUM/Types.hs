@@ -241,6 +241,7 @@ data User = User
     , _userBadgeUrl   :: !(S.Maybe Text)
     , _userId         :: !Int
     , _userSupervisor :: !(S.Maybe Int)
+    , _userActiveInPm :: !Int
     }
     deriving (Eq, Ord, Show, Read, Typeable, Generic)
 
@@ -269,6 +270,7 @@ instance FromJSON User where
         <*> v .: "portrait_badge_url"
         <*> v .: "id"
         <*> v .:?? "supervisor"
+        <*> v .: "active_in_planmill"
 
 userFullName :: Getter User Text
 userFullName = to $ \u -> u ^. userFirst <> " " <> u ^. userLast

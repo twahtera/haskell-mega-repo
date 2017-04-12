@@ -18,6 +18,7 @@ import Servant
 
 import Futurice.App.Reports.Balances          (BalanceReport)
 import Futurice.App.Reports.FumFlowdock       (FumFlowdockReport)
+import Futurice.App.Reports.FumPlanmill       (FumPlanmillReport)
 import Futurice.App.Reports.FumGithub         (FumGitHubReport)
 import Futurice.App.Reports.GithubIssues      (IssueReport)
 import Futurice.App.Reports.GithubUsers       (GithubUsersReport)
@@ -35,6 +36,7 @@ type Reports =
     '[ R "issues"             IssueReport
     , R "fum-github"          FumGitHubReport
     , R "fum-flowdock"        FumFlowdockReport
+    , R "fum-planmill"        FumPlanmillReport
     , R "github-users"        GithubUsersReport
     , R "missing-hours"       MissingHoursReport
     , R "balances"            BalanceReport
