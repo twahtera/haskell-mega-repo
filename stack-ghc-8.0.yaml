@@ -37,6 +37,7 @@ packages:
 - proxy-mgmt-app/
 - reports-app/
 - servant-binary-tagged/
+- servant-Chart/
 - servant-status/
 - sms-proxy/
 - spice-stats/

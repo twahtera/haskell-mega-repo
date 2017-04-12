@@ -16,12 +16,12 @@ module Futurice.App.Reports (defaultMain) where
 import Prelude ()
 import Futurice.Prelude
 import Futurice.Integrations
-       (IntegrationsConfig (..), beginningOfPrev2Month, beginningOfPrevMonth,
-       runIntegrations)
+       (Integrations, IntegrationsConfig (..), beginningOfPrev2Month,
+       beginningOfPrevMonth, runIntegrations)
 import Futurice.Periocron
 import Futurice.Servant
 import Generics.SOP              (hcmap, hcollapse)
-import GHC.TypeLits              (symbolVal)
+import GHC.TypeLits              (KnownSymbol, symbolVal)
 import Network.HTTP.Client       (httpLbs, parseUrlThrow, responseBody)
 import Numeric.Interval.NonEmpty ((...))
 import Servant
@@ -33,6 +33,7 @@ import qualified GitHub               as GH
 
 import Futurice.App.Reports.API
 import Futurice.App.Reports.Balances          (BalanceReport, balanceReport)
+import Futurice.App.Reports.Chart             (Chart)
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.FumFlowdock
        (FumFlowdockReport, fumFlowdockReport)
@@ -53,6 +54,7 @@ import Futurice.App.Reports.PowerAbsences
 import Futurice.App.Reports.PowerUser         (PowerUserReport, powerUserReport)
 import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport, timereportsByTaskReport)
+import Futurice.App.Reports.UtzChart          (utzChart)
 
 -- /TODO/ Make proper type
 type Ctx = (DynMapCache, Manager, Logger, Config)
@@ -167,6 +169,17 @@ reports =
     ReportEndpoint servePlanmillEmployeesReport :*
     Nil
 
+serveChart
+    :: KnownSymbol key
+    => Integrations I I I I (Chart key)
+    -> Ctx
+    -> IO (Chart key)
+serveChart f ctx = cachedIO' ctx () $ do
+    now <- currentTime
+    runIntegrations
+        (ctxToIntegrationsConfig now ctx)
+        f
+
 makeServer :: Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)
 makeServer _   Nil = pure indexPage
 makeServer ctx (ReportEndpoint r :* rs) =
@@ -176,6 +189,7 @@ makeServer ctx (ReportEndpoint r :* rs) =
 -- | API server
 server :: Ctx -> Server ReportsAPI
 server ctx = makeServer ctx reports
+    :<|> liftIO (serveChart utzChart ctx)
     :<|> liftIO (servePowerUsersReport ctx)
     :<|> liftIO . servePowerAbsencesReport ctx
 
