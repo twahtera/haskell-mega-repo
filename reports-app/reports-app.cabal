@@ -100,6 +100,7 @@ library
       Futurice.App.Reports.Config
       Futurice.App.Reports.FumFlowdock
       Futurice.App.Reports.FumGithub
+      Futurice.App.Reports.FumPlanmill
       Futurice.App.Reports.GithubIssues
       Futurice.App.Reports.GithubUsers
       Futurice.App.Reports.Markup

@@ -11,6 +11,7 @@ module PlanMill.Queries (
     allTimereports,
     capacities,
     enumerationValue,
+    allEnumerationValues,
     -- * Non special queries
     me,
     user,
@@ -32,12 +33,12 @@ module PlanMill.Queries (
 
 import PlanMill.Internal.Prelude
 
+import Control.Lens    (alongside, to, withIndex)
 import Data.Constraint (Dict (..))
 import Data.Reflection (reifySymbol)
 import GHC.TypeLits    (KnownSymbol, symbolVal)
 
 import Control.Monad.PlanMill
-
 import PlanMill.Types
        (Absences, Account, AccountId, CapacityCalendars, Me, Project,
        ProjectId, Projects, Task, TaskId, Tasks, Team, TeamId, TimeBalance,
@@ -82,6 +83,18 @@ enumerationValue (EnumValue value) defaultText = do
         Just (MkSomeEnumDesc (EnumDesc im)) -> case IM.lookup value im of
             Nothing        -> return defaultText
             Just textValue -> return textValue
+
+allEnumerationValues
+    :: (HasMeta entity , KnownSymbol field , MonadPlanMillQuery m)
+    => Proxy entity -> Proxy field
+    -> m (Map (EnumValue entity field) Text)
+allEnumerationValues pe pf = mk <$> enumerationForField pe pf
+  where
+    mk :: Maybe SomeEnumDesc -> Map (EnumValue entity field) Text
+    mk Nothing = mempty
+    mk (Just (MkSomeEnumDesc (EnumDesc im))) = toMapOf
+        (ifolded . withIndex . alongside (to EnumValue) id . ifolded)
+        im
 
 enumerationForField
     :: forall entity field m.
