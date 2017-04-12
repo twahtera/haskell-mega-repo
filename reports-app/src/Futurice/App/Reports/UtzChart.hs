@@ -4,15 +4,16 @@ module Futurice.App.Reports.UtzChart (utzChart) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens                (Getter, to, toListOf, (.=))
+import Control.Lens                (Getter, to, (.=))
 import Data.Time.Calendar.WeekDate (toWeekDate)
 import Futurice.Integrations
 import Futurice.Monoid             (Average (..))
 import Futurice.Time
+import Numeric.Interval.NonEmpty   (Interval, inf, sup, (...))
 
 import Futurice.App.Reports.Chart
 
-import qualified Data.Map.Strict as Map
+import qualified Data.Map.Strict               as Map
 import qualified Graphics.Rendering.Chart.Easy as C
 import qualified PlanMill                      as PM
 import qualified PlanMill.Queries              as PMQ
@@ -26,9 +27,9 @@ utzChart = Chart . C.toRenderable <$> c
     c = do
         today <- currentDay
         uids <- view PM.identifier <$$> PMQ.users
-        -- TODO: limit the parallelism
-        trs <- toListOf (folded . folded) <$>
-            traverse (PMQ.timereports (interval today)) uids
+        trs' <- bindForM (chopInterval $ interval today) $ \i ->
+            traverse (PMQ.timereports i) uids
+        let trs = trs' ^.. folded . folded . folded
         let utzs = timereportUtzPerWeek trs
         pure $ do
             C.layout_title .= "UTZ per week"
@@ -40,6 +41,25 @@ utzChart = Chart . C.toRenderable <$> c
                 [[(fromIntegral w, fromMaybe 0 $ utzs ^? ix (2015, w)) | w <- [1..53]]]
 
     interval today = $(mkDay "2015-01-01") PM.... today
+
+-- bindForM and chopInterval used to cut the parallelism, as we ask "for everything"
+-- TODO: move to integrations
+bindForM :: Monad m => [a] -> (a -> m b) -> m [b]
+bindForM [] _ = return []
+bindForM (a:as) f = do
+    b <- f a
+    bs <- bindForM as f
+    return (b : bs)
+
+chopInterval :: (Ord a, Enum a) => Interval a -> [Interval a]
+chopInterval i
+    | s < 50    = [i]
+    | otherwise = (mi ... md) : chopInterval (succ md ... ma)
+  where
+    mi = inf i
+    md = toEnum (fromEnum mi + 50)
+    ma = sup i
+    s = fromEnum ma - fromEnum mi
 
 timereportUtzPerWeek :: [PM.Timereport] -> Map (Integer, Int) Double
 timereportUtzPerWeek = fmap getAverage . Map.fromListWith (<>) . fmap mk

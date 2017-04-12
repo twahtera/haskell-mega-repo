@@ -170,7 +170,7 @@ reports =
     Nil
 
 serveChart
-    :: KnownSymbol key
+    :: (Typeable key, KnownSymbol key)
     => Integrations I I I I (Chart key)
     -> Ctx
     -> IO (Chart key)
