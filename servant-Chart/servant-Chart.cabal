@@ -1,0 +1,44 @@
+-- This file has been generated from package.yaml by hpack version 0.17.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           servant-Chart
+version:        0
+synopsis:       Servant support for Chart
+description:    Servant support for Chart
+category:       Web
+homepage:       https://github.com/phadej/servant-Chart-svg#readme
+bug-reports:    https://github.com/phadej/servant-Chart-svg/issues
+author:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
+license:        BSD3
+license-file:   LICENSE
+tested-with:    GHC==7.8.4, GHC==7.10.3, GHC==8.0.2
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/phadej/servant-Chart-svg
+
+library
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      base           >=4.7      && <4.10
+    , Chart
+    , Chart-diagrams
+    , diagrams-lib
+    , diagrams-svg
+    , file-embed
+    , http-media     >=0.6.2    && <0.7
+    , servant        >=0.4.4.5  && <0.11
+    , svg-builder
+    , SVGFonts
+  exposed-modules:
+      Servant.Chart
+  default-language: Haskell2010

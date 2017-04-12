@@ -38,6 +38,7 @@ library
     , bytestring
     , case-insensitive
     , cassava
+    , Chart
     , constraints
     , containers
     , deepseq
@@ -78,6 +79,7 @@ library
     , semigroups
     , servant
     , servant-cassava ==0.8.*
+    , servant-Chart
     , servant-lucid
     , servant-server
     , SHA
@@ -97,6 +99,7 @@ library
       Futurice.App.Reports
       Futurice.App.Reports.API
       Futurice.App.Reports.Balances
+      Futurice.App.Reports.Chart
       Futurice.App.Reports.Config
       Futurice.App.Reports.FumFlowdock
       Futurice.App.Reports.FumGithub
@@ -109,6 +112,7 @@ library
       Futurice.App.Reports.PowerAbsences
       Futurice.App.Reports.PowerUser
       Futurice.App.Reports.TimereportsByTask
+      Futurice.App.Reports.UtzChart
   default-language: Haskell2010
 
 executable reports-app-server
@@ -129,6 +133,7 @@ executable reports-app-server
     , bytestring
     , case-insensitive
     , cassava
+    , Chart
     , constraints
     , containers
     , deepseq
@@ -169,6 +174,7 @@ executable reports-app-server
     , semigroups
     , servant
     , servant-cassava ==0.8.*
+    , servant-Chart
     , servant-lucid
     , servant-server
     , SHA

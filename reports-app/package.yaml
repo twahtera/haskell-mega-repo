@@ -23,6 +23,7 @@ dependencies:
   - bytestring
   - case-insensitive
   - cassava
+  - Chart
   - constraints
   - containers
   - deepseq
@@ -63,6 +64,7 @@ dependencies:
   - semigroups
   - servant
   - servant-cassava ==0.8.*
+  - servant-Chart
   - servant-lucid
   - servant-server
   - SHA

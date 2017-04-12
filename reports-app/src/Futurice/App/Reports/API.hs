@@ -15,11 +15,13 @@ import Futurice.Report.Columns   (Report)
 import Futurice.Servant
 import GHC.TypeLits              (KnownSymbol, Symbol)
 import Servant
+import Servant.Chart             (SVG)
 
 import Futurice.App.Reports.Balances          (BalanceReport)
+import Futurice.App.Reports.Chart             (Chart)
 import Futurice.App.Reports.FumFlowdock       (FumFlowdockReport)
-import Futurice.App.Reports.FumPlanmill       (FumPlanmillReport)
 import Futurice.App.Reports.FumGithub         (FumGitHubReport)
+import Futurice.App.Reports.FumPlanmill       (FumPlanmillReport)
 import Futurice.App.Reports.GithubIssues      (IssueReport)
 import Futurice.App.Reports.GithubUsers       (GithubUsersReport)
 import Futurice.App.Reports.MissingHours      (MissingHoursReport)
@@ -68,6 +70,8 @@ type family FoldReportsAPI rs :: * where
         FoldReportsAPI rs
 
 type ReportsAPI = FoldReportsAPI Reports
+    -- Charts
+    :<|> "charts" :> "utz" :> Get '[SVG] (Chart "utz")
     -- Additional non-reports
     :<|> "power" :> "users" :> Get '[JSON] PowerUserReport
     :<|> "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport
