@@ -1,7 +1,10 @@
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 -- |
 -- Module      :  Servant.Chart
@@ -11,11 +14,15 @@
 -- An 'SVG' empty data type with 'MimeRender' instances for @Chart@.
 --
 -- >>> type ChartGet a = Get '[SVG] a
-module Servant.Chart (SVG) where
+module Servant.Chart (SVG, Chart (..)) where
 
-import Data.FileEmbed   (embedFile, makeRelativeToProject)
-import Data.Typeable    (Typeable)
-import Servant.API      (Accept (..), MimeRender (..))
+import Data.FileEmbed (embedFile, makeRelativeToProject)
+import Data.Proxy     (Proxy (..))
+import Data.String    (fromString)
+import Data.Swagger   (NamedSchema (..), ToSchema (..))
+import Data.Typeable  (Typeable)
+import GHC.TypeLits   (KnownSymbol, Symbol, symbolVal)
+import Servant.API    (Accept (..), MimeRender (..))
 
 import Graphics.Rendering.Chart.Backend.Diagrams
        (DEnv, FontSelector, createEnv, runBackendR)
@@ -24,9 +31,11 @@ import Graphics.Rendering.Chart.Renderable       (ToRenderable (..))
 import qualified Diagrams                         as D
 import qualified Diagrams.Backend.SVG             as DSVG
 import qualified Graphics.Rendering.Chart.Backend as B
+import qualified Graphics.Rendering.Chart.Easy    as C
 import qualified Graphics.Svg.Core                as S
 import qualified Graphics.SVGFonts.ReadFont       as F
 import qualified Network.HTTP.Media               as M
+
 
 -------------------------------------------------------------------------------
 -- Servant
@@ -85,3 +94,17 @@ loadSansSerifFonts = selectFont
 
 alterFontFamily :: String -> F.PreparedFont n -> F.PreparedFont n
 alterFontFamily n (fd, om) = (fd { F.fontDataFamily = n }, om)
+
+-------------------------------------------------------------------------------
+-- Chart
+-------------------------------------------------------------------------------
+
+newtype Chart (name :: Symbol) = Chart (C.Renderable ())
+
+instance C.ToRenderable (Chart name) where
+    toRenderable (Chart r) = r
+
+instance KnownSymbol name => ToSchema (Chart name) where
+    declareNamedSchema _ = pure $ NamedSchema (Just $ fromString $ "Chart" ++ n) mempty
+      where
+        n = symbolVal (Proxy :: Proxy name)

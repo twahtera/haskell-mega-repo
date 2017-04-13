@@ -140,12 +140,13 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                     td_ $ toHtml $ show (diffDays startingDay today) <> " days"
                     case ifoldMapOf
                         (worldTaskItems . ix eid . ifolded)
-                        (toTodoCounter world viewerRole)
+                        (toTodoCounter world)
                         world
                       of
-                        TodoCounter a b i j -> do
-                            td_ $ toHtml (show a) *> "/" *> toHtml (show b)
-                            td_ $ toHtml (show i) *> "/" *> toHtml (show j)
+                        TodoCounter (Counter i j) perRole -> case perRole ^. ix viewerRole of
+                            Counter a b -> do
+                                td_ $ toHtml (show a) *> "/" *> toHtml (show b)
+                                td_ $ toHtml (show i) *> "/" *> toHtml (show j)
 
 -------------------------------------------------------------------------------
 -- Utilities
@@ -154,15 +155,10 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
 countEmployeesWithTask :: Monad m => World -> Task -> [Employee] -> HtmlT m ()
 countEmployeesWithTask world task = toHtml' . foldMap f
   where
-    toHtml' (TodoCounter _ _ i j) =
+    toHtml' (Counter i j) =
       "(" *> toHtml (show i) *> "/" *> toHtml (show j) *> ")"
 
     f employee = case world ^? worldTaskItems . ix (employee ^. identifier) . ix (task ^. identifier) of
-        Nothing                 -> TodoCounter 0 0 0 0
-        Just AnnTaskItemTodo {} -> TodoCounter 0 0 0 1
-        Just AnnTaskItemDone {} -> TodoCounter 0 0 1 1
-
-viewerItemsHeader :: Monad m => TaskRole -> HtmlT m ()
-viewerItemsHeader TaskRoleIT         = th_ [title_ "IT tasks todo/done"]          "IT items"
-viewerItemsHeader TaskRoleHR         = th_ [title_ "HR tasks todo/done"]          "HR items"
-viewerItemsHeader TaskRoleSupervisor = th_ [title_ "Supervisor tasks todo/done"]  "Supervisor items"
+        Nothing                 -> Counter 0 0
+        Just AnnTaskItemTodo {} -> Counter 0 1
+        Just AnnTaskItemDone {} -> Counter 1 1

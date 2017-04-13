@@ -8,6 +8,7 @@ import Futurice.Prelude
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Servant          (SSOUser)
 import Servant.API
+import Servant.Chart             (Chart, SVG)
 import Servant.HTML.Lucid        (HTML)
 
 import Futurice.App.Checklist.Ack     (Ack)
@@ -30,6 +31,9 @@ type ChecklistAPI = IndexPageEndpoint
     :<|> EmployeeAuditPageEndpoint
     -- Archive
     :<|> ArchivePageEndpoint
+    -- Report(s)
+    :<|> ReportPageEndpoint
+    :<|> "reports" :> "charts" :> "done.svg" :> SSOUser :> Get '[SVG] (Chart "done")
     -- Help
     :<|> ApplianceHelpEndpoint
     -- Command
@@ -124,6 +128,18 @@ type ArchivePageEndpoint =
     Get '[HTML] (HtmlPage "archive")
 
 -------------------------------------------------------------------------------
+-- Report
+-------------------------------------------------------------------------------
+
+type ReportPageEndpoint =
+    SSOUser :>
+    "report" :>
+    QueryParam "checklist" (Identifier Checklist) :>
+    QueryParam "day-from" Day :>
+    QueryParam "day-to" Day :>
+    Get '[HTML] (HtmlPage "report")
+
+-------------------------------------------------------------------------------
 -- Help
 -------------------------------------------------------------------------------
 
@@ -172,3 +188,6 @@ applianceHelpEndpoint = Proxy
 
 archivePageEndpoint :: Proxy ArchivePageEndpoint
 archivePageEndpoint = Proxy
+
+reportPageEndpoint :: Proxy ReportPageEndpoint
+reportPageEndpoint = Proxy

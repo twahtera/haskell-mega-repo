@@ -26,6 +26,7 @@ module Futurice.App.Checklist.Types (
     AnnTaskItem (..),
     TaskAppliance(..),
     TaskComment(..),
+    Tribe,
     -- ** Wrappers
     Identifier(..),
     identifierToText,
@@ -35,6 +36,11 @@ module Futurice.App.Checklist.Types (
     HasName (..),
     -- * Functions
     employeeTaskApplies,
+    -- * Tribe
+    ValidTribes,
+    validTribes,
+    HasValidTribes,
+    foldedValidTribes,
     -- * Lenses
     -- ** Employee
     employeeFirstName, employeeLastName, employeeContractType, employeeLocation, employeeConfirmed,
@@ -57,6 +63,7 @@ module Futurice.App.Checklist.Types (
     _TaskRole,
     _TaskRoleIT, _TaskRoleHR, _TaskRoleSupervisor,
     taskRoleToText, taskRoleFromText,
+    PerTaskRole (..),
     -- ** Checklist
     checklistName, checklistTasks,
     -- ** TaskItem
@@ -82,6 +89,10 @@ module Futurice.App.Checklist.Types (
     -- * Access
     AuthUser,
     authUserTaskRole,
+    -- * Counters
+    Counter (..),
+    TodoCounter (..),
+    toTodoCounter,
     ) where
 
 import Prelude ()
@@ -89,6 +100,7 @@ import Futurice.Prelude
 
 import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.ContractType
+import Futurice.App.Checklist.Types.Counter
 import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.Location
 import Futurice.App.Checklist.Types.TaskItem
@@ -96,6 +108,7 @@ import Futurice.App.Checklist.Types.World
 import Futurice.App.Checklist.Types.TaskAppliance
 import Futurice.App.Checklist.Types.TaskComment
 import Futurice.App.Checklist.Types.TaskRole
+import Futurice.App.Checklist.Types.Tribe
 
 import qualified FUM (UserName)
 

@@ -12,14 +12,19 @@ ghc-options: -Wall
 
 dependencies:
   - base >= 4.7 && <4.10
+  - adjunctions
   - aeson
   - aeson-compat
   - ansi-pretty
   - ansi-wl-pprint
   - async
+  - Chart
   - clay
+  - constraints
   - containers
   - crypto-api
+  - deepseq
+  - distributive
   - DRBG
   - env-config
   - fum-client
@@ -36,8 +41,11 @@ dependencies:
   - postgresql-simple
   - QuickCheck
   - recursion-schemes >= 5.0.1
+  - reflection
+  - regex-applicative
   - resource-pool
   - servant
+  - servant-Chart
   - servant-lucid
   - servant-server
   - singleton-bool

@@ -4,8 +4,9 @@ module Futurice.App.Checklist.Pages.Tasks (tasksPage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (filtered, foldMapOf, has, re, to, forOf_)
+import Control.Lens              (filtered, foldMapOf, forOf_, has, re, to)
 import Futurice.Lucid.Foundation
+import Text.Printf               (printf)
 
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
@@ -79,12 +80,17 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
                     br_ []
                 td_ $ a_ [ indexPageHref Nothing mlist (Just tid) defaultShowAll ] $
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
-                        TodoCounter _ _ i j ->
-                            toHtml (show i) *> "/" *> toHtml (show j)
+                        Counter i j -> do
+                            toHtml (show i)
+                            "/"
+                            toHtml (show j)
+                            " = "
+                            if j == 0 then "0" else toHtml (printf ("%.01f") (100 * fromIntegral i / fromIntegral j :: Double) :: String)
+                            "%"
                 td_ $ forWith_
                     (br_ [])
                     (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l))
                     checklistLink
  where
-  countUsers AnnTaskItemDone {} = TodoCounter 0 0 1 1
-  countUsers AnnTaskItemTodo {} = TodoCounter 0 0 0 1
+  countUsers AnnTaskItemDone {} = Counter 1 1
+  countUsers AnnTaskItemTodo {} = Counter 0 1

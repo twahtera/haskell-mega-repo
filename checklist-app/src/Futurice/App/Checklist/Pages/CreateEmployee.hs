@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.CreateEmployee (createEmployeePage) where
 
@@ -15,7 +16,8 @@ import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
 createEmployeePage
-    :: World
+    :: HasValidTribes
+    => World
     -> AuthUser    -- ^ logged in user
     -> Maybe Employee
     -> HtmlPage "create-employee"
@@ -80,11 +82,12 @@ createEmployeePage world authUser memployee = checklistPage_ ("Create employee")
                 ]
         row_ $ large_ 12 $ label_ $ do
             "Tribe"
-            input_
-                [ futuId_ "employee-tribe", type_ "text"
-                , data_ "futu-values" $ encodeToText tribes
-                , value_ $ maybe "" (toQueryParam . view employeeTribe) memployee
-                ]
+            select_ [ futuId_ "employee-tribe", type_ "text" ] $ do
+                optionSelected_ False [ value_ "" ] "-"
+                forOf_ foldedValidTribes validTribes $ \tribe ->
+                    optionSelected_ False
+                        [ value_ $ toQueryParam tribe ]
+                        $ toHtml tribe
         row_ $ large_ 12 $ label_ $ do
             "Info"
             textarea_ [ futuId_ "employee-info", rows_ "5" ] (pure ())
@@ -117,9 +120,6 @@ createEmployeePage world authUser memployee = checklistPage_ ("Create employee")
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Create"
             button_ [ class_ "button", data_ "futu-action" "reset" ] $ "Reset"
   where
-    tribes :: [Text]
-    tribes = toList $ setOf (worldEmployees . folded . employeeTribe) world
-
     supervisors :: [Text]
     supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . to toQueryParam) world
 

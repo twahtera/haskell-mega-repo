@@ -27,6 +27,8 @@ data ContractType
 makePrisms ''ContractType
 deriveGeneric ''ContractType
 
+instance NFData ContractType
+
 instance Arbitrary ContractType where
     arbitrary = sopArbitrary
     shrink    = sopShrink

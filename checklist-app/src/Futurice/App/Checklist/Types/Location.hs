@@ -29,6 +29,8 @@ data Location
 makePrisms ''Location
 deriveGeneric ''Location
 
+instance NFData Location
+
 instance Arbitrary Location where
     arbitrary = sopArbitrary
     shrink    = sopShrink

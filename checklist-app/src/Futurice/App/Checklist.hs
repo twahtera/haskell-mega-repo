@@ -9,15 +9,19 @@ module Futurice.App.Checklist (defaultMain) where
 import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
+import Data.Constraint           (Dict (..))
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
+import Data.Reflection           (give)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Servant
 import Futurice.Stricter
 import Servant
+import Servant.Chart             (Chart)
 
 import Futurice.App.Checklist.Ack
 import Futurice.App.Checklist.API
+import Futurice.App.Checklist.Charts.Done
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Logic
@@ -33,6 +37,7 @@ import Futurice.App.Checklist.Pages.Error
        (forbiddedPage, notFoundPage)
 import Futurice.App.Checklist.Pages.HelpAppliance
 import Futurice.App.Checklist.Pages.Index
+import Futurice.App.Checklist.Pages.Report
 import Futurice.App.Checklist.Pages.Task
 import Futurice.App.Checklist.Pages.Tasks
 import Futurice.App.Checklist.Types
@@ -57,6 +62,8 @@ server ctx = indexPageImpl ctx
     :<|> employeePageImpl ctx
     :<|> employeeAuditPageImpl ctx
     :<|> archivePageImpl ctx
+    :<|> reportPageImpl ctx
+    :<|> doneChartImpl ctx
     :<|> applianceHelpImpl ctx
     :<|> commandImpl ctx
 
@@ -124,7 +131,8 @@ createEmployeePageImpl
     -> Handler (HtmlPage "create-employee")
 createEmployeePageImpl ctx fu meid = withAuthUser ctx fu impl
   where
-    impl world userInfo = pure $ createEmployeePage world userInfo memployee
+    impl world userInfo = pure $ case ctxValidTribes ctx of
+        Dict -> createEmployeePage world userInfo memployee
       where
         memployee = meid >>= \eid -> world ^? worldEmployees . ix eid
 
@@ -172,7 +180,8 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
   where
     impl world userInfo = pure $ case world ^? worldEmployees . ix eid of
         Nothing       -> notFoundPage
-        Just employee -> employeePage world userInfo employee
+        Just employee -> case ctxValidTribes ctx of
+            Dict -> employeePage world userInfo employee
 
 archivePageImpl
     :: Ctx
@@ -180,6 +189,24 @@ archivePageImpl
     -> Handler (HtmlPage "archive")
 archivePageImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
     pure $ archivePage world userInfo
+
+reportPageImpl
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> Maybe (Identifier Checklist)
+    -> Maybe Day
+    -> Maybe Day
+    -> Handler (HtmlPage "report")
+reportPageImpl ctx fu cid fday tday= withAuthUser ctx fu $ \world userInfo ->
+    pure $ reportPage world userInfo cid fday tday
+
+doneChartImpl
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> Handler (Chart "done")
+doneChartImpl ctx fu = withAuthUserChart ctx fu $ \world userInfo -> do
+    today <- currentDay
+    pure $ doneChart world today userInfo
 
 applianceHelpImpl
     :: Ctx
@@ -252,8 +279,9 @@ fetchEmployeeCommands
     => Ctx
     -> Employee
     -> m [(Command Identity, FUM.UserName, UTCTime)]
-fetchEmployeeCommands ctx e = withResource (ctxPostgres ctx) $ \conn ->
-    liftBase $ Postgres.query conn query (e ^. identifier, e ^. employeeChecklist)
+fetchEmployeeCommands ctx e = case ctxValidTribes ctx of
+    Dict -> withResource (ctxPostgres ctx) $ \conn ->
+        liftBase $ Postgres.query conn query (e ^. identifier, e ^. employeeChecklist)
   where
     query = fromString $ unwords
         [ "SELECT cmddata, username, updated FROM checklist2.commands"
@@ -274,6 +302,14 @@ withAuthUser
     -> m (HtmlPage a)
 withAuthUser ctx fu f = runLogT "withAuthUser" (ctxLogger ctx) $
     withAuthUser' forbiddedPage ctx fu (\w u -> lift $ f w u)
+
+withAuthUserChart
+    :: (MonadIO m, MonadBase IO m, MonadTime m)
+    => Ctx -> Maybe FUM.UserName
+    -> (World -> AuthUser -> m (Chart a))
+    -> m (Chart a)
+withAuthUserChart ctx fu f = runLogT "withAuthUser" (ctxLogger ctx) $
+    withAuthUser' (error "404 chart") ctx fu (\w u -> lift $ f w u)
 
 withAuthUser'
     :: (MonadIO m, MonadBase IO m, MonadTime m)
@@ -298,24 +334,30 @@ withAuthUser' def ctx fu f = do
 -------------------------------------------------------------------------------
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain' makeDict makeCtx $ emptyServerConfig
     & serverName             .~ "Checklist"
     & serverDescription      .~ "Super TODO"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
     & serverApp checklistApi .~ server
     & serverEnvPfx           .~ "CHECKLISTAPP"
-  where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-    makeCtx Config {..} logger _cache = do
-        ctx <- newCtx
-            logger
-            cfgPostgresConnInfo
-            cfgFumToken cfgFumBaseurl
-            (cfgFumITGroup, cfgFumHRGroup, cfgFumSupervisorGroup)
-            cfgMockUser
-            emptyWorld
-        cmds <- withResource (ctxPostgres ctx) $ \conn ->
-            Postgres.query_ conn "SELECT username, updated, cmddata FROM checklist2.commands ORDER BY cid;"
-        let world0 = foldl' (\world (fumuser, now, cmd) -> applyCommand now fumuser cmd world) emptyWorld cmds
-        atomically $ writeTVar (ctxWorld ctx) world0
-        pure (ctx, [])
+
+makeDict :: Ctx -> Dict (HasServer ChecklistAPI '[])
+makeDict ctx = case ctxValidTribes ctx of Dict -> Dict
+
+makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+makeCtx cfg lgr cache = give (cfgValidTribes cfg) (makeCtx' cfg lgr cache)
+
+makeCtx' :: HasValidTribes => Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+makeCtx' Config {..} logger _cache = do
+    ctx <- newCtx
+        logger
+        cfgPostgresConnInfo
+        cfgFumToken cfgFumBaseurl
+        (cfgFumITGroup, cfgFumHRGroup, cfgFumSupervisorGroup)
+        cfgMockUser
+        emptyWorld
+    cmds <- withResource (ctxPostgres ctx) $ \conn ->
+        Postgres.query_ conn "SELECT username, updated, cmddata FROM checklist2.commands ORDER BY cid;"
+    let world0 = foldl' (\world (fumuser, now, cmd) -> applyCommand now fumuser cmd world) emptyWorld cmds
+    atomically $ writeTVar (ctxWorld ctx) world0
+    pure (ctx, [])

@@ -15,10 +15,9 @@ import Futurice.Report.Columns   (Report)
 import Futurice.Servant
 import GHC.TypeLits              (KnownSymbol, Symbol)
 import Servant
-import Servant.Chart             (SVG)
+import Servant.Chart             (SVG, Chart (..))
 
 import Futurice.App.Reports.Balances          (BalanceReport)
-import Futurice.App.Reports.Chart             (Chart)
 import Futurice.App.Reports.FumFlowdock       (FumFlowdockReport)
 import Futurice.App.Reports.FumGithub         (FumGitHubReport)
 import Futurice.App.Reports.FumPlanmill       (FumPlanmillReport)

@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections     #-}
 module Futurice.App.Checklist.Logic (
     applyCommand,
     transactCommand,
@@ -7,11 +8,11 @@ module Futurice.App.Checklist.Logic (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens               (iforOf_, non, use)
+import Control.Lens               (ifoldMapOf, iforOf_, non, use)
 import Control.Monad.State.Strict (execState)
 
-import qualified Control.Lens                         as Lens
-import qualified Database.PostgreSQL.Simple           as Postgres
+import qualified Control.Lens               as Lens
+import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM
 
 import Futurice.App.Checklist.Command
@@ -74,8 +75,13 @@ applyCommand now ssoUser cmd world = flip execState world $ case cmd of
         worldEmployees . at eid Lens..= Nothing
 
     CmdArchiveEmployee eid Archive -> do
+        let counters = ifoldMapOf
+                (worldTaskItems . ix eid . ifolded)
+                (toTodoCounter world)
+                world
+
         employee <- use (worldEmployees . at eid)
-        worldArchive . at eid Lens..= employee
+        worldArchive . at eid Lens..= ((, counters) <$> employee)
 
         worldTaskItems . at eid Lens..= Nothing
         worldEmployees . at eid Lens..= Nothing

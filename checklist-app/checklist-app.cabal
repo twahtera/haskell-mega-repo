@@ -27,14 +27,19 @@ library
   ghc-options: -Wall
   build-depends:
       base >= 4.7 && <4.10
+    , adjunctions
     , aeson
     , aeson-compat
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , Chart
     , clay
+    , constraints
     , containers
     , crypto-api
+    , deepseq
+    , distributive
     , DRBG
     , env-config
     , fum-client
@@ -51,8 +56,11 @@ library
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
+    , reflection
+    , regex-applicative
     , resource-pool
     , servant
+    , servant-Chart
     , servant-lucid
     , servant-server
     , singleton-bool
@@ -67,6 +75,7 @@ library
       Futurice.App.Checklist
       Futurice.App.Checklist.Ack
       Futurice.App.Checklist.API
+      Futurice.App.Checklist.Charts.Done
       Futurice.App.Checklist.Clay
       Futurice.App.Checklist.Command
       Futurice.App.Checklist.Config
@@ -83,11 +92,13 @@ library
       Futurice.App.Checklist.Pages.Error
       Futurice.App.Checklist.Pages.HelpAppliance
       Futurice.App.Checklist.Pages.Index
+      Futurice.App.Checklist.Pages.Report
       Futurice.App.Checklist.Pages.Task
       Futurice.App.Checklist.Pages.Tasks
       Futurice.App.Checklist.Types
       Futurice.App.Checklist.Types.Basic
       Futurice.App.Checklist.Types.ContractType
+      Futurice.App.Checklist.Types.Counter
       Futurice.App.Checklist.Types.Ctx
       Futurice.App.Checklist.Types.Identifier
       Futurice.App.Checklist.Types.Location
@@ -95,6 +106,7 @@ library
       Futurice.App.Checklist.Types.TaskComment
       Futurice.App.Checklist.Types.TaskItem
       Futurice.App.Checklist.Types.TaskRole
+      Futurice.App.Checklist.Types.Tribe
       Futurice.App.Checklist.Types.World
   default-language: Haskell2010
 
@@ -105,14 +117,19 @@ executable checklist-app-server
   ghc-options: -Wall -Wall -threaded -rtsopts
   build-depends:
       base >= 4.7 && <4.10
+    , adjunctions
     , aeson
     , aeson-compat
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , Chart
     , clay
+    , constraints
     , containers
     , crypto-api
+    , deepseq
+    , distributive
     , DRBG
     , env-config
     , fum-client
@@ -129,8 +146,11 @@ executable checklist-app-server
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
+    , reflection
+    , regex-applicative
     , resource-pool
     , servant
+    , servant-Chart
     , servant-lucid
     , servant-server
     , singleton-bool
@@ -151,14 +171,19 @@ executable checklist-import
   ghc-options: -Wall -Wall -threaded -rtsopts
   build-depends:
       base >= 4.7 && <4.10
+    , adjunctions
     , aeson
     , aeson-compat
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , Chart
     , clay
+    , constraints
     , containers
     , crypto-api
+    , deepseq
+    , distributive
     , DRBG
     , env-config
     , fum-client
@@ -175,8 +200,11 @@ executable checklist-import
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
+    , reflection
+    , regex-applicative
     , resource-pool
     , servant
+    , servant-Chart
     , servant-lucid
     , servant-server
     , singleton-bool
@@ -201,14 +229,19 @@ test-suite unit-tests
   ghc-options: -Wall
   build-depends:
       base >= 4.7 && <4.10
+    , adjunctions
     , aeson
     , aeson-compat
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , Chart
     , clay
+    , constraints
     , containers
     , crypto-api
+    , deepseq
+    , distributive
     , DRBG
     , env-config
     , fum-client
@@ -225,8 +258,11 @@ test-suite unit-tests
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
+    , reflection
+    , regex-applicative
     , resource-pool
     , servant
+    , servant-Chart
     , servant-lucid
     , servant-server
     , singleton-bool

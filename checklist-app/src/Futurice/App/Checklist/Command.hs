@@ -135,7 +135,7 @@ data EmployeeEdit f = EmployeeEdit
     , eeConfirmed    :: !(f Bool)
     , eeStartingDay  :: !(f Day)
     , eeSupervisor   :: !(f FUM.UserName)
-    , eeTribe        :: !(f Text)
+    , eeTribe        :: !(f Tribe)
     , eeInfo         :: !(f Text)
     -- this fields are optional
     , eePhone        :: !(Maybe Text)
@@ -186,7 +186,7 @@ applyEmployeeEdit ee
     . Lens.over employeeHRNumber (eeHrNumber ee <|>)
 
 type EmployeeEditTypes =
-    '[Text, ContractType, Location, Bool, FUM.UserName, Int, Day]
+    '[Text, ContractType, Location, Bool, FUM.UserName, Int, Day, Tribe]
 
 deriving instance SOP.All (SOP.Compose Eq f) EmployeeEditTypes => Eq (EmployeeEdit f)
 deriving instance SOP.All (SOP.Compose Show f) EmployeeEditTypes => Show (EmployeeEdit f)
@@ -401,7 +401,7 @@ sumSopToJSON
 
 -- | This instance has to be written by hand, as we wan't to be
 -- more lenient, or&and verify that the generic code above works
-instance FromJSONField1 f => FromJSON (Command f)
+instance (HasValidTribes, FromJSONField1 f) => FromJSON (Command f)
   where
     parseJSON = withObject "Command" $ \obj -> do
         cmd <- obj .: "cmd" :: Aeson.Parser Text
@@ -457,7 +457,7 @@ instance ToSchema (Command p) where
 instance ToJSON (Command f) => Postgres.ToField (Command f) where
     toField = Postgres.toField . Aeson.encode
 
-instance FromJSONField1 f => Postgres.FromField (Command f) where
+instance (HasValidTribes, FromJSONField1 f) => Postgres.FromField (Command f) where
     fromField f mdata = do
         bs <- Postgres.fromField f mdata
         case Aeson.eitherDecode bs of

@@ -25,6 +25,7 @@ import GHC.TypeLits              (KnownSymbol, symbolVal)
 import Network.HTTP.Client       (httpLbs, parseUrlThrow, responseBody)
 import Numeric.Interval.NonEmpty ((...))
 import Servant
+import Servant.Chart             (Chart (..))
 
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text            as T
@@ -33,7 +34,6 @@ import qualified GitHub               as GH
 
 import Futurice.App.Reports.API
 import Futurice.App.Reports.Balances          (BalanceReport, balanceReport)
-import Futurice.App.Reports.Chart             (Chart)
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.FumFlowdock
        (FumFlowdockReport, fumFlowdockReport)

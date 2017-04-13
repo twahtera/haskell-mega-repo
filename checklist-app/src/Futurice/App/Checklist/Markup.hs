@@ -34,17 +34,20 @@ module Futurice.App.Checklist.Markup (
     locationHtml,
     -- * Counter
     TodoCounter (..),
+    Counter (..),
     toTodoCounter,
     -- * Tasks
     taskCheckbox_,
     taskCommentInput_,
+    -- * Headers
+    viewerItemsHeader,
     -- * Defaults
     defaultShowAll,
     ) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens        (Getter, has, non, only, re, to, _Wrapped)
+import Control.Lens        (Getter, has, non, re, to, _Wrapped)
 import Servant.Utils.Links (Link, safeLink)
 import Web.HttpApiData     (toUrlPiece)
 
@@ -266,26 +269,6 @@ checklistNameHtml world mloc i notDone =
         world ^. worldLists . at i . non (error "Inconsisten world") . nameHtml
 
 -------------------------------------------------------------------------------
--- TodoCounter
--------------------------------------------------------------------------------
-
-toTodoCounter :: World -> TaskRole -> Identifier Task -> AnnTaskItem -> TodoCounter
-toTodoCounter world tr tid td =
-    case (has (worldTasks . ix tid . taskRole . only tr) world, td) of
-        (True,  AnnTaskItemDone {}) -> TodoCounter 1 1 1 1
-        (True,  AnnTaskItemTodo {}) -> TodoCounter 0 1 0 1
-        (False, AnnTaskItemDone {}) -> TodoCounter 0 0 1 1
-        (False, AnnTaskItemTodo {}) -> TodoCounter 0 0 0 1
-
-data TodoCounter = TodoCounter !Int !Int !Int !Int
-instance Semigroup TodoCounter where
-    TodoCounter a b c d <> TodoCounter a' b' c' d' =
-        TodoCounter (a + a') (b + b') (c + c') (d + d')
-instance Monoid TodoCounter where
-    mempty = TodoCounter 0 0 0 0
-    mappend = (<>)
-
--------------------------------------------------------------------------------
 -- Tasks
 -------------------------------------------------------------------------------
 
@@ -322,6 +305,15 @@ taskCommentInput_ world employee task
         , value_ $ fromMaybe "" $ world ^? worldTaskItems . ix (employee ^. identifier) . ix (task ^. identifier) . annTaskItemComment
         ]
     | otherwise           = pure ()
+
+-------------------------------------------------------------------------------
+-- Headers
+-------------------------------------------------------------------------------
+
+viewerItemsHeader :: Monad m => TaskRole -> HtmlT m ()
+viewerItemsHeader TaskRoleIT         = th_ [title_ "IT tasks todo/done"]          "IT items"
+viewerItemsHeader TaskRoleHR         = th_ [title_ "HR tasks todo/done"]          "HR items"
+viewerItemsHeader TaskRoleSupervisor = th_ [title_ "Supervisor tasks todo/done"]  "Supervisor items"
 
 -------------------------------------------------------------------------------
 -- Defaults
