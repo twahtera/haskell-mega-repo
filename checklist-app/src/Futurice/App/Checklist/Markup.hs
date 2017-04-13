@@ -34,6 +34,7 @@ module Futurice.App.Checklist.Markup (
     locationHtml,
     -- * Counter
     TodoCounter (..),
+    Counter (..),
     toTodoCounter,
     -- * Tasks
     taskCheckbox_,
@@ -44,7 +45,8 @@ module Futurice.App.Checklist.Markup (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens        (Getter, has, non, only, re, to, _Wrapped)
+import Control.Lens        (Getter, has, non, re, to, _Wrapped)
+import Data.Functor.Rep    (Representable (..))
 import Servant.Utils.Links (Link, safeLink)
 import Web.HttpApiData     (toUrlPiece)
 
@@ -269,20 +271,31 @@ checklistNameHtml world mloc i notDone =
 -- TodoCounter
 -------------------------------------------------------------------------------
 
-toTodoCounter :: World -> TaskRole -> Identifier Task -> AnnTaskItem -> TodoCounter
-toTodoCounter world tr tid td =
-    case (has (worldTasks . ix tid . taskRole . only tr) world, td) of
-        (True,  AnnTaskItemDone {}) -> TodoCounter 1 1 1 1
-        (True,  AnnTaskItemTodo {}) -> TodoCounter 0 1 0 1
-        (False, AnnTaskItemDone {}) -> TodoCounter 0 0 1 1
-        (False, AnnTaskItemTodo {}) -> TodoCounter 0 0 0 1
+toTodoCounter :: World -> Identifier Task -> AnnTaskItem -> TodoCounter
+toTodoCounter world tid td =
+    case (world ^? worldTasks . ix tid . taskRole, td) of
+        (Just role, AnnTaskItemDone {}) -> TodoCounter (Counter 1 1) $ mk role 1
+        (Just role, AnnTaskItemTodo {}) -> TodoCounter (Counter 0 1) $ mk role 0
+        (Nothing,   AnnTaskItemDone {}) -> TodoCounter (Counter 1 1) $ mempty
+        (Nothing,   AnnTaskItemTodo {}) -> TodoCounter (Counter 0 1) $ mempty
+  where
+    mk :: TaskRole -> Int -> PerTaskRole Counter
+    mk role value = tabulate $ \role' -> if role == role'
+        then Counter value 1
+        else mempty
 
-data TodoCounter = TodoCounter !Int !Int !Int !Int
+data Counter = Counter !Int Int
+instance Semigroup Counter where
+    Counter a b <> Counter a' b' = Counter (a + a') (b + b')
+instance Monoid Counter where
+    mempty = Counter 0 0
+    mappend = (<>)
+
+data TodoCounter = TodoCounter Counter (PerTaskRole Counter)
 instance Semigroup TodoCounter where
-    TodoCounter a b c d <> TodoCounter a' b' c' d' =
-        TodoCounter (a + a') (b + b') (c + c') (d + d')
+    TodoCounter a b <> TodoCounter a' b' = TodoCounter (a <> a') (b <> b')
 instance Monoid TodoCounter where
-    mempty = TodoCounter 0 0 0 0
+    mempty = TodoCounter mempty mempty
     mappend = (<>)
 
 -------------------------------------------------------------------------------

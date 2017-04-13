@@ -12,6 +12,7 @@ ghc-options: -Wall
 
 dependencies:
   - base >= 4.7 && <4.10
+  - adjunctions
   - aeson
   - aeson-compat
   - ansi-pretty
@@ -22,6 +23,7 @@ dependencies:
   - constraints
   - containers
   - crypto-api
+  - distributive
   - DRBG
   - env-config
   - fum-client

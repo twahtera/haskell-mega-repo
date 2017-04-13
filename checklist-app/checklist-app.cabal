@@ -27,6 +27,7 @@ library
   ghc-options: -Wall
   build-depends:
       base >= 4.7 && <4.10
+    , adjunctions
     , aeson
     , aeson-compat
     , ansi-pretty
@@ -37,6 +38,7 @@ library
     , constraints
     , containers
     , crypto-api
+    , distributive
     , DRBG
     , env-config
     , fum-client
@@ -113,6 +115,7 @@ executable checklist-app-server
   ghc-options: -Wall -Wall -threaded -rtsopts
   build-depends:
       base >= 4.7 && <4.10
+    , adjunctions
     , aeson
     , aeson-compat
     , ansi-pretty
@@ -123,6 +126,7 @@ executable checklist-app-server
     , constraints
     , containers
     , crypto-api
+    , distributive
     , DRBG
     , env-config
     , fum-client
@@ -164,6 +168,7 @@ executable checklist-import
   ghc-options: -Wall -Wall -threaded -rtsopts
   build-depends:
       base >= 4.7 && <4.10
+    , adjunctions
     , aeson
     , aeson-compat
     , ansi-pretty
@@ -174,6 +179,7 @@ executable checklist-import
     , constraints
     , containers
     , crypto-api
+    , distributive
     , DRBG
     , env-config
     , fum-client
@@ -219,6 +225,7 @@ test-suite unit-tests
   ghc-options: -Wall
   build-depends:
       base >= 4.7 && <4.10
+    , adjunctions
     , aeson
     , aeson-compat
     , ansi-pretty
@@ -229,6 +236,7 @@ test-suite unit-tests
     , constraints
     , containers
     , crypto-api
+    , distributive
     , DRBG
     , env-config
     , fum-client

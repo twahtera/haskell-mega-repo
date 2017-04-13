@@ -1,12 +1,16 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
 module Futurice.App.Checklist.Types.TaskRole where
 
 import Prelude ()
 import Futurice.Prelude
+import Control.Lens      (Index, IxValue, Ixed (..))
 import Data.Aeson.Compat (Value (String), withText)
+import Data.Distributive (Distributive (..))
+import Data.Functor.Rep  (Representable (..), distributeRep, liftR2, pureRep)
 import Data.Swagger
        (SwaggerType (SwaggerString), ToParamSchema (..), enum_, type_)
 import Futurice.Generics
@@ -60,3 +64,40 @@ instance FromHttpApiData TaskRole where
 
 instance ToHttpApiData TaskRole where
     toUrlPiece = taskRoleToText
+
+-------------------------------------------------------------------------------
+-- PerTaskRole container
+-------------------------------------------------------------------------------
+
+data PerTaskRole a = PerTaskRole !a !a !a
+  deriving (Functor)
+
+type instance Index (PerTaskRole a) = TaskRole
+type instance IxValue (PerTaskRole a) = a
+
+instance Ixed (PerTaskRole a) where
+    ix TaskRoleIT f (PerTaskRole x y z) = (\a -> PerTaskRole a y z) <$> f x
+    ix TaskRoleHR f (PerTaskRole x y z) = (\a -> PerTaskRole x a z) <$> f y
+    ix TaskRoleSupervisor f (PerTaskRole x y z) = (\a -> PerTaskRole x y a) <$> f z
+
+instance Semigroup a => Semigroup (PerTaskRole a) where
+    (<>) = liftR2 (<>)
+
+instance Monoid a => Monoid (PerTaskRole a) where
+    mempty = pureRep mempty
+    mappend = liftR2 mappend
+
+instance Distributive PerTaskRole where
+    distribute = distributeRep
+
+instance Representable PerTaskRole where
+    type Rep PerTaskRole = TaskRole
+
+    tabulate f = PerTaskRole
+        (f TaskRoleIT)
+        (f TaskRoleHR)
+        (f TaskRoleSupervisor)
+
+    index (PerTaskRole x _ _) TaskRoleIT = x
+    index (PerTaskRole _ x _) TaskRoleHR = x
+    index (PerTaskRole _ _ x) TaskRoleSupervisor = x

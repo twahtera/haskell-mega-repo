@@ -80,7 +80,7 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
                     br_ []
                 td_ $ a_ [ indexPageHref Nothing mlist (Just tid) defaultShowAll ] $
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
-                        TodoCounter _ _ i j -> do
+                        Counter i j -> do
                             toHtml (show i)
                             "/"
                             toHtml (show j)
@@ -92,5 +92,5 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
                     (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l))
                     checklistLink
  where
-  countUsers AnnTaskItemDone {} = TodoCounter 0 0 1 1
-  countUsers AnnTaskItemTodo {} = TodoCounter 0 0 0 1
+  countUsers AnnTaskItemDone {} = Counter 1 1
+  countUsers AnnTaskItemTodo {} = Counter 0 1

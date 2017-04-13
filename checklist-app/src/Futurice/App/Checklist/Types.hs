@@ -63,6 +63,7 @@ module Futurice.App.Checklist.Types (
     _TaskRole,
     _TaskRoleIT, _TaskRoleHR, _TaskRoleSupervisor,
     taskRoleToText, taskRoleFromText,
+    PerTaskRole (..),
     -- ** Checklist
     checklistName, checklistTasks,
     -- ** TaskItem
