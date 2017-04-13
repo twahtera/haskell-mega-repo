@@ -9,8 +9,10 @@ module Futurice.App.Checklist (defaultMain) where
 import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
+import Data.Constraint           (Dict (..), withDict)
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
+import Data.Reflection           (give)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Servant
 import Futurice.Stricter
@@ -124,7 +126,8 @@ createEmployeePageImpl
     -> Handler (HtmlPage "create-employee")
 createEmployeePageImpl ctx fu meid = withAuthUser ctx fu impl
   where
-    impl world userInfo = pure $ createEmployeePage world userInfo memployee
+    impl world userInfo = pure $ case ctxValidTribes ctx of
+        Dict -> createEmployeePage world userInfo memployee
       where
         memployee = meid >>= \eid -> world ^? worldEmployees . ix eid
 
@@ -172,7 +175,8 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
   where
     impl world userInfo = pure $ case world ^? worldEmployees . ix eid of
         Nothing       -> notFoundPage
-        Just employee -> employeePage world userInfo employee
+        Just employee -> case ctxValidTribes ctx of
+            Dict -> employeePage world userInfo employee
 
 archivePageImpl
     :: Ctx
@@ -252,8 +256,9 @@ fetchEmployeeCommands
     => Ctx
     -> Employee
     -> m [(Command Identity, FUM.UserName, UTCTime)]
-fetchEmployeeCommands ctx e = withResource (ctxPostgres ctx) $ \conn ->
-    liftBase $ Postgres.query conn query (e ^. identifier, e ^. employeeChecklist)
+fetchEmployeeCommands ctx e =
+    withDict (ctxValidTribes ctx) $ withResource (ctxPostgres ctx) $ \conn ->
+        liftBase $ Postgres.query conn query (e ^. identifier, e ^. employeeChecklist)
   where
     query = fromString $ unwords
         [ "SELECT cmddata, username, updated FROM checklist2.commands"
@@ -298,24 +303,30 @@ withAuthUser' def ctx fu f = do
 -------------------------------------------------------------------------------
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain' makeDict makeCtx $ emptyServerConfig
     & serverName             .~ "Checklist"
     & serverDescription      .~ "Super TODO"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
     & serverApp checklistApi .~ server
     & serverEnvPfx           .~ "CHECKLISTAPP"
-  where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-    makeCtx Config {..} logger _cache = do
-        ctx <- newCtx
-            logger
-            cfgPostgresConnInfo
-            cfgFumToken cfgFumBaseurl
-            (cfgFumITGroup, cfgFumHRGroup, cfgFumSupervisorGroup)
-            cfgMockUser
-            emptyWorld
-        cmds <- withResource (ctxPostgres ctx) $ \conn ->
-            Postgres.query_ conn "SELECT username, updated, cmddata FROM checklist2.commands ORDER BY cid;"
-        let world0 = foldl' (\world (fumuser, now, cmd) -> applyCommand now fumuser cmd world) emptyWorld cmds
-        atomically $ writeTVar (ctxWorld ctx) world0
-        pure (ctx, [])
+
+makeDict :: Ctx -> Dict (HasServer ChecklistAPI '[])
+makeDict ctx = case ctxValidTribes ctx of Dict -> Dict
+
+makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+makeCtx cfg lgr cache = give (cfgValidTribes cfg) (makeCtx' cfg lgr cache)
+
+makeCtx' :: HasValidTribes => Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+makeCtx' Config {..} logger _cache = do
+    ctx <- newCtx
+        logger
+        cfgPostgresConnInfo
+        cfgFumToken cfgFumBaseurl
+        (cfgFumITGroup, cfgFumHRGroup, cfgFumSupervisorGroup)
+        cfgMockUser
+        emptyWorld
+    cmds <- withResource (ctxPostgres ctx) $ \conn ->
+        Postgres.query_ conn "SELECT username, updated, cmddata FROM checklist2.commands ORDER BY cid;"
+    let world0 = foldl' (\world (fumuser, now, cmd) -> applyCommand now fumuser cmd world) emptyWorld cmds
+    atomically $ writeTVar (ctxWorld ctx) world0
+    pure (ctx, [])

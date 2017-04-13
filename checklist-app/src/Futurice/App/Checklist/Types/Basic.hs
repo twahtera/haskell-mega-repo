@@ -22,6 +22,7 @@ import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.Location
 import Futurice.App.Checklist.Types.TaskAppliance
 import Futurice.App.Checklist.Types.TaskRole
+import Futurice.App.Checklist.Types.Tribe
 
 import qualified Data.Text       as T
 import qualified FUM
@@ -50,7 +51,7 @@ data Employee = Employee
       -- ^ /Note:/ This is non-work email!
     , _employeeStartingDay  :: !Day
     , _employeeSupervisor   :: !FUM.UserName
-    , _employeeTribe        :: !Text
+    , _employeeTribe        :: !Tribe
       -- ^ /Note:/ ATM this is free form text.
     , _employeeInfo         :: !Text
       -- ^ Free text comments about the employee.

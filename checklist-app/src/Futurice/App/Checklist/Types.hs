@@ -26,6 +26,7 @@ module Futurice.App.Checklist.Types (
     AnnTaskItem (..),
     TaskAppliance(..),
     TaskComment(..),
+    Tribe,
     -- ** Wrappers
     Identifier(..),
     identifierToText,
@@ -35,6 +36,11 @@ module Futurice.App.Checklist.Types (
     HasName (..),
     -- * Functions
     employeeTaskApplies,
+    -- * Tribe
+    ValidTribes,
+    validTribes,
+    HasValidTribes,
+    foldedValidTribes,
     -- * Lenses
     -- ** Employee
     employeeFirstName, employeeLastName, employeeContractType, employeeLocation, employeeConfirmed,
@@ -96,6 +102,7 @@ import Futurice.App.Checklist.Types.World
 import Futurice.App.Checklist.Types.TaskAppliance
 import Futurice.App.Checklist.Types.TaskComment
 import Futurice.App.Checklist.Types.TaskRole
+import Futurice.App.Checklist.Types.Tribe
 
 import qualified FUM (UserName)
 

@@ -53,6 +53,10 @@ envs:
     GITHUBPROXY_BASEURL: http://localhost:8811
     POWER_BASEURL: http://localhost:8000
 
+    # tribes
+    TRIBES:
+      secret: futu-tribes
+
     # spice stats
     FD_FLOW: "open-source"
 

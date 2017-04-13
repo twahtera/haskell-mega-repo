@@ -34,6 +34,7 @@ library
     , async
     , clay
     , containers
+    , constraints
     , crypto-api
     , DRBG
     , env-config
@@ -51,12 +52,14 @@ library
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
+    , reflection
     , resource-pool
     , servant
     , servant-lucid
     , servant-server
     , singleton-bool
     , split
+    , regex-applicative
     , stm
     , swagger2
     , text
@@ -95,6 +98,7 @@ library
       Futurice.App.Checklist.Types.TaskComment
       Futurice.App.Checklist.Types.TaskItem
       Futurice.App.Checklist.Types.TaskRole
+      Futurice.App.Checklist.Types.Tribe
       Futurice.App.Checklist.Types.World
   default-language: Haskell2010
 
@@ -112,6 +116,7 @@ executable checklist-app-server
     , async
     , clay
     , containers
+    , constraints
     , crypto-api
     , DRBG
     , env-config
@@ -129,12 +134,14 @@ executable checklist-app-server
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
+    , reflection
     , resource-pool
     , servant
     , servant-lucid
     , servant-server
     , singleton-bool
     , split
+    , regex-applicative
     , stm
     , swagger2
     , text
@@ -158,6 +165,7 @@ executable checklist-import
     , async
     , clay
     , containers
+    , constraints
     , crypto-api
     , DRBG
     , env-config
@@ -175,12 +183,14 @@ executable checklist-import
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
+    , reflection
     , resource-pool
     , servant
     , servant-lucid
     , servant-server
     , singleton-bool
     , split
+    , regex-applicative
     , stm
     , swagger2
     , text
@@ -208,6 +218,7 @@ test-suite unit-tests
     , async
     , clay
     , containers
+    , constraints
     , crypto-api
     , DRBG
     , env-config
@@ -225,12 +236,14 @@ test-suite unit-tests
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
+    , reflection
     , resource-pool
     , servant
     , servant-lucid
     , servant-server
     , singleton-bool
     , split
+    , regex-applicative
     , stm
     , swagger2
     , text

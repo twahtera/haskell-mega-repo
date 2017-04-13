@@ -19,6 +19,7 @@ dependencies:
   - async
   - clay
   - containers
+  - constraints
   - crypto-api
   - DRBG
   - env-config
@@ -36,12 +37,14 @@ dependencies:
   - postgresql-simple
   - QuickCheck
   - recursion-schemes >= 5.0.1
+  - reflection
   - resource-pool
   - servant
   - servant-lucid
   - servant-server
   - singleton-bool
   - split
+  - regex-applicative
   - stm
   - swagger2
   - text

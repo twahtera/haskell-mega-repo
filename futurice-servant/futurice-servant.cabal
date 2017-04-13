@@ -33,6 +33,7 @@ library
       base                  >=4.7   && <4.10
     , aeson
     , base-compat
+    , constraints
     , dynmap-cache
     , ekg
     , ekg-core

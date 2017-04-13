@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -10,6 +11,7 @@
 module Futurice.Servant (
     -- * @main@ boilerplate
     futuriceServerMain,
+    futuriceServerMain',
     futuriceNoMiddleware,
     liftFuturiceMiddleware,
     -- * HTML (lucid)
@@ -64,6 +66,7 @@ import Control.Concurrent.STM               (atomically)
 import Control.Lens                         (LensLike)
 import Control.Monad.Catch                  (fromException, handleAll)
 import Data.Char                            (isAlpha)
+import Data.Constraint                      (Dict (..))
 import Data.Swagger                         hiding (port)
 import Data.TDigest.Metrics                 (registerTDigest)
 import Development.GitRev                   (gitCommitDate, gitHash)
@@ -213,7 +216,18 @@ futuriceServerMain
     -> ServerConfig I colour ctx api
        -- ^ Server configuration
     -> IO ()
-futuriceServerMain makeCtx (SC t d server middleware (I envpfx)) =
+futuriceServerMain = futuriceServerMain' (\_ -> Dict)
+
+futuriceServerMain'
+    :: forall cfg ctx api colour.
+       (Configure cfg, HasSwagger api, SColour colour)
+    => (ctx -> Dict (HasServer api '[]))
+    -> (cfg -> Logger -> DynMapCache -> IO (ctx, [Job]))
+       -- ^ Initialise the context for application, add periocron jobs
+    -> ServerConfig I colour ctx api
+       -- ^ Server configuration
+    -> IO ()
+futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
     withStderrLogger $ \logger ->
     handleAll (handler logger) $ do
         (cfg, p, ekgP, leToken) <- runLogT "futurice-servant" logger $ do
@@ -231,6 +245,8 @@ futuriceServerMain makeCtx (SC t d server middleware (I envpfx)) =
   where
     main cfg p ekgP cache logger = do
         (ctx, jobs)    <- makeCtx cfg logger cache
+        -- brings 'HasServer' instance into a scope
+        Dict           <- pure $ makeDict ctx
         let server'    =  futuriceServer t d cache proxyApi (server ctx)
                        :: Server (FuturiceAPI api colour)
 
