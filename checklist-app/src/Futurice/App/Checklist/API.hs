@@ -8,6 +8,7 @@ import Futurice.Prelude
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Servant          (SSOUser)
 import Servant.API
+import Servant.Chart             (Chart, SVG)
 import Servant.HTML.Lucid        (HTML)
 
 import Futurice.App.Checklist.Ack     (Ack)
@@ -32,6 +33,7 @@ type ChecklistAPI = IndexPageEndpoint
     :<|> ArchivePageEndpoint
     -- Report(s)
     :<|> ReportPageEndpoint
+    :<|> "reports" :> "charts" :> "done.svg" :> SSOUser :> Get '[SVG] (Chart "done")
     -- Help
     :<|> ApplianceHelpEndpoint
     -- Command

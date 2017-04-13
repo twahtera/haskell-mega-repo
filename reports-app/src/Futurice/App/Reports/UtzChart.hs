@@ -10,8 +10,7 @@ import Futurice.Integrations
 import Futurice.Monoid             (Average (..))
 import Futurice.Time
 import Numeric.Interval.NonEmpty   (Interval, inf, sup, (...))
-
-import Futurice.App.Reports.Chart
+import Servant.Chart               (Chart (..))
 
 import qualified Data.Map.Strict               as Map
 import qualified Graphics.Rendering.Chart.Easy as C

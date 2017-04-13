@@ -17,9 +17,11 @@ import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Servant
 import Futurice.Stricter
 import Servant
+import Servant.Chart             (Chart)
 
 import Futurice.App.Checklist.Ack
 import Futurice.App.Checklist.API
+import Futurice.App.Checklist.Charts.Done
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Logic
@@ -61,6 +63,7 @@ server ctx = indexPageImpl ctx
     :<|> employeeAuditPageImpl ctx
     :<|> archivePageImpl ctx
     :<|> reportPageImpl ctx
+    :<|> doneChartImpl ctx
     :<|> applianceHelpImpl ctx
     :<|> commandImpl ctx
 
@@ -197,6 +200,14 @@ reportPageImpl
 reportPageImpl ctx fu cid fday tday= withAuthUser ctx fu $ \world userInfo ->
     pure $ reportPage world userInfo cid fday tday
 
+doneChartImpl
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> Handler (Chart "done")
+doneChartImpl ctx fu = withAuthUserChart ctx fu $ \world userInfo -> do
+    today <- currentDay
+    pure $ doneChart world today userInfo
+
 applianceHelpImpl
     :: Ctx
     -> Maybe FUM.UserName
@@ -291,6 +302,14 @@ withAuthUser
     -> m (HtmlPage a)
 withAuthUser ctx fu f = runLogT "withAuthUser" (ctxLogger ctx) $
     withAuthUser' forbiddedPage ctx fu (\w u -> lift $ f w u)
+
+withAuthUserChart
+    :: (MonadIO m, MonadBase IO m, MonadTime m)
+    => Ctx -> Maybe FUM.UserName
+    -> (World -> AuthUser -> m (Chart a))
+    -> m (Chart a)
+withAuthUserChart ctx fu f = runLogT "withAuthUser" (ctxLogger ctx) $
+    withAuthUser' (error "404 chart") ctx fu (\w u -> lift $ f w u)
 
 withAuthUser'
     :: (MonadIO m, MonadBase IO m, MonadTime m)

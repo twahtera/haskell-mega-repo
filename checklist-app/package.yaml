@@ -17,9 +17,10 @@ dependencies:
   - ansi-pretty
   - ansi-wl-pprint
   - async
+  - Chart
   - clay
-  - containers
   - constraints
+  - containers
   - crypto-api
   - DRBG
   - env-config
@@ -38,13 +39,14 @@ dependencies:
   - QuickCheck
   - recursion-schemes >= 5.0.1
   - reflection
+  - regex-applicative
   - resource-pool
   - servant
+  - servant-Chart
   - servant-lucid
   - servant-server
   - singleton-bool
   - split
-  - regex-applicative
   - stm
   - swagger2
   - text

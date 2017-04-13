@@ -32,9 +32,10 @@ library
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , Chart
     , clay
-    , containers
     , constraints
+    , containers
     , crypto-api
     , DRBG
     , env-config
@@ -53,13 +54,14 @@ library
     , QuickCheck
     , recursion-schemes >= 5.0.1
     , reflection
+    , regex-applicative
     , resource-pool
     , servant
+    , servant-Chart
     , servant-lucid
     , servant-server
     , singleton-bool
     , split
-    , regex-applicative
     , stm
     , swagger2
     , text
@@ -70,6 +72,7 @@ library
       Futurice.App.Checklist
       Futurice.App.Checklist.Ack
       Futurice.App.Checklist.API
+      Futurice.App.Checklist.Charts.Done
       Futurice.App.Checklist.Clay
       Futurice.App.Checklist.Command
       Futurice.App.Checklist.Config
@@ -115,9 +118,10 @@ executable checklist-app-server
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , Chart
     , clay
-    , containers
     , constraints
+    , containers
     , crypto-api
     , DRBG
     , env-config
@@ -136,13 +140,14 @@ executable checklist-app-server
     , QuickCheck
     , recursion-schemes >= 5.0.1
     , reflection
+    , regex-applicative
     , resource-pool
     , servant
+    , servant-Chart
     , servant-lucid
     , servant-server
     , singleton-bool
     , split
-    , regex-applicative
     , stm
     , swagger2
     , text
@@ -164,9 +169,10 @@ executable checklist-import
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , Chart
     , clay
-    , containers
     , constraints
+    , containers
     , crypto-api
     , DRBG
     , env-config
@@ -185,13 +191,14 @@ executable checklist-import
     , QuickCheck
     , recursion-schemes >= 5.0.1
     , reflection
+    , regex-applicative
     , resource-pool
     , servant
+    , servant-Chart
     , servant-lucid
     , servant-server
     , singleton-bool
     , split
-    , regex-applicative
     , stm
     , swagger2
     , text
@@ -217,9 +224,10 @@ test-suite unit-tests
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , Chart
     , clay
-    , containers
     , constraints
+    , containers
     , crypto-api
     , DRBG
     , env-config
@@ -238,13 +246,14 @@ test-suite unit-tests
     , QuickCheck
     , recursion-schemes >= 5.0.1
     , reflection
+    , regex-applicative
     , resource-pool
     , servant
+    , servant-Chart
     , servant-lucid
     , servant-server
     , singleton-bool
     , split
-    , regex-applicative
     , stm
     , swagger2
     , text
