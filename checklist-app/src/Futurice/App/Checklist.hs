@@ -35,6 +35,7 @@ import Futurice.App.Checklist.Pages.Error
        (forbiddedPage, notFoundPage)
 import Futurice.App.Checklist.Pages.HelpAppliance
 import Futurice.App.Checklist.Pages.Index
+import Futurice.App.Checklist.Pages.Report
 import Futurice.App.Checklist.Pages.Task
 import Futurice.App.Checklist.Pages.Tasks
 import Futurice.App.Checklist.Types
@@ -59,6 +60,7 @@ server ctx = indexPageImpl ctx
     :<|> employeePageImpl ctx
     :<|> employeeAuditPageImpl ctx
     :<|> archivePageImpl ctx
+    :<|> reportPageImpl ctx
     :<|> applianceHelpImpl ctx
     :<|> commandImpl ctx
 
@@ -184,6 +186,16 @@ archivePageImpl
     -> Handler (HtmlPage "archive")
 archivePageImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
     pure $ archivePage world userInfo
+
+reportPageImpl
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> Maybe (Identifier Checklist)
+    -> Maybe Day
+    -> Maybe Day
+    -> Handler (HtmlPage "report")
+reportPageImpl ctx fu cid fday tday= withAuthUser ctx fu $ \world userInfo ->
+    pure $ reportPage world userInfo cid fday tday
 
 applianceHelpImpl
     :: Ctx
