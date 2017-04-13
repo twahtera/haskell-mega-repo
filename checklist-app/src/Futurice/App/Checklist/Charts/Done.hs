@@ -18,8 +18,8 @@ doneChart
     -> Chart "done"
 doneChart world today _ = Chart . C.toRenderable $ do
     C.layout_title .= "tasks done per employee"
-    C.layout_y_axis . C.laxis_title .= "day offset"
-    C.layout_y_axis . C.laxis_title .= "done"
+    C.layout_x_axis . C.laxis_title .= "starting day offset from today"
+    C.layout_y_axis . C.laxis_title .= "done %"
 
     C.plot $ pure $ C.PlotPoints
         { C._plot_points_title = "All"
