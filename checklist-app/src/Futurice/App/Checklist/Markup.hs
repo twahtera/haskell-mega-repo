@@ -39,6 +39,8 @@ module Futurice.App.Checklist.Markup (
     -- * Tasks
     taskCheckbox_,
     taskCommentInput_,
+    -- * Headers
+    viewerItemsHeader,
     -- * Defaults
     defaultShowAll,
     ) where
@@ -46,7 +48,6 @@ module Futurice.App.Checklist.Markup (
 import Prelude ()
 import Futurice.Prelude
 import Control.Lens        (Getter, has, non, re, to, _Wrapped)
-import Data.Functor.Rep    (Representable (..))
 import Servant.Utils.Links (Link, safeLink)
 import Web.HttpApiData     (toUrlPiece)
 
@@ -268,37 +269,6 @@ checklistNameHtml world mloc i notDone =
         world ^. worldLists . at i . non (error "Inconsisten world") . nameHtml
 
 -------------------------------------------------------------------------------
--- TodoCounter
--------------------------------------------------------------------------------
-
-toTodoCounter :: World -> Identifier Task -> AnnTaskItem -> TodoCounter
-toTodoCounter world tid td =
-    case (world ^? worldTasks . ix tid . taskRole, td) of
-        (Just role, AnnTaskItemDone {}) -> TodoCounter (Counter 1 1) $ mk role 1
-        (Just role, AnnTaskItemTodo {}) -> TodoCounter (Counter 0 1) $ mk role 0
-        (Nothing,   AnnTaskItemDone {}) -> TodoCounter (Counter 1 1) $ mempty
-        (Nothing,   AnnTaskItemTodo {}) -> TodoCounter (Counter 0 1) $ mempty
-  where
-    mk :: TaskRole -> Int -> PerTaskRole Counter
-    mk role value = tabulate $ \role' -> if role == role'
-        then Counter value 1
-        else mempty
-
-data Counter = Counter !Int Int
-instance Semigroup Counter where
-    Counter a b <> Counter a' b' = Counter (a + a') (b + b')
-instance Monoid Counter where
-    mempty = Counter 0 0
-    mappend = (<>)
-
-data TodoCounter = TodoCounter Counter (PerTaskRole Counter)
-instance Semigroup TodoCounter where
-    TodoCounter a b <> TodoCounter a' b' = TodoCounter (a <> a') (b <> b')
-instance Monoid TodoCounter where
-    mempty = TodoCounter mempty mempty
-    mappend = (<>)
-
--------------------------------------------------------------------------------
 -- Tasks
 -------------------------------------------------------------------------------
 
@@ -335,6 +305,15 @@ taskCommentInput_ world employee task
         , value_ $ fromMaybe "" $ world ^? worldTaskItems . ix (employee ^. identifier) . ix (task ^. identifier) . annTaskItemComment
         ]
     | otherwise           = pure ()
+
+-------------------------------------------------------------------------------
+-- Headers
+-------------------------------------------------------------------------------
+
+viewerItemsHeader :: Monad m => TaskRole -> HtmlT m ()
+viewerItemsHeader TaskRoleIT         = th_ [title_ "IT tasks todo/done"]          "IT items"
+viewerItemsHeader TaskRoleHR         = th_ [title_ "HR tasks todo/done"]          "HR items"
+viewerItemsHeader TaskRoleSupervisor = th_ [title_ "Supervisor tasks todo/done"]  "Supervisor items"
 
 -------------------------------------------------------------------------------
 -- Defaults

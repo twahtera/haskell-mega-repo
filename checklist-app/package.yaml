@@ -23,6 +23,7 @@ dependencies:
   - constraints
   - containers
   - crypto-api
+  - deepseq
   - distributive
   - DRBG
   - env-config

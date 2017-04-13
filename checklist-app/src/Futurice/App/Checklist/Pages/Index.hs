@@ -162,8 +162,3 @@ countEmployeesWithTask world task = toHtml' . foldMap f
         Nothing                 -> Counter 0 0
         Just AnnTaskItemTodo {} -> Counter 0 1
         Just AnnTaskItemDone {} -> Counter 1 1
-
-viewerItemsHeader :: Monad m => TaskRole -> HtmlT m ()
-viewerItemsHeader TaskRoleIT         = th_ [title_ "IT tasks todo/done"]          "IT items"
-viewerItemsHeader TaskRoleHR         = th_ [title_ "HR tasks todo/done"]          "HR items"
-viewerItemsHeader TaskRoleSupervisor = th_ [title_ "Supervisor tasks todo/done"]  "Supervisor items"

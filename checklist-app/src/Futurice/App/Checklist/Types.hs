@@ -89,6 +89,10 @@ module Futurice.App.Checklist.Types (
     -- * Access
     AuthUser,
     authUserTaskRole,
+    -- * Counters
+    Counter (..),
+    TodoCounter (..),
+    toTodoCounter,
     ) where
 
 import Prelude ()
@@ -96,6 +100,7 @@ import Futurice.Prelude
 
 import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.ContractType
+import Futurice.App.Checklist.Types.Counter
 import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.Location
 import Futurice.App.Checklist.Types.TaskItem

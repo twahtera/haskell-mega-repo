@@ -63,6 +63,8 @@ data Employee = Employee
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
 
+instance NFData Employee
+
 -- | 'Task' describes a particular task needs to be done. For example /"add to fum"/ or /"order a laptop".
 data Task = Task
     { _taskId           :: !(Identifier Task)

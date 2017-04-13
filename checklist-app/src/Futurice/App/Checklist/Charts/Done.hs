@@ -3,14 +3,12 @@ module Futurice.App.Checklist.Charts.Done (doneChart) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens     (ifoldMapOf, (.=))
+import Control.Lens     (ifoldMapOf, to, (.=))
 import Data.Time        (diffDays)
 import Servant.Chart    (Chart (..))
 
 import qualified Graphics.Rendering.Chart.Easy as C
 
-import Futurice.App.Checklist.Markup
-       (Counter (..), TodoCounter (..), toTodoCounter)
 import Futurice.App.Checklist.Types
 
 doneChart
@@ -49,7 +47,9 @@ doneChart world today _ = Chart . C.toRenderable $ do
     colors = PerTaskRole C.blue C.green C.red
 
     rawPoints :: [(Integer, TodoCounter)]
-    rawPoints = mkPoint <$> world ^.. worldEmployees . folded
+    rawPoints =
+        (world ^.. worldEmployees . folded . to mkPoint)
+        ++ (world ^.. worldArchive . folded . to mkArchivedPoint)
 
     mkAllPoint :: (Integer, TodoCounter) -> (Double, C.Percent)
     mkAllPoint (d, TodoCounter (Counter i j) _) =
@@ -73,3 +73,8 @@ doneChart world today _ = Chart . C.toRenderable $ do
             (worldTaskItems . ix eid . ifolded)
             (toTodoCounter world)
             world
+
+    mkArchivedPoint :: (Employee, TodoCounter) -> (Integer, TodoCounter)
+    mkArchivedPoint (e, counter) = (diffDays startingDay today, counter)
+      where
+        startingDay = e ^. employeeStartingDay

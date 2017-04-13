@@ -27,6 +27,8 @@ newtype Identifier a = Identifier UUID
 identifierToText :: Identifier a -> Text
 identifierToText (Identifier u) = UUID.toText u
 
+instance NFData (Identifier a)
+
 instance Arbitrary (Identifier a) where
     arbitrary = Identifier <$> arbitrary
 

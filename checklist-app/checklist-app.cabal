@@ -38,6 +38,7 @@ library
     , constraints
     , containers
     , crypto-api
+    , deepseq
     , distributive
     , DRBG
     , env-config
@@ -97,6 +98,7 @@ library
       Futurice.App.Checklist.Types
       Futurice.App.Checklist.Types.Basic
       Futurice.App.Checklist.Types.ContractType
+      Futurice.App.Checklist.Types.Counter
       Futurice.App.Checklist.Types.Ctx
       Futurice.App.Checklist.Types.Identifier
       Futurice.App.Checklist.Types.Location
@@ -126,6 +128,7 @@ executable checklist-app-server
     , constraints
     , containers
     , crypto-api
+    , deepseq
     , distributive
     , DRBG
     , env-config
@@ -179,6 +182,7 @@ executable checklist-import
     , constraints
     , containers
     , crypto-api
+    , deepseq
     , distributive
     , DRBG
     , env-config
@@ -236,6 +240,7 @@ test-suite unit-tests
     , constraints
     , containers
     , crypto-api
+    , deepseq
     , distributive
     , DRBG
     , env-config

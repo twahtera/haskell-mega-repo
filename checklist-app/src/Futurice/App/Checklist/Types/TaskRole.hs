@@ -29,6 +29,8 @@ data TaskRole
 makePrisms ''TaskRole
 deriveGeneric ''TaskRole
 
+instance NFData TaskRole
+
 instance Arbitrary TaskRole where
     arbitrary = sopArbitrary
     shrink    = sopShrink
@@ -71,6 +73,10 @@ instance ToHttpApiData TaskRole where
 
 data PerTaskRole a = PerTaskRole !a !a !a
   deriving (Functor)
+
+instance NFData a => NFData (PerTaskRole a) where
+    rnf (PerTaskRole x y z) =
+        rnf x `seq` rnf y `seq` rnf z
 
 type instance Index (PerTaskRole a) = TaskRole
 type instance IxValue (PerTaskRole a) = a

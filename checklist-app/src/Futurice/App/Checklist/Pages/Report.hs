@@ -21,7 +21,7 @@ reportPage
     -> HtmlPage "report"
 reportPage world authUser mcid fday tday = checklistPage_ "Employees" authUser $ do
     let employees' = sortOn (view employeeStartingDay) $
-            (world ^.. worldArchive . folded)
+            (world ^.. worldArchive . folded . _1)
             <> (world ^.. worldEmployees . folded)
 
     let employees = employees'

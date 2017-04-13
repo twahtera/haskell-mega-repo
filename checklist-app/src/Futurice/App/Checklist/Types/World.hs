@@ -16,12 +16,19 @@ module Futurice.App.Checklist.Types.World (
     worldTaskItems',
     worldTasksSorted,
     worldTasksSortedByName,
+    -- * Counters
+    toTodoCounter,
+    -- * Archive
+    ArchivedEmployee,
+    Archive,
     ) where
 
 -- import Futurice.Generics
 import Prelude ()
 import Futurice.Prelude
+import Control.DeepSeq  (force)
 import Control.Lens     (Getter, contains, filtered, ifiltered, to, (<&>))
+import Data.Functor.Rep (Representable (..))
 import Futurice.Graph   (Graph)
 import Futurice.IdMap   (IdMap)
 
@@ -30,6 +37,7 @@ import qualified Futurice.Graph as Graph
 import qualified Futurice.IdMap as IdMap
 
 import Futurice.App.Checklist.Types.Basic
+import Futurice.App.Checklist.Types.Counter
 import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.Location
 import Futurice.App.Checklist.Types.TaskItem
@@ -46,13 +54,16 @@ import qualified FUM
 -- | Primitive ACL. Given possible username, return the actual username, role and location.
 type AuthCheck = Maybe FUM.UserName -> Maybe (FUM.UserName, TaskRole, Location)
 
+type ArchivedEmployee = (Employee, TodoCounter)
+type Archive = Map (Identifier Employee) ArchivedEmployee
+
 -- | World desribes the state of the db.
 data World = World
     { _worldEmployees  :: !(IdMap Employee)
     , _worldTasks      :: !(Graph Task)
     , _worldLists      :: !(IdMap Checklist)
     , _worldTaskItems  :: !(Map (Identifier Employee) (Map (Identifier Task) AnnTaskItem))
-    , _worldArchive    :: !(IdMap Employee) -- TODO: we'd need to save the task info
+    , _worldArchive    :: !Archive
       -- ^ ACL lookup
     -- lazy fields, updated on need when accessed
     , _worldTaskItems' :: Map (Identifier Task) (Map (Identifier Employee) AnnTaskItem)
@@ -75,7 +86,7 @@ worldTaskItems :: Lens' World (Map (Identifier Employee) (Map (Identifier Task) 
 worldTaskItems f (World es ts ls is arc _) = f is <&>
     \x -> mkWorld es (Graph.toIdMap ts) ls x arc
 
-worldArchive :: Lens' World (IdMap Employee)
+worldArchive :: Lens' World Archive
 worldArchive f (World es ts ls is arc _) = f arc <&>
     \x -> mkWorld es (Graph.toIdMap ts) ls is x
 
@@ -107,7 +118,7 @@ mkWorld
     -> IdMap Task
     -> IdMap Checklist
     -> Map (Identifier Employee) (Map (Identifier Task) AnnTaskItem)
-    -> IdMap Employee  -- ^ archive
+    -> Archive
     -> World
 mkWorld es ts ls is arc =
     let tids            = IdMap.keysSet ts
@@ -131,7 +142,7 @@ mkWorld es ts ls is arc =
         -- TODO: validate is
 
         swappedIs = swapMapMap is
-    in World es' (Graph.fromIdMap ts') ls' is arc swappedIs
+    in World es' (Graph.fromIdMap ts') ls' is (force arc) swappedIs
 
 {-
 
@@ -192,3 +203,20 @@ instance QC.Arbitrary World where
         -- World
         pure $ mkWorld es' ts' cs is''
 -}
+
+-------------------------------------------------------------------------------
+-- Counters
+-------------------------------------------------------------------------------
+
+toTodoCounter :: World -> Identifier Task -> AnnTaskItem -> TodoCounter
+toTodoCounter world tid td =
+    case (world ^? worldTasks . ix tid . taskRole, td) of
+        (Just role, AnnTaskItemDone {}) -> TodoCounter (Counter 1 1) $ mk role 1
+        (Just role, AnnTaskItemTodo {}) -> TodoCounter (Counter 0 1) $ mk role 0
+        (Nothing,   AnnTaskItemDone {}) -> TodoCounter (Counter 1 1) $ mempty
+        (Nothing,   AnnTaskItemTodo {}) -> TodoCounter (Counter 0 1) $ mempty
+  where
+    mk :: TaskRole -> Int -> PerTaskRole Counter
+    mk role value = tabulate $ \role' -> if role == role'
+        then Counter value 1
+        else mempty

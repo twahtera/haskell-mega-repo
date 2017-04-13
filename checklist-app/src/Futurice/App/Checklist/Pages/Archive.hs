@@ -14,8 +14,8 @@ archivePage
     :: World       -- ^ the world
     -> AuthUser    -- ^ logged in user
     -> HtmlPage "archive"
-archivePage world authUser = checklistPage_ "Employees" authUser $ do
-    let employees = sortOn (view employeeStartingDay) $ world ^.. worldArchive . folded
+archivePage world authUser@(_, viewerRole) = checklistPage_ "Employees" authUser $ do
+    let employees = sortOn (view $ _1 . employeeStartingDay) $ world ^.. worldArchive . folded
 
     -- Title
     header "Archive" []
@@ -29,10 +29,16 @@ archivePage world authUser = checklistPage_ "Employees" authUser $ do
             th_ [title_ "Checklist"]                   "List"
             th_ [title_ "Due date"]                    "Due date"
             th_ [title_ "Confirmed - contract signed"] "Confirmed"
-        tbody_ $ for_ employees $ \employee -> tr_ $ do
+            viewerItemsHeader viewerRole
+            th_ [title_ "Task items todo/done"]        "Tasks"
+        tbody_ $ for_ employees $ \(employee, TodoCounter (Counter i j) perRole ) -> tr_ $ do
             td_ $ contractTypeHtml $ employee ^. employeeContractType
             td_ $ locationHtml (Nothing :: Maybe Checklist) $ employee ^. employeeLocation
             td_ $ employee ^. nameHtml
             td_ $ checklistNameHtml world Nothing (employee ^. employeeChecklist) False
             td_ $ toHtml $ show $ employee ^. employeeStartingDay
             td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
+            case perRole ^. ix viewerRole of
+                Counter a b -> do
+                    td_ $ toHtml (show a) *> "/" *> toHtml (show b)
+                    td_ $ toHtml (show i) *> "/" *> toHtml (show j)

@@ -33,6 +33,8 @@ newtype Tribe = Tribe Text
 getTribe :: Tribe -> Text
 getTribe (Tribe t) = t
 
+instance NFData Tribe
+
 instance Arbitrary Tribe where
     arbitrary = Tribe <$> QC.elements tribes
 
