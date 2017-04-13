@@ -9,7 +9,7 @@ module Futurice.App.Checklist (defaultMain) where
 import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
-import Data.Constraint           (Dict (..), withDict)
+import Data.Constraint           (Dict (..))
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
 import Data.Reflection           (give)
@@ -268,8 +268,8 @@ fetchEmployeeCommands
     => Ctx
     -> Employee
     -> m [(Command Identity, FUM.UserName, UTCTime)]
-fetchEmployeeCommands ctx e =
-    withDict (ctxValidTribes ctx) $ withResource (ctxPostgres ctx) $ \conn ->
+fetchEmployeeCommands ctx e = case ctxValidTribes ctx of
+    Dict -> withResource (ctxPostgres ctx) $ \conn ->
         liftBase $ Postgres.query conn query (e ^. identifier, e ^. employeeChecklist)
   where
     query = fromString $ unwords
