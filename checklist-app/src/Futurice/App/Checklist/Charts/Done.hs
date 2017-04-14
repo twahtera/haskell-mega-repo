@@ -4,7 +4,6 @@ module Futurice.App.Checklist.Charts.Done (doneChart) where
 import Prelude ()
 import Futurice.Prelude
 import Control.Lens     (ifoldMapOf, to, (.=))
-import Data.Time        (diffDays)
 import Servant.Chart    (Chart (..))
 
 import qualified Graphics.Rendering.Chart.Easy as C
@@ -16,9 +15,9 @@ doneChart
     -> Day         -- ^ today
     -> AuthUser
     -> Chart "done"
-doneChart world today _ = Chart . C.toRenderable $ do
+doneChart world _today _ = Chart . C.toRenderable $ do
     C.layout_title .= "tasks done per employee"
-    C.layout_x_axis . C.laxis_title .= "starting day offset from today"
+    C.layout_x_axis . C.laxis_title .= "due day"
     C.layout_y_axis . C.laxis_title .= "done %"
 
     C.plot $ pure $ C.PlotPoints
@@ -46,26 +45,26 @@ doneChart world today _ = Chart . C.toRenderable $ do
  where
     colors = PerTaskRole C.blue C.green C.red
 
-    rawPoints :: [(Integer, TodoCounter)]
+    rawPoints :: [(Day, TodoCounter)]
     rawPoints =
         (world ^.. worldEmployees . folded . to mkPoint)
         ++ (world ^.. worldArchive . folded . to mkArchivedPoint)
 
-    mkAllPoint :: (Integer, TodoCounter) -> (Double, C.Percent)
+    mkAllPoint :: (Day, TodoCounter) -> (Day, C.Percent)
     mkAllPoint (d, TodoCounter (Counter i j) _) =
-        ( fromInteger d
+        ( d
         , C.Percent $ 100 * fromIntegral i / fromIntegral j
         )
 
-    mkViewerPoint :: TaskRole -> (Integer, TodoCounter) -> (Double, C.Percent)
+    mkViewerPoint :: TaskRole -> (Day, TodoCounter) -> (Day, C.Percent)
     mkViewerPoint r (d, TodoCounter _ perRole) = case perRole ^. ix r of
         Counter i j ->
-            ( fromInteger d
+            ( d
             , C.Percent $ 100 * fromIntegral i / fromIntegral j
             )
 
-    mkPoint :: Employee -> (Integer, TodoCounter)
-    mkPoint e = (diffDays startingDay today, counter)
+    mkPoint :: Employee -> (Day, TodoCounter)
+    mkPoint e = (startingDay, counter)
       where
         eid = e ^. identifier
         startingDay = e ^. employeeStartingDay
@@ -74,7 +73,5 @@ doneChart world today _ = Chart . C.toRenderable $ do
             (toTodoCounter world)
             world
 
-    mkArchivedPoint :: (Employee, TodoCounter) -> (Integer, TodoCounter)
-    mkArchivedPoint (e, counter) = (diffDays startingDay today, counter)
-      where
-        startingDay = e ^. employeeStartingDay
+    mkArchivedPoint :: (Employee, TodoCounter) -> (Day, TodoCounter)
+    mkArchivedPoint (e, counter) = (e ^. employeeStartingDay, counter)

@@ -44,6 +44,12 @@ packages:
 - tdigest/tdigest-bench/
 - tdigest-ekg/
 - theme-app/
+- extra-dep: true
+  subdirs:
+  - chart
+  location:
+    git: https://github.com/timbod7/haskell-chart.git
+    commit: 564d8672c4217db30032d093a6652edd83f0100d
 extra-deps:
 - active-0.2.0.12
 - aeson-1.1.0.0
@@ -51,7 +57,7 @@ extra-deps:
 - aeson-pretty-0.8.2
 - bifunctors-5.4.1
 - cabal-doctest-1
-- Chart-1.8.2
+# - Chart-1.8.2
 - Chart-diagrams-1.8.2
 - clay-0.11
 - comonad-5
