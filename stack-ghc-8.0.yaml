@@ -46,4 +46,10 @@ packages:
 - tdigest/tdigest-bench/
 - tdigest-ekg/
 - theme-app/
+- extra-dep: true
+  subdirs:
+  - chart
+  location:
+    git: https://github.com/timbod7/haskell-chart.git
+    commit: 564d8672c4217db30032d093a6652edd83f0100d
 extra-deps: []
