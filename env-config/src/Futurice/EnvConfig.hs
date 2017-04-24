@@ -12,6 +12,7 @@ module Futurice.EnvConfig (
     envVarWithDefault,
     ConfigParser,
     FromEnvVar (..),
+    FromEnvVarList (..),
     -- * Helpers
     envConnectInfo,
     optionalAlt,
@@ -26,6 +27,7 @@ import Algebra.Lattice
 import Control.Monad.Logger           (LogLevel (..))
 import Data.Functor.Alt               (Alt (..))
 import Data.List                      (foldl')
+import Data.List.Split                (splitOn)
 import Data.Semigroup.Foldable        (asum1)
 import Database.PostgreSQL.Simple     (ConnectInfo (..))
 import Database.PostgreSQL.Simple.URL (parseDatabaseUrl)
@@ -91,6 +93,15 @@ class Configure cfg where
 -- | Class to parse env variables
 class FromEnvVar a where
     fromEnvVar :: String -> Maybe a
+
+class FromEnvVarList a where
+    fromEnvVarList :: String -> [a]
+
+instance FromEnvVarList a => FromEnvVar [a] where
+    fromEnvVar = Just . fromEnvVarList
+
+instance (FromEnvVarList a, Ord a) => FromEnvVar (Set a) where
+    fromEnvVar = Just . Set.fromList . fromEnvVarList
 
 -------------------------------------------------------------------------------
 -- CP
@@ -182,9 +193,11 @@ defaultEkgPort = 9000
 -- Instances
 -------------------------------------------------------------------------------
 
--- | This instance is temporary.
-instance a ~ Char => FromEnvVar [a] where
-    fromEnvVar = Just
+instance FromEnvVarList Char where
+    fromEnvVarList = id
+
+instance FromEnvVarList Int where
+    fromEnvVarList =  mapMaybe fromEnvVar . splitOn ","
 
 instance FromEnvVar Text where
     fromEnvVar = Just . view packed

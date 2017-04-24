@@ -20,6 +20,7 @@ import PlanMill.Internal.Prelude
 
 import Data.Aeson.Types                 (Parser)
 import Futurice.Constraint.ForallSymbol (Dict (..), ForallFSymbol (..))
+import Futurice.EnvConfig
 import Futurice.Reflection.TypeLits     (reifyTypeableSymbol)
 import GHC.TypeLits                     (KnownSymbol, Symbol, symbolVal)
 
@@ -73,6 +74,9 @@ instance FromJSON (EnumValue entity field) where
 
 instance ToJSON (EnumValue entity field) where
     toJSON (EnumValue v) = toJSON v
+
+instance FromEnvVarList (EnumValue entity field) where
+    fromEnvVarList = fmap EnumValue . fromEnvVarList
 
 -------------------------------------------------------------------------------
 -- IntMap from Object

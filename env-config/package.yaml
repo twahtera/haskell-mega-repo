@@ -31,6 +31,7 @@ library:
     - semigroupoids
     - semigroups
     - servant-client
+    - split
     - text
     - uuid-types
   default-extensions:

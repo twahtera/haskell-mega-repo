@@ -45,6 +45,7 @@ library
     , semigroupoids
     , semigroups
     , servant-client
+    , split
     , text
     , uuid-types
   exposed-modules:
