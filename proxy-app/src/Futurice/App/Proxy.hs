@@ -35,7 +35,7 @@ import qualified PlanMill.Types.Query       as PM (SomeQuery, SomeResponse)
 
 import Futurice.App.Proxy.Config
 import Futurice.App.Proxy.Ctx
-import Futurice.App.Reports.MissingHours      (MissingHoursReport)
+import Futurice.App.Reports.MissingHours      (MissingHoursReport, MissingHoursTitle)
 import Futurice.App.Reports.TimereportsByTask (TimereportsByTaskReport)
 
 -------------------------------------------------------------------------------
@@ -74,9 +74,9 @@ instance HasClientBaseurl Ctx PowerService where
 
 -- Reports
 type MissingReportsEndpoint = ProxyPair
-    ("futuhours" :> "reports" :> "missinghours" :> Get '[CSV, JSON] MissingHoursReport)
+    ("futuhours" :> "reports" :> "missinghours" :> Get '[CSV, JSON] (MissingHoursReport MissingHoursTitle))
     ReportsAppService
-    ("missing-hours" :> Get '[JSON] MissingHoursReport)
+    ("missing-hours" :> Get '[JSON] (MissingHoursReport MissingHoursTitle))
 
 type TimereportsByTaskReportEndpoint = ProxyPair
     ("reports" :> "hours-by-task" :> Get '[CSV, JSON] TimereportsByTaskReport)
