@@ -34,7 +34,11 @@ missingHoursChart contractTypes = Chart . C.toRenderable <$> c
         -- interval: from beginning of the year
         today <- currentDay
         let (currYear, currWeek, _) = toWeekDate today
-        let interval = fromWeekDate currYear 1 1 ... today
+        let weekA = max 1 (currWeek - 13)
+            weekB = max 1 (currWeek - 1)
+        let interval =
+                fromWeekDate currYear weekA 1 ...
+                fromWeekDate currYear weekB 7
 
         -- people: do not include only some contracts
         fpm0 <- snd <$$> fumPlanmillMap
@@ -54,7 +58,7 @@ missingHoursChart contractTypes = Chart . C.toRenderable <$> c
                     scale x = realToFrac (getNDT x) / fromIntegral (getSum count)
                 lineStyle <- nextLineStyle
                 lift $ C.plot $ line' lineStyle (tribe ^. unpacked) $ singleton $ do
-                    week <- [1..currWeek-1]
+                    week <- [weekA .. weekB]
                     let day = fromWeekDate currYear week 1
                     pure (day, maybe 0 scale $ hours ^? ix (currYear, week))
 
