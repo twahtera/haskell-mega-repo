@@ -73,6 +73,7 @@ type family FoldReportsAPI rs :: * where
 type ReportsAPI = FoldReportsAPI Reports
     -- Charts
     :<|> "charts" :> "utz" :> Get '[SVG] (Chart "utz")
+    :<|> "charts" :> "missing-hours" :> Get '[SVG] (Chart "missing-hours")
     -- Additional non-reports
     :<|> "power" :> "users" :> Get '[JSON] PowerUserReport
     :<|> "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport

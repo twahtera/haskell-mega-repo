@@ -47,6 +47,7 @@ import Futurice.App.Reports.GithubUsers
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, missingHoursReport)
+import Futurice.App.Reports.MissingHoursChart (missingHoursChart)
 import Futurice.App.Reports.PlanmillEmployees
        (PlanmillEmployeesReport, planmillEmployeesReport)
 import Futurice.App.Reports.PowerAbsences
@@ -190,6 +191,13 @@ serveChart f ctx = cachedIO' ctx () $ do
         (ctxToIntegrationsConfig now ctx)
         f
 
+-- TODO: introduce "HasMissingHoursContracts"
+missingHoursChart'
+    :: Ctx
+    -> Integrations I I I I (Chart "missing-hours")
+missingHoursChart' ctx =
+    missingHoursChart (cfgMissingHoursContracts (ctxConfig ctx))
+
 makeServer :: Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)
 makeServer _   Nil = pure indexPage
 makeServer ctx (ReportEndpoint r :* rs) =
@@ -200,6 +208,7 @@ makeServer ctx (ReportEndpoint r :* rs) =
 server :: Ctx -> Server ReportsAPI
 server ctx = makeServer ctx reports
     :<|> liftIO (serveChart utzChart ctx)
+    :<|> liftIO (serveChart (missingHoursChart' ctx) ctx)
     :<|> liftIO (servePowerUsersReport ctx)
     :<|> liftIO . servePowerAbsencesReport ctx
 

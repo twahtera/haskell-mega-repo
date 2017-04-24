@@ -29,8 +29,8 @@ module Futurice.App.Reports.MissingHours (
 
 import Prelude ()
 import Futurice.Prelude
+import Control.Lens              (contains)
 import Data.Fixed                (Centi)
-import Control.Lens (contains)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Lucid.Foundation
