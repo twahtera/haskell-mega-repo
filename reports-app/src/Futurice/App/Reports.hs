@@ -107,7 +107,9 @@ serveFumPlanmillReport ctx = cachedIO' ctx () $ do
         (ctxToIntegrationsConfig now ctx)
         fumPlanmillReport
 
-serveMissingHoursReport :: Bool -> Ctx -> IO MissingHoursReport
+serveMissingHoursReport
+    :: KnownSymbol title
+    => Bool -> Ctx -> IO (MissingHoursReport title)
 serveMissingHoursReport allContracts ctx = cachedIO' ctx allContracts $ do
     now <- currentTime
     day <- currentDay

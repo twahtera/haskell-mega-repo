@@ -10,6 +10,8 @@
 -- | Missing hours report
 module Futurice.App.Reports.MissingHours (
     -- * Report
+    MissingHoursTitle,
+    MissingHoursTitleFilt,
     MissingHoursReport,
     missingHoursReport,
     -- * Data
@@ -73,8 +75,11 @@ instance ToColumns MissingHour where
 -- Report
 -------------------------------------------------------------------------------
 
-type MissingHoursReport = Report
-    "Missing hour markings"
+type MissingHoursTitle = "Missing hour markings"
+type MissingHoursTitleFilt = "Missing hour markings, filtered"
+
+type MissingHoursReport title = Report
+    title
     MissingHoursParams
     (HashMap FUM.UserName :$ StrictPair Employee :$ Vector :$ MissingHour)
 
@@ -163,13 +168,13 @@ missingHoursForUser interval user = do
     isPositive = (>0)
 
 missingHoursReport
-    :: forall m env.
+    :: forall m env title.
         ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m
         , MonadReader env m, HasFUMEmployeeListName env, HasFUMPublicURL env
         )
     => Maybe (Set (PM.EnumValue PM.User "contractType"))
     -> PM.Interval Day
-    -> m MissingHoursReport
+    -> m (MissingHoursReport title)
 missingHoursReport mcontractTypes interval = do
     fumPubUrl <- view fumPublicUrl
     now <- PM.currentTime
