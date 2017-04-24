@@ -61,6 +61,9 @@ type Ctx = (DynMapCache, Manager, Logger, Config)
 
 newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
 
+ctxConfig :: Ctx -> Config
+ctxConfig (_, _, _, cfg) = cfg
+
 -------------------------------------------------------------------------------
 -- Endpoints
 -------------------------------------------------------------------------------
@@ -104,15 +107,19 @@ serveFumPlanmillReport ctx = cachedIO' ctx () $ do
         (ctxToIntegrationsConfig now ctx)
         fumPlanmillReport
 
-serveMissingHoursReport :: Ctx -> IO MissingHoursReport
-serveMissingHoursReport ctx = cachedIO' ctx () $ do
+serveMissingHoursReport :: Bool -> Ctx -> IO MissingHoursReport
+serveMissingHoursReport allContracts ctx = cachedIO' ctx allContracts $ do
     now <- currentTime
     day <- currentDay
     -- TODO: end date to the last friday
     let interval = beginningOfPrev2Month day ... pred day
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
-        (missingHoursReport interval)
+        (missingHoursReport contractTypes interval)
+  where
+    contractTypes
+        | allContracts = Nothing
+        | otherwise    = Just (cfgMissingHoursContracts (ctxConfig ctx))
 
 serveBalancesReport :: Ctx -> IO BalanceReport
 serveBalancesReport ctx = cachedIO' ctx () $ do
@@ -163,7 +170,8 @@ reports =
     ReportEndpoint serveFumFlowdockReport :*
     ReportEndpoint serveFumPlanmillReport :*
     ReportEndpoint serveGithubUsersReport :*
-    ReportEndpoint serveMissingHoursReport :*
+    ReportEndpoint (serveMissingHoursReport True) :*
+    ReportEndpoint (serveMissingHoursReport False) :*
     ReportEndpoint serveBalancesReport :*
     ReportEndpoint serveTimereportsByTaskReport :*
     ReportEndpoint servePlanmillEmployeesReport :*

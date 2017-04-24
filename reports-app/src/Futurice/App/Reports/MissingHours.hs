@@ -28,6 +28,7 @@ module Futurice.App.Reports.MissingHours (
 import Prelude ()
 import Futurice.Prelude
 import Data.Fixed                (Centi)
+import Control.Lens (contains)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Lucid.Foundation
@@ -35,12 +36,13 @@ import Futurice.Report.Columns
 import Futurice.Time
 import Numeric.Interval.NonEmpty (inf, sup)
 
-import qualified Data.Map          as Map
-import qualified Data.Tuple.Strict as S
-import qualified Data.Vector       as V
+import qualified Data.HashMap.Strict as HM
+import qualified Data.Map            as Map
+import qualified Data.Tuple.Strict   as S
+import qualified Data.Vector         as V
 import qualified FUM
-import qualified PlanMill          as PM
-import qualified PlanMill.Queries  as PMQ
+import qualified PlanMill            as PM
+import qualified PlanMill.Queries    as PMQ
 
 -------------------------------------------------------------------------------
 -- Data
@@ -165,14 +167,20 @@ missingHoursReport
         ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m
         , MonadReader env m, HasFUMEmployeeListName env, HasFUMPublicURL env
         )
-    => PM.Interval Day
+    => Maybe (Set (PM.EnumValue PM.User "contractType"))
+    -> PM.Interval Day
     -> m MissingHoursReport
-missingHoursReport interval = do
+missingHoursReport mcontractTypes interval = do
     fumPubUrl <- view fumPublicUrl
     now <- PM.currentTime
-    fpm <- snd <$$> fumPlanmillMap
-    fpm' <- traverse perUser fpm
-    pure $ Report (MissingHoursParams now (inf interval) (sup interval) fumPubUrl) fpm'
+    fpm0 <- snd <$$> fumPlanmillMap
+    let fpm1 = case mcontractTypes of
+            Just contractTypes ->
+                HM.filter (\e -> contractTypes ^. contains (PM.uContractType e)) fpm0
+            Nothing ->
+                fpm0
+    fpm2 <- traverse perUser fpm1
+    pure $ Report (MissingHoursParams now (inf interval) (sup interval) fumPubUrl) fpm2
   where
     perUser :: PM.User -> m (StrictPair Employee :$ Vector :$ MissingHour)
     perUser pmUser = (S.:!:)

@@ -40,6 +40,7 @@ type Reports =
     , R "fum-planmill"        FumPlanmillReport
     , R "github-users"        GithubUsersReport
     , R "missing-hours"       MissingHoursReport
+    , R "missing-hours-filt"  MissingHoursReport
     , R "balances"            BalanceReport
     , R "hours-by-task"       TimereportsByTaskReport
     , R "planmill-employees"  PlanmillEmployeesReport
