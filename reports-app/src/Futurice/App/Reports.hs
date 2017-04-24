@@ -109,7 +109,7 @@ serveFumPlanmillReport ctx = cachedIO' ctx () $ do
         fumPlanmillReport
 
 serveMissingHoursReport
-    :: KnownSymbol title
+    :: (KnownSymbol title, Typeable title)
     => Bool -> Ctx -> IO (MissingHoursReport title)
 serveMissingHoursReport allContracts ctx = cachedIO' ctx allContracts $ do
     now <- currentTime
