@@ -47,6 +47,7 @@ import Futurice.App.Reports.GithubUsers
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, missingHoursReport)
+import Futurice.App.Reports.MissingHoursChart (missingHoursChart)
 import Futurice.App.Reports.PlanmillEmployees
        (PlanmillEmployeesReport, planmillEmployeesReport)
 import Futurice.App.Reports.PowerAbsences
@@ -60,6 +61,9 @@ import Futurice.App.Reports.UtzChart          (utzChart)
 type Ctx = (DynMapCache, Manager, Logger, Config)
 
 newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
+
+ctxConfig :: Ctx -> Config
+ctxConfig (_, _, _, cfg) = cfg
 
 -------------------------------------------------------------------------------
 -- Endpoints
@@ -104,15 +108,21 @@ serveFumPlanmillReport ctx = cachedIO' ctx () $ do
         (ctxToIntegrationsConfig now ctx)
         fumPlanmillReport
 
-serveMissingHoursReport :: Ctx -> IO MissingHoursReport
-serveMissingHoursReport ctx = cachedIO' ctx () $ do
+serveMissingHoursReport
+    :: (KnownSymbol title, Typeable title)
+    => Bool -> Ctx -> IO (MissingHoursReport title)
+serveMissingHoursReport allContracts ctx = cachedIO' ctx allContracts $ do
     now <- currentTime
     day <- currentDay
     -- TODO: end date to the last friday
     let interval = beginningOfPrev2Month day ... pred day
     runIntegrations
         (ctxToIntegrationsConfig now ctx)
-        (missingHoursReport interval)
+        (missingHoursReport contractTypes interval)
+  where
+    contractTypes
+        | allContracts = Nothing
+        | otherwise    = Just (cfgMissingHoursContracts (ctxConfig ctx))
 
 serveBalancesReport :: Ctx -> IO BalanceReport
 serveBalancesReport ctx = cachedIO' ctx () $ do
@@ -163,7 +173,8 @@ reports =
     ReportEndpoint serveFumFlowdockReport :*
     ReportEndpoint serveFumPlanmillReport :*
     ReportEndpoint serveGithubUsersReport :*
-    ReportEndpoint serveMissingHoursReport :*
+    ReportEndpoint (serveMissingHoursReport True) :*
+    ReportEndpoint (serveMissingHoursReport False) :*
     ReportEndpoint serveBalancesReport :*
     ReportEndpoint serveTimereportsByTaskReport :*
     ReportEndpoint servePlanmillEmployeesReport :*
@@ -180,6 +191,13 @@ serveChart f ctx = cachedIO' ctx () $ do
         (ctxToIntegrationsConfig now ctx)
         f
 
+-- TODO: introduce "HasMissingHoursContracts"
+missingHoursChart'
+    :: Ctx
+    -> Integrations I I I I (Chart "missing-hours")
+missingHoursChart' ctx =
+    missingHoursChart (cfgMissingHoursContracts (ctxConfig ctx))
+
 makeServer :: Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)
 makeServer _   Nil = pure indexPage
 makeServer ctx (ReportEndpoint r :* rs) =
@@ -190,6 +208,7 @@ makeServer ctx (ReportEndpoint r :* rs) =
 server :: Ctx -> Server ReportsAPI
 server ctx = makeServer ctx reports
     :<|> liftIO (serveChart utzChart ctx)
+    :<|> liftIO (serveChart (missingHoursChart' ctx) ctx)
     :<|> liftIO (servePowerUsersReport ctx)
     :<|> liftIO . servePowerAbsencesReport ctx
 

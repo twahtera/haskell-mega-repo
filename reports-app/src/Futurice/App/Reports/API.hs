@@ -15,7 +15,7 @@ import Futurice.Report.Columns   (Report)
 import Futurice.Servant
 import GHC.TypeLits              (KnownSymbol, Symbol)
 import Servant
-import Servant.Chart             (SVG, Chart (..))
+import Servant.Chart             (Chart (..), SVG)
 
 import Futurice.App.Reports.Balances          (BalanceReport)
 import Futurice.App.Reports.FumFlowdock       (FumFlowdockReport)
@@ -23,7 +23,8 @@ import Futurice.App.Reports.FumGithub         (FumGitHubReport)
 import Futurice.App.Reports.FumPlanmill       (FumPlanmillReport)
 import Futurice.App.Reports.GithubIssues      (IssueReport)
 import Futurice.App.Reports.GithubUsers       (GithubUsersReport)
-import Futurice.App.Reports.MissingHours      (MissingHoursReport)
+import Futurice.App.Reports.MissingHours
+       (MissingHoursReport, MissingHoursTitle, MissingHoursTitleFilt)
 import Futurice.App.Reports.PlanmillEmployees (PlanmillEmployeesReport)
 import Futurice.App.Reports.PowerAbsences     (PowerAbsenceReport)
 import Futurice.App.Reports.PowerUser         (PowerUserReport)
@@ -39,7 +40,8 @@ type Reports =
     , R "fum-flowdock"        FumFlowdockReport
     , R "fum-planmill"        FumPlanmillReport
     , R "github-users"        GithubUsersReport
-    , R "missing-hours"       MissingHoursReport
+    , R "missing-hours"       (MissingHoursReport MissingHoursTitle)
+    , R "missing-hours-filt"  (MissingHoursReport MissingHoursTitleFilt)
     , R "balances"            BalanceReport
     , R "hours-by-task"       TimereportsByTaskReport
     , R "planmill-employees"  PlanmillEmployeesReport
@@ -71,6 +73,7 @@ type family FoldReportsAPI rs :: * where
 type ReportsAPI = FoldReportsAPI Reports
     -- Charts
     :<|> "charts" :> "utz" :> Get '[SVG] (Chart "utz")
+    :<|> "charts" :> "missing-hours" :> Get '[SVG] (Chart "missing-hours")
     -- Additional non-reports
     :<|> "power" :> "users" :> Get '[JSON] PowerUserReport
     :<|> "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport

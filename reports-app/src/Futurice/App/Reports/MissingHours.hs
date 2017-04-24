@@ -10,6 +10,8 @@
 -- | Missing hours report
 module Futurice.App.Reports.MissingHours (
     -- * Report
+    MissingHoursTitle,
+    MissingHoursTitleFilt,
     MissingHoursReport,
     missingHoursReport,
     -- * Data
@@ -27,6 +29,7 @@ module Futurice.App.Reports.MissingHours (
 
 import Prelude ()
 import Futurice.Prelude
+import Control.Lens              (contains)
 import Data.Fixed                (Centi)
 import Futurice.Generics
 import Futurice.Integrations
@@ -35,12 +38,13 @@ import Futurice.Report.Columns
 import Futurice.Time
 import Numeric.Interval.NonEmpty (inf, sup)
 
-import qualified Data.Map          as Map
-import qualified Data.Tuple.Strict as S
-import qualified Data.Vector       as V
+import qualified Data.HashMap.Strict as HM
+import qualified Data.Map            as Map
+import qualified Data.Tuple.Strict   as S
+import qualified Data.Vector         as V
 import qualified FUM
-import qualified PlanMill          as PM
-import qualified PlanMill.Queries  as PMQ
+import qualified PlanMill            as PM
+import qualified PlanMill.Queries    as PMQ
 
 -------------------------------------------------------------------------------
 -- Data
@@ -71,8 +75,11 @@ instance ToColumns MissingHour where
 -- Report
 -------------------------------------------------------------------------------
 
-type MissingHoursReport = Report
-    "Missing hour markings"
+type MissingHoursTitle = "Missing hour markings"
+type MissingHoursTitleFilt = "Missing hour markings, filtered"
+
+type MissingHoursReport title = Report
+    title
     MissingHoursParams
     (HashMap FUM.UserName :$ StrictPair Employee :$ Vector :$ MissingHour)
 
@@ -161,18 +168,24 @@ missingHoursForUser interval user = do
     isPositive = (>0)
 
 missingHoursReport
-    :: forall m env.
+    :: forall m env title.
         ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m
         , MonadReader env m, HasFUMEmployeeListName env, HasFUMPublicURL env
         )
-    => PM.Interval Day
-    -> m MissingHoursReport
-missingHoursReport interval = do
+    => Maybe (Set (PM.EnumValue PM.User "contractType"))
+    -> PM.Interval Day
+    -> m (MissingHoursReport title)
+missingHoursReport mcontractTypes interval = do
     fumPubUrl <- view fumPublicUrl
     now <- PM.currentTime
-    fpm <- snd <$$> fumPlanmillMap
-    fpm' <- traverse perUser fpm
-    pure $ Report (MissingHoursParams now (inf interval) (sup interval) fumPubUrl) fpm'
+    fpm0 <- snd <$$> fumPlanmillMap
+    let fpm1 = case mcontractTypes of
+            Just contractTypes ->
+                HM.filter (\e -> contractTypes ^. contains (PM.uContractType e)) fpm0
+            Nothing ->
+                fpm0
+    fpm2 <- traverse perUser fpm1
+    pure $ Report (MissingHoursParams now (inf interval) (sup interval) fumPubUrl) fpm2
   where
     perUser :: PM.User -> m (StrictPair Employee :$ Vector :$ MissingHour)
     perUser pmUser = (S.:!:)
