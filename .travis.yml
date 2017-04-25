@@ -1,3 +1,4 @@
+dist: trusty
 sudo: false
 language: c
 
@@ -35,14 +36,17 @@ before_install:
 
 install:
 - JOB_CURR_TIME=$(date +%s)
-- echo time to run $((JOB_START_TIME + 2400 - JOB_CURR_TIME))
-- timeout $((JOB_START_TIME + 2400 - JOB_CURR_TIME)) stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-dependencies -j2 --ghc-options="-optl-fuse-ld=gold -j +RTS -M1.5G -A128M -n2m -RTS" || true;
+- JOB_DURR=$((JOB_START_TIME + 2400 - JOB_CURR_TIME))
+- echo time to run $JOB_DURR
+- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-dependencies -j2 --ghc-options="-optl-fuse-ld=gold -j +RTS -M1.5G -A128M -n2m -RTS" || true;
 
 script:
 - if [ "$PEDANTIC" = "YES" ]; then export STACKOPTS=--pedantic; fi
 - JOB_CURR_TIME=$(date +%s)
-- echo time to run $((JOB_START_TIME + 2400 - JOB_CURR_TIME))
-- timeout $((JOB_START_TIME + 2400 - JOB_CURR_TIME)) stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test $STACKOPTS -j1 --ghc-options="-optl-fuse-ld=gold -j2 +RTS -M2G -A128M -n2m -RTS"
+- JOB_DURR=$((JOB_START_TIME + 2400 - JOB_CURR_TIME))
+- echo time to run $JOB_DURR
+- if [ $JOB_DURR -lt 60 ]; then echo "Less then minute to go"; false; fi
+- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test $STACKOPTS -j1 --ghc-options="-optl-fuse-ld=gold -j2 +RTS -M2G -A128M -n2m -RTS"
   # - stack --no-terminal --skip-ghc-check sdist
 
 matrix:
