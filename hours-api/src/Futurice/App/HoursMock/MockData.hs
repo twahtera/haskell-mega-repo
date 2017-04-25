@@ -19,16 +19,16 @@ import qualified PlanMill as PM
 -- Helpers
 -------------------------------------------------------------------------------
 
+mkTask' :: Word64 -> Text -> ReportableTask
 mkTask' = mkTask . PM.Ident
-mkTask' :: Word64 -> Text -> Task
 
-projectFirstTaskId :: PM.TaskId -> Getter Project PM.TaskId
+projectFirstTaskId :: PM.TaskId -> Getter (Project ReportableTask) PM.TaskId
 projectFirstTaskId def = to $ \project -> fromMaybe def $
-    project ^? projectTasks . traverse . taskId
+    project ^? projectTasks . traverse . rtaskId
 
-projectLatestDescription :: Getter Project Text
+projectLatestDescription :: Getter (Project ReportableTask) Text
 projectLatestDescription = to $ \project -> fromMaybe "" $
-    project ^? projectTasks . traverse . taskLatestEntry .  _Just .  latestEntryDescription
+    project ^? projectTasks . traverse . rtaskLatestEntry .  _Just .  latestEntryDescription
 
 -------------------------------------------------------------------------------
 -- Mock data:
@@ -36,7 +36,7 @@ projectLatestDescription = to $ \project -> fromMaybe "" $
 
 -- TODO: add latest entries
 
-internalProject :: Project
+internalProject :: Project ReportableTask
 internalProject = Project
     { _projectId = PM.Ident 1
     , _projectName = "Internal Work"
@@ -47,7 +47,7 @@ internalProject = Project
         ]
     }
 
-absenceProject :: Project
+absenceProject :: Project ReportableTask
 absenceProject = Project
     { _projectId = PM.Ident 4
     , _projectName = "Absences"
@@ -59,7 +59,7 @@ absenceProject = Project
         ]
     }
 
-customerProject :: Project
+customerProject :: Project ReportableTask
 customerProject = Project
     { _projectId = PM.Ident 2
     , _projectName = "Actual customer work"
@@ -70,7 +70,7 @@ customerProject = Project
         ]
     }
 
-inactiveProject :: Project
+inactiveProject :: Project ReportableTask
 inactiveProject = Project
     { _projectId = PM.Ident 3
     , _projectName = "Not active project"
@@ -81,7 +81,7 @@ inactiveProject = Project
         ]
     }
 
-projects :: [Project]
+projects :: [Project ReportableTask]
 projects = [internalProject, absenceProject, customerProject, inactiveProject]
 
 entries :: [Entry]
@@ -130,7 +130,7 @@ entries =
         { _entryId          = PM.Ident 5
         , _entryDay         = ModifiedJulianDay 0
         , _entryProjectId   = customerProject ^. projectId
-        , _entryTaskId      = fromMaybe (PM.Ident 5) $ customerProject ^? projectTasks . traverse .  taskId
+        , _entryTaskId      = fromMaybe (PM.Ident 5) $ customerProject ^? projectTasks . traverse .  rtaskId
         , _entryDescription = "Customer work"
         , _entryHours       = 5
         , _entryClosed      = False

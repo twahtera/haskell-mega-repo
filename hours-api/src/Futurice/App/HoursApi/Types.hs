@@ -32,32 +32,30 @@ import qualified PlanMill as PM
 -- Project
 -------------------------------------------------------------------------------
 
-data Project = Project
+data Project task = Project
     { _projectId     :: PM.ProjectId
     , _projectName   :: !Text
-    , _projectTasks  :: [Task]
+    , _projectTasks  :: [task]
     , _projectClosed :: !Bool
     }
   deriving (Eq, Show, Typeable, Generic)
 
-data Task = Task
-    { _taskId             :: PM.TaskId
-    , _taskName           :: !Text
-    , _taskAbsence        :: !Bool
-    , _taskClosed         :: !Bool
-    , _taskLatestEntry    :: !(Maybe LatestEntry)
-    , _taskHoursRemaining :: !(Maybe Float) -- TODO: better type
+data ReportableTask = ReportableTask
+    { _rtaskId             :: PM.TaskId
+    , _rtaskName           :: !Text
+    , _rtaskClosed         :: !Bool
+    , _rtaskLatestEntry    :: !(Maybe LatestEntry)
+    , _rtaskHoursRemaining :: !(Maybe (NDT 'Hours Centi))
     }
   deriving (Eq, Show, Typeable, Generic)
 
-mkTask :: PM.TaskId -> Text -> Task
-mkTask i name = Task
-    { _taskId             = i
-    , _taskName           = name
-    , _taskAbsence        = False
-    , _taskClosed         = False
-    , _taskLatestEntry    = Nothing
-    , _taskHoursRemaining = Nothing
+mkTask :: PM.TaskId -> Text -> ReportableTask
+mkTask i name = ReportableTask
+    { _rtaskId             = i
+    , _rtaskName           = name
+    , _rtaskClosed         = False
+    , _rtaskLatestEntry    = Nothing
+    , _rtaskHoursRemaining = Nothing
     }
 
 -- | Entry may be billable, not billable, or not-countable (i.e. absences)
@@ -160,9 +158,9 @@ data HoursMonth = HoursMonth
   deriving (Eq, Show, Typeable, Generic)
 
 data HoursResponse = HoursResponse
-    { _hoursResponseDefaultWorkHours :: !(NDT 'Hours Centi)
-    , _hoursResponseProjects         :: ![Project]
-    , _hoursResponseMonths           :: Map Month HoursMonth -- invariant contents: 'HoursMonth' contains days of key-month
+    { _hoursResponseDefaultWorkHours    :: !(NDT 'Hours Centi)
+    , _hoursResponseReportableProjects  :: ![Project ReportableTask]
+    , _hoursResponseMonths              :: Map Month HoursMonth -- invariant contents: 'HoursMonth' contains days of key-month
     }
   deriving (Eq, Show, Typeable, Generic)
 
@@ -173,8 +171,8 @@ data HoursResponse = HoursResponse
 makeLenses ''Project
 deriveGeneric ''Project
 
-makeLenses ''Task
-deriveGeneric ''Task
+makeLenses ''ReportableTask
+deriveGeneric ''ReportableTask
 
 makeLenses ''LatestEntry
 deriveGeneric ''LatestEntry
@@ -285,25 +283,25 @@ instance FromJSON EntryType where
 instance ToSchema EntryType where
     declareNamedSchema _ = pure $ NamedSchema (Just "EntryType") mempty
 
-instance Arbitrary Project where
+instance Arbitrary task => Arbitrary (Project task) where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance ToJSON Project where
+instance ToJSON task => ToJSON (Project task) where
     toJSON = sopToJSON
     toEncoding = sopToEncoding
-instance FromJSON Project where parseJSON = sopParseJSON
-instance ToSchema Project where declareNamedSchema = sopDeclareNamedSchema
+instance FromJSON task => FromJSON (Project task) where parseJSON = sopParseJSON
+instance ToSchema task => ToSchema (Project task) where declareNamedSchema = sopDeclareNamedSchema
 
-instance Arbitrary Task where
+instance Arbitrary ReportableTask where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-instance ToJSON Task where
+instance ToJSON ReportableTask where
     toJSON = sopToJSON
     toEncoding = sopToEncoding
-instance FromJSON Task where parseJSON = sopParseJSON
-instance ToSchema Task where declareNamedSchema = sopDeclareNamedSchema
+instance FromJSON ReportableTask where parseJSON = sopParseJSON
+instance ToSchema ReportableTask where declareNamedSchema = sopDeclareNamedSchema
 
 instance Arbitrary LatestEntry where
     arbitrary = sopArbitrary

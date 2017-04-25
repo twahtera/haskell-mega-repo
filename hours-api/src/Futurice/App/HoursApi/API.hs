@@ -17,7 +17,7 @@ import Futurice.App.HoursApi.Types
 import qualified PlanMill as PM
 
 type FutuhoursV1API =
-    "projects" :> SSOUser :> Get '[JSON] (Vector Project)
+    "projects" :> SSOUser :> Get '[JSON] [Project ReportableTask]
     :<|> "user" :> SSOUser :> Get '[JSON] User
     :<|> "hours" :> SSOUser :> QueryParam "start-date" Day :> QueryParam "end-date" Day :> Get '[JSON] (HoursResponse)
     :<|> "entry" :> SSOUser :> ReqBody '[JSON] EntryUpdate :> Post '[JSON] EntryUpdateResponse
