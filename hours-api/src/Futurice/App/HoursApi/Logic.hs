@@ -22,6 +22,7 @@ import Control.Lens
        (Getter, filtered, firstOf, foldOf, maximumOf, sumOf, to, withIndex,
        (<&>))
 import Data.Fixed             (Centi)
+import Data.List              (nubBy)
 import Data.Set.Lens          (setOf)
 import Data.Time              (addDays)
 import Futurice.Cache         (DynMapCache, cached)
@@ -228,7 +229,7 @@ reportableProjects cache now _fumUser pmUser pmData = do
     mk latestEntries p ts = Project
         { _projectId     = p ^. PM.identifier
         , _projectName   = PM.pName p
-        , _projectTasks  = tasks
+        , _projectTasks  = nubBy ((==) `on` view rtaskId) tasks
         , _projectClosed = False  -- reportable projects aren't closed
         }
       where
