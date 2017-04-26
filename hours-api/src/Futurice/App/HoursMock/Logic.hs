@@ -14,7 +14,8 @@ module Futurice.App.HoursMock.Logic (
 import Prelude ()
 import Futurice.Prelude
 import Control.Lens              (forOf)
-import Data.Vector.Lens          (vector)
+import Data.Fixed                (Centi)
+import Futurice.Time             (NDT (..))
 import Futurice.Time.Month       (dayToMonth)
 import Numeric.Interval.NonEmpty ((...))
 import Servant
@@ -32,10 +33,9 @@ import qualified Test.QuickCheck as QC
 projectEndpoint
     :: Ctx
     -> Maybe FUM.UserName
-    -> Handler (Vector Project)
+    -> Handler [Project ReportableTask]
 projectEndpoint _ctx _fumUser = liftIO $ do
-    p <- QC.sample' QC.arbitrary
-    pure $ p ^. vector
+    QC.sample' QC.arbitrary
 
 -- | @GET /user@
 userEndpoint
@@ -65,9 +65,10 @@ hoursEndpoint _ctx _fumUser (Just sd) (Just ed) = do
     months <- liftIO $ fmap last $ QC.sample' $ genMonths [ sd .. ed ]
     p <- liftIO $ fillProjects
     return $ HoursResponse
-        { _hoursResponseProjects         = p
-        , _hoursResponseMonths           = months
-        , _hoursResponseDefaultWorkHours = 7.5
+        { _hoursResponseReportableProjects = p
+        , _hoursResponseMarkedProjects     = mempty -- TODO: not true.
+        , _hoursResponseMonths             = months
+        , _hoursResponseDefaultWorkHours   = 7.5
         }
 
 -- start or end days not set
@@ -90,10 +91,10 @@ genMonths ds = do
 
 
 -- | /TODO/: we should use 'MonadRandom', not 'MonadIO'.
-fillProjects :: forall m. (MonadTime m, MonadIO m) => m [Project]
+fillProjects :: forall m. (MonadTime m, MonadIO m) => m [Project ReportableTask]
 fillProjects = for projects $ \p -> do
     forOf (projectTasks . traverse) p $ \t -> do
-        tle <- for (t ^? taskLatestEntry . _Just) $ \x -> do
+        tle <- for (t ^? rtaskLatestEntry . _Just) $ \x -> do
             today <- currentDay
             hrs <- liftIO $ randomRIO (1, 7) :: m Int
             pure $ x
@@ -102,12 +103,12 @@ fillProjects = for projects $ \p -> do
                 }
         hrsRemaining <- case _projectId p /= _projectId internalProject && _projectId p /= _projectId absenceProject of
             True -> do
-                x <- liftIO $ randomRIO (-10, 20) :: m Float
+                x <- liftIO $ randomRIO (-10, 20) :: m Centi
                 pure $ Just x
             False -> pure $ Nothing
         pure $ t
-            { _taskLatestEntry    = tle
-            , _taskHoursRemaining = hrsRemaining
+            { _rtaskLatestEntry    = tle
+            , _rtaskHoursRemaining = NDT <$> hrsRemaining
             }
 
 mkEntryEndPoint :: (MonadTime m, MonadIO m) => EntryUpdate -> m EntryUpdateResponse
@@ -119,9 +120,10 @@ mkEntryEndPoint req = do
     usrUTZ <- liftIO $ randomRIO (0,100)
     newEntryId <- liftIO $ randomRIO (0, 100)
     let md = HoursDay
-            { _dayHolidayName = Nothing
-            , _dayHours       = _euHours req
-            , _dayEntries     = pure $ Entry
+            { _dayType    = DayTypeNormal
+            , _dayHours   = _euHours req
+            , _dayClosed  = False
+            , _dayEntries = pure $ Entry
                 { _entryId          = PM.Ident newEntryId
                 , _entryDay         = ModifiedJulianDay 0 -- wrong
                 , _entryProjectId   = _euProjectId req
@@ -131,7 +133,6 @@ mkEntryEndPoint req = do
                 , _entryClosed      = fromMaybe False (_euClosed req) -- TODO: is Maybe open or closed?
                 , _entryBillable    = EntryTypeBillable -- wrong
                 }
-            , _dayClosed = False
             }
     let d = Map.fromList [(date, md)]
     let mm = HoursMonth
@@ -148,9 +149,11 @@ mkEntryEndPoint req = do
             , _userProfilePicture="https://raw.githubusercontent.com/futurice/spiceprogram/gh-pages/assets/img/logo/chilicorn_no_text-128.png"
             }
     let hoursResponse = HoursResponse
-            { _hoursResponseDefaultWorkHours = 8
-            , _hoursResponseProjects         = ps
-            , _hoursResponseMonths           = months }
+            { _hoursResponseDefaultWorkHours   = 8
+            , _hoursResponseReportableProjects = ps
+            , _hoursResponseMarkedProjects     = mempty -- TODO: not true
+            , _hoursResponseMonths             = months
+            }
     pure $ EntryUpdateResponse
         { _eurUser=userResponse
         , _eurHours=hoursResponse
