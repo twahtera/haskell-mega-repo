@@ -19,7 +19,7 @@ import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM (readTVarIO)
 import Control.Lens
-       (Getter, filtered, firstOf, foldOf, sumOf, to, (<&>))
+       (Getter, filtered, firstOf, foldOf, sumOf, to, (<&>), withIndex, maximumOf)
 import Data.Fixed             (Centi)
 import Data.Set.Lens          (setOf)
 import Data.Time              (addDays)
@@ -204,8 +204,8 @@ reportableProjects cache now _fumUser pmUser pmData = do
     let perProject :: Map PM.ProjectId (NonEmpty PM.Task)
         perProject = Map.fromListWith (<>) $ reps ^.. folded . to perProjectEl . folded
 
-    pure $ mapMaybe (\(i, ts) -> flip (mk latestEntries) ts <$> pmData ^? planmillProjects . ix i . _1) $
-        Map.toList perProject
+    let projects = perProject ^.. ifolded . withIndex . to (uncurry (mk' latestEntries)) . folded
+    pure $ sortBy compareProjects projects
   where
     pmUid = pmUser ^. PM.identifier
     today = utctDay now
@@ -214,6 +214,12 @@ reportableProjects cache now _fumUser pmUser pmData = do
         :: PM.ReportableAssignment
         -> Maybe (PM.ProjectId, NonEmpty PM.Task)
     perProjectEl ra = (PM.raProject ra,) <$> pmData ^?  planmillTasks . ix (PM.raTask ra) . to (:| [])
+
+    mk' :: Map PM.TaskId LatestEntry
+        -> PM.ProjectId -> NonEmpty PM.Task
+        -> Maybe (Project ReportableTask)
+    mk' latestEntries pid ts = pmData ^? planmillProjects . ix pid . _1 <&> \p ->
+         mk latestEntries p ts
 
     mk :: Map PM.TaskId LatestEntry
        -> PM.Project -> NonEmpty PM.Task -> Project ReportableTask
@@ -224,6 +230,7 @@ reportableProjects cache now _fumUser pmUser pmData = do
         , _projectClosed = False  -- reportable projects aren't closed
         }
       where
+        -- TODO: sort by latestEntry?
         tasks = sortOn (view rtaskName) $ ts ^.. folded . to toTask
 
         toTask :: PM.Task -> ReportableTask
@@ -244,6 +251,17 @@ reportableProjects cache now _fumUser pmUser pmData = do
     pickLatest a b
         | a ^. latestEntryDate > b ^. latestEntryDate = a
         | otherwise                                   = b
+
+
+    -- compare latest entries dates
+    compareProjects :: Project ReportableTask -> Project ReportableTask -> Ordering
+    compareProjects a b = case (maximumOf l a, maximumOf l b) of
+        (Just a', Just b') -> compare b' a'
+        (Just _,  Nothing) -> LT
+        (Nothing, Just _ ) -> GT
+        (Nothing, Nothing) -> EQ
+      where
+        l = projectTasks . folded . rtaskLatestEntry . folded . latestEntryDate
 
 --  Note: we might want to not ask the cache for user vacations.
 userResponse
