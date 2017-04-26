@@ -15,7 +15,6 @@ import Prelude ()
 import Futurice.Prelude
 import Control.Lens              (forOf)
 import Data.Fixed                (Centi)
-import Data.Vector.Lens          (vector)
 import Futurice.Time             (NDT (..))
 import Futurice.Time.Month       (dayToMonth)
 import Numeric.Interval.NonEmpty ((...))
