@@ -19,7 +19,8 @@ import Prelude ()
 import Futurice.Prelude
 import Control.Concurrent.STM (readTVarIO)
 import Control.Lens
-       (Getter, filtered, firstOf, foldOf, sumOf, to, (<&>), withIndex, maximumOf)
+       (Getter, filtered, firstOf, foldOf, maximumOf, sumOf, to, withIndex,
+       (<&>))
 import Data.Fixed             (Centi)
 import Data.Set.Lens          (setOf)
 import Data.Time              (addDays)
@@ -37,6 +38,7 @@ import Futurice.App.HoursApi.Ctx
 import Futurice.App.HoursApi.Types
 
 import qualified Data.Map as Map
+import qualified Data.Set as Set
 import qualified FUM
 import qualified PlanMill as PM
 
@@ -231,7 +233,7 @@ reportableProjects cache now _fumUser pmUser pmData = do
         }
       where
         -- TODO: sort by latestEntry?
-        tasks = sortOn (view rtaskName) $ ts ^.. folded . to toTask
+        tasks = sortBy compareTasks $ ts ^.. folded . to toTask
 
         toTask :: PM.Task -> ReportableTask
         toTask t = mkTask tid (PM.taskName t)
@@ -255,13 +257,21 @@ reportableProjects cache now _fumUser pmUser pmData = do
 
     -- compare latest entries dates
     compareProjects :: Project ReportableTask -> Project ReportableTask -> Ordering
-    compareProjects a b = case (maximumOf l a, maximumOf l b) of
-        (Just a', Just b') -> compare b' a'
-        (Just _,  Nothing) -> LT
-        (Nothing, Just _ ) -> GT
-        (Nothing, Nothing) -> EQ
+    compareProjects a b = compareMaybes (maximumOf l a) (maximumOf l b)
       where
         l = projectTasks . folded . rtaskLatestEntry . folded . latestEntryDate
+
+    compareTasks :: ReportableTask -> ReportableTask -> Ordering
+    compareTasks a b = compareMaybes (maximumOf l a) (maximumOf l b)
+      where
+        l = rtaskLatestEntry . folded . latestEntryDate
+
+    -- 'Just' values are smaller.
+    compareMaybes :: Ord a => Maybe a -> Maybe a -> Ordering
+    compareMaybes (Just a) (Just b) = compare a b
+    compareMaybes (Just _) Nothing  = LT
+    compareMaybes Nothing  (Just _) = GT
+    compareMaybes Nothing  Nothing  = EQ
 
 --  Note: we might want to not ask the cache for user vacations.
 userResponse
@@ -351,7 +361,13 @@ hoursResponse cache now interval pmUser pmData = do
 
     let entries = reportToEntry <$> toList reports'
 
-    -- generate response projects
+    -- marked projects; the ones in entries
+    let markedTaskIds = Map.fromListWith (<>) $
+            entries <&> \e -> (e ^. entryProjectId, Set.singleton (e ^. entryTaskId))
+
+    markedProjects <- toList <$> itraverse markedProject markedTaskIds
+
+    -- reportable projects; the ones we can report
     projects <- reportableProjects cache now undefined pmUser pmData
 
     -- logTrace "latestEntries" latestEntries
@@ -368,19 +384,58 @@ hoursResponse cache now interval pmUser pmData = do
     pure $ HoursResponse
         { _hoursResponseDefaultWorkHours   = wh
         , _hoursResponseReportableProjects = projects
+        , _hoursResponseMarkedProjects     = markedProjects
         , _hoursResponseMonths             = mkHoursMonth interval holidayNames entries
         }
   where
-    mkHolidayNames :: Foldable f => f PM.UserCapacity -> Map Day Text
+    -- TODO: hardcoded value
+    isAbsence :: PM.Project -> Bool
+    isAbsence p = PM.pCategory p == Just 900
+
+    markedProject :: PM.ProjectId -> Set (PM.TaskId) -> ImplM (Project MarkedTask)
+    markedProject pid tids = do
+        (pname, closed, absence) <- case pmData ^? planmillProjects . ix pid . _1 of
+            Just p  -> pure (PM.pName p, False, False)
+            Nothing -> do
+                p <- cachedPlanmillAction cache (PM.project pid)
+                -- TODO: absence names
+                pure (PM.pName p, True, isAbsence p)
+
+        tasks <- for (toList tids) $ \tid ->
+            case pmData ^? planmillTasks . ix tid of
+                Just t -> pure $ MarkedTask
+                    { _mtaskId      = tid
+                    , _mtaskName    = PM.taskName t
+                    , _mtaskClosed  = now > PM.taskFinish t
+                    , _mtaskAbsence = False
+                    }
+                Nothing -> pure $ MarkedTask
+                    { _mtaskId = tid
+                    , _mtaskName = "-"
+                    , _mtaskClosed = True
+                    , _mtaskAbsence = absence
+                    }
+
+        pure $ Project
+            { _projectId     = pid
+            , _projectName   = pname
+            , _projectTasks  = tasks
+            , _projectClosed = closed
+            }
+
+    mkHolidayNames :: Foldable f => f PM.UserCapacity -> Map Day DayType
     mkHolidayNames = toMapOf (folded . to mk . folded . ifolded)
       where
-        mk :: PM.UserCapacity -> Maybe (Day, Text)
+        mk :: PM.UserCapacity -> Maybe (Day, DayType)
         mk uc
-            | Just desc <- PM.userCapacityDescription uc = Just (day, desc)
-            | PM.userCapacityAmount uc == 0              = Just (day, "STAY HOME DAY") -- TODO: better name
-            | otherwise                                  = Nothing
+            | Just desc <- PM.userCapacityDescription uc
+                                              = if desc == ""
+                                                    then mk' DayTypeZero
+                                                    else mk' (DayTypeHoliday desc)
+            | PM.userCapacityAmount uc == 0   = mk' DayTypeZero
+            | otherwise                       = Nothing
           where
-            day = PM.userCapacityDate uc
+            mk' x = Just (PM.userCapacityDate uc, x)
 
     reportToEntry :: PM.Timereport -> Entry
     reportToEntry tr = Entry

@@ -16,6 +16,7 @@ import Prelude ()
 import Futurice.Prelude
 import Control.Lens              (Getter, foldOf, imap, sumOf, to)
 import Data.Aeson                (Value (..), withText)
+import Data.Aeson.Types          (typeMismatch)
 import Data.Fixed                (Centi)
 import Data.Swagger              (NamedSchema (..))
 import Futurice.Generics
@@ -25,6 +26,7 @@ import Futurice.Time.Month       (dayToMonth)
 import Numeric.Interval.NonEmpty (Interval, inf, sup)
 import Test.QuickCheck           (arbitraryBoundedEnum)
 
+import qualified Test.QuickCheck as QC
 import qualified Data.Map as Map
 import qualified PlanMill as PM
 
@@ -57,6 +59,14 @@ mkTask i name = ReportableTask
     , _rtaskLatestEntry    = Nothing
     , _rtaskHoursRemaining = Nothing
     }
+
+data MarkedTask = MarkedTask
+    { _mtaskId     :: PM.TaskId
+    , _mtaskName   :: !Text
+    , _mtaskClosed :: !Bool
+    , _mtaskAbsence :: !Bool
+    }
+  deriving (Eq, Show, Typeable, Generic)
 
 -- | Entry may be billable, not billable, or not-countable (i.e. absences)
 data EntryType
@@ -126,27 +136,26 @@ data User = User
   deriving (Eq, Show, Typeable, Generic)
 
 -- |
---
--- /Note:/ filling HolidayName marks Day as a Holiday
---
--- TODO: is it UI feature?
---
--- /Was:/ HoursDayUpdate is HoursDay with dayClosed::Maybe Bool AND *singular* dayEntries :: !Entry
--- Keep different types now; perhaps refactor UI to lessen Backend types in Future *shrug*
 data HoursDay = HoursDay
-    { _dayHolidayName :: !(Maybe Text)
-    , _dayHours       :: !(NDT 'Hours Centi)
-    , _dayEntries     :: ![Entry]
-    , _dayClosed      :: !Bool -- ^ TODO: Maybe Bool, why maybe?
+    { _dayType    :: !DayType
+    , _dayHours   :: !(NDT 'Hours Centi)
+    , _dayEntries :: ![Entry]
+    , _dayClosed  :: !Bool
     }
+  deriving (Eq, Show, Typeable, Generic)
+
+data DayType
+    = DayTypeNormal
+    | DayTypeZero           -- ^ zero capacity, weekend or other non-working day
+    | DayTypeHoliday !Text  -- ^ named holiday
   deriving (Eq, Show, Typeable, Generic)
 
 defaultHoursDay :: HoursDay
 defaultHoursDay = HoursDay
-    { _dayHolidayName = Nothing
-    , _dayHours       = 0
-    , _dayEntries     = []
-    , _dayClosed      = False
+    { _dayType    = DayTypeNormal
+    , _dayHours   = 0
+    , _dayEntries = []
+    , _dayClosed  = False
     }
 
 -- | TODO: add a '_samples' of Utilisation rate weighted average.
@@ -160,6 +169,7 @@ data HoursMonth = HoursMonth
 data HoursResponse = HoursResponse
     { _hoursResponseDefaultWorkHours    :: !(NDT 'Hours Centi)
     , _hoursResponseReportableProjects  :: ![Project ReportableTask]
+    , _hoursResponseMarkedProjects      :: ![Project MarkedTask]
     , _hoursResponseMonths              :: Map Month HoursMonth -- invariant contents: 'HoursMonth' contains days of key-month
     }
   deriving (Eq, Show, Typeable, Generic)
@@ -173,6 +183,9 @@ deriveGeneric ''Project
 
 makeLenses ''ReportableTask
 deriveGeneric ''ReportableTask
+
+makeLenses ''MarkedTask
+deriveGeneric ''MarkedTask
 
 makeLenses ''LatestEntry
 deriveGeneric ''LatestEntry
@@ -192,6 +205,8 @@ deriveGeneric ''User
 makeLenses ''HoursDay
 deriveGeneric ''HoursDay
 
+makePrisms ''DayType
+
 makeLenses ''HoursMonth
 deriveGeneric ''HoursMonth
 
@@ -206,8 +221,8 @@ deriveGeneric ''HoursResponse
 
 -- | Smart constructor.
 mkHoursMonth
-    :: Interval Day  -- ^ Interval to include entries from
-    -> Map Day Text  -- ^ Holiday names
+    :: Interval Day     -- ^ Interval to include entries from
+    -> Map Day DayType  -- ^ Holiday names
     -> [Entry]
     -> Map Month HoursMonth
 mkHoursMonth interval holidays entries =
@@ -241,10 +256,10 @@ mkHoursMonth interval holidays entries =
     -- Invariant: all entries are on the first day
     mkHoursDay :: Day -> [Entry] -> HoursDay
     mkHoursDay d es = HoursDay
-        { _dayHolidayName = holidays ^? ix d
-        , _dayHours       = sumOf (folded . entryHours) es
-        , _dayEntries     = es
-        , _dayClosed      = False -- TODO: not correct: andOf (folded . entryClosed) es
+        { _dayType    = fromMaybe DayTypeNormal $ holidays ^? ix d
+        , _dayHours   = sumOf (folded . entryHours) es
+        , _dayEntries = es
+        , _dayClosed  = False -- TODO: not correct: andOf (folded . entryClosed) es
           -- day is closed if every entry in it is closed
         }
 
@@ -303,6 +318,16 @@ instance ToJSON ReportableTask where
 instance FromJSON ReportableTask where parseJSON = sopParseJSON
 instance ToSchema ReportableTask where declareNamedSchema = sopDeclareNamedSchema
 
+instance Arbitrary MarkedTask where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
+
+instance ToJSON MarkedTask where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
+instance FromJSON MarkedTask where parseJSON = sopParseJSON
+instance ToSchema MarkedTask where declareNamedSchema = sopDeclareNamedSchema
+
 instance Arbitrary LatestEntry where
     arbitrary = sopArbitrary
     shrink    = sopShrink
@@ -352,6 +377,25 @@ instance ToJSON User where
     toEncoding = sopToEncoding
 instance FromJSON User where parseJSON = sopParseJSON
 instance ToSchema User where declareNamedSchema = sopDeclareNamedSchema
+
+instance Arbitrary DayType where
+    arbitrary = QC.elements [ DayTypeNormal, DayTypeZero, DayTypeHoliday "Christmas" ]
+
+-- | Truthy value indicates it's a holiday!
+instance ToJSON DayType where
+    toJSON DayTypeNormal      = Bool False
+    toJSON DayTypeZero        = Bool True
+    toJSON (DayTypeHoliday n) = String n
+
+instance FromJSON DayType where
+    parseJSON (Bool False) = pure DayTypeNormal
+    parseJSON (Bool True)  = pure DayTypeZero
+    parseJSON (String n)   = pure (DayTypeHoliday n)
+    parseJSON v            = typeMismatch "DayType" v
+
+-- | TODO
+instance ToSchema DayType where
+    declareNamedSchema _ = pure $ NamedSchema (Just "Day type") mempty
 
 instance Arbitrary HoursDay where
     arbitrary = sopArbitrary

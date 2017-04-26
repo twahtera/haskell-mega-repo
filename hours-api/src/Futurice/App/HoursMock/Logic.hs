@@ -67,6 +67,7 @@ hoursEndpoint _ctx _fumUser (Just sd) (Just ed) = do
     p <- liftIO $ fillProjects
     return $ HoursResponse
         { _hoursResponseReportableProjects = p
+        , _hoursResponseMarkedProjects     = mempty -- TODO: not true.
         , _hoursResponseMonths             = months
         , _hoursResponseDefaultWorkHours   = 7.5
         }
@@ -120,9 +121,10 @@ mkEntryEndPoint req = do
     usrUTZ <- liftIO $ randomRIO (0,100)
     newEntryId <- liftIO $ randomRIO (0, 100)
     let md = HoursDay
-            { _dayHolidayName = Nothing
-            , _dayHours       = _euHours req
-            , _dayEntries     = pure $ Entry
+            { _dayType    = DayTypeNormal
+            , _dayHours   = _euHours req
+            , _dayClosed  = False
+            , _dayEntries = pure $ Entry
                 { _entryId          = PM.Ident newEntryId
                 , _entryDay         = ModifiedJulianDay 0 -- wrong
                 , _entryProjectId   = _euProjectId req
@@ -132,7 +134,6 @@ mkEntryEndPoint req = do
                 , _entryClosed      = fromMaybe False (_euClosed req) -- TODO: is Maybe open or closed?
                 , _entryBillable    = EntryTypeBillable -- wrong
                 }
-            , _dayClosed = False
             }
     let d = Map.fromList [(date, md)]
     let mm = HoursMonth
@@ -151,7 +152,9 @@ mkEntryEndPoint req = do
     let hoursResponse = HoursResponse
             { _hoursResponseDefaultWorkHours   = 8
             , _hoursResponseReportableProjects = ps
-            , _hoursResponseMonths             = months }
+            , _hoursResponseMarkedProjects     = mempty -- TODO: not true
+            , _hoursResponseMonths             = months
+            }
     pure $ EntryUpdateResponse
         { _eurUser=userResponse
         , _eurHours=hoursResponse
