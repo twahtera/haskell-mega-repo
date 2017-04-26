@@ -266,9 +266,9 @@ reportableProjects cache now _fumUser pmUser pmData = do
       where
         l = rtaskLatestEntry . folded . latestEntryDate
 
-    -- 'Just' values are smaller.
+    -- 'Just' values are smaller. Note: reversed
     compareMaybes :: Ord a => Maybe a -> Maybe a -> Ordering
-    compareMaybes (Just a) (Just b) = compare a b
+    compareMaybes (Just a) (Just b) = compare b a
     compareMaybes (Just _) Nothing  = LT
     compareMaybes Nothing  (Just _) = GT
     compareMaybes Nothing  Nothing  = EQ
