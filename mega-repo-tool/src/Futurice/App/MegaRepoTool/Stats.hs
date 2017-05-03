@@ -77,9 +77,11 @@ statsMachine
         , isSuffixOf ".stack-work-docker"
         -- some code we just have around
         , isSuffixOf "deprecated"
+        -- js
+        , isSuffixOf "node_modules"
         ]
 
-    filePredicate f = isSuffixOf ".hs" f
+    filePredicate f = (isSuffixOf ".hs" f || isSuffixOf ".js" f || isSuffixOf ".java" f)
         && not (isSuffixOf "Setup.hs" f)
         && not (isSuffixOf "Main.hs" f)
 
