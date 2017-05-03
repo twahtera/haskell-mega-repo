@@ -11,7 +11,7 @@ apps:
     executable: checklist-app-server
   contacts-api:
     docker: contacts-api
-    executable: contacts-server
+    executable: contacts-api-server
   favicon:
     docker: favicon
     executable: favicon

@@ -1,6 +1,7 @@
 {-# LANGUAGE ConstraintKinds   #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TupleSections     #-}
 -- | Common integrations requests.
 module Futurice.Integrations.Common (
     -- * Date
@@ -24,9 +25,9 @@ import Prelude ()
 import Futurice.Prelude
 import Data.Time
        (addGregorianMonthsClip, fromGregorian, toGregorian)
+import Futurice.IdMap                (IdMap, idMapOf)
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Types
-import Futurice.IdMap (IdMap, idMapOf)
 import Text.Regex.Applicative.Text   (anySym, match)
 
 import qualified Data.HashMap.Strict as HM
@@ -114,23 +115,30 @@ fumPlanmillMap =
   where
     users = do
         us <- PMQ.users
-        traverse (PMQ.user . view PM.identifier) us
+        traverse (\u -> (u,) <$> PMQ.user (view PM.identifier u)) us
 
-    combine :: Vector FUM.User -> Vector PM.User -> HashMap FUM.UserName (FUM.User, PM.User)
+    combine :: Vector FUM.User -> Vector (PM.User, PM.User) -> HashMap FUM.UserName (FUM.User, PM.User)
     combine fum pm = HM.fromList $ catMaybes $ map extract $ toList pm
       where
         fumNames :: IdMap FUM.User
         fumNames = idMapOf folded fum
 
-        extract :: PM.User -> Maybe (FUM.UserName, (FUM.User, PM.User))
-        extract pmUser = do
+        extract :: (PM.User, PM.User) -> Maybe (FUM.UserName, (FUM.User, PM.User))
+        extract (pmUser', pmUser) = do
             name <- match loginRe (PM.uUserName pmUser)
             fumUser <- fumNames ^. at name
-            pure (name, (fumUser, pmUser))
+            pure (name, (fumUser, update pmUser' pmUser))
 
         loginRe = FUM.UserName . view packed
             <$  "https://login.futurice.com/openid/"
             <*> many anySym
+
+    -- workaround for https://github.com/planmill/api/issues/11
+    -- some data is present in users output but not in per-user
+    update :: PM.User -> PM.User -> PM.User
+    update u' u = u
+        { PM.uCompetence = PM.uCompetence u <|> PM.uCompetence u'
+        }
 
 -- | Get information about employee from planmill
 --

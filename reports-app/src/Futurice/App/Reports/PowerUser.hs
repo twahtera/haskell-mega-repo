@@ -36,6 +36,7 @@ data PowerUser = PowerUser
     , _powerUserFirst          :: !Text
     , _powerUserLast           :: !Text
     , _powerUserTeam           :: !Text
+    , _powerUserCompetence     :: !Text
     , _powerUserSupervisor     :: !(Maybe FUM.UserName)
     , _powerUserSupervisorName :: !(Maybe Text)
     , _powerUserStart          :: !(Maybe Day)
@@ -112,10 +113,10 @@ powerUser supervisors fumLogin u = do
         , _powerUserFirst          = PM.uFirstName u
         , _powerUserLast           = PM.uLastName u
         , _powerUserTeam           = maybe "Unknown Team" PM.tName t
+        , _powerUserCompetence     = fromMaybe "No competence" (PM.uCompetence u)
         , _powerUserStart          = PM.uHireDate u
         , _powerUserEnd            = PM.uDepartDate u
         , _powerUserActive         = a
         , _powerUserSupervisor     = supervisors ^? ix fumLogin . _1
         , _powerUserSupervisorName = supervisors ^? ix fumLogin . _2
         }
-

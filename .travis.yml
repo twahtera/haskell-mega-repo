@@ -10,7 +10,7 @@ cache:
   - .stack-work/
 
 before_cache:
-- rm -rf $(stack path --local-install-root)/bin/*
+- rm -rf $(stack --no-terminal --system-ghc --skip-ghc-check path --local-install-root)/bin/*
 
 before_install:
 # Cache name
