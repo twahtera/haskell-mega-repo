@@ -39,7 +39,7 @@ data User = User
     , uBalanceAdjustment :: !(Maybe Int)
     , uBalanceMaximum    :: !(Maybe Int)
     , uCalendars         :: !(Maybe CapacityCalendarId)
-    --, uCompetence         :: !(Maybe Int) -- users returns Text, users/:id returns Int
+    , uCompetence        :: !(Maybe Text) -- users returns Text, users/:id returns Int
     , uContractType      :: !(EnumValue User "contractType")
     , uCurrencyCode      :: !(Maybe Text)
     , uDepartDate        :: !(Maybe Day)
@@ -82,7 +82,7 @@ instance FromJSON User where
         <*> obj .:? "balanceAdjustment"
         <*> obj .:? "balanceMaximum"
         <*> optional (getParsedAsIntegral <$> obj .: "calendars") -- TODO
-        -- <*> obj .:? "competence"
+        <*> obj .:? "competence"
         <*> obj .: "contractType"
         <*> obj .:? "currencyCode"
         <*> (dayFromZ <$$> obj .:? "departDate" <|> emptyString <$> obj .: "departDate")
