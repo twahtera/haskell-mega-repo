@@ -55,17 +55,18 @@ instance ToSchema a => ToSchema (ContactGH a) where
     declareNamedSchema = sopDeclareNamedSchema
 
 data Contact avatar = Contact
-    { contactLogin    :: !FUM.UserName
-    , contactFirst    :: !Text
-    , contactName     :: !Text
-    , contactEmail    :: !Text
-    , contactPhones   :: ![Text]
-    , contactTitle    :: !(Maybe Text)
-    , contactThumb    :: !avatar
-    , contactImage    :: !Text
-    , contactFlowdock :: !(Tri (ContactFD avatar))
-    , contactGithub   :: !(Tri (ContactGH avatar))
-    , contactTeam     :: !(Maybe Text)
+    { contactLogin      :: !FUM.UserName
+    , contactFirst      :: !Text
+    , contactName       :: !Text
+    , contactEmail      :: !Text
+    , contactPhones     :: ![Text]
+    , contactTitle      :: !(Maybe Text)
+    , contactThumb      :: !avatar
+    , contactImage      :: !Text
+    , contactFlowdock   :: !(Tri (ContactFD avatar))
+    , contactGithub     :: !(Tri (ContactGH avatar))
+    , contactTeam       :: !(Maybe Text)
+    , contactCompetence :: !(Maybe Text)
     }
   deriving
     ( Eq, Ord, Show, Read, Generic, Typeable

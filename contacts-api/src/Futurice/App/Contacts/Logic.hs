@@ -51,6 +51,7 @@ contacts = contacts'
     <$> fumEmployeeList
     <*> githubDetailedMembers
     <*> flowdockOrganisation
+    <*> fumPlanmillCompetenceMap
     <*> fumPlanmillTeamMap
 
 -- | The pure, data mangling part of 'contacts'
@@ -59,28 +60,30 @@ contacts'
     -> Vector GH.User
     -> FD.Organisation
     -> HashMap FUM.UserName (Maybe Text)
+    -> HashMap FUM.UserName (Maybe Text)
     -> [Contact Text]
-contacts' users githubMembers flowdockOrg teamMap =
+contacts' users githubMembers flowdockOrg competenceMap teamMap =
     let users' = filter ((==FUM.StatusActive) . view FUM.userStatus) $ V.toList users
         res0 = map userToContact users'
         res1 = addGithubInfo githubMembers res0
         res2 = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) res1
-        res3 = addPlanmillInfo teamMap res2
+        res3 = addPlanmillInfo competenceMap teamMap res2
     in sortBy (compareUnicodeText `on` contactName) res3
 
 userToContact :: FUM.User -> Contact Text
 userToContact FUM.User{..} = Contact
-    { contactLogin    = _userName
-    , contactFirst    = _userFirst
-    , contactName     = _userFirst <> " " <> _userLast
-    , contactEmail    = S.fromMaybe defaultEmail _userEmail
-    , contactPhones   = S.catMaybes [_userPhone1, _userPhone2]
-    , contactTitle    = _userTitle ^. lazy
-    , contactThumb    = S.fromMaybe noImage _userThumbUrl
-    , contactImage    = S.fromMaybe noImage _userImageUrl
-    , contactFlowdock = S.maybe Unknown (Sure . (\uid -> ContactFD uid "-" noImage)) _userFlowdock
-    , contactGithub   = S.maybe Unknown (Sure . flip ContactGH noImage) _userGithub
-    , contactTeam     = Nothing
+    { contactLogin      = _userName
+    , contactFirst      = _userFirst
+    , contactName       = _userFirst <> " " <> _userLast
+    , contactEmail      = S.fromMaybe defaultEmail _userEmail
+    , contactPhones     = S.catMaybes [_userPhone1, _userPhone2]
+    , contactTitle      = _userTitle ^. lazy
+    , contactThumb      = S.fromMaybe noImage _userThumbUrl
+    , contactImage      = S.fromMaybe noImage _userImageUrl
+    , contactFlowdock   = S.maybe Unknown (Sure . (\uid -> ContactFD uid "-" noImage)) _userFlowdock
+    , contactGithub     = S.maybe Unknown (Sure . flip ContactGH noImage) _userGithub
+    , contactTeam       = Nothing
+    , contactCompetence = Nothing
     }
   where
     noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
@@ -91,9 +94,10 @@ githubDetailedMembers
        , MonadReader env m, HasGithubOrgName env
        )
     => m (Vector GH.User)
-githubDetailedMembers = do
+githubDetailedMembers = pure mempty {- do
     githubMembers <- githubOrganisationMembers
     traverse (githubReq . GH.userInfoForR . GH.simpleUserLogin) githubMembers
+    -}
 
 fumPlanmillTeamMap
     :: forall m env.
@@ -106,6 +110,13 @@ fumPlanmillTeamMap = fumPlanmillMap >>= traverse (f . snd)
     f :: PM.User -> m (Maybe Text)
     f u = PM.tName <$$> traverse PMQ.team (PM.uTeam u)
 
+fumPlanmillCompetenceMap
+    :: forall m env.
+       ( MonadPlanMillQuery m, MonadFUM m
+       , MonadReader env m, HasFUMEmployeeListName env
+       )
+    => m (HashMap FUM.UserName (Maybe Text))
+fumPlanmillCompetenceMap = PM.uCompetence . snd  <$$> fumPlanmillMap
 
 addGithubInfo
     :: (Functor f, Foldable g)
@@ -192,11 +203,15 @@ addFlowdockInfo us = fmap add
 addPlanmillInfo
     :: Functor f
     => HashMap FUM.UserName (Maybe Text)
+    -> HashMap FUM.UserName (Maybe Text)
     -> f (Contact a)
     -> f (Contact a)
-addPlanmillInfo teamMap = fmap f
+addPlanmillInfo competenceMap teamMap = fmap f
   where
     f :: Contact a -> Contact a
     f c = c
-        { contactTeam = join $ HM.lookup (contactLogin c) teamMap
+        { contactTeam       = join $ HM.lookup login teamMap
+        , contactCompetence = join $ HM.lookup login competenceMap
         }
+      where
+        login = contactLogin c

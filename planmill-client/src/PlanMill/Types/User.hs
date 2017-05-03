@@ -39,7 +39,9 @@ data User = User
     , uBalanceAdjustment :: !(Maybe Int)
     , uBalanceMaximum    :: !(Maybe Int)
     , uCalendars         :: !(Maybe CapacityCalendarId)
-    , uCompetence        :: !(Maybe Text) -- users returns Text, users/:id returns Int
+    -- TODO: users returns Text, users/:id returns Int
+    -- https://github.com/planmill/api/issues/11
+    , uCompetence        :: !(Maybe Text)
     , uContractType      :: !(EnumValue User "contractType")
     , uCurrencyCode      :: !(Maybe Text)
     , uDepartDate        :: !(Maybe Day)
@@ -82,7 +84,7 @@ instance FromJSON User where
         <*> obj .:? "balanceAdjustment"
         <*> obj .:? "balanceMaximum"
         <*> optional (getParsedAsIntegral <$> obj .: "calendars") -- TODO
-        <*> obj .:? "competence"
+        <*> (obj .:? "competence" <|> pure Nothing)
         <*> obj .: "contractType"
         <*> obj .:? "currencyCode"
         <*> (dayFromZ <$$> obj .:? "departDate" <|> emptyString <$> obj .: "departDate")
