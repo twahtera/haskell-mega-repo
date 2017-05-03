@@ -87,7 +87,7 @@ library:
     - wai
 
 executables:
-  contacts-server:
+  contacts-api-server:
     ghc-options: -threaded -rtsopts
     main: Main.hs
     source-dirs: srv
