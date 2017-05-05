@@ -58,7 +58,7 @@ sendSES ctx req = do
                  , ("Message.Body.Text.Data", encodeUtf8 $ req ^. reqBody)
                  ]
     res <- liftIO $ H.httpLbs request (ctxManager ctx)
-    {-| TODO: parse XML response to obtain Error or SendEmailResult
+    {- TODO: parse XML response to obtain Error or SendEmailResult
     <ErrorResponse xmlns="http://ses.amazonaws.com/doc/2010-12-01/">
     <Error><Type>string</Type><Code>string</Code><Message>string</Message></Error>
     <RequestId>string</RequestId>
