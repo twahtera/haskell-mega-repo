@@ -75,10 +75,12 @@ statsMachine
         -- build-in-docker.sh artifacts
         , isSuffixOf ".stack-root"
         , isSuffixOf ".stack-work-docker"
-        -- some code we just have around
-        , isSuffixOf "deprecated"
         -- js
         , isSuffixOf "node_modules"
+        -- magic directories
+        , isSuffixOf "vendor"
+        , isSuffixOf "venv"
+        , isSuffixOf "deprecated" -- some code we just have around
         ]
 
     filePredicate f = (isSuffixOf ".hs" f || isSuffixOf ".js" f || isSuffixOf ".java" f)

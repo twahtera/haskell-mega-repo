@@ -52,21 +52,21 @@ import qualified Lucid     as L
 
 embeddedFoundationStyle_ :: Monad m => HtmlT m ()
 embeddedFoundationStyle_ =
-    style_ [type_ "text/css"] ($(embedStringFile "foundation.min.css") :: String)
+    style_ [type_ "text/css"] ($(embedStringFile "vendor/foundation.min.css") :: String)
 
 -- | <https://lodash.com/ Lodash>.
 embeddedLodash_ :: Monad m => HtmlT m ()
-embeddedLodash_ = toHtml $(embedJS "lodash.js")
+embeddedLodash_ = toHtml $(embedJS "vendor/lodash.js")
 
 -- | Data-flow library <https://github.com/phadej/menrva menrva>.
 menrvaJS :: JS
-menrvaJS = $(embedJS "menrva.standalone.js")
+menrvaJS = $(embedJS "vendor/menrva.standalone.js")
 
 embedJQuery :: Monad m => HtmlT m ()
 embedJQuery = do
-    toHtml $(embedJS "jquery-3.1.1.min.js")
-    toHtml $(embedJS "jquery-ui.min.js")
-    style_ [type_ "text/css"] ($(embedStringFile "jquery-ui.min.css") :: String)
+    toHtml $(embedJS "vendor/jquery-3.1.1.min.js")
+    toHtml $(embedJS "vendor/jquery-ui.min.js")
+    style_ [type_ "text/css"] ($(embedStringFile "vendor/jquery-ui.min.css") :: String)
 
 -------------------------------------------------------------------------------
 -- Lucid
