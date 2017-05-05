@@ -30,14 +30,15 @@ packages:
 - monad-http/
 - optparse-sop/
 - periocron/
+- personio-client/
 - planmill-client/
 - planmill-proxy/
 - postgresql-simple-url/
 - proxy-app/
 - proxy-mgmt-app/
 - reports-app/
-- servant-binary-tagged/
 - servant-Chart/
+- servant-binary-tagged/
 - servant-status/
 - sms-proxy/
 - spice-stats/

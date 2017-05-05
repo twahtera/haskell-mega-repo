@@ -21,6 +21,11 @@ envs:
         secret: prod-fum-token
     GH_ORGANISATION: "futurice"
 
+    PERSONIO_CLIENT_ID:
+        secret: futu-personio-client-id
+    PERSONIO_CLIENT_SECRET:
+        secret: futu-personio-client-secret
+
     POSTGRES_URL: postgres://$USER@localhost:5432/$USER
     POSTGRES_PASS: ""
 
