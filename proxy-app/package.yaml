@@ -66,3 +66,17 @@ executables:
     dependencies:
       - base
       - proxy-app
+
+tests:
+  proxy-app-tests:
+    main: Tests.hs
+    source-dirs: tests/
+    dependencies:
+      - base
+      - binary-tagged
+      - base16-bytestring
+      - futurice-github
+      - futurice-prelude
+      - planmill-client
+      - tasty
+      - tasty-quickcheck

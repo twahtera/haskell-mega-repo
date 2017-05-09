@@ -56,6 +56,7 @@ extra-deps:
 - aeson-extra-0.4.0.0
 - aeson-pretty-0.8.2
 - bifunctors-5.4.1
+- bitarray-0.0.1.1
 - cabal-doctest-1
 # - Chart-1.8.2
 - Chart-diagrams-1.8.2
@@ -105,5 +106,6 @@ extra-deps:
 - transformers-0.5.2.0
 - transformers-compat-0.5.1.4
 - trifecta-1.6.1
+- unicode-transforms-0.3.0
 - vector-instances-3.4
 - warp-3.2.11.1
