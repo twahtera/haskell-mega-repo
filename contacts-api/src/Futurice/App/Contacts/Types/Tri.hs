@@ -8,11 +8,12 @@
 {-# LANGUAGE TemplateHaskell       #-}
 module Futurice.App.Contacts.Types.Tri (Tri(..), lessSure) where
 
-import Futurice.Prelude
 import Prelude ()
+import Futurice.Prelude
 
 import Control.Monad (ap)
 import Data.Char     (toLower)
+import Data.Csv      (ToField (..))
 
 import qualified Data.Aeson.TH as A
 import qualified Data.Swagger  as S
@@ -57,3 +58,11 @@ instance S.ToSchema a => S.ToSchema (Tri a) where
 lessSure :: Tri a -> Tri a
 lessSure (Sure a) = Unsure a
 lessSure x        = x
+
+toMaybe :: Tri a -> Maybe a
+toMaybe (Sure a)   = Just a
+toMaybe (Unsure a) = Just a
+toMaybe Unknown    = Nothing
+
+instance ToField a => ToField (Tri a) where
+    toField = toField . toMaybe
