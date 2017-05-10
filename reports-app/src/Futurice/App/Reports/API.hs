@@ -28,6 +28,7 @@ import Futurice.App.Reports.MissingHours
 import Futurice.App.Reports.PlanmillEmployees (PlanmillEmployeesReport)
 import Futurice.App.Reports.PowerAbsences     (PowerAbsenceReport)
 import Futurice.App.Reports.PowerUser         (PowerUserReport)
+import Futurice.App.Reports.PowerProjects     (PowerProjectsReport)
 import Futurice.App.Reports.TimereportsByTask (TimereportsByTaskReport)
 
 type ReportTypes = '[HTML, CSV, JSON]
@@ -76,6 +77,7 @@ type ReportsAPI = FoldReportsAPI Reports
     :<|> "charts" :> "missing-hours" :> Get '[SVG] (Chart "missing-hours")
     -- Additional non-reports
     :<|> "power" :> "users" :> Get '[JSON] PowerUserReport
+    :<|> "power" :> "projects" :> Get '[JSON] PowerProjectsReport
     :<|> "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport
 
 reportsApi :: Proxy ReportsAPI

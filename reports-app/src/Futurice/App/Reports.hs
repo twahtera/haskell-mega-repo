@@ -52,6 +52,8 @@ import Futurice.App.Reports.PlanmillEmployees
        (PlanmillEmployeesReport, planmillEmployeesReport)
 import Futurice.App.Reports.PowerAbsences
        (PowerAbsenceReport, powerAbsenceReport)
+import Futurice.App.Reports.PowerProjects
+       (PowerProjectsReport, powerProjectsReport)
 import Futurice.App.Reports.PowerUser         (PowerUserReport, powerUserReport)
 import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport, timereportsByTaskReport)
@@ -140,6 +142,13 @@ servePowerUsersReport ctx = cachedIO' ctx () $ do
         (ctxToIntegrationsConfig now ctx)
         powerUserReport
 
+servePowerProjectsReport :: Ctx -> IO PowerProjectsReport
+servePowerProjectsReport ctx = cachedIO' ctx () $ do
+    now <- currentTime
+    runIntegrations
+        (ctxToIntegrationsConfig now ctx)
+        powerProjectsReport
+
 servePowerAbsencesReport :: Ctx -> Maybe Month -> IO PowerAbsenceReport
 servePowerAbsencesReport ctx mmonth = cachedIO' ctx mmonth $ do
     now <- currentTime
@@ -210,6 +219,7 @@ server ctx = makeServer ctx reports
     :<|> liftIO (serveChart utzChart ctx)
     :<|> liftIO (serveChart (missingHoursChart' ctx) ctx)
     :<|> liftIO (servePowerUsersReport ctx)
+    :<|> liftIO (servePowerProjectsReport ctx)
     :<|> liftIO . servePowerAbsencesReport ctx
 
 defaultMain :: IO ()
