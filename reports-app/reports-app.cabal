@@ -110,6 +110,7 @@ library
       Futurice.App.Reports.MissingHoursChart
       Futurice.App.Reports.PlanmillEmployees
       Futurice.App.Reports.PowerAbsences
+      Futurice.App.Reports.PowerProjects
       Futurice.App.Reports.PowerUser
       Futurice.App.Reports.TimereportsByTask
       Futurice.App.Reports.UtzChart
