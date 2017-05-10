@@ -84,6 +84,7 @@ userToContact FUM.User{..} = Contact
     , contactGithub     = S.maybe Unknown (Sure . flip ContactGH noImage) _userGithub
     , contactTeam       = Nothing
     , contactCompetence = Nothing
+    , contactHrNumber   = _userHrNumber ^. lazy
     }
   where
     noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"

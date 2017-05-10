@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE RecordWildCards       #-}
 module Futurice.App.Contacts.Types (
     Tri(..),
     ContactFD(..),
@@ -16,8 +17,12 @@ import Futurice.Prelude
 import Futurice.App.Contacts.Types.Tri
 import Futurice.Generics
 import Futurice.IsMaybe
+import Data.Maybe (listToMaybe)
+import Data.Csv (ToField (..))
 
 import qualified FUM
+
+import qualified Data.HashMap.Strict as HM
 
 data ContactFD avatar = ContactFD
     { cfdId     :: !Int       -- ^ Identifier
@@ -36,6 +41,8 @@ instance (ToJSON a, IsMaybe a) => ToJSON (ContactFD a) where
     toEncoding = sopToEncoding
 instance ToSchema a => ToSchema (ContactFD a) where
     declareNamedSchema = sopDeclareNamedSchema
+instance ToField (ContactFD a) where
+    toField = toField . cfdNick
 
 data ContactGH avatar = ContactGH
     { cghNick   :: !Text
@@ -53,6 +60,8 @@ instance (ToJSON a, IsMaybe a) => ToJSON (ContactGH a) where
     toEncoding = sopToEncoding
 instance ToSchema a => ToSchema (ContactGH a) where
     declareNamedSchema = sopDeclareNamedSchema
+instance ToField (ContactGH a) where
+    toField = toField . cghNick
 
 data Contact avatar = Contact
     { contactLogin      :: !FUM.UserName
@@ -67,6 +76,7 @@ data Contact avatar = Contact
     , contactGithub     :: !(Tri (ContactGH avatar))
     , contactTeam       :: !(Maybe Text)
     , contactCompetence :: !(Maybe Text)
+    , contactHrNumber   :: !(Maybe Text)
     }
   deriving
     ( Eq, Ord, Show, Read, Generic, Typeable
@@ -83,3 +93,21 @@ instance (ToJSON a, IsMaybe a) => ToJSON (Contact a) where
     toEncoding = sopToEncoding
 instance ToSchema a => ToSchema (Contact a) where
     declareNamedSchema = sopDeclareNamedSchema
+instance ToField a => ToNamedRecord (Contact a) where
+    toNamedRecord Contact {..} = HM.fromList
+        [ (,) "login"      $ toField contactLogin
+        , (,) "first"      $ toField contactFirst
+        , (,) "name"       $ toField contactName
+        , (,) "email"      $ toField contactEmail
+        , (,) "phones"     $ toField $ listToMaybe contactPhones
+        , (,) "title"      $ toField contactTitle
+        , (,) "thumb"      $ toField contactThumb
+        , (,) "image"      $ toField contactImage
+        , (,) "flowdock"   $ toField contactFlowdock
+        , (,) "github"     $ toField contactGithub
+        , (,) "team"       $ toField contactTeam
+        , (,) "competence" $ toField contactCompetence
+        , (,) "hrNumber"   $ toField contactHrNumber
+        ]
+instance DefaultOrdered (Contact a) where
+    headerOrder = sopHeaderOrder

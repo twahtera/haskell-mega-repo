@@ -242,6 +242,7 @@ data User = User
     , _userId         :: !Int
     , _userSupervisor :: !(S.Maybe Int)
     , _userActiveInPm :: !Int
+    , _userHrNumber   :: !(S.Maybe Text)
     }
     deriving (Eq, Ord, Show, Read, Typeable, Generic)
 
@@ -271,6 +272,7 @@ instance FromJSON User where
         <*> v .: "id"
         <*> v .:?? "supervisor"
         <*> v .: "active_in_planmill"
+        <*> v .:?? "hr_number"
 
 userFullName :: Getter User Text
 userFullName = to $ \u -> u ^. userFirst <> " " <> u ^. userLast

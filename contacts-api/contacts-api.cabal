@@ -38,6 +38,7 @@ library
     , binary-orphans
     , binary-tagged
     , bytestring
+    , cassava
     , containers
     , cryptohash
     , deepseq
@@ -69,7 +70,7 @@ library
     , rfc5051
     , semigroups
     , servant
-    , servant-JuicyPixels
+    , servant-cassava
     , servant-lucid
     , servant-server
     , SHA

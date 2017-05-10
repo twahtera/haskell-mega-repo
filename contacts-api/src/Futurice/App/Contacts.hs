@@ -24,7 +24,9 @@ import Futurice.App.Contacts.Types
 type Ctx = IO [Contact Text]
 
 server :: Ctx -> Server ContactsAPI
-server action = liftIO action :<|> liftIO action
+server action = liftIO action
+    :<|> liftIO action
+    :<|> liftIO action
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
