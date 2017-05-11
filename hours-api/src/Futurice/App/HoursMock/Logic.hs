@@ -66,7 +66,7 @@ hoursEndpoint _ctx _fumUser (Just sd) (Just ed) = do
     p <- liftIO $ fillProjects
     return $ HoursResponse
         { _hoursResponseReportableProjects = p
-        , _hoursResponseMarkedProjects     = mempty -- TODO: not true.
+        , _hoursResponseMarkedProjects     = fromReToMa p -- TODO: temporary
         , _hoursResponseMonths             = months
         , _hoursResponseDefaultWorkHours   = 7.5
         }
@@ -151,7 +151,7 @@ mkEntryEndPoint req = do
     let hoursResponse = HoursResponse
             { _hoursResponseDefaultWorkHours   = 8
             , _hoursResponseReportableProjects = ps
-            , _hoursResponseMarkedProjects     = mempty -- TODO: not true
+            , _hoursResponseMarkedProjects     = fromReToMa ps -- TODO: temporary
             , _hoursResponseMonths             = months
             }
     pure $ EntryUpdateResponse
@@ -209,3 +209,15 @@ entryDeleteEndpoint _ctx _fumUser _id = do
 eurHoursDayUpdates :: Traversal' EntryUpdateResponse HoursDay
 eurHoursDayUpdates =
     eurHours . hoursResponseMonths . traverse . monthDays . traverse
+
+-- | Temporary helper to keep mock-api in line with hours-api
+fromReToMa :: [Project ReportableTask] -> [Project MarkedTask]
+fromReToMa ts = map fn ts
+  where
+    fn = over (projectTasks. traverse) mkTask'
+    mkTask' t = MarkedTask
+        { _mtaskId = _rtaskId t
+        , _mtaskName = _rtaskName t
+        , _mtaskClosed = _rtaskClosed t
+        , _mtaskAbsence = False
+        }
