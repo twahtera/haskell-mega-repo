@@ -19,4 +19,6 @@ deriving instance Eq (PersonioReq a)
 deriving instance Ord (PersonioReq a)
 deriving instance Show (PersonioReq a)
 
--- TODO: hashable
+instance Hashable (PersonioReq a) where
+    hashWithSalt salt PersonioEmployees = salt
+        `hashWithSalt` (0 :: Int)
