@@ -2,93 +2,71 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Personio (
-{-
     -- * Actions
-    fumUsers,
-    fumList,
-    fumGroup,
+    personioEmployees,
     -- * Requests
-    fumUsersR,
-    fumListR,
-    fumGroupR,
-    executeRequest,
-    -- * Legacy Methods
-    fetchUsers,
-    fetchList,
+    personioEmployeesR,
+    evalPersonioReq,
+    evalPersonioReqIO,
+    -- * Testing
+    testPersonioEmployees,
     -- * Types
-    module FUM.Types,
-    module FUM.Request,
--}
+    module Control.Monad.Personio,
+    module Personio.Request,
+    module Personio.Types,
     ) where
-{-
+
+import Control.Monad.Http (runHttpT)
+import Data.Aeson         (FromJSON)
+import Futurice.EnvConfig (getConfig')
 import Futurice.Prelude
-import Prelude          ()
+import Prelude ()
 
-import Control.Monad.Http   (runHttpT)
-import Data.Aeson           (FromJSON)
-
-import Control.Monad.FUM
-import FUM.Request
-import FUM.Types
+import Control.Monad.Personio
+import Personio.Eval
+import Personio.Request
+import Personio.Types
 
 -------------------------------------------------------------------------------
 -- Requests
 -------------------------------------------------------------------------------
 
-fumUsersR :: FUM (Vector User)
-fumUsersR = FumPagedGet "users/"
-
-fumListR :: ListName -> FUM (Vector User)
-fumListR (ListName listName) =
-    FumGet $ "list/" <> listName ^. unpacked <> "/"
-
-fumGroupR :: GroupName -> FUM Group
-fumGroupR (GroupName name) =
-    FumGet $ "groups/" <> name ^. unpacked <> "/"
+personioEmployeesR :: PersonioReq [Employee]
+personioEmployeesR = PersonioEmployees
 
 -------------------------------------------------------------------------------
 -- Actions
 -------------------------------------------------------------------------------
 
-fumUsers :: MonadFUM m => m (Vector User)
-fumUsers = fumAction fumUsersR
+personioEmployees :: MonadPersonio m => m [Employee]
+personioEmployees = personio personioEmployeesR
 
-fumList :: MonadFUM m => ListName -> m (Vector User)
-fumList = fumAction . fumListR
-
-fumGroup :: MonadFUM m => GroupName -> m Group
-fumGroup = fumAction . fumGroupR
-
-executeRequest
+evalPersonioReqIO
     :: FromJSON a
     => Manager
-    -> AuthToken
-    -> BaseUrl
-    -> FUM a
+    -> Logger
+    -> Cfg
+    -> PersonioReq a
     -> IO a
-executeRequest mgr token burl fum =
-    flip runHttpT mgr $ flip runReaderT cfg $ evalFUM fum
-  where
-    cfg = Cfg burl token
+evalPersonioReqIO mgr lgr cfg req
+    = runLogT "personio" lgr
+    $ flip runHttpT mgr
+    $ flip runReaderT cfg
+    $ evalPersonioReq req
 
 -------------------------------------------------------------------------------
--- Legacy
+-- Testing
 -------------------------------------------------------------------------------
 
-fetchUsers
-    :: Manager
-    -> AuthToken
-    -> BaseUrl
-    -> IO (Vector User)
-fetchUsers mgr token burl =
-    executeRequest mgr token burl fumUsersR
-
-fetchList
-    :: Manager
-    -> AuthToken
-    -> BaseUrl
-    -> ListName
-    -> IO (Vector User)
-fetchList mgr token burl listname =
-    executeRequest mgr token burl $ fumListR listname
--}
+-- | Test personio employees.
+--
+-- Load default configuration from envvars. Use fresh manager and logger.
+--
+-- > testPersonioEmployees >>= traverse_ print
+--
+testPersonioEmployees :: IO [Employee]
+testPersonioEmployees = do
+    mgr <- newManager tlsManagerSettings
+    withStderrLogger $ \lgr -> runLogT "personio-test" lgr $ do
+        cfg <- getConfig' "REPL" configurePersonioCfg
+        liftIO $ evalPersonioReqIO mgr lgr cfg PersonioEmployees

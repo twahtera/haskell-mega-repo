@@ -7,21 +7,62 @@
 {-# LANGUAGE TypeFamilies        #-}
 module Personio.Types where
 
-import Prelude ()
-import Futurice.Prelude
 import Data.Aeson.Compat
+import Data.Time          (zonedTimeToLocalTime)
 import Futurice.Aeson
 import Futurice.EnvConfig
+import Futurice.Prelude
+import Prelude ()
 
 -------------------------------------------------------------------------------
 -- Data
 -------------------------------------------------------------------------------
 
-newtype Employee = Employee { getEmployeeValue :: Value }
+-- | Personio employee id.
+newtype EmployeeId = EmployeeId Word
+  deriving (Eq, Ord, Show)
+
+instance Hashable EmployeeId where
+    hashWithSalt salt (EmployeeId i) = hashWithSalt salt i
+
+instance FromJSON EmployeeId where
+    parseJSON = fmap EmployeeId . parseJSON
+
+
+-- | Employee structure. Doesn't contain sensitive information.
+data Employee = Employee
+    { employeeId       :: !EmployeeId
+    , employeeFirst    :: !Text
+    , employeeLast     :: !Text
+    , employeeHireDate :: !(Maybe Day)
+    , employeeEndDate  :: !(Maybe Day)
+    -- use this when debugging
+    -- , employeeRest     :: !(HashMap Text Value)
+    }
   deriving (Show)
 
 instance FromJSON Employee where
-    parseJSON = pure . Employee
+    parseJSON = withObjectDump "Personio.Employee" $ \obj -> do
+        type_ <- obj .: "type"
+        if type_ == ("Employee" :: Text)
+            then obj .: "attributes" >>= parseObject
+            else fail $ "Not Employee: " ++ type_ ^. unpacked
+      where
+        parseObject obj = do
+            Employee
+                <$> parseAttribute "id"
+                <*> parseAttribute "first_name"
+                <*> parseAttribute "last_name"
+                <*> fmap (fmap zonedDay) (parseAttribute "hire_date")
+                <*> fmap (fmap zonedDay) (parseAttribute "contract_end_date")
+                -- <*> pure obj -- for employeeRest field
+          where
+            parseAttribute :: FromJSON a => Text -> Parser a
+            parseAttribute attrName = do
+                attr <- obj .: attrName
+                withObjectDump "Attribute" (\subobj -> subobj .: "value") attr
+
+            zonedDay =  localDay . zonedTimeToLocalTime
 
 -------------------------------------------------------------------------------
 -- Envelope

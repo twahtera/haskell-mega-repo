@@ -33,10 +33,11 @@ library
     , aeson-compat
     , base
     , constraints
-    , http-client
     , env-config
     , futurice-prelude
+    , http-client
     , monad-http
+    , time
   exposed-modules:
       Control.Monad.Personio
       Personio

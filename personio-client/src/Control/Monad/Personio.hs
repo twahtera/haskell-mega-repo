@@ -19,7 +19,7 @@ import Personio.Types
 
 class
     ( Monad m
-    , MonadPersonioC m (Vector Employee)
+    , MonadPersonioC m [Employee]
     ) => MonadPersonio m
   where
     type MonadPersonioC m a :: Constraint
