@@ -13,6 +13,7 @@ packages:
 #- flowdock-cli/
 - flowdock-grep/
 - flowdock-rest/
+- fum-carbon-app/
 - fum-client/
 - futurice-foundation/
 - futurice-github/

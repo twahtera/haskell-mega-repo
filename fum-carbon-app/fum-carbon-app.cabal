@@ -1,0 +1,201 @@
+-- This file has been generated from package.yaml by hpack version 0.17.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           fum-carbon-app
+version:        6
+synopsis:       An user management system for LDAP
+description:    ...
+category:       Web
+homepage:       https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
+author:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+
+source-repository head
+  type: git
+  location: https://github.com/futurice/haskell-mega-repo
+
+library
+  hs-source-dirs:
+      src
+  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
+  ghc-options: -Wall
+  build-depends:
+      base >= 4.7 && <4.10
+    , adjunctions
+    , aeson
+    , aeson-compat
+    , ansi-pretty
+    , ansi-wl-pprint
+    , async
+    , Chart
+    , clay
+    , constraints
+    , containers
+    , crypto-api
+    , deepseq
+    , distributive
+    , DRBG
+    , env-config
+    , futurice-foundation
+    , futurice-prelude
+    , futurice-servant
+    , generics-sop
+    , generics-sop-lens
+    , http-api-data
+    , lattices
+    , lens
+    , lucid
+    , mtl
+    , personio-client
+    , postgresql-simple
+    , QuickCheck
+    , recursion-schemes >= 5.0.1
+    , reflection
+    , regex-applicative
+    , resource-pool
+    , servant
+    , servant-Chart
+    , servant-lucid
+    , servant-server
+    , singleton-bool
+    , split
+    , stm
+    , swagger2
+    , text
+    , time
+    , trifecta
+    , uuid
+  exposed-modules:
+      Futurice.App.FUM
+      Futurice.App.FUM.Ack
+      Futurice.App.FUM.API
+      Futurice.App.FUM.Clay
+      Futurice.App.FUM.Command
+      Futurice.App.FUM.Config
+      Futurice.App.FUM.Logic
+      Futurice.App.FUM.Markup
+      Futurice.App.FUM.Pages.Index
+      Futurice.App.FUM.Types
+      Futurice.App.FUM.Types.Basic
+      Futurice.App.FUM.Types.Ctx
+      Futurice.App.FUM.Types.Identifier
+      Futurice.App.FUM.Types.Status
+      Futurice.App.FUM.Types.World
+  default-language: Haskell2010
+
+executable fum-carbon-server
+  main-is: Main.hs
+  hs-source-dirs:
+      srv
+  ghc-options: -Wall -Wall -threaded -rtsopts
+  build-depends:
+      base >= 4.7 && <4.10
+    , adjunctions
+    , aeson
+    , aeson-compat
+    , ansi-pretty
+    , ansi-wl-pprint
+    , async
+    , Chart
+    , clay
+    , constraints
+    , containers
+    , crypto-api
+    , deepseq
+    , distributive
+    , DRBG
+    , env-config
+    , futurice-foundation
+    , futurice-prelude
+    , futurice-servant
+    , generics-sop
+    , generics-sop-lens
+    , http-api-data
+    , lattices
+    , lens
+    , lucid
+    , mtl
+    , personio-client
+    , postgresql-simple
+    , QuickCheck
+    , recursion-schemes >= 5.0.1
+    , reflection
+    , regex-applicative
+    , resource-pool
+    , servant
+    , servant-Chart
+    , servant-lucid
+    , servant-server
+    , singleton-bool
+    , split
+    , stm
+    , swagger2
+    , text
+    , time
+    , trifecta
+    , uuid
+    , fum-carbon-app
+  default-language: Haskell2010
+
+test-suite unit-tests
+  type: exitcode-stdio-1.0
+  main-is: Tests.hs
+  hs-source-dirs:
+      tests/
+  ghc-options: -Wall
+  build-depends:
+      base >= 4.7 && <4.10
+    , adjunctions
+    , aeson
+    , aeson-compat
+    , ansi-pretty
+    , ansi-wl-pprint
+    , async
+    , Chart
+    , clay
+    , constraints
+    , containers
+    , crypto-api
+    , deepseq
+    , distributive
+    , DRBG
+    , env-config
+    , futurice-foundation
+    , futurice-prelude
+    , futurice-servant
+    , generics-sop
+    , generics-sop-lens
+    , http-api-data
+    , lattices
+    , lens
+    , lucid
+    , mtl
+    , personio-client
+    , postgresql-simple
+    , QuickCheck
+    , recursion-schemes >= 5.0.1
+    , reflection
+    , regex-applicative
+    , resource-pool
+    , servant
+    , servant-Chart
+    , servant-lucid
+    , servant-server
+    , singleton-bool
+    , split
+    , stm
+    , swagger2
+    , text
+    , time
+    , trifecta
+    , uuid
+    , tasty
+    , tasty-quickcheck
+    , fum-carbon-app
+  default-language: Haskell2010

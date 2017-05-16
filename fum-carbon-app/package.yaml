@@ -1,0 +1,85 @@
+name: fum-carbon-app
+version: "6"
+synopsis: An user management system for LDAP
+description: ...
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/haskell-mega-repo
+category: Web
+
+ghc-options: -Wall
+
+dependencies:
+  - base >= 4.7 && <4.10
+  - adjunctions
+  - aeson
+  - aeson-compat
+  - ansi-pretty
+  - ansi-wl-pprint
+  - async
+  - Chart
+  - clay
+  - constraints
+  - containers
+  - crypto-api
+  - deepseq
+  - distributive
+  - DRBG
+  - env-config
+  - futurice-foundation
+  - futurice-prelude
+  - futurice-servant
+  - generics-sop
+  - generics-sop-lens
+  - http-api-data
+  - lattices
+  - lens
+  - lucid
+  - mtl
+  - personio-client
+  - postgresql-simple
+  - QuickCheck
+  - recursion-schemes >= 5.0.1
+  - reflection
+  - regex-applicative
+  - resource-pool
+  - servant
+  - servant-Chart
+  - servant-lucid
+  - servant-server
+  - singleton-bool
+  - split
+  - stm
+  - swagger2
+  - text
+  - time
+  - trifecta
+  - uuid
+
+library:
+  source-dirs: src
+  default-extensions:
+    - DeriveDataTypeable
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveGeneric
+    - DeriveTraversable
+    - ScopedTypeVariables
+
+executables:
+  fum-carbon-server:
+    main: Main.hs
+    source-dirs: srv
+    ghc-options: -Wall -threaded -rtsopts
+    dependencies:
+      - fum-carbon-app
+
+tests:
+  unit-tests:
+    main: Tests.hs
+    source-dirs: tests/
+    dependencies:
+      - tasty
+      - tasty-quickcheck
+      - fum-carbon-app

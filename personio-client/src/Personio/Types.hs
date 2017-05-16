@@ -28,6 +28,9 @@ instance Hashable EmployeeId where
 instance FromJSON EmployeeId where
     parseJSON = fmap EmployeeId . parseJSON
 
+instance NFData EmployeeId where
+    rnf (EmployeeId i) = rnf i
+
 
 -- | Employee structure. Doesn't contain sensitive information.
 data Employee = Employee
