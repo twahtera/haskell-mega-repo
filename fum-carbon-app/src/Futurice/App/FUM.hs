@@ -19,6 +19,8 @@ import Futurice.App.FUM.Types
 import Futurice.App.FUM.Types.Ctx
 import Futurice.App.FUM.Pages.Index
 
+import qualified Personio
+
 -------------------------------------------------------------------------------
 -- Server
 -------------------------------------------------------------------------------
@@ -36,7 +38,7 @@ indexPageImpl
     -> Handler (HtmlPage "indexpage")
 indexPageImpl ctx fu  = withAuthUser ctx fu impl
   where
-    impl world = pure $ indexPage world
+    impl world es = pure $ indexPage world es
 
 -------------------------------------------------------------------------------
 -- Auth
@@ -47,10 +49,12 @@ withAuthUser
     :: (MonadIO m, MonadBase IO m, MonadTime m)
     => Ctx
     -> auth
-    -> (World -> m (HtmlPage a))
+    -> (World -> [Personio.Employee] -> m (HtmlPage a))
     -> m (HtmlPage a)
 withAuthUser ctx fu f = runLogT "withAuthUser" (ctxLogger ctx) $
-    withAuthUser' (error "forbiddenPage") ctx fu (\w -> lift $ f w)
+    withAuthUser' (error "forbiddenPage") ctx fu (\w -> lift $ f w es)
+  where
+    es = ctxPersonio ctx
 
 withAuthUser'
     :: (MonadIO m, MonadBase IO m, MonadTime m)
@@ -76,7 +80,12 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx           .~ "FUMAPP"
 
 makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-makeCtx cfg lgr _cache = (,[]) <$> newCtx
-    lgr
-    (cfgPostgresConnInfo cfg)
-    emptyWorld
+makeCtx Config {..} lgr _cache = do
+    mgr <- newManager tlsManagerSettings
+    employees <- Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioEmployees
+    ctx <- newCtx
+        lgr
+        employees
+        cfgPostgresConnInfo
+        emptyWorld
+    pure (ctx, [])
