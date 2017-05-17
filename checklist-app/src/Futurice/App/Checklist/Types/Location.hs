@@ -4,13 +4,11 @@
 {-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.Checklist.Types.Location where
 
-import Prelude ()
-import Futurice.Prelude
 import Data.Aeson.Compat (Value (String), withText)
-import Data.Swagger
-       (SwaggerType (SwaggerString), ToParamSchema (..), enum_, type_)
+import Data.Swagger      (SwaggerType (SwaggerString), enum_, type_)
 import Futurice.Generics
-import Servant           (FromHttpApiData (..), ToHttpApiData (..))
+import Futurice.Prelude
+import Prelude ()
 
 import qualified Data.Map  as Map
 import qualified Data.Text as T

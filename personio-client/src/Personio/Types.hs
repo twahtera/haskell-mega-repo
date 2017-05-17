@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP                 #-}
+{-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE OverloadedStrings   #-}
@@ -11,6 +12,7 @@ import Data.Aeson.Compat
 import Data.Time          (zonedTimeToLocalTime)
 import Futurice.Aeson
 import Futurice.EnvConfig
+import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
 
@@ -22,6 +24,8 @@ import Prelude ()
 newtype EmployeeId = EmployeeId Word
   deriving (Eq, Ord, Show)
 
+deriveGeneric ''EmployeeId
+
 instance Hashable EmployeeId where
     hashWithSalt salt (EmployeeId i) = hashWithSalt salt i
 
@@ -30,6 +34,16 @@ instance FromJSON EmployeeId where
 
 instance NFData EmployeeId where
     rnf (EmployeeId i) = rnf i
+
+-- | We could use 'GeneralizedNewtypeDeriving', but we don't (yet?).
+instance ToParamSchema EmployeeId where
+    toParamSchema = newtypeToParamSchema
+
+instance FromHttpApiData EmployeeId where
+    parseUrlPiece = newtypeParseUrlPiece
+
+instance ToHttpApiData EmployeeId where
+    toUrlPiece = newtypeToUrlPiece
 
 
 -- | Employee structure. Doesn't contain sensitive information.

@@ -21,8 +21,10 @@ dependencies:
   - constraints
   - env-config
   - futurice-prelude
+  - http-api-data
   - http-client
   - monad-http
+  - swagger2
   - time
 
 library:
