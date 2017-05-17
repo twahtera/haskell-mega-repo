@@ -6,18 +6,18 @@
 {-# LANGUAGE TupleSections     #-}
 module Futurice.App.FUM (defaultMain) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Concurrent.STM    (readTVarIO)
 import Futurice.Lucid.Foundation (HtmlPage)
+import Futurice.Prelude
 import Futurice.Servant
+import Prelude ()
 import Servant
 
 import Futurice.App.FUM.API
 import Futurice.App.FUM.Config
-import Futurice.App.FUM.Types
-import Futurice.App.FUM.Types.Ctx
+import Futurice.App.FUM.Ctx
 import Futurice.App.FUM.Pages.Index
+import Futurice.App.FUM.Types
 
 import qualified Personio
 
@@ -25,8 +25,9 @@ import qualified Personio
 -- Server
 -------------------------------------------------------------------------------
 
-server :: Ctx -> Server ChecklistAPI
+server :: Ctx -> Server FumCarbonApi
 server ctx = indexPageImpl ctx
+    :<|> error "employee page"
 
 -------------------------------------------------------------------------------
 -- Endpoint wrappers
@@ -76,7 +77,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName             .~ "FUM Carbon"
     & serverDescription      .~ "FUM faster than ever"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
-    & serverApp checklistApi .~ server
+    & serverApp fumCarbonApi .~ server
     & serverEnvPfx           .~ "FUMAPP"
 
 makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])

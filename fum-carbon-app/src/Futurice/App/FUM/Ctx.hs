@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Futurice.App.FUM.Types.Ctx (
+module Futurice.App.FUM.Ctx (
     Ctx (..),
     newCtx,
     ) where

@@ -10,10 +10,15 @@ import Futurice.Servant          (SSOUser)
 import Servant.API
 import Servant.HTML.Lucid        (HTML)
 
-type ChecklistAPI = IndexPageEndpoint
+import qualified Personio
 
-checklistApi :: Proxy ChecklistAPI
-checklistApi = Proxy
+type FumCarbonApi = IndexPageEndpoint
+    -- Employees
+    :<|> CreateEmployeePageEndpoint
+    -- machine api
+
+fumCarbonApi :: Proxy FumCarbonApi
+fumCarbonApi = Proxy
 
 -------------------------------------------------------------------------------
 -- Index
@@ -25,3 +30,16 @@ type IndexPageEndpoint =
 
 indexPageEndpoint :: Proxy IndexPageEndpoint
 indexPageEndpoint = Proxy
+
+-------------------------------------------------------------------------------
+-- Employee
+-------------------------------------------------------------------------------
+
+type CreateEmployeePageEndpoint =
+    "employees" :> "create" :>
+    SSOUser :>
+    Capture "personio-id" Personio.EmployeeId :>
+    Get '[HTML] (HtmlPage "create-employee")
+
+createEmployeePageEndpoint :: Proxy CreateEmployeePageEndpoint
+createEmployeePageEndpoint = Proxy

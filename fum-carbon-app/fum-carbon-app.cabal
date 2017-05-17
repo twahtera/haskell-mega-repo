@@ -78,12 +78,13 @@ library
       Futurice.App.FUM.Clay
       Futurice.App.FUM.Command
       Futurice.App.FUM.Config
+      Futurice.App.FUM.Ctx
       Futurice.App.FUM.Logic
       Futurice.App.FUM.Markup
+      Futurice.App.FUM.Markup.Href
       Futurice.App.FUM.Pages.Index
       Futurice.App.FUM.Types
       Futurice.App.FUM.Types.Basic
-      Futurice.App.FUM.Types.Ctx
       Futurice.App.FUM.Types.Identifier
       Futurice.App.FUM.Types.Status
       Futurice.App.FUM.Types.World

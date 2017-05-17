@@ -16,7 +16,6 @@ import Control.Lens      (Getter, to)
 import Data.Swagger
        (SwaggerType (SwaggerString), ToParamSchema (..), format, type_)
 import Futurice.Generics
-import Servant.API
 
 import qualified Data.UUID as UUID
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
