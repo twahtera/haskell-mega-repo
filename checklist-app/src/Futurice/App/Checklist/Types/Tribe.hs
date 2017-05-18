@@ -20,7 +20,6 @@ import Data.Reflection           (Given (..), give)
 import Futurice.EnvConfig        (FromEnvVar (..))
 import Futurice.Generics
 import Futurice.Lucid.Foundation (ToHtml (..))
-import Servant                   (ToHttpApiData (..))
 import Text.Regex.Applicative    (few, match, psym, sym)
 
 import qualified Data.Set        as Set

@@ -5,16 +5,14 @@
 {-# LANGUAGE TypeFamilies          #-}
 module Futurice.App.Checklist.Types.TaskRole where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens      (Index, IxValue, Ixed (..))
 import Data.Aeson.Compat (Value (String), withText)
 import Data.Distributive (Distributive (..))
 import Data.Functor.Rep  (Representable (..), distributeRep, liftR2, pureRep)
-import Data.Swagger
-       (SwaggerType (SwaggerString), ToParamSchema (..), enum_, type_)
+import Data.Swagger      (SwaggerType (SwaggerString), enum_, type_)
 import Futurice.Generics
-import Servant           (FromHttpApiData (..), ToHttpApiData (..))
+import Futurice.Prelude
+import Prelude ()
 
 import qualified Data.Map  as Map
 import qualified Data.Text as T

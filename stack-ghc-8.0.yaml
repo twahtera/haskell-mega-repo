@@ -1,9 +1,9 @@
 resolver: nightly-2017-04-01
 packages:
 - ansi-pretty/
-- avar/
+# - avar/
 - avatar-app/
-- base64-bytestring-type/
+#- base64-bytestring-type/
 - checklist-app/
 - contacts-api/
 - dynmap-cache/
@@ -34,7 +34,7 @@ packages:
 - personio-client/
 - planmill-client/
 - planmill-proxy/
-- postgresql-simple-url/
+#- postgresql-simple-url/
 - proxy-app/
 - proxy-mgmt-app/
 - reports-app/
@@ -43,9 +43,9 @@ packages:
 - servant-status/
 - sms-proxy/
 - spice-stats/
-- tdigest/tdigest/
-- tdigest/tdigest-Chart/
-- tdigest/tdigest-bench/
+# - tdigest/tdigest/
+# - tdigest/tdigest-Chart/
+# - tdigest/tdigest-bench/
 - tdigest-ekg/
 - theme-app/
 - extra-dep: true

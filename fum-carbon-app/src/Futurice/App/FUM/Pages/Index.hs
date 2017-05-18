@@ -25,9 +25,11 @@ indexPage _world es = fumPage_ "FUM" () $ do
             th_ "last"
             th_ "hire date"
             th_ "end date"
+            th_ "create"
         tbody_ $ for_ es $ \Personio.Employee {..} -> tr_ $ do
             td_ $ toHtml $ show employeeId
             td_ $ toHtml employeeFirst
             td_ $ toHtml employeeLast
             td_ $ traverse_ (toHtml . show) employeeHireDate
             td_ $ traverse_ (toHtml . show) employeeEndDate 
+            td_ $ futuLinkButton_ (createEmployeeHref_ employeeId) "Create"
