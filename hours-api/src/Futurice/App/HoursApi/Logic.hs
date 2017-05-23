@@ -1,22 +1,19 @@
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE OverloadedStrings      #-}
-{-# LANGUAGE TupleSections          #-}
-{-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE TupleSections        #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Futurice.App.HoursApi.Logic (
     projectEndpoint,
     userEndpoint,
     hoursEndpoint,
     entryEndpoint,
-    entryIdEndpoint,
+    entryEditEndpoint,
     entryDeleteEndpoint,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Concurrent.STM (readTVarIO)
 import Control.Lens
        (Getter, filtered, firstOf, foldOf, maximumOf, sumOf, to, withIndex,
@@ -28,9 +25,11 @@ import Data.Time              (addDays)
 import Futurice.Cache         (DynMapCache, cached)
 import Futurice.CryptoRandom  (CryptoGenError)
 import Futurice.Monoid        (Average (..))
+import Futurice.Prelude
 import Futurice.Time
        (NDT (..), TimeUnit (..), ndtConvert, ndtConvert', ndtDivide)
 import Futurice.Trans.PureT
+import Prelude ()
 import Servant                (Handler, ServantErr (..), err400, err403)
 
 import Control.Concurrent.Async.Lifted (Concurrently (..))
@@ -119,17 +118,34 @@ entryEndpoint ctx mfum eu = do
         entryUpdateResponse (ctxCache ctx) now fumUser pmUser pmData (eu ^. euDate)
 
 -- | @PUT /entry/#id@
-entryIdEndpoint
+entryEditEndpoint
     :: Ctx
     -> Maybe FUM.UserName
     -> PM.TimereportId
     -> EntryUpdate
     -> Handler EntryUpdateResponse
-entryIdEndpoint ctx mfum eid eu = do
+entryEditEndpoint ctx mfum eid eu = do
     now <- currentTime
     authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
         let task' = pmData ^? planmillTasks . ix (eu ^. euTaskId)
-        _  <- maybe (logAttention_ "cannot find task" >> lift (throwError err400 { errBody = "Unknown task" })) pure task'
+        _ <- maybe (logAttention_ "cannot find task" >> lift (throwError err400 { errBody = "Unknown task" })) pure task'
+
+        timereport <- PM.planmillAction $ PM.timereport eid
+
+        -- If new taskId is different from old one:
+        -- remove marking, and create new one
+        -- https://github.com/futurice/hours-ui/issues/70
+        if PM.trTask timereport == eu ^. euTaskId
+            then doEdit pmUser
+            else do
+                _ <- PM.planmillAction $ PM.deleteTimereport eid
+                doCreate pmUser
+
+        -- Building the response
+        entryUpdateResponse (ctxCache ctx) now fumUser pmUser pmData (eu ^. euDate)
+  where
+    doEdit pmUser = do
+        logTrace_ "endryEditEndpoint: editTimereport"
 
         let editTimereport = PM.EditTimereport
               { PM._etrId     = eid
@@ -140,10 +156,20 @@ entryIdEndpoint ctx mfum eid eu = do
               , PM.etrUser    = pmUser ^. PM.identifier
               }
 
-        _ <- PM.planmillAction $ PM.editTimereport editTimereport
+        void $ PM.planmillAction $ PM.editTimereport editTimereport
 
-        -- Building the response
-        entryUpdateResponse (ctxCache ctx) now fumUser pmUser pmData (eu ^. euDate)
+    doCreate pmUser = do
+        logTrace_ "endryEditEndpoint: delete >> create"
+
+        let newTimeReport = PM.NewTimereport
+              { PM.ntrTask    = eu ^. euTaskId
+              , PM.ntrStart   = eu ^. euDate
+              , PM.ntrAmount  = fmap truncate $ ndtConvert $ eu ^. euHours
+              , PM.ntrComment = fromMaybe "" $ eu ^. euDescription
+              , PM.ntrUser    = pmUser ^. PM.identifier
+              }
+
+        void $ PM.planmillAction $ PM.addTimereport newTimeReport
 
 -- | @DELETE /entry/#id@
 entryDeleteEndpoint
