@@ -8,24 +8,24 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.HoursApi (defaultMain) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Concurrent.MVar (newMVar)
 import Control.Concurrent.STM  (atomically, newTVarIO, writeTVar)
 import Data.Pool               (createPool)
 import Futurice.CryptoRandom   (mkCryptoGen)
 import Futurice.Integrations
 import Futurice.Periocron
+import Futurice.Prelude
 import Futurice.Servant
-import Network.HTTP.Client     (managerConnCount)
 import Futurice.Trans.PureT
+import Network.HTTP.Client     (managerConnCount)
+import Prelude ()
 import Servant
 
 import Futurice.App.HoursApi.API
 import Futurice.App.HoursApi.Config
 import Futurice.App.HoursApi.Ctx
 import Futurice.App.HoursApi.Logic
-       (entryDeleteEndpoint, entryEndpoint, entryIdEndpoint, hoursEndpoint,
+       (entryDeleteEndpoint, entryEditEndpoint, entryEndpoint, hoursEndpoint,
        projectEndpoint, userEndpoint)
 
 import qualified Data.HashMap.Strict as HM
@@ -38,7 +38,7 @@ server ctx = pure "This is futuhours api"
     :<|> userEndpoint ctx
     :<|> hoursEndpoint ctx
     :<|> entryEndpoint ctx
-    :<|> entryIdEndpoint ctx
+    :<|> entryEditEndpoint ctx
     :<|> entryDeleteEndpoint ctx
 
 
