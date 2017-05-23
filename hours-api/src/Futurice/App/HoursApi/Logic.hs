@@ -308,7 +308,7 @@ userResponse
     -> PM.User
     -> PlanmillData
     -> ImplM User
-userResponse cache now fumUser pmUser pmData = runConcurrently $ mkUser
+userResponse cache now fumUser pmUser _pmData = runConcurrently $ mkUser
     <$> balanceResponse
     <*> holidaysLeftResponse
     <*> utzResponse
@@ -329,9 +329,11 @@ userResponse cache now fumUser pmUser pmData = runConcurrently $ mkUser
 
     holidaysLeftResponse :: Concurrently ImplM (NDT 'Days Centi)
     holidaysLeftResponse = Concurrently $ do
-        let wh = workingHours (pmData ^. planmillCalendars) pmUser
-        holidaysLeft <- sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') <$>
-            cachedPlanmillAction cache (PM.userVacations pmUid)
+        -- Seems that we always need to divide by 7.5
+        -- https://github.com/planmill/api/issues/12
+        let wh = 7.5 :: NDT 'Hours Centi -- workingHours (pmData ^. planmillCalendars) pmUser
+        vs <- cachedPlanmillAction cache (PM.userVacations pmUid)
+        let holidaysLeft = sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') vs
         -- I wish we could do units properly.
         pure $ NDT $ ndtDivide holidaysLeft wh
 
