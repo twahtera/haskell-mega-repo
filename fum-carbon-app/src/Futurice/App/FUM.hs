@@ -3,7 +3,6 @@
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TupleSections     #-}
 module Futurice.App.FUM (defaultMain) where
 
 import Control.Concurrent.STM    (readTVarIO)
@@ -16,9 +15,12 @@ import Servant
 import Futurice.App.FUM.API
 import Futurice.App.FUM.Config
 import Futurice.App.FUM.Ctx
+import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Pages.Index
+import Futurice.App.FUM.Pages.CreateEmployee
 import Futurice.App.FUM.Types
 
+import qualified Futurice.IdMap as IdMap
 import qualified Personio
 
 -------------------------------------------------------------------------------
@@ -27,7 +29,7 @@ import qualified Personio
 
 server :: Ctx -> Server FumCarbonApi
 server ctx = indexPageImpl ctx
-    :<|> error "employee page"
+    :<|> createEmployeePageImpl ctx
 
 -------------------------------------------------------------------------------
 -- Endpoint wrappers
@@ -37,9 +39,24 @@ indexPageImpl
     :: Ctx
     -> a
     -> Handler (HtmlPage "indexpage")
-indexPageImpl ctx fu  = withAuthUser ctx fu impl
+indexPageImpl ctx fu = withAuthUser ctx fu impl
   where
     impl world es = pure $ indexPage world es
+
+createEmployeePageImpl
+    :: Ctx
+    -> a
+    -> Personio.EmployeeId
+    -> Handler (HtmlPage "create-employee")
+createEmployeePageImpl ctx fu pid = withAuthUser ctx fu impl
+  where
+    impl world es = case es ^? ix pid of
+        Just e -> pure $ createEmployeePage world es e
+        Nothing -> pure notFoundPage
+
+notFoundPage :: HtmlPage sym
+notFoundPage = fumPage_ "Not found" ()
+    ":("
 
 -------------------------------------------------------------------------------
 -- Auth
@@ -50,7 +67,7 @@ withAuthUser
     :: (MonadIO m, MonadBase IO m, MonadTime m)
     => Ctx
     -> auth
-    -> (World -> [Personio.Employee] -> m (HtmlPage a))
+    -> (World -> IdMap.IdMap Personio.Employee -> m (HtmlPage a))
     -> m (HtmlPage a)
 withAuthUser ctx fu f = runLogT "withAuthUser" (ctxLogger ctx) $
     withAuthUser' (error "forbiddenPage") ctx fu (\w -> lift $ f w es)
@@ -86,7 +103,7 @@ makeCtx Config {..} lgr _cache = do
     employees <- Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioEmployees
     ctx <- newCtx
         lgr
-        employees
+        (IdMap.fromFoldable employees)
         cfgPostgresConnInfo
         emptyWorld
     pure (ctx, [])

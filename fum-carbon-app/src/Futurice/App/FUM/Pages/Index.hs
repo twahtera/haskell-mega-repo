@@ -6,6 +6,7 @@ module Futurice.App.FUM.Pages.Index (indexPage) where
 
 import Prelude ()
 import Futurice.Prelude
+import Futurice.IdMap (IdMap)
 
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Types hiding (employeeId)
@@ -13,8 +14,8 @@ import Futurice.App.FUM.Types hiding (employeeId)
 import qualified Personio
 
 indexPage
-    :: World                -- ^ the world
-    -> [Personio.Employee]  -- ^ employees
+    :: World                    -- ^ the world
+    -> IdMap Personio.Employee  -- ^ employees
     -> HtmlPage "indexpage"
 indexPage _world es = fumPage_ "FUM" () $ do
     subheader_ "Personio users"
@@ -27,9 +28,9 @@ indexPage _world es = fumPage_ "FUM" () $ do
             th_ "end date"
             th_ "create"
         tbody_ $ for_ es $ \Personio.Employee {..} -> tr_ $ do
-            td_ $ toHtml $ show employeeId
-            td_ $ toHtml employeeFirst
-            td_ $ toHtml employeeLast
-            td_ $ traverse_ (toHtml . show) employeeHireDate
-            td_ $ traverse_ (toHtml . show) employeeEndDate 
-            td_ $ futuLinkButton_ (createEmployeeHref_ employeeId) "Create"
+            td_ $ toHtml $ show _employeeId
+            td_ $ toHtml _employeeFirst
+            td_ $ toHtml _employeeLast
+            td_ $ traverse_ (toHtml . show) _employeeHireDate
+            td_ $ traverse_ (toHtml . show) _employeeEndDate
+            td_ $ futuLinkButton_ (createEmployeeHref_ _employeeId) "Create"
