@@ -25,6 +25,7 @@ type Login = Text
 type Email = Text
 -- | Any email
 type RawEmail = Text
+-- | We always have /some/ picture of the employee.
 type Picture = Text
 
 data GroupType
@@ -40,8 +41,8 @@ instance NFData GroupType
 -- Name etc. comes from Personio.
 data Employee = Employee
     { _employeeId             :: !(Identifier Employee)  -- ^ internal unique identifier
-    , _employeeLogin          :: !Login                  -- ^ @ttee@
     , _employeePersonioId     :: !P.EmployeeId           -- ^ @123@, provides information to names, contract data etc.
+    , _employeeLogin          :: !Login                  -- ^ @ttee@
     , _employeeStatus         :: !Status                 -- ^ "futurice status", importantly not directly the google status.
     , _employeeEmail          :: !Email
     , _employeeEmailAliases   :: ![Email]

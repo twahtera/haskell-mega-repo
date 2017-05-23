@@ -1,5 +1,4 @@
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Futurice.App.FUM.Ctx (
     Ctx (..),
     newCtx,
@@ -8,6 +7,7 @@ module Futurice.App.FUM.Ctx (
 import Control.Concurrent.STM (TVar, newTVarIO)
 import Data.Pool              (Pool, createPool)
 import Futurice.CryptoRandom  (CryptoGen, mkCryptoGen)
+import Futurice.IdMap         (IdMap)
 import Futurice.Prelude
 import Prelude ()
 
@@ -19,7 +19,7 @@ import Futurice.App.FUM.Types
 
 data Ctx = Ctx
     { ctxLogger      :: !Logger
-    , ctxPersonio    :: !([Personio.Employee])
+    , ctxPersonio    :: !(IdMap Personio.Employee)
     , ctxWorld       :: !(TVar World)
     , ctxPostgres    :: !(Pool Postgres.Connection)
     , ctxPRNGs       :: !(Pool (TVar CryptoGen))
@@ -28,7 +28,7 @@ data Ctx = Ctx
 
 newCtx
     :: Logger
-    -> [Personio.Employee]
+    -> IdMap Personio.Employee
     -> Postgres.ConnectInfo
     -> World
     -> IO Ctx

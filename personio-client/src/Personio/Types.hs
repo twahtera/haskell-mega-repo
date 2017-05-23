@@ -13,6 +13,7 @@ import Data.Time          (zonedTimeToLocalTime)
 import Futurice.Aeson
 import Futurice.EnvConfig
 import Futurice.Generics
+import Futurice.IdMap     (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
 
@@ -45,18 +46,26 @@ instance FromHttpApiData EmployeeId where
 instance ToHttpApiData EmployeeId where
     toUrlPiece = newtypeToUrlPiece
 
+_EmployeeId :: Prism' Text EmployeeId
+_EmployeeId = prism' toUrlPiece (either (const Nothing) Just . parseUrlPiece)
 
 -- | Employee structure. Doesn't contain sensitive information.
 data Employee = Employee
-    { employeeId       :: !EmployeeId
-    , employeeFirst    :: !Text
-    , employeeLast     :: !Text
-    , employeeHireDate :: !(Maybe Day)
-    , employeeEndDate  :: !(Maybe Day)
+    { _employeeId       :: !EmployeeId
+    , _employeeFirst    :: !Text
+    , _employeeLast     :: !Text
+    , _employeeHireDate :: !(Maybe Day)
+    , _employeeEndDate  :: !(Maybe Day)
     -- use this when debugging
     -- , employeeRest     :: !(HashMap Text Value)
     }
   deriving (Show)
+
+makeLenses ''Employee
+
+instance HasKey Employee where
+    type Key Employee = EmployeeId
+    key = employeeId
 
 instance FromJSON Employee where
     parseJSON = withObjectDump "Personio.Employee" $ \obj -> do
@@ -65,19 +74,18 @@ instance FromJSON Employee where
             then obj .: "attributes" >>= parseObject
             else fail $ "Not Employee: " ++ type_ ^. unpacked
       where
-        parseObject obj = do
-            Employee
-                <$> parseAttribute "id"
-                <*> parseAttribute "first_name"
-                <*> parseAttribute "last_name"
-                <*> fmap (fmap zonedDay) (parseAttribute "hire_date")
-                <*> fmap (fmap zonedDay) (parseAttribute "contract_end_date")
+        parseObject obj = Employee
+            <$> parseAttribute "id"
+            <*> parseAttribute "first_name"
+            <*> parseAttribute "last_name"
+            <*> fmap (fmap zonedDay) (parseAttribute "hire_date")
+            <*> fmap (fmap zonedDay) (parseAttribute "contract_end_date")
                 -- <*> pure obj -- for employeeRest field
           where
             parseAttribute :: FromJSON a => Text -> Parser a
             parseAttribute attrName = do
                 attr <- obj .: attrName
-                withObjectDump "Attribute" (\subobj -> subobj .: "value") attr
+                withObjectDump "Attribute" (.: "value") attr
 
             zonedDay =  localDay . zonedTimeToLocalTime
 
