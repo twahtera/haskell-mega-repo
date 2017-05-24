@@ -42,3 +42,6 @@ apps:
   email-proxy:
     docker: email-proxy
     executable: email-proxy-server
+  smileys:
+    docker: smileys-app
+    executable: smileys-app-server

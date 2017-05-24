@@ -41,6 +41,7 @@ packages:
 - servant-Chart/
 - servant-binary-tagged/
 - servant-status/
+- smileys-app/
 - sms-proxy/
 - spice-stats/
 # - tdigest/tdigest/
