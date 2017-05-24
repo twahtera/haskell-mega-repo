@@ -32,7 +32,7 @@ createEmployeePage _world _es e = fumPage_ "Create employee" () $ do
         dd_ $ maybe "-" (toHtml . show) $ e ^. Personio.employeeEndDate
 
     -- Form
-    lomakeHtml lomakeData $ createEmployeeForm pid
+    lomakeHtml lomakeData createEmployeeForm
   where
     pid = e ^. Personio.employeeId
     lomakeData :: NP I CEFFields
@@ -60,8 +60,8 @@ data CreateEmployeeForm = CreateEmployeeForm
 
 type CEFFields = '[Personio.EmployeeId, Text, Text]
 
-createEmployeeForm :: Personio.EmployeeId -> Lomake CEFFields '[] CreateEmployeeForm
-createEmployeeForm pid = CreateEmployeeForm
-    <<$>> hiddenField "Personio.EmployeeId" pid Personio._EmployeeId
+createEmployeeForm :: Lomake CEFFields '[] CreateEmployeeForm
+createEmployeeForm = CreateEmployeeForm
+    <<$>> hiddenField "Personio.EmployeeId" Personio._EmployeeId
     <<*>> textField "Login"
     <<*>> textField "Email"

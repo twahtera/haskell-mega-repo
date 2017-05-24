@@ -14,11 +14,13 @@ module Futurice.Lomake (
 
 import Control.Lens               (review, use)
 import Control.Monad.State.Strict
+import Data.Char                  (isAlphaNum)
+import Data.Maybe                 (isNothing)
 import Futurice.Indexed
 import Futurice.Lucid.Foundation
-import Data.Char (isAlphaNum)
 import Futurice.Prelude
 import Prelude ()
+import Web.HttpApiData            (ToHttpApiData (..))
 
 import qualified Data.Text    as T
 import qualified Generics.SOP as SOP
@@ -31,9 +33,26 @@ import qualified Generics.SOP as SOP
 type FieldName = Text
 
 data Field x a where
-    HiddenField :: FieldName -> a -> Prism' Text a -> Field a a
-    TextField :: FieldName -> Field Text Text
-    -- HiddenField / StaticField
+    -- TODO: change order
+    HiddenField :: FieldName -> Prism' Text a -> Field a a
+    TextField   :: FieldName -> Field Text Text -- TODO: add regex validation
+    EnumField   :: FieldName -> EnumFieldOpts a -> Field (Maybe a) a
+
+data EnumFieldOpts a = EnumFieldOpts
+    { efoValues    :: [a]
+    , efoToApiData :: a -> Text
+    , efoToHtml    :: a -> Html ()
+    }
+
+defaultEnumFieldOpts
+    :: (Enum a, Bounded a, ToHttpApiData a)
+    => (a -> Html ())
+    -> EnumFieldOpts a
+defaultEnumFieldOpts h = EnumFieldOpts
+    { efoValues    = [ minBound .. maxBound ]
+    , efoToApiData = toUrlPiece
+    , efoToHtml    = h
+    }
 
 -------------------------------------------------------------------------------
 -- Fields
@@ -42,8 +61,8 @@ data Field x a where
 textField :: FieldName -> Lomake (Text ': xs) xs Text
 textField n = liftLomake (TextField n)
 
-hiddenField :: FieldName -> a -> Prism' Text a -> Lomake (a ': xs) xs a
-hiddenField n x p = liftLomake (HiddenField n x p)
+hiddenField :: FieldName -> Prism' Text a -> Lomake (a ': xs) xs a
+hiddenField n p = liftLomake (HiddenField n p)
 
 -------------------------------------------------------------------------------
 -- Lomake
@@ -105,7 +124,8 @@ lomakeHtml xs lmk =
                 , type_ "text"
                 , value_ value
                 ]
-    go (I value) (HiddenField name _value p) = do
+
+    go (I value) (HiddenField name p) = do
         n <- inputName name
         lift $ input_
             [ data_ "lomake-id" n
@@ -113,6 +133,18 @@ lomakeHtml xs lmk =
             , type_ "hidden"
             , value_ (review p value)
             ]
+
+    go (I value) (EnumField name opts) = do
+        n <- inputName name
+        lift $ select_ [ data_ "lomake-id" n, name_ n ] $ do
+            when (isNothing value) $
+                optionSelected_ True [] "-"
+
+            for_ (efoValues opts) $ \v ->
+                optionSelected_ (fmap p value == Just (p v)) [] $ h v
+      where
+        p = efoToApiData opts
+        h x = hoist (return . runIdentity) (efoToHtml opts x)
 
     inputName :: MonadState (Set Text) n => Text -> n Text
     inputName n0 = do

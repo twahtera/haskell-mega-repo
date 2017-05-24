@@ -6,6 +6,7 @@ module Futurice.App.FUM.Types.Status where
 
 import Prelude ()
 import Futurice.Prelude
+import Futurice.Lucid.Foundation (ToHtml (..))
 import Data.Aeson.Compat (Value (String), withText)
 import Data.Swagger
        (SwaggerType (SwaggerString), ToParamSchema (..), enum_, type_)
@@ -18,7 +19,7 @@ import qualified Data.Text as T
 -- | User status
 data Status
     = StatusActive
-    | StatusSuspend  -- ^ temporary status.
+    | StatusSuspended  -- ^ temporary status.
     | StatusDeleted
   deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
 
@@ -32,9 +33,9 @@ instance Arbitrary Status where
     shrink    = sopShrink
 
 statusToText :: Status -> Text
-statusToText StatusActive  = "text"
-statusToText StatusSuspend = "suspend"
-statusToText StatusDeleted = "deleted"
+statusToText StatusActive    = "active"
+statusToText StatusSuspended = "suspended"
+statusToText StatusDeleted   = "deleted"
 
 statusFromText :: Text -> Maybe Status
 statusFromText t = Map.lookup (T.toLower t) m
@@ -44,10 +45,15 @@ statusFromText t = Map.lookup (T.toLower t) m
 _Status :: Prism' Text Status
 _Status = prism' statusToText statusFromText
 
+instance ToHtml Status where
+    toHtmlRaw = toHtml
+    -- TODO:
+    toHtml = toHtml . statusToText
+
 instance ToParamSchema Status where
     toParamSchema _ = mempty
-          & type_ .~ SwaggerString
-          & enum_ ?~ (String . statusToText <$> [minBound .. maxBound])
+        & type_ .~ SwaggerString
+        & enum_ ?~ (String . statusToText <$> [minBound .. maxBound])
 
 instance ToJSON Status where
     toJSON = String . statusToText
