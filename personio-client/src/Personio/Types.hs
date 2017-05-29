@@ -71,6 +71,8 @@ data Employee = Employee
     , _employeeEndDate  :: !(Maybe Day)
     , _employeeRole     :: !Text
     , _employeeTribe    :: !Text
+    , _employeeEmail    :: !Text
+    , _employeePhone    :: !Text
     -- use this when debugging
     -- , employeeRest     :: !(HashMap Text Value)
     }
@@ -110,6 +112,8 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> fmap (fmap zonedDay) (parseAttribute "contract_end_date")
         <*> parseDynamicAttribute "Primary role"
         <*> parseDynamicAttribute "Home tribe"
+        <*> parseAttribute "email"
+        <*> parseDynamicAttribute "Work phone"
             -- <*> pure obj -- for employeeRest field
       where
         parseAttribute :: FromJSON a => Text -> Parser a
