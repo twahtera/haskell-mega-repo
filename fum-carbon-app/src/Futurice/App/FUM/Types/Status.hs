@@ -1,20 +1,25 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
-module Futurice.App.FUM.Types.Status where
+module Futurice.App.FUM.Types.Status (
+    Status (..),
+    statusToText,
+    statusFromText,
+    -- * Prisms
+    _Status,
+    _StatusActive,
+    _StatusSuspended,
+    _StatusDeleted,
+    ) where
 
-import Prelude ()
-import Futurice.Prelude
-import Futurice.Lucid.Foundation (ToHtml (..))
-import Data.Aeson.Compat (Value (String), withText)
-import Data.Swagger
-       (SwaggerType (SwaggerString), ToParamSchema (..), enum_, type_)
 import Futurice.Generics
-import Servant           (FromHttpApiData (..), ToHttpApiData (..))
-
-import qualified Data.Map  as Map
-import qualified Data.Text as T
+import Futurice.Generics.Enum
+import Futurice.Lucid.Foundation (ToHtml (..))
+import Futurice.Prelude
+import Prelude ()
+import Servant                   (FromHttpApiData (..), ToHttpApiData (..))
 
 -- | User status
 data Status
@@ -26,45 +31,50 @@ data Status
 makePrisms ''Status
 deriveGeneric ''Status
 
+ei :: EnumInstances Status
+ei = sopEnumInstances $
+    K "active" :*
+    K "suspended" :*
+    K "deleted" :*
+    Nil
+
+-------------------------------------------------------------------------------
+-- Boilerplate
+-------------------------------------------------------------------------------
+
+statusToText :: Status -> Text
+statusToText = enumToText ei
+
+statusFromText :: Text -> Maybe Status
+statusFromText = enumFromText ei
+
+_Status :: Prism' Text Status
+_Status = enumPrism ei
+
 instance NFData Status
 
 instance Arbitrary Status where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-statusToText :: Status -> Text
-statusToText StatusActive    = "active"
-statusToText StatusSuspended = "suspended"
-statusToText StatusDeleted   = "deleted"
-
-statusFromText :: Text -> Maybe Status
-statusFromText t = Map.lookup (T.toLower t) m
-  where
-    m = Map.fromList $ map (\x -> (T.toLower $ statusToText x, x)) [minBound .. maxBound]
-
-_Status :: Prism' Text Status
-_Status = prism' statusToText statusFromText
-
 instance ToHtml Status where
     toHtmlRaw = toHtml
-    -- TODO:
-    toHtml = toHtml . statusToText
+    toHtml = toHtml . enumToText ei
 
 instance ToParamSchema Status where
-    toParamSchema _ = mempty
-        & type_ .~ SwaggerString
-        & enum_ ?~ (String . statusToText <$> [minBound .. maxBound])
+    toParamSchema = enumToParamSchema ei
+
+instance ToSchema Status where
+    declareNamedSchema = enumDeclareNamedSchema ei
 
 instance ToJSON Status where
-    toJSON = String . statusToText
+    toJSON = enumToJSON ei
 
 instance FromJSON Status where
-    parseJSON = withText "Status" $ \t ->
-        maybe (fail $ "invalid status " <> t ^. unpacked) pure $ t ^? _Status
+    parseJSON = enumParseJSON ei
 
 instance FromHttpApiData Status where
-    parseUrlPiece t =
-        maybe (Left $ "invalid status " <> t) Right $ t ^? _Status
+    parseUrlPiece = enumParseUrlPiece ei
 
 instance ToHttpApiData Status where
-    toUrlPiece = statusToText
+    toUrlPiece = enumToUrlPiece ei
