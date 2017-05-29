@@ -41,6 +41,7 @@ library
     , swagger2
     , text
     , time
+    , unordered-containers
   exposed-modules:
       Control.Monad.Personio
       Personio
@@ -68,6 +69,7 @@ test-suite unit-tests
     , swagger2
     , text
     , time
+    , unordered-containers
     , file-embed
     , personio-client
     , tasty

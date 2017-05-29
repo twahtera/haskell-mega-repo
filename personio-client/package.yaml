@@ -27,6 +27,7 @@ dependencies:
   - swagger2
   - text
   - time
+  - unordered-containers
 
 library:
   source-dirs: src
