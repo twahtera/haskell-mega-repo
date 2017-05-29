@@ -10,6 +10,7 @@ import Personio.Request
 import Personio.Types
 import Prelude ()
 
+import qualified Data.Text as T
 import qualified Network.HTTP.Client as H
 
 evalPersonioReq
@@ -42,6 +43,7 @@ evalPersonioReq PersonioEmployees = do
             : H.requestHeaders req
         }
     logTrace "personio response" dur
+    logTrace "response" (T.take 10000 $ decodeUtf8Lenient $ H.responseBody res ^. strict)
     Envelope employees <- decode (H.responseBody res)
 
     -- Done

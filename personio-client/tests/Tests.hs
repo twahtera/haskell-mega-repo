@@ -1,17 +1,29 @@
-{-# LANGUAGE FlexibleContexts #-}
-import Prelude ()
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
+import Data.Aeson.Compat
+import Data.Aeson.Types      (parseEither)
+import Data.FileEmbed
 import Futurice.Prelude
-import Data.Aeson
+import Prelude ()
 import Test.Tasty
+import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 import Personio
 
 main :: IO ()
-main = defaultMain tests
+main = defaultMain $ testGroup "tests"
+    [ properties
+    , examples
+    ]
 
-tests :: TestTree
-tests = testGroup "QuickCheck"
+-------------------------------------------------------------------------------
+-- Properties
+-------------------------------------------------------------------------------
+
+properties :: TestTree
+properties = testGroup "QuickCheck"
     [ testProperty "Employee roundtrip" employeeAesonRoundtrip
     ]
 
@@ -20,3 +32,20 @@ employeeAesonRoundtrip e = lhs === rhs
   where
     lhs = eitherDecode (encode e)
     rhs = Right e
+
+-------------------------------------------------------------------------------
+-- Examples
+-------------------------------------------------------------------------------
+
+examples :: TestTree
+examples = testGroup "HUnit"
+    [ testCase "parsePersonioEmployee" $ do
+        contents <- contentsM
+        e <- either fail pure $ parseEither parsePersonioEmployee contents
+        "Teemu" @=? e ^. employeeFirst
+        "Teekkari" @=? e ^. employeeLast
+        Just $(mkDay "2017-05-29") @=? e ^. employeeHireDate
+        Nothing @=? e ^. employeeEndDate
+    ]
+  where
+    contentsM = decodeStrict $(makeRelativeToProject "fixtures/employee.json" >>= embedFile)

@@ -87,28 +87,27 @@ instance ToJSON Employee where
     toJSON = sopToJSON
     toEncoding = sopToEncoding
 
-{-
-    parseJSON = withObjectDump "Personio.Employee" $ \obj -> do
-        type_ <- obj .: "type"
-        if type_ == ("Employee" :: Text)
-            then obj .: "attributes" >>= parseObject
-            else fail $ "Not Employee: " ++ type_ ^. unpacked
+parsePersonioEmployee :: Value -> Parser Employee
+parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
+    type_ <- obj .: "type"
+    if type_ == ("Employee" :: Text)
+        then obj .: "attributes" >>= parseObject
+        else fail $ "Not Employee: " ++ type_ ^. unpacked
+  where
+    parseObject obj = Employee
+        <$> parseAttribute "id"
+        <*> parseAttribute "first_name"
+        <*> parseAttribute "last_name"
+        <*> fmap (fmap zonedDay) (parseAttribute "hire_date")
+        <*> fmap (fmap zonedDay) (parseAttribute "contract_end_date")
+            -- <*> pure obj -- for employeeRest field
       where
-        parseObject obj = Employee
-            <$> parseAttribute "id"
-            <*> parseAttribute "first_name"
-            <*> parseAttribute "last_name"
-            <*> fmap (fmap zonedDay) (parseAttribute "hire_date")
-            <*> fmap (fmap zonedDay) (parseAttribute "contract_end_date")
-                -- <*> pure obj -- for employeeRest field
-          where
-            parseAttribute :: FromJSON a => Text -> Parser a
-            parseAttribute attrName = do
-                attr <- obj .: attrName
-                withObjectDump "Attribute" (.: "value") attr
+        parseAttribute :: FromJSON a => Text -> Parser a
+        parseAttribute attrName = do
+            attr <- obj .: attrName
+            withObjectDump "Attribute" (.: "value") attr
 
-            zonedDay =  localDay . zonedTimeToLocalTime
--}
+        zonedDay =  localDay . zonedTimeToLocalTime
 
 -------------------------------------------------------------------------------
 -- Envelope

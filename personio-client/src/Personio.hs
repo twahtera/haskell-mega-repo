@@ -38,6 +38,10 @@ personioEmployeesR = PersonioEmployees
 -- Actions
 -------------------------------------------------------------------------------
 
+-- | Get a list of all employees in personio.
+--
+-- See <url>.
+--
 personioEmployees :: MonadPersonio m => m [Employee]
 personioEmployees = personio personioEmployeesR
 

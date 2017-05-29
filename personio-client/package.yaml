@@ -25,6 +25,7 @@ dependencies:
   - http-client
   - monad-http
   - swagger2
+  - text
   - time
 
 library:
@@ -35,6 +36,8 @@ tests:
     main: Tests.hs
     source-dirs: tests/
     dependencies:
+      - file-embed
+      - personio-client
       - tasty
       - tasty-quickcheck
-      - personio-client
+      - tasty-hunit
