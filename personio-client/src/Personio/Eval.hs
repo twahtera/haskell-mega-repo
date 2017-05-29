@@ -1,16 +1,18 @@
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Personio.Eval where
+module Personio.Eval (
+    evalPersonioReq,
+    ) where
 
 import Control.Monad.Http
-import Data.Aeson.Compat  (decode)
+import Data.Aeson.Compat  (FromJSON (..), decode)
+import Data.Aeson.Types   (listParser)
 import Futurice.Clock
 import Futurice.Prelude
 import Personio.Request
 import Personio.Types
 import Prelude ()
 
-import qualified Data.Text as T
 import qualified Network.HTTP.Client as H
 
 evalPersonioReq
@@ -43,8 +45,16 @@ evalPersonioReq PersonioEmployees = do
             : H.requestHeaders req
         }
     logTrace "personio response" dur
-    logTrace "response" (T.take 10000 $ decodeUtf8Lenient $ H.responseBody res ^. strict)
-    Envelope employees <- decode (H.responseBody res)
+    -- logTrace "response" (T.take 10000 $ decodeUtf8Lenient $ H.responseBody res ^. strict)
+    Envelope (E employees) <- decode (H.responseBody res)
 
     -- Done
     pure employees
+
+
+-- | A wrapper around list of 'Employee's, using
+-- 'parsePersonioEmployee' in 'FromJSON' instance.
+newtype E = E [Employee]
+
+instance FromJSON E where
+    parseJSON = fmap E . listParser parsePersonioEmployee

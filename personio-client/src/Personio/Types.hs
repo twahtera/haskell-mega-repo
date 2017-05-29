@@ -9,6 +9,7 @@
 module Personio.Types where
 
 import Data.Aeson.Compat
+import Data.Aeson.Types   (FromJSON1 (..), explicitParseField, parseJSON1)
 import Data.Time          (zonedTimeToLocalTime)
 import Futurice.Aeson
 import Futurice.EnvConfig
@@ -116,13 +117,16 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
 newtype Envelope a = Envelope { getEnvelope :: a }
 
 instance FromJSON a => FromJSON (Envelope a) where
-    parseJSON = withObjectDump "Envelope" $ \obj -> do
+    parseJSON = parseJSON1
+
+instance FromJSON1 Envelope where
+    liftParseJSON p _ = withObjectDump "Envelope" $ \obj -> do
         b <- obj .: "success"
         case b of
-            False ->  do
+            False -> do
                 err <- obj .: "error"
                 fail (errMessage err ^. unpacked)
-            True -> Envelope <$> obj .: "data"
+            True -> Envelope <$> explicitParseField p obj "data"
 
 -- | API error.
 data Err = Err
