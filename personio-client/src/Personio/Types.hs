@@ -27,11 +27,19 @@ newtype EmployeeId = EmployeeId Word
 
 deriveGeneric ''EmployeeId
 
+instance Arbitrary EmployeeId where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
+
 instance Hashable EmployeeId where
     hashWithSalt salt (EmployeeId i) = hashWithSalt salt i
 
 instance FromJSON EmployeeId where
     parseJSON = fmap EmployeeId . parseJSON
+
+instance ToJSON EmployeeId where
+    toJSON (EmployeeId i) = toJSON i
+    toEncoding (EmployeeId i) = toEncoding i
 
 instance NFData EmployeeId where
     rnf (EmployeeId i) = rnf i
@@ -59,15 +67,27 @@ data Employee = Employee
     -- use this when debugging
     -- , employeeRest     :: !(HashMap Text Value)
     }
-  deriving (Show)
+  deriving (Eq, Show)
 
 makeLenses ''Employee
+deriveGeneric ''Employee
+
+instance Arbitrary Employee where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
 
 instance HasKey Employee where
     type Key Employee = EmployeeId
     key = employeeId
 
 instance FromJSON Employee where
+    parseJSON = sopParseJSON
+
+instance ToJSON Employee where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
+
+{-
     parseJSON = withObjectDump "Personio.Employee" $ \obj -> do
         type_ <- obj .: "type"
         if type_ == ("Employee" :: Text)
@@ -88,6 +108,7 @@ instance FromJSON Employee where
                 withObjectDump "Attribute" (.: "value") attr
 
             zonedDay =  localDay . zonedTimeToLocalTime
+-}
 
 -------------------------------------------------------------------------------
 -- Envelope

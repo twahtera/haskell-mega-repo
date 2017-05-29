@@ -29,3 +29,12 @@ dependencies:
 
 library:
   source-dirs: src
+
+tests:
+  unit-tests:
+    main: Tests.hs
+    source-dirs: tests/
+    dependencies:
+      - tasty
+      - tasty-quickcheck
+      - personio-client
