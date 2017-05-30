@@ -27,10 +27,10 @@ getSmileys ctx _ start end = do
         res <- q conn (fromMaybe today start) (fromMaybe today end)
         return $ res
         where
-            q :: (MonadIO m, MonadBaseControl IO m) => Postgres.Connection -> Day -> Day -> m [Smileys]
-            q conn s e = liftIO $ Postgres.query conn
-                    "SELECT entries, username, smiley, day FROM smileys.trail WHERE day >= ? AND day <= ?"
-                    (s, e)
+          q :: (MonadIO m, MonadBaseControl IO m) => Postgres.Connection -> Day -> Day -> m [Smileys]
+          q conn s e = liftIO $ Postgres.query conn
+                "SELECT entries, username, smiley, day FROM smileys.trail WHERE day >= ? AND day <= ?"
+                (s, e)
 
 postSmiley
     :: (MonadIO m, MonadBaseControl IO m, MonadError ServantErr m)
@@ -41,16 +41,16 @@ postSmiley
 postSmiley ctx mfum req = do
     withResource (ctxPostgresPool ctx) $ \conn -> do
         mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
-                let insertQuery = fromString $ unwords $
-                     [ "INSERT INTO smileys.trail as c (entries, username, smiley, day)"
-                     , "VALUES (?, ?, ?, ?) ON CONFLICT (username, day) DO UPDATE"
-                     , "SET entries = EXCLUDED.entries, smiley = EXCLUDED.smiley"
-                     ]
-                let smiley_entries = _postSmileyEntries req
-                let smiley_day = textShow $ _postSmileyDate req
-                let smiley_user = FUM._getUserName fumUsername
-                let smiley_state = textShow $ _postSmileySmiley req
-                _ <- liftIO $ Postgres.execute conn
-                         insertQuery
-                         ( smiley_entries, smiley_user, smiley_state, smiley_day)
-                pure $ Res { _resStatus = "OK" }
+            let insertQuery = fromString $ unwords $
+                 [ "INSERT INTO smileys.trail as c (entries, username, smiley, day)"
+                 , "VALUES (?, ?, ?, ?) ON CONFLICT (username, day) DO UPDATE"
+                 , "SET entries = EXCLUDED.entries, smiley = EXCLUDED.smiley"
+                 ]
+            let smiley_entries = _postSmileyEntries req
+            let smiley_day = textShow $ _postSmileyDate req
+            let smiley_user = FUM._getUserName fumUsername
+            let smiley_state = textShow $ _postSmileySmiley req
+            _ <- liftIO $ Postgres.execute conn
+                     insertQuery
+                     ( smiley_entries, smiley_user, smiley_state, smiley_day)
+            pure $ Res { _resStatus = "OK" }
