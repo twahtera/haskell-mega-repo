@@ -39,11 +39,40 @@ library
     , http-client
     , monad-http
     , swagger2
+    , text
     , time
+    , unordered-containers
   exposed-modules:
       Control.Monad.Personio
       Personio
       Personio.Eval
       Personio.Request
       Personio.Types
+  default-language: Haskell2010
+
+test-suite unit-tests
+  type: exitcode-stdio-1.0
+  main-is: Tests.hs
+  hs-source-dirs:
+      tests/
+  ghc-options: -Wall
+  build-depends:
+      aeson
+    , aeson-compat
+    , base
+    , constraints
+    , env-config
+    , futurice-prelude
+    , http-api-data
+    , http-client
+    , monad-http
+    , swagger2
+    , text
+    , time
+    , unordered-containers
+    , file-embed
+    , personio-client
+    , tasty
+    , tasty-quickcheck
+    , tasty-hunit
   default-language: Haskell2010

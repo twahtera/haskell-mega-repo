@@ -9,13 +9,18 @@
 module Personio.Types where
 
 import Data.Aeson.Compat
-import Data.Time          (zonedTimeToLocalTime)
+import Data.Aeson.Internal (JSONPathElement (Key), (<?>))
+import Data.Aeson.Types    (FromJSON1 (..), explicitParseField, parseJSON1)
+import Data.Time           (zonedTimeToLocalTime)
 import Futurice.Aeson
 import Futurice.EnvConfig
 import Futurice.Generics
-import Futurice.IdMap     (HasKey (..))
+import Futurice.IdMap      (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
+
+import qualified Data.HashMap.Strict as HM
+import qualified Data.Text           as T
 
 -------------------------------------------------------------------------------
 -- Data
@@ -27,11 +32,19 @@ newtype EmployeeId = EmployeeId Word
 
 deriveGeneric ''EmployeeId
 
+instance Arbitrary EmployeeId where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
+
 instance Hashable EmployeeId where
     hashWithSalt salt (EmployeeId i) = hashWithSalt salt i
 
 instance FromJSON EmployeeId where
     parseJSON = fmap EmployeeId . parseJSON
+
+instance ToJSON EmployeeId where
+    toJSON (EmployeeId i) = toJSON i
+    toEncoding (EmployeeId i) = toEncoding i
 
 instance NFData EmployeeId where
     rnf (EmployeeId i) = rnf i
@@ -56,38 +69,78 @@ data Employee = Employee
     , _employeeLast     :: !Text
     , _employeeHireDate :: !(Maybe Day)
     , _employeeEndDate  :: !(Maybe Day)
+    , _employeeRole     :: !Text
+    , _employeeTribe    :: !Text
     -- use this when debugging
     -- , employeeRest     :: !(HashMap Text Value)
     }
-  deriving (Show)
+  deriving (Eq, Show)
 
 makeLenses ''Employee
+deriveGeneric ''Employee
+
+instance Arbitrary Employee where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
 
 instance HasKey Employee where
     type Key Employee = EmployeeId
     key = employeeId
 
 instance FromJSON Employee where
-    parseJSON = withObjectDump "Personio.Employee" $ \obj -> do
-        type_ <- obj .: "type"
-        if type_ == ("Employee" :: Text)
-            then obj .: "attributes" >>= parseObject
-            else fail $ "Not Employee: " ++ type_ ^. unpacked
-      where
-        parseObject obj = Employee
-            <$> parseAttribute "id"
-            <*> parseAttribute "first_name"
-            <*> parseAttribute "last_name"
-            <*> fmap (fmap zonedDay) (parseAttribute "hire_date")
-            <*> fmap (fmap zonedDay) (parseAttribute "contract_end_date")
-                -- <*> pure obj -- for employeeRest field
-          where
-            parseAttribute :: FromJSON a => Text -> Parser a
-            parseAttribute attrName = do
-                attr <- obj .: attrName
-                withObjectDump "Attribute" (.: "value") attr
+    parseJSON = sopParseJSON
 
-            zonedDay =  localDay . zonedTimeToLocalTime
+instance ToJSON Employee where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
+
+parsePersonioEmployee :: Value -> Parser Employee
+parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
+    type_ <- obj .: "type"
+    if type_ == ("Employee" :: Text)
+        then obj .: "attributes" >>= parseObject
+        else fail $ "Not Employee: " ++ type_ ^. unpacked
+  where
+    parseObject :: HashMap Text Attribute -> Parser Employee
+    parseObject obj = Employee
+        <$> parseAttribute "id"
+        <*> parseAttribute "first_name"
+        <*> parseAttribute "last_name"
+        <*> fmap (fmap zonedDay) (parseAttribute "hire_date")
+        <*> fmap (fmap zonedDay) (parseAttribute "contract_end_date")
+        <*> parseDynamicAttribute "Primary role"
+        <*> parseDynamicAttribute "Home tribe"
+            -- <*> pure obj -- for employeeRest field
+      where
+        parseAttribute :: FromJSON a => Text -> Parser a
+        parseAttribute attrName = case HM.lookup attrName obj of
+            Nothing              -> fail $ "key " ++ show attrName ++ " not present"
+            Just (Attribute _ v) -> parseJSON v <?> Key attrName
+
+        parseDynamicAttribute :: FromJSON a => Text -> Parser a
+        parseDynamicAttribute k = dynamicAttributes .: k
+
+        dynamicAttributes :: HashMap Text Value
+        dynamicAttributes = flip mapHM obj $ \k (Attribute l v) ->
+            if "dynamic_" `T.isPrefixOf` k
+                then Just (l, v)
+                else Nothing
+
+        zonedDay =  localDay . zonedTimeToLocalTime
+
+        mapHM
+            :: (Eq k2, Hashable k2)
+            => (k1 -> v1 -> Maybe (k2, v2))
+            -> HashMap k1 v1 -> HashMap k2 v2
+        mapHM f = HM.fromList . mapMaybe (uncurry f) . HM.toList
+
+-- | Personio attribute, i.e. labelled value.
+data Attribute = Attribute !Text !Value
+
+instance FromJSON Attribute where
+    parseJSON = withObjectDump "Attribute" $ \obj -> Attribute
+        <$> obj .: "label"
+        <*> obj .: "value"
 
 -------------------------------------------------------------------------------
 -- Envelope
@@ -96,13 +149,16 @@ instance FromJSON Employee where
 newtype Envelope a = Envelope { getEnvelope :: a }
 
 instance FromJSON a => FromJSON (Envelope a) where
-    parseJSON = withObjectDump "Envelope" $ \obj -> do
+    parseJSON = parseJSON1
+
+instance FromJSON1 Envelope where
+    liftParseJSON p _ = withObjectDump "Envelope" $ \obj -> do
         b <- obj .: "success"
         case b of
-            False ->  do
+            False -> do
                 err <- obj .: "error"
                 fail (errMessage err ^. unpacked)
-            True -> Envelope <$> obj .: "data"
+            True -> Envelope <$> explicitParseField p obj "data"
 
 -- | API error.
 data Err = Err

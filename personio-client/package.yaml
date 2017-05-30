@@ -25,7 +25,20 @@ dependencies:
   - http-client
   - monad-http
   - swagger2
+  - text
   - time
+  - unordered-containers
 
 library:
   source-dirs: src
+
+tests:
+  unit-tests:
+    main: Tests.hs
+    source-dirs: tests/
+    dependencies:
+      - file-embed
+      - personio-client
+      - tasty
+      - tasty-quickcheck
+      - tasty-hunit
