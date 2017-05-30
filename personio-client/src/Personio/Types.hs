@@ -73,6 +73,7 @@ data Employee = Employee
     , _employeeTribe    :: !Text
     , _employeeEmail    :: !Text
     , _employeePhone    :: !Text
+    , _employeeSupervisorId :: !(Maybe EmployeeId)
     -- use this when debugging
     -- , employeeRest     :: !(HashMap Text Value)
     }
@@ -114,6 +115,7 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseDynamicAttribute "Home tribe"
         <*> parseAttribute "email"
         <*> parseDynamicAttribute "Work phone"
+        <*> fmap getSupervisor (parseAttribute "supervisor")
             -- <*> pure obj -- for employeeRest field
       where
         parseAttribute :: FromJSON a => Text -> Parser a
@@ -138,13 +140,24 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
             -> HashMap k1 v1 -> HashMap k2 v2
         mapHM f = HM.fromList . mapMaybe (uncurry f) . HM.toList
 
+
 -- | Personio attribute, i.e. labelled value.
-data Attribute = Attribute !Text !Value
+data Attribute = Attribute !Text !Value deriving Show
 
 instance FromJSON Attribute where
     parseJSON = withObjectDump "Attribute" $ \obj -> Attribute
         <$> obj .: "label"
         <*> obj .: "value"
+
+newtype Supervisor = Supervisor { getSupervisor :: Maybe EmployeeId }
+
+instance FromJSON Supervisor where
+    parseJSON = withObjectDump "SupervisorId" $ \obj -> do
+      type_ <- obj .: "type"
+      attrs_ <- obj .: "attributes" :: Parser (HashMap Text Attribute)
+      if type_ == ("Employee" :: Text)
+          then fail (" ++ " ++ show attrs_)
+          else fail $ "Not Employee: " ++ type_ ^. unpacked
 
 -------------------------------------------------------------------------------
 -- Envelope
