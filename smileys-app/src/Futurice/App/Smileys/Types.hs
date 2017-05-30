@@ -6,28 +6,35 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Smileys.Types (
-    SmileysReport,
     PostSmiley(..),
-    Res(..)
+    Res(..),
+    Smileys(..)
     ) where
 
 import Prelude ()
 import Futurice.Prelude
 import Futurice.Generics
 
-import Data.Pool                  (Pool)
-import Database.PostgreSQL.Simple (Connection)
-import Futurice.Report            (Report, ReportGenerated)
-import Futurice.Report.Columns    (ToColumns, toColumns, Columns)
+import qualified Database.PostgreSQL.Simple as Postgres
+import qualified Database.PostgreSQL.Simple.FromField as Postgres
+import qualified Database.PostgreSQL.Simple.ToField   as Postgres
+import Database.PostgreSQL.Simple.FromRow (FromRow(..), field)
+import Database.PostgreSQL.Simple.FromField (FromField(..))
+import Database.PostgreSQL.Simple.ToField (ToField(..))
+
+import Data.Aeson.Compat
+       (AesonException (..), eitherDecode, encode)
 
 -------------------------------------------------------------------------------
 -- Smiley
 -------------------------------------------------------------------------------
 
+type HourEntries = Vector HourEntry
+
 data PostSmiley = PostSmiley
-  { _postSmileyEntries :: ![Smiley]
+  { _postSmileyEntries :: !HourEntries
   , _postSmileyDate :: !Day
-  , _postSmileySmiley   :: !SmileyState
+  , _postSmileySmiley   :: !SmileyValue
   } deriving (Eq, Ord, Show, Typeable, Generic)
 
 data Res = Res
@@ -36,32 +43,42 @@ data Res = Res
 
 type ProjectId = Int
 type TaskId = Int
-type SmileyState = Int
+type SmileyValue = Int
 
--- TODO: Naming: Smiley? SmileyEntries?
-data Smiley = Smiley
+data HourEntry = HourEntry
   { _smileyProject :: !ProjectId
   , _smileyTask    :: !TaskId
   } deriving (Eq, Ord, Show, Typeable, Generic)
 
-makeLenses ''Smiley
-deriveGeneric ''Smiley
+makeLenses ''HourEntry
+deriveGeneric ''HourEntry
 
-instance NFData Smiley
-instance ToJSON Smiley where
+instance NFData HourEntry
+instance ToJSON HourEntry where
     toJSON = sopToJSON
     toEncoding = sopToEncoding
-instance FromJSON Smiley where parseJSON = sopParseJSON
-instance ToSchema Smiley where declareNamedSchema = sopDeclareNamedSchema
-instance ToColumns Smiley where
-    type Columns Smiley = '[Int, Int]
-    toColumns (Smiley d c) = [I d :* I c :* Nil]
+instance FromJSON HourEntry where parseJSON = sopParseJSON
+instance ToSchema HourEntry where declareNamedSchema = sopDeclareNamedSchema
+
+instance ToField HourEntry where
+  toField = toField . encode
+instance FromField HourEntry where
+  fromField f mdata = do
+        bs <- fromField f mdata
+        case eitherDecode bs of
+            Right x  -> pure x
+            Left err -> Postgres.conversionError (AesonException err)
+
+-- instance Postgres.ToField UserName where
+--    toField = Postgres.toField . _getUserName
+--instance Postgres.FromField UserName where
+--    fromField f mdata = UserName <$> Postgres.fromField f mdata
 
 data Smileys = Smileys
-  { _smileysEntries  :: ![Smiley]
+  { _smileysEntries  :: !HourEntries
   , _smileysDate     :: !Day
   , _smileysUsername :: !Text
-  , _smileysSmiley   :: !SmileyState
+  , _smileysSmiley   :: !SmileyValue
   } deriving (Eq, Ord, Show, Typeable, Generic)
 
 makeLenses ''Smileys
@@ -73,20 +90,8 @@ instance ToJSON Smileys where
     toEncoding = sopToEncoding
 instance FromJSON Smileys where parseJSON = sopParseJSON
 instance ToSchema Smileys where declareNamedSchema = sopDeclareNamedSchema
-
--------------------------------------------------------------------------------
--- Reports
--------------------------------------------------------------------------------
-
-type SmileysReport = Report
-    "Smileys report"
-    ReportGenerated
-    (Vector :$ NP I '[Text, Text, Int, Day])
-
-type SmileysReport' = Report
-    "Smileys report"
-    ReportGenerated
-    (Vector :$ Smileys)
+instance FromRow Smileys where
+  fromRow = Smileys <$> field <*> field <*> field <*> field
 
 -------------------------------------------------------------------------------
 -- instances

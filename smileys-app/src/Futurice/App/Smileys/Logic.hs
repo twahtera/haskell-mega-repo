@@ -5,15 +5,11 @@ module Futurice.App.Smileys.Logic (getSmileys, postSmiley) where
 import Prelude ()
 import Futurice.Prelude
 import Data.Pool                    (withResource)
-import Data.Time                    (getCurrentTime)
 
-import Futurice.Report
 import Futurice.App.Smileys.Types
 import Futurice.App.Smileys.Ctx
 
-import qualified Data.Vector                as V
 import qualified Database.PostgreSQL.Simple as Postgres
-import qualified Data.Text as T
 import qualified FUM
 import Servant (ServantErr(..), err403)
 
@@ -23,18 +19,18 @@ getSmileys
     -> Maybe FUM.UserName
     -> Maybe Day
     -> Maybe Day
-    -> m SmileysReport
+    -> m [Smileys]
 getSmileys ctx _ start end = do
-  now <- liftIO $ getCurrentTime
+  now <- liftIO $ currentTime
   let today = utctDay now
   withResource (ctxPostgresPool ctx) $ \conn -> do
-    res <- liftIO $ Postgres.query conn
-        "SELECT entries, username, smiley, day FROM smileys.trail WHERE day >= ? AND day <= ?"
-        [fromMaybe today start, fromMaybe today end]
-    return $ Report (ReportGenerated now) $ V.fromList $ map toNP res
-  where
-    toNP (a, b, c, d) = I a :* I b :* I c :* I d :* Nil
-
+    res <- q conn (fromMaybe today start) (fromMaybe today end)
+    return $ res
+    where
+      q :: (MonadIO m, MonadBaseControl IO m) => Postgres.Connection -> Day -> Day -> m [Smileys]
+      q conn s e = liftIO $ Postgres.query conn
+              "SELECT entries, username, smiley, day FROM smileys.trail WHERE day >= ? AND day <= ?"
+              (s, e)
 
 postSmiley
     :: (MonadIO m, MonadBaseControl IO m, MonadError ServantErr m)
@@ -50,11 +46,11 @@ postSmiley ctx mfum req = do
                , "VALUES (?, ?, ?, ?) ON CONFLICT (username, day) DO UPDATE"
                , "SET entries = EXCLUDED.entries, smiley = EXCLUDED.smiley"
                ]
-        let smiley_entries = textShow $ _postSmileyEntries req
+        let smiley_entries = _postSmileyEntries req
         let smiley_day = textShow $ _postSmileyDate req
         let smiley_user = FUM._getUserName fumUsername
         let smiley_state = textShow $ _postSmileySmiley req
         _ <- liftIO $ Postgres.execute conn
                insertQuery
-               [ smiley_entries, smiley_user, smiley_state, smiley_day]
+               ( smiley_entries, smiley_user, smiley_state, smiley_day)
         pure $ Res { _resStatus = "OK" }
