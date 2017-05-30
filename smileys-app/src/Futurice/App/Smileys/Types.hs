@@ -69,16 +69,11 @@ instance FromField HourEntry where
             Right x  -> pure x
             Left err -> Postgres.conversionError (AesonException err)
 
--- instance Postgres.ToField UserName where
---    toField = Postgres.toField . _getUserName
---instance Postgres.FromField UserName where
---    fromField f mdata = UserName <$> Postgres.fromField f mdata
-
 data Smileys = Smileys
   { _smileysEntries  :: !HourEntries
-  , _smileysDate     :: !Day
   , _smileysUsername :: !Text
   , _smileysSmiley   :: !SmileyValue
+  , _smileysDate     :: !Day
   } deriving (Eq, Ord, Show, Typeable, Generic)
 
 makeLenses ''Smileys
