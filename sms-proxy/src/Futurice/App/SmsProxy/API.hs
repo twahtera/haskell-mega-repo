@@ -14,7 +14,7 @@ import Futurice.App.SmsProxy.Types
 
 type SmsProxyAPI =
     Get '[PlainText] Text
-    :<|> "send" :> QueryParam "to" Text :> QueryParam "text" Text :> Get '[JSON] Res
+    :<|> "send" :> QueryParam "to" Text :> QueryParam "text" Text :> Get '[PlainText] Text
     :<|> "send" :> ReqBody '[JSON] Req :> Post '[JSON] Res
 
 smsProxyApi :: Proxy SmsProxyAPI
