@@ -15,15 +15,11 @@ import Prelude ()
 import Futurice.Prelude
 import Futurice.Generics
 
-import qualified Database.PostgreSQL.Simple as Postgres
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 import Database.PostgreSQL.Simple.FromRow (FromRow(..), field)
 import Database.PostgreSQL.Simple.FromField (FromField(..))
 import Database.PostgreSQL.Simple.ToField (ToField(..))
-
-import Data.Aeson.Compat
-       (AesonException (..), eitherDecode, encode)
 
 -------------------------------------------------------------------------------
 -- Smiley
