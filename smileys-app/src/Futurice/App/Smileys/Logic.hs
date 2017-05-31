@@ -44,7 +44,7 @@ postSmiley ctx mfum req = do
             let insertQuery = fromString $ unwords $
                  [ "INSERT INTO smileys.trail as c (entries, username, smiley, day)"
                  , "VALUES (?, ?, ?, ?) ON CONFLICT (username, day) DO UPDATE"
-                 , "SET entries = EXCLUDED.entries, smiley = EXCLUDED.smiley"
+                 , "SET entries = CAST(EXCLUDED.entries AS json), smiley = EXCLUDED.smiley"
                  ]
             let smiley_entries = _postSmileyEntries req
             let smiley_day = textShow $ _postSmileyDate req

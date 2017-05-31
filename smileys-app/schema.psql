@@ -2,7 +2,7 @@ CREATE SCHEMA smileys;
 
 CREATE TABLE smileys.trail (
   id SERIAL PRIMARY KEY,
-  entries TEXT[] NOT NULL,
+  entries JSON NOT NULL,
   username TEXT NOT NULL,
   smiley SMALLINT NOT NULL,
   day DATE NOT NULL,

@@ -29,7 +29,7 @@ import Data.Aeson.Compat
 -- Smiley
 -------------------------------------------------------------------------------
 
-type HourEntries = Vector HourEntry
+type HourEntries = [HourEntry]
 
 data PostSmiley = PostSmiley
   { _postSmileyEntries :: !HourEntries
@@ -60,14 +60,10 @@ instance ToJSON HourEntry where
 instance FromJSON HourEntry where parseJSON = sopParseJSON
 instance ToSchema HourEntry where declareNamedSchema = sopDeclareNamedSchema
 
-instance ToField HourEntry where
-  toField = toField . encode
-instance FromField HourEntry where
-  fromField f mdata = do
-        bs <- fromField f mdata
-        case eitherDecode bs of
-            Right x  -> pure x
-            Left err -> Postgres.conversionError (AesonException err)
+instance FromField HourEntries where
+  fromField = Postgres.fromJSONField
+instance ToField HourEntries where
+  toField = Postgres.toJSONField
 
 data Smileys = Smileys
   { _smileysEntries  :: !HourEntries
