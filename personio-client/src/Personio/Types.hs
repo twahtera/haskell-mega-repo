@@ -70,7 +70,6 @@ data Employee = Employee
     , _employeeHireDate :: !(Maybe Day)
     , _employeeEndDate  :: !(Maybe Day)
     , _employeeRole     :: !Text
-    , _employeeTribe    :: !Text
     , _employeeEmail    :: !Text
     , _employeePhone    :: !Text
     , _employeeSupervisorId :: !(Maybe EmployeeId)
@@ -117,7 +116,6 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> fmap (fmap zonedDay) (parseAttribute obj "hire_date")
         <*> fmap (fmap zonedDay) (parseAttribute obj "contract_end_date")
         <*> parseDynamicAttribute "Primary role"
-        <*> parseDynamicAttribute "Home tribe"
         <*> parseAttribute obj "email"
         <*> parseDynamicAttribute "Work phone"
         <*> fmap getSupervisor (parseAttribute obj "supervisor")
