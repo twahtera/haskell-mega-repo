@@ -39,6 +39,7 @@ instance Arbitrary EmployeeId where
 instance Hashable EmployeeId where
     hashWithSalt salt (EmployeeId i) = hashWithSalt salt i
 
+
 instance FromJSON EmployeeId where
     parseJSON = fmap EmployeeId . parseJSON
 
@@ -52,6 +53,9 @@ instance NFData EmployeeId where
 -- | We could use 'GeneralizedNewtypeDeriving', but we don't (yet?).
 instance ToParamSchema EmployeeId where
     toParamSchema = newtypeToParamSchema
+
+instance ToSchema EmployeeId where
+    declareNamedSchema = newtypeDeclareNamedSchema
 
 instance FromHttpApiData EmployeeId where
     parseUrlPiece = newtypeParseUrlPiece
@@ -86,6 +90,9 @@ instance Arbitrary Employee where
 instance HasKey Employee where
     type Key Employee = EmployeeId
     key = employeeId
+
+instance ToSchema Employee where
+    declareNamedSchema = sopDeclareNamedSchema
 
 instance FromJSON Employee where
     parseJSON = sopParseJSON

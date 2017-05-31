@@ -12,10 +12,14 @@ import Servant.HTML.Lucid        (HTML)
 
 import qualified Personio
 
+type FumCarbonMachineApi =
+    "raw-employees" :> Get '[JSON] [Personio.Employee]
+
 type FumCarbonApi = IndexPageEndpoint
     -- Employees
     :<|> CreateEmployeePageEndpoint
     -- machine api
+    :<|> "api" :> FumCarbonMachineApi
 
 fumCarbonApi :: Proxy FumCarbonApi
 fumCarbonApi = Proxy
