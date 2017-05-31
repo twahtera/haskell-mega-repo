@@ -36,20 +36,20 @@ sendTwilioSms ctx req = do
     res <- liftIO $ H.httpLbs request (ctxManager ctx)
     pure $ res
 
+-- | Legacy Kannel response
 sendLegacySms :: (MonadIO m, MonadLog m) => Ctx -> Req -> m Text
 sendLegacySms ctx req = do
     res <- sendTwilioSms ctx req
 
-    -- Legacy Kannel response
     pure $ decodeUtf8Lenient $ case S.statusMessage $ H.responseStatus res of
-      "CREATED" -> "0: Accepted for delivery"
-      _         -> S.statusMessage $ H.responseStatus res
+        "CREATED" -> "0: Accepted for delivery"
+        _         -> S.statusMessage $ H.responseStatus res
 
 sendSms :: (MonadIO m, MonadLog m) => Ctx -> Req -> m Res
 sendSms ctx req = do
     res <- sendTwilioSms ctx req
 
     pure $ Res
-            { _resTo     = req ^. reqTo
-            , _resStatus = decodeUtf8Lenient $ S.statusMessage $ H.responseStatus res
-            }
+        { _resTo     = req ^. reqTo
+        , _resStatus = decodeUtf8Lenient $ S.statusMessage $ H.responseStatus res
+        }
