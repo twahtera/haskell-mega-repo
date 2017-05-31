@@ -97,6 +97,11 @@ instance ToJSON Employee where
     toJSON = sopToJSON
     toEncoding = sopToEncoding
 
+parseAttribute :: FromJSON a => HashMap Text Attribute -> Text -> Parser a
+parseAttribute obj attrName = case HM.lookup attrName obj of
+    Nothing              -> fail $ "key " ++ show attrName ++ " not present"
+    Just (Attribute _ v) -> parseJSON v <?> Key attrName
+
 parsePersonioEmployee :: Value -> Parser Employee
 parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
     type_ <- obj .: "type"
@@ -106,23 +111,18 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
   where
     parseObject :: HashMap Text Attribute -> Parser Employee
     parseObject obj = Employee
-        <$> parseAttribute "id"
-        <*> parseAttribute "first_name"
-        <*> parseAttribute "last_name"
-        <*> fmap (fmap zonedDay) (parseAttribute "hire_date")
-        <*> fmap (fmap zonedDay) (parseAttribute "contract_end_date")
+        <$> parseAttribute obj "id"
+        <*> parseAttribute obj "first_name"
+        <*> parseAttribute obj "last_name"
+        <*> fmap (fmap zonedDay) (parseAttribute obj "hire_date")
+        <*> fmap (fmap zonedDay) (parseAttribute obj "contract_end_date")
         <*> parseDynamicAttribute "Primary role"
         <*> parseDynamicAttribute "Home tribe"
-        <*> parseAttribute "email"
+        <*> parseAttribute obj "email"
         <*> parseDynamicAttribute "Work phone"
-        <*> fmap getSupervisor (parseAttribute "supervisor")
-            -- <*> pure obj -- for employeeRest field
+        <*> fmap getSupervisor (parseAttribute obj "supervisor")
+            -- <*> pure obj -- for employeeR<§<§est field
       where
-        parseAttribute :: FromJSON a => Text -> Parser a
-        parseAttribute attrName = case HM.lookup attrName obj of
-            Nothing              -> fail $ "key " ++ show attrName ++ " not present"
-            Just (Attribute _ v) -> parseJSON v <?> Key attrName
-
         parseDynamicAttribute :: FromJSON a => Text -> Parser a
         parseDynamicAttribute k = dynamicAttributes .: k
 
@@ -153,15 +153,14 @@ newtype Supervisor = Supervisor { getSupervisor :: Maybe EmployeeId }
 
 instance FromJSON Supervisor where
     parseJSON = withObjectDump "SupervisorId" $ \obj -> do
-      type_ <- obj .: "type"
-      attrs_ <- obj .: "attributes" :: Parser (HashMap Text Attribute)
-      if type_ == ("Employee" :: Text)
-          then case HM.lookup "id" attrs_ of
-            Nothing              -> fail "No id present in Supervisor"
-            Just (Attribute _ v) -> parseJSON  v <?> Key "id" :: Parser Supervisor
-          -- then fail (" ++ " ++ show (HM.lookup "id" attrs_))
-          -- then ((obj .: "attributes") >>= (.: "id")) :: Parser Supervisor
-          else fail $ "Supervisor not Employee: " ++ type_ ^. unpacked
+        type_ <- obj .: "type"
+        if type_ == ("Employee" :: Text)
+            then obj .: "attributes" >>= parseObject
+            else fail $ "Attribute Supervisor is not Employee: " ++ type_ ^. unpacked
+      where
+        parseObject :: HashMap Text Attribute -> Parser Supervisor
+        parseObject obj = Supervisor <$> parseAttribute obj "id"
+
 
 -------------------------------------------------------------------------------
 -- Envelope

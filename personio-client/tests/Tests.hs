@@ -41,7 +41,7 @@ examples :: TestTree
 examples = testGroup "HUnit"
     [ testCase "parsePersonioEmployee" $ do
         contents <- contentsM
-        e <- either fail pure $ parseEither parsePersonioEmployee contents        
+        e <- either fail pure $ parseEither parsePersonioEmployee contents
         "Teemu" @=? e ^. employeeFirst
         "Teekkari" @=? e ^. employeeLast
         Just $(mkDay "2017-05-29") @=? e ^. employeeHireDate
@@ -50,7 +50,7 @@ examples = testGroup "HUnit"
         "SomeTribe" @=? e ^. employeeTribe
         "teemu.teekkari@example.com" @=? e ^. employeeEmail
         "+123 5678910" @=? e ^. employeePhone
-        Nothing @=? e ^. employeeSupervisorId
+        Just (EmployeeId 1337) @=? e ^. employeeSupervisorId
     ]
   where
     contentsM = decodeStrict $(makeRelativeToProject "fixtures/employee.json" >>= embedFile)
