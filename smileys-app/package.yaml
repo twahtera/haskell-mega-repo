@@ -1,7 +1,7 @@
 name: smileys-app
 version: "0"
-synopsis: Proxy conf management
-description: Proxy conf management
+synopsis: Smileys backend for FutuHours
+description: Smileys backend for FutuHours
 author: Jussi Vaihia <jussi.viahia@futurice.com>
 maintainer: Jussi Vaihia <jussi.viahia@futurice.com>
 license: BSD3

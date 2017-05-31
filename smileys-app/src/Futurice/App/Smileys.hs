@@ -25,8 +25,8 @@ import Futurice.App.Smileys.Logic
 
 server :: Ctx -> Server SmileysAPI
 server ctx = pure "smileys backend"
-    :<|> (postSmiley ctx)
-    :<|> (getSmileys ctx)
+    :<|> postSmiley ctx
+    :<|> getSmileys ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig

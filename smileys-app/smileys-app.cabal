@@ -4,8 +4,8 @@
 
 name:           smileys-app
 version:        0
-synopsis:       Proxy conf management
-description:    Proxy conf management
+synopsis:       Smileys backend for FutuHours
+description:    Smileys backend for FutuHours
 category:       Web
 homepage:       https://github.com/futurice/haskell-mega-rpo#readme
 bug-reports:    https://github.com/futurice/haskell-mega-rpo/issues
