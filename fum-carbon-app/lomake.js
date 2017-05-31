@@ -74,13 +74,28 @@ lomake = (function () {
       });
 
       // per element validation.
-      menrva.combine(def.dirty$, def.submittable$, function (dirty, submittable) {
-        return dirty && !submittable;
-      }).onValue(function (erroneous) {
-        if (erroneous) {
+      menrva.combine(def.dirty$, def.changed$, def.submittable$, function (dirty, changed, submittable) {
+        if ((dirty || changed) && !submittable) {
+          return "error"
+        } else if (changed) {
+          return "pending";
+        } else {
+          return false;
+        }
+      }).onValue(function (state) {
+        if (state === "error") {
           def.el.parentElement.classList.add("error");
           def.el.classList.add("error");
+          def.el.parentElement.classList.remove("pending");
+          def.el.classList.remove("pending");
+        } else if (state === "pending") {
+          def.el.parentElement.classList.remove("error");
+          def.el.classList.remove("error");
+          def.el.parentElement.classList.add("pending");
+          def.el.classList.add("pending");
         } else {
+          def.el.parentElement.classList.remove("pending");
+          def.el.classList.remove("pending");
           def.el.parentElement.classList.remove("error");
           def.el.classList.remove("error");
         }
@@ -89,6 +104,27 @@ lomake = (function () {
       defs[elName] = def;
     });
 
+    // actions
+    function markDirty() {
+      var tr = [];
+      _.forEach(defs, function (def) {
+        tr.push(def.dirty$);
+        tr.push(true);
+      });
+      menrva.transaction(tr).commit();
+    }
+
+    function markClean() {
+      var tr = [];
+      _.forEach(defs, function (def) {
+        tr.push(def.dirty$);
+        tr.push(false);
+        tr.push(def.signal);
+        tr.push(inputValue(def.el));
+      });
+      menrva.transaction(tr).commit();
+    }
+
     // Form signals
     var formChanged$ = menrva.record(_.mapValues(defs, "changed$")).map(function (rec) {
       return _.chain(rec).values().some().value();
@@ -96,6 +132,10 @@ lomake = (function () {
 
     var formDirty$ = menrva.record(_.mapValues(defs, "dirty$")).map(function (rec) {
       return _.chain(rec).values().some().value();
+    });
+
+    var formSubmittable$ = menrva.record(_.mapValues(defs, "submittable$")).map(function (rec) {
+      return _.chain(rec).values().every().value();
     });
 
     // reset button state
@@ -120,9 +160,40 @@ lomake = (function () {
       menrva.transaction(tr).commit();
     });
 
+    // submit button state
+    menrva.combine(formSubmittable$, formChanged$, function (submittable, changed) {
+      return changed || !submittable;
+    }).onValue(function (enabled) {
+      submitBtn.disabled = !enabled;
+    });
+
+    formSubmittable$.onValue(function (submittable) {
+      if (submittable) {
+        submitBtn.classList.remove("alert");
+        submitBtn.classList.add("success");
+      } else {
+        submitBtn.classList.add("alert");
+        submitBtn.classList.remove("success");
+      }
+    });
+
+    buttonOnClick(submitBtn, function () {
+      if (formSubmittable$.value()) {
+        var values = _.mapValues(defs, function (def) {
+          return def.signal$.value();
+        });
+
+        // TODO:
+        console.log("SUBMIT", values);
+      } else {
+        actions.markDirty();
+      }
+    });
+
     // write down form
     forms[formName] = {
-      // TODO
+      markDirty: markDirty,
+      markClean: markClean,
     };
   };
 

@@ -22,6 +22,7 @@ css = do
     header ? do
         marginTop $ em 1
         marginBottom $ em 1
+
     label # ".error" ? do
         color red
     "input[type=text]" # ".error" ? do
@@ -30,3 +31,12 @@ css = do
         borderColor red
     "select" # ".error" ? do
         borderColor red
+
+    label # ".pending" ? do
+        color orange
+    "input[type=text]" # ".pending" ? do
+        borderColor orange
+    "input[type=date]" # ".pending" ? do
+        borderColor orange
+    "select" # ".pending" ? do
+        borderColor orange
