@@ -57,9 +57,9 @@ instance FromJSON HourEntry where parseJSON = sopParseJSON
 instance ToSchema HourEntry where declareNamedSchema = sopDeclareNamedSchema
 
 instance FromField HourEntries where
-  fromField = Postgres.fromJSONField
+    fromField = Postgres.fromJSONField
 instance ToField HourEntries where
-  toField = Postgres.toJSONField
+    toField = Postgres.toJSONField
 
 data Smileys = Smileys
   { _smileysEntries  :: !HourEntries
@@ -78,7 +78,7 @@ instance ToJSON Smileys where
 instance FromJSON Smileys where parseJSON = sopParseJSON
 instance ToSchema Smileys where declareNamedSchema = sopDeclareNamedSchema
 instance FromRow Smileys where
-  fromRow = Smileys <$> field <*> field <*> field <*> field
+    fromRow = Smileys <$> field <*> field <*> field <*> field
 
 -------------------------------------------------------------------------------
 -- instances
