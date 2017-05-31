@@ -32,7 +32,7 @@ createEmployeePage _world _es e = fumPage_ "Create employee" () $ do
         dd_ $ maybe "-" (toHtml . show) $ e ^. Personio.employeeEndDate
 
     -- Form
-    lomakeHtml lomakeData createEmployeeForm
+    lomakeHtml "create-employee-form" lomakeData createEmployeeForm
   where
     pid = e ^. Personio.employeeId
     lomakeData :: NP I CEFFields
@@ -40,6 +40,7 @@ createEmployeePage _world _es e = fumPage_ "Create employee" () $ do
         I pid :*
         I loginSuggestion :*
         I emailSuggestion :*
+        I Nothing :*
         Nil
 
     -- TODO: check used
@@ -56,12 +57,14 @@ data CreateEmployeeForm = CreateEmployeeForm
     { _cefPersonioId :: !Personio.EmployeeId
     , _cefLogin      :: !Login
     , _cefEmail      :: !Email
+    , _cefStatus     :: !Status
     }
 
-type CEFFields = '[Personio.EmployeeId, Text, Text]
+type CEFFields = '[Personio.EmployeeId, Text, Text, Maybe Status]
 
 createEmployeeForm :: Lomake CEFFields '[] CreateEmployeeForm
 createEmployeeForm = CreateEmployeeForm
     <<$>> hiddenField "Personio.EmployeeId" Personio._EmployeeId
     <<*>> textField "Login"
     <<*>> textField "Email"
+    <<*>> enumField "Status" (defaultEnumFieldOpts (toHtml . show))

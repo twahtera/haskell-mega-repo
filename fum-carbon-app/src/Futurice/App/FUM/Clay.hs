@@ -14,7 +14,7 @@ import qualified Control.Lens as L
 pageParams :: PageParams
 pageParams = defPageParams
     L.& pageCss    .~ [ css ]
-    L.& pageJs     .~ [ menrvaJS, $(embedJS "fum-carbon.js") ]
+    L.& pageJs     .~ [ menrvaJS, $(embedJS "futu.js"), $(embedJS "lomake.js"), $(embedJS "fum-carbon.js") ]
     L.& pageJQuery .~ True
 
 css :: Css
