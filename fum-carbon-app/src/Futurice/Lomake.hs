@@ -145,7 +145,7 @@ lomakeHtml formName xs lmk =
                     optionSelected_ True [] "-"
 
                 for_ (efoValues opts) $ \v ->
-                    optionSelected_ (fmap p value == Just (p v)) [] $ h v
+                    optionSelected_ (fmap p value == Just (p v)) [ value_ $ p v ] $ h v
       where
         p = efoToApiData opts
         h x = hoist (return . runIdentity) (efoToHtml opts x)
