@@ -41,7 +41,7 @@ examples :: TestTree
 examples = testGroup "HUnit"
     [ testCase "parsePersonioEmployee" $ do
         contents <- contentsM
-        e <- either fail pure $ parseEither parsePersonioEmployee contents
+        e <- either fail pure $ parseEither parsePersonioEmployee contents        
         "Teemu" @=? e ^. employeeFirst
         "Teekkari" @=? e ^. employeeLast
         Just $(mkDay "2017-05-29") @=? e ^. employeeHireDate

@@ -156,8 +156,12 @@ instance FromJSON Supervisor where
       type_ <- obj .: "type"
       attrs_ <- obj .: "attributes" :: Parser (HashMap Text Attribute)
       if type_ == ("Employee" :: Text)
-          then fail (" ++ " ++ show attrs_)
-          else fail $ "Not Employee: " ++ type_ ^. unpacked
+          then case HM.lookup "id" attrs_ of
+            Nothing              -> fail "No id present in Supervisor"
+            Just (Attribute _ v) -> parseJSON  v <?> Key "id" :: Parser Supervisor
+          -- then fail (" ++ " ++ show (HM.lookup "id" attrs_))
+          -- then ((obj .: "attributes") >>= (.: "id")) :: Parser Supervisor
+          else fail $ "Supervisor not Employee: " ++ type_ ^. unpacked
 
 -------------------------------------------------------------------------------
 -- Envelope
