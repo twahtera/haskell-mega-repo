@@ -77,6 +77,8 @@ data Employee = Employee
     , _employeeEmail    :: !Text
     , _employeePhone    :: !Text
     , _employeeSupervisorId :: !(Maybe EmployeeId)
+    , _employeeTribe    :: !Text
+    , _employeeOffice   :: !Text
     -- use this when debugging
     -- , employeeRest     :: !(HashMap Text Value)
     }
@@ -128,7 +130,9 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseAttribute obj "email"
         <*> parseDynamicAttribute "Work phone"
         <*> fmap getSupervisorId (parseAttribute obj "supervisor")
-            -- <*> pure obj -- for employeeR<§<§est field
+        <*> fmap getName (parseAttribute obj "department")
+        <*> fmap getName (parseAttribute obj "office")
+            -- <*> pure obj -- for employeeRest field
       where
         parseDynamicAttribute :: FromJSON a => Text -> Parser a
         parseDynamicAttribute k = dynamicAttributes .: k
@@ -172,6 +176,11 @@ instance FromJSON SupervisorId where
         parseObject :: HashMap Text Attribute -> Parser SupervisorId
         parseObject obj = SupervisorId <$> parseAttribute obj "id"
 
+newtype NamedAttribute = NamedAttribute { getName :: Text }
+
+instance FromJSON NamedAttribute where
+    parseJSON = withObjectDump "NamedAttribute" $ \obj ->
+     NamedAttribute <$> ((obj .: "attributes") >>= (.: "name"))
 
 -------------------------------------------------------------------------------
 -- Envelope
