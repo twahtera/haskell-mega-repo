@@ -37,6 +37,7 @@ dependencies:
   - lens
   - lucid
   - mtl
+  - periocron
   - personio-client
   - postgresql-simple
   - QuickCheck

@@ -52,6 +52,7 @@ library
     , lens
     , lucid
     , mtl
+    , periocron
     , personio-client
     , postgresql-simple
     , QuickCheck
@@ -125,6 +126,7 @@ executable fum-carbon-server
     , lens
     , lucid
     , mtl
+    , periocron
     , personio-client
     , postgresql-simple
     , QuickCheck
@@ -180,6 +182,7 @@ test-suite unit-tests
     , lens
     , lucid
     , mtl
+    , periocron
     , personio-client
     , postgresql-simple
     , QuickCheck

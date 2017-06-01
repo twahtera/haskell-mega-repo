@@ -5,8 +5,9 @@
 {-# LANGUAGE RecordWildCards   #-}
 module Futurice.App.FUM (defaultMain) where
 
-import Control.Concurrent.STM    (readTVarIO)
+import Control.Concurrent.STM    (atomically, readTVar, readTVarIO)
 import Futurice.Lucid.Foundation (HtmlPage)
+import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
@@ -16,8 +17,8 @@ import Futurice.App.FUM.API
 import Futurice.App.FUM.Config
 import Futurice.App.FUM.Ctx
 import Futurice.App.FUM.Markup
-import Futurice.App.FUM.Pages.Index
 import Futurice.App.FUM.Pages.CreateEmployee
+import Futurice.App.FUM.Pages.Index
 import Futurice.App.FUM.Types
 
 import qualified Futurice.IdMap as IdMap
@@ -33,7 +34,8 @@ apiServer ctx = rawEmployees
     -- TODO: eventually move to the Logic module
     rawEmployees = do
         today <- currentDay
-        pure $ filter (isCurrentEmployee today) $ toList $ ctxPersonio ctx
+        es <- liftIO $ readTVarIO $ ctxPersonio ctx
+        pure $ filter (isCurrentEmployee today) $ toList es
 
     isCurrentEmployee today e =
         maybe True (today <=) (e ^. Personio.employeeEndDate) &&
@@ -83,20 +85,20 @@ withAuthUser
     -> (World -> IdMap.IdMap Personio.Employee -> m (HtmlPage a))
     -> m (HtmlPage a)
 withAuthUser ctx fu f = runLogT "withAuthUser" (ctxLogger ctx) $
-    withAuthUser' (error "forbiddenPage") ctx fu (\w -> lift $ f w es)
-  where
-    es = ctxPersonio ctx
+    withAuthUser' (error "forbiddenPage") ctx fu (\w es -> lift $ f w es)
 
 withAuthUser'
     :: (MonadIO m, MonadBase IO m, MonadTime m)
     => a                           -- ^ Response to unauthenticated users
     -> Ctx
     -> auth
-    -> (World -> LogT m a)
+    -> (World -> IdMap.IdMap Personio.Employee -> LogT m a)
     -> LogT m a
 withAuthUser' _def ctx _fu f = do
-     world <- liftIO $ readTVarIO (ctxWorld ctx)
-     f world
+     (world, es) <- liftIO $ atomically $ (,)
+          <$> readTVar (ctxWorld ctx)
+          <*> readTVar (ctxPersonio ctx)
+     f world es
 
 -------------------------------------------------------------------------------
 -- Main
@@ -113,10 +115,19 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
 makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
 makeCtx Config {..} lgr _cache = do
     mgr <- newManager tlsManagerSettings
-    employees <- Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioEmployees
+
+    -- employees
+    let fetchEmployees = Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioEmployees
+    employees <- fetchEmployees
+
+    -- context
     ctx <- newCtx
         lgr
-        (IdMap.fromFoldable employees)
         cfgPostgresConnInfo
+        (IdMap.fromFoldable employees)
         emptyWorld
-    pure (ctx, [])
+
+    -- jobs
+    let employeesJob = mkJob "Update personio data" fetchEmployees $ tail $ every 300
+
+    pure (ctx, [ employeesJob ])
