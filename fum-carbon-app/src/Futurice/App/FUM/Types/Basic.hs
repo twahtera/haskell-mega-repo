@@ -42,9 +42,7 @@ instance NFData GroupType
 data Employee = Employee
     { _employeeId             :: !(Identifier Employee)  -- ^ internal unique identifier
     , _employeePersonioId     :: !P.EmployeeId           -- ^ @123@, provides information to names, contract data etc.
-    , _employeeLogin          :: !Login                  -- ^ @ttee@
     , _employeeStatus         :: !Status                 -- ^ "futurice status", importantly not directly the google status.
-    , _employeeEmail          :: !Email
     , _employeeEmailAliases   :: ![Email]
     , _employeeSshKeys        :: ![SshKey]
     , _employeePicture        :: !Picture

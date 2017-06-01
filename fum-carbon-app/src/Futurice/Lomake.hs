@@ -64,6 +64,9 @@ textField n = liftLomake (TextField n)
 hiddenField :: FieldName -> Prism' Text a -> Lomake (a ': xs) xs a
 hiddenField n p = liftLomake (HiddenField n p)
 
+enumField :: FieldName -> EnumFieldOpts a -> Lomake (Maybe a ': xs) xs a
+enumField n opts = liftLomake (EnumField n opts)
+
 -------------------------------------------------------------------------------
 -- Lomake
 -------------------------------------------------------------------------------
@@ -102,15 +105,14 @@ lowerLomakeWithNp_ nt = go where
 -- Markup
 -------------------------------------------------------------------------------
 
-lomakeHtml :: forall xs m a. (Monad m, SOP.SListI xs) => NP I xs -> Lomake xs '[] a -> HtmlT m ()
-lomakeHtml xs lmk =
-    row_ $ large_ 12 $ do
-        -- TODO: form tag
+lomakeHtml :: forall xs m a. (Monad m, SOP.SListI xs) => Text -> NP I xs -> Lomake xs '[] a -> HtmlT m ()
+lomakeHtml formName xs lmk =
+    row_ [ data_ "lomake-form" formName ] $ large_ 12 $ do
         evalStateT (lowerLomakeWithNp_ go xs lmk) mempty
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
-            button_ [ class_ "button success", data_ "lomake-action" "submit" ] "Submit"
-            button_ [ class_ "button", data_ "lomake-action" "reset" ] "Reset"
+            button_ [ class_ "button success", data_ "lomake-action" "submit", disabled_ "disabled" ] "Submit"
+            button_ [ class_ "button", data_ "lomake-action" "reset", disabled_ "disabled" ] "Reset"
 
   where
     go :: I y -> Field y x -> StateT (Set Text) (HtmlT m) ()
@@ -136,12 +138,14 @@ lomakeHtml xs lmk =
 
     go (I value) (EnumField name opts) = do
         n <- inputName name
-        lift $ select_ [ data_ "lomake-id" n, name_ n ] $ do
-            when (isNothing value) $
-                optionSelected_ True [] "-"
+        lift $ row_ $ large_ 12 $ label_ $ do
+            toHtml name
+            select_ [ data_ "lomake-id" n, name_ n ] $ do
+                when (isNothing value) $
+                    optionSelected_ True [] "-"
 
-            for_ (efoValues opts) $ \v ->
-                optionSelected_ (fmap p value == Just (p v)) [] $ h v
+                for_ (efoValues opts) $ \v ->
+                    optionSelected_ (fmap p value == Just (p v)) [ value_ $ p v ] $ h v
       where
         p = efoToApiData opts
         h x = hoist (return . runIdentity) (efoToHtml opts x)

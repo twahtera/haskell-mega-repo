@@ -27,9 +27,22 @@ import qualified Personio
 -- Server
 -------------------------------------------------------------------------------
 
+apiServer :: Ctx -> Server FumCarbonMachineApi
+apiServer ctx = rawEmployees
+  where
+    -- TODO: eventually move to the Logic module
+    rawEmployees = do
+        today <- currentDay
+        pure $ filter (isCurrentEmployee today) $ toList $ ctxPersonio ctx
+
+    isCurrentEmployee today e =
+        maybe True (today <=) (e ^. Personio.employeeEndDate) &&
+        maybe False (<= today) (e ^. Personio.employeeHireDate)
+
 server :: Ctx -> Server FumCarbonApi
 server ctx = indexPageImpl ctx
     :<|> createEmployeePageImpl ctx
+    :<|> apiServer ctx
 
 -------------------------------------------------------------------------------
 -- Endpoint wrappers
