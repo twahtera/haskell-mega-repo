@@ -46,7 +46,6 @@ data HourEntry = HourEntry
   , _smileyTask    :: !TaskId
   } deriving (Eq, Ord, Show, Typeable, Generic)
 
-makeLenses ''HourEntry
 deriveGeneric ''HourEntry
 
 instance NFData HourEntry
@@ -68,7 +67,6 @@ data Smileys = Smileys
   , _smileysDate     :: !Day
   } deriving (Eq, Ord, Show, Typeable, Generic)
 
-makeLenses ''Smileys
 deriveGeneric ''Smileys
 
 instance NFData Smileys
@@ -83,9 +81,6 @@ instance FromRow Smileys where
 -------------------------------------------------------------------------------
 -- instances
 -------------------------------------------------------------------------------
-
-makeLenses ''Res
-makeLenses ''PostSmiley
 
 deriveGeneric ''Res
 deriveGeneric ''PostSmiley

@@ -8,7 +8,6 @@ import Futurice.Prelude
 import Data.Pool                  (Pool)
 import Database.PostgreSQL.Simple (Connection)
 
-import Futurice.App.Smileys.Config
 import qualified FUM
 
 -------------------------------------------------------------------------------
