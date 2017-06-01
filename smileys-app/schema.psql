@@ -1,12 +1,13 @@
 CREATE SCHEMA smileys;
 
 CREATE TABLE smileys.trail (
-  id SERIAL PRIMARY KEY,
   entries JSON NOT NULL,
   username TEXT NOT NULL,
   smiley SMALLINT NOT NULL,
   day DATE NOT NULL,
-  constraint one_a_day UNIQUE (username, day)
+  PRIMARY KEY (username, day)  -- this is natural primary key
 );
 
-CREATE INDEX ON smileys.trail (day);
+-- primary key creates an index,
+-- but let's have this way around too.
+CREATE INDEX ON smileys.trail (day, username);
