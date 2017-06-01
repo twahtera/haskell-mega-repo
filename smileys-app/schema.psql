@@ -1,0 +1,12 @@
+CREATE SCHEMA smileys;
+
+CREATE TABLE smileys.trail (
+  id SERIAL PRIMARY KEY,
+  entries JSON NOT NULL,
+  username TEXT NOT NULL,
+  smiley SMALLINT NOT NULL,
+  day DATE NOT NULL,
+  constraint one_a_day UNIQUE (username, day)
+);
+
+CREATE INDEX ON smileys.trail (day);

@@ -37,6 +37,7 @@ packages:
 - servant-binary-tagged/
 - servant-Chart/
 - servant-status/
+- smileys-app/
 - sms-proxy/
 - spice-stats/
 - tdigest/tdigest/
