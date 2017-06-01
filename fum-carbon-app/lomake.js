@@ -15,7 +15,8 @@ lomake = (function () {
     var formName = formElement.dataset.lomakeForm;
     console.info("found lomake: ", formName);
 
-    console.log(formElement);
+    // The url where we will submit the form.
+    var formSubmitUrl = formElement.dataset.lomakeFormSubmit;
 
     // Elements
     var inputElements = $$("*[data-lomake-id");
@@ -36,7 +37,7 @@ lomake = (function () {
 
       // original value, so we can find changed elements.
       def.original$ = menrva.source(inputValue(el));
-     
+
       // the value in the element
       def.source$ = menrvaInputValue(el);
 
@@ -53,7 +54,7 @@ lomake = (function () {
 
       // checked value
       def.signal$ = _.isFunction(check) ? def.source$.map(check) : def.source$
-      
+
       // changed = original != source
       // note: check may say it's invalid - but it's still changed!
       def.changed$ = menrva.combine(def.original$, def.source$, function (original, source) {
@@ -100,7 +101,7 @@ lomake = (function () {
           def.el.classList.remove("error");
         }
       });
-     
+
       defs[elName] = def;
     });
 
@@ -183,10 +184,46 @@ lomake = (function () {
           return def.signal$.value();
         });
 
-        // TODO:
-        console.log("SUBMIT", values);
+        console.log("Submitting", formSubmitUrl, values);
+
+        // Modal
+        var modalElement = document.createElement("DIV");
+        modalElement.className = "reveal";
+        modalElement.dataset.reveal = "";
+        modalElement.innerText = "Thinking..."; // todo some spinner?
+
+        var modal = new Foundation.Reveal(jQuery(modalElement), { closeOnClick: false, closeOnEsc: false });
+        modal.open();
+
+        // Request
+        postJSON(formSubmitUrl, values)
+            .then(function (response) {
+                switch (response.tag) {
+                    case "LomakeResponseNoop": 
+                        modal.close();
+                        break;
+                    default:
+                        throw new Error("Unknown LomakeResponse " + JSON.stringify(response));
+                }
+            })
+            .catch(function (exc) {
+                console.error(exc);
+
+                modalElement.innerText = "" + exc;
+
+                var btn = document.createElement("BUTTON");
+                btn.className = "button alert"
+                btn.innerText = "Close";
+
+                buttonOnClick(btn, function () {
+                    modal.close();
+                });
+
+                modalElement.appendChild(document.createElement("HR"));
+                modalElement.appendChild(btn);
+            });
       } else {
-        actions.markDirty();
+        markDirty();
       }
     });
 
@@ -253,6 +290,41 @@ lomake = (function () {
     } else {
       el.value = value;
     }
+  }
+
+  // Fetch
+  function postJSON(url, body) {
+    // absolute urls only!
+    if (url[0] !== "/") {
+      url = "/" + url;
+    }
+
+    var headers = new Headers();
+    headers.append("Accept", "application/json");
+    headers.append("Content-Type", "application/json");
+
+    var opts = {
+      method: "POST",
+      headers: headers,
+      credentials: "same-origin",
+      body: JSON.stringify(body),
+    };
+
+    return fetch(url, opts)
+      .then(function (res) {
+        if (res.status !== 200) {
+          throw new Error("Non-200 status: " + res.status);
+        }
+
+        var contentType = res.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          return res.json();
+        } else {
+          return res.text().then(function (txt) {
+            throw new Error("Not a JSON: " + txt);
+          });
+        }
+      });
   }
 
   // exports

@@ -8,8 +8,8 @@
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE UndecidableInstances   #-}
 module Futurice.Lucid.Foundation (
-    -- * Embedded style
-    embeddedFoundationStyle_,
+    -- * Vendor
+    vendorServer,
     -- * Grid
     row_,
     large_,
@@ -30,7 +30,6 @@ module Futurice.Lucid.Foundation (
     getJS,
     makeJS,
     embedJS,
-    menrvaJS,
     -- * Lucid
     module Lucid,
     attrfor_,
@@ -42,31 +41,15 @@ import Futurice.Prelude
 import Data.Swagger (ToSchema (..), NamedSchema (..))
 import Clay                   (Css, render)
 import Futurice.Lucid.Style   (css)
-import Data.FileEmbed         (embedStringFile)
 import Futurice.JavaScript
 import Futurice.JavaScript.TH
 import GHC.TypeLits           (KnownSymbol, Symbol, symbolVal)
 import Lucid                  hiding (for_)
+import Servant.Swagger.UI.Internal (mkRecursiveEmbedded)
+import Network.Wai.Application.Static (embeddedSettings, staticApp)
+import Servant (Server, Raw)
 
 import qualified Lucid     as L
-
-embeddedFoundationStyle_ :: Monad m => HtmlT m ()
-embeddedFoundationStyle_ =
-    style_ [type_ "text/css"] ($(embedStringFile "vendor/foundation.min.css") :: String)
-
--- | <https://lodash.com/ Lodash>.
-embeddedLodash_ :: Monad m => HtmlT m ()
-embeddedLodash_ = toHtml $(embedJS "vendor/lodash.js")
-
--- | Data-flow library <https://github.com/phadej/menrva menrva>.
-menrvaJS :: JS
-menrvaJS = $(embedJS "vendor/menrva.standalone.js")
-
-embedJQuery :: Monad m => HtmlT m ()
-embedJQuery = do
-    toHtml $(embedJS "vendor/jquery-3.1.1.min.js")
-    toHtml $(embedJS "vendor/jquery-ui.min.js")
-    style_ [type_ "text/css"] ($(embedStringFile "vendor/jquery-ui.min.css") :: String)
 
 -------------------------------------------------------------------------------
 -- Lucid
@@ -157,14 +140,32 @@ pageImpl t p b = HtmlPage $ doctypehtml_ $ do
         meta_ [charset_ "utf-8"]
         meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1.0"]
         meta_ [httpEquiv_ "x-ua-compatible", content_"ie=edge"]
-        embeddedFoundationStyle_
-        embeddedLodash_
+        -- Stylesheets
+        link_ [ rel_ "stylesheet", href_ "/vendor/foundation.min.css" ]
+        link_ [ rel_ "stylesheet", href_ "/vendor/jquery-ui.min.css" ]
+        -- JS
+        script_ [ src_ "/vendor/jquery-3.1.1.min.js" ] tempty
+        script_ [ src_ "/vendor/jquery-ui.min.js" ] tempty
+        script_ [ src_ "/vendor/foundation.min.js"] tempty
+        script_ [ src_ "/vendor/lodash.js" ] tempty
+        script_ [ src_ "/vendor/menrva.standalone.js" ] tempty
+
+        -- Futurice styles
         style_ $ view strict $ render css
         -- additional styles
         for_ (p ^. pageCss) $ style_ . view strict . render
         -- additional js
         for_ (p ^. pageJs) $ toHtml
-        -- jQuery :S
-        when (p ^. pageJQuery) embedJQuery
     body_ b
+  where
+    tempty = "" :: Text
 
+-------------------------------------------------------------------------------
+-- Statics
+-------------------------------------------------------------------------------
+
+vendorFiles :: [(FilePath, ByteString)]
+vendorFiles = $(mkRecursiveEmbedded "vendor")
+
+vendorServer :: Server Raw
+vendorServer = staticApp $ embeddedSettings vendorFiles
