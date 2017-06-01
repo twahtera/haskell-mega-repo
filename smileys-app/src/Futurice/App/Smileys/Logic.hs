@@ -38,19 +38,19 @@ postSmiley
     -> Maybe FUM.UserName
     -> PostSmiley
     -> m Res
-postSmiley ctx mfum req = do
-    mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
+postSmiley ctx mfum req =
+    mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername ->
         withResource (ctxPostgresPool ctx) $ \conn -> do
             let insertQuery = fromString $ unwords $
                  [ "INSERT INTO smileys.trail as c (entries, username, smiley, day)"
                  , "VALUES (?, ?, ?, ?) ON CONFLICT (username, day) DO UPDATE"
                  , "SET entries = EXCLUDED.entries, smiley = EXCLUDED.smiley"
                  ]
-            let smiley_entries = _postSmileyEntries req
-            let smiley_day = textShow $ _postSmileyDate req
-            let smiley_user = FUM._getUserName fumUsername
-            let smiley_state = textShow $ _postSmileySmiley req
-            _ <- liftIO $ Postgres.execute conn
-                     insertQuery
-                     ( smiley_entries, smiley_user, smiley_state, smiley_day)
+
+            _ <- liftIO $ Postgres.execute conn insertQuery Smileys
+                  { _smileysEntries  = _postSmileyEntries req
+                  , _smileysUsername = fumUsername
+                  , _smileysDate     = _postSmileyDate req
+                  , _smileysSmiley   = _postSmileySmiley req
+                  }
             pure $ Res { _resStatus = "OK" }
