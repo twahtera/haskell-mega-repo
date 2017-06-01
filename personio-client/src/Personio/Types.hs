@@ -80,10 +80,12 @@ data Employee = Employee
     -- use this when debugging
     -- , employeeRest     :: !(HashMap Text Value)
     }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 makeLenses ''Employee
 deriveGeneric ''Employee
+
+instance NFData Employee
 
 instance Arbitrary Employee where
     arbitrary = sopArbitrary
@@ -125,7 +127,7 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseDynamicAttribute "Primary role"
         <*> parseAttribute obj "email"
         <*> parseDynamicAttribute "Work phone"
-        <*> fmap getSupervisor (parseAttribute obj "supervisor")
+        <*> fmap getSupervisorId (parseAttribute obj "supervisor")
             -- <*> pure obj -- for employeeR<§<§est field
       where
         parseDynamicAttribute :: FromJSON a => Text -> Parser a
@@ -154,17 +156,21 @@ instance FromJSON Attribute where
         <$> obj .: "label"
         <*> obj .: "value"
 
-newtype Supervisor = Supervisor { getSupervisor :: Maybe EmployeeId }
+newtype SupervisorId = SupervisorId { getSupervisorId :: Maybe EmployeeId }
 
-instance FromJSON Supervisor where
-    parseJSON = withObjectDump "SupervisorId" $ \obj -> do
-        type_ <- obj .: "type"
-        if type_ == ("Employee" :: Text)
-            then obj .: "attributes" >>= parseObject
-            else fail $ "Attribute Supervisor is not Employee: " ++ type_ ^. unpacked
+instance FromJSON SupervisorId where
+    -- no supervisor: empty array
+    parseJSON (Array xs) | null xs = pure (SupervisorId Nothing)
+    parseJSON v = p v
       where
-        parseObject :: HashMap Text Attribute -> Parser Supervisor
-        parseObject obj = Supervisor <$> parseAttribute obj "id"
+        p = withObjectDump "SupervisorId" $ \obj -> do
+            type_ <- obj .: "type"
+            if type_ == ("Employee" :: Text)
+                then obj .: "attributes" >>= parseObject
+                else fail $ "Attribute Supervisor is not Employee: " ++ type_ ^. unpacked
+
+        parseObject :: HashMap Text Attribute -> Parser SupervisorId
+        parseObject obj = SupervisorId <$> parseAttribute obj "id"
 
 
 -------------------------------------------------------------------------------

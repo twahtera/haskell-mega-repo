@@ -19,7 +19,7 @@ import Futurice.App.FUM.Types
 
 data Ctx = Ctx
     { ctxLogger      :: !Logger
-    , ctxPersonio    :: !(IdMap Personio.Employee)
+    , ctxPersonio    :: !(TVar (IdMap Personio.Employee))
     , ctxWorld       :: !(TVar World)
     , ctxPostgres    :: !(Pool Postgres.Connection)
     , ctxPRNGs       :: !(Pool (TVar CryptoGen))
@@ -28,11 +28,12 @@ data Ctx = Ctx
 
 newCtx
     :: Logger
-    -> IdMap Personio.Employee
     -> Postgres.ConnectInfo
+    -> IdMap Personio.Employee
     -> World
     -> IO Ctx
-newCtx logger es ci w = Ctx logger es
-    <$> newTVarIO w
+newCtx logger ci es w = Ctx logger
+    <$> newTVarIO es
+    <*> newTVarIO w
     <*> createPool (Postgres.connect ci) Postgres.close 1 60 5
     <*> createPool (mkCryptoGen >>= newTVarIO) (\_ -> return()) 1 3600 5
