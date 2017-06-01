@@ -14,16 +14,15 @@ import qualified FUM
 import Servant (ServantErr(..), err403)
 
 getSmileys
-    :: (MonadIO m, MonadBaseControl IO m)
+    :: (MonadIO m, MonadBaseControl IO m, MonadTime m)
     => Ctx
     -> Maybe FUM.UserName
     -> Maybe Day
     -> Maybe Day
     -> m [Smileys]
-getSmileys ctx _ start end = do
-    now <- liftIO $ currentTime
-    let today = utctDay now
+getSmileys ctx _ start end =
     withResource (ctxPostgresPool ctx) $ \conn -> do
+        today <- currentDay
         res <- q conn (fromMaybe today start) (fromMaybe today end)
         return $ res
         where
