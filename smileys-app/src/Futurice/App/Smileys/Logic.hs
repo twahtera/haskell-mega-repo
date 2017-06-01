@@ -14,22 +14,23 @@ import qualified FUM
 import Servant (ServantErr(..), err403)
 
 getSmileys
-    :: (MonadIO m, MonadBaseControl IO m, MonadTime m)
+    :: (MonadIO m, MonadBaseControl IO m, MonadTime m, MonadError ServantErr m)
     => Ctx
     -> Maybe FUM.UserName
     -> Maybe Day
     -> Maybe Day
     -> m [Smileys]
-getSmileys ctx _ start end =
-    withResource (ctxPostgresPool ctx) $ \conn -> do
-        today <- currentDay
-        res <- q conn (fromMaybe today start) (fromMaybe today end)
-        return $ res
-        where
-          q :: (MonadIO m, MonadBaseControl IO m) => Postgres.Connection -> Day -> Day -> m [Smileys]
-          q conn s e = liftIO $ Postgres.query conn
-                "SELECT entries, username, smiley, day FROM smileys.trail WHERE day >= ? AND day <= ?"
-                (s, e)
+getSmileys ctx mfum start end =
+    mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername ->
+        withResource (ctxPostgresPool ctx) $ \conn -> do
+            today <- currentDay
+            q conn fumUsername (fromMaybe today start) (fromMaybe today end)
+          where
+            q :: (MonadIO m, MonadBaseControl IO m)
+              => Postgres.Connection -> FUM.UserName -> Day -> Day -> m [Smileys]
+            q conn fumUsername s e = liftIO $ Postgres.query conn
+                "SELECT entries, username, smiley, day FROM smileys.trail WHERE day >= ? AND day <= ? AND username = ?;"
+                (s, e, fumUsername)
 
 postSmiley
     :: (MonadIO m, MonadBaseControl IO m, MonadError ServantErr m)
