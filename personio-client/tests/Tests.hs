@@ -52,6 +52,7 @@ examples = testGroup "HUnit"
         Just (EmployeeId 1337) @=? e ^. employeeSupervisorId
         "A Tribe" @=? e ^. employeeTribe
         "Helsinki" @=? e ^. employeeOffice
+        Just "gitMastur" @=? e ^. employeeGithub
     ]
   where
     contentsM = decodeStrict $(makeRelativeToProject "fixtures/employee.json" >>= embedFile)

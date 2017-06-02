@@ -18,6 +18,7 @@ import Futurice.Generics
 import Futurice.IdMap      (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
+import Text.Regex.Applicative.Text (RE', string, match, anySym)
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text           as T
@@ -79,6 +80,7 @@ data Employee = Employee
     , _employeeSupervisorId :: !(Maybe EmployeeId)
     , _employeeTribe    :: !Text
     , _employeeOffice   :: !Text
+    , _employeeGithub   :: !(Maybe Text)
     -- use this when debugging
     -- , employeeRest     :: !(HashMap Text Value)
     }
@@ -132,6 +134,7 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> fmap getSupervisorId (parseAttribute obj "supervisor")
         <*> fmap getName (parseAttribute obj "department")
         <*> fmap getName (parseAttribute obj "office")
+        <*> fmap getGithubUsername (parseDynamicAttribute "Github")
             -- <*> pure obj -- for employeeRest field
       where
         parseDynamicAttribute :: FromJSON a => Text -> Parser a
@@ -150,7 +153,6 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
             => (k1 -> v1 -> Maybe (k2, v2))
             -> HashMap k1 v1 -> HashMap k2 v2
         mapHM f = HM.fromList . mapMaybe (uncurry f) . HM.toList
-
 
 -- | Personio attribute, i.e. labelled value.
 data Attribute = Attribute !Text !Value deriving Show
@@ -181,6 +183,14 @@ newtype NamedAttribute = NamedAttribute { getName :: Text }
 instance FromJSON NamedAttribute where
     parseJSON = withObjectDump "NamedAttribute" $ \obj ->
      NamedAttribute <$> ((obj .: "attributes") >>= (.: "name"))
+
+newtype GithubUsername = GithubUsername { getGithubUsername :: Maybe Text }
+
+instance FromJSON GithubUsername where
+    parseJSON = withText "Github" (pure . GithubUsername . match regexp)
+      where
+        regexp :: RE' Text
+        regexp = string "https://github.com/" *> (T.pack <$> some anySym)
 
 -------------------------------------------------------------------------------
 -- Envelope
