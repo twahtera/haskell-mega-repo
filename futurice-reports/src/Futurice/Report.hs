@@ -44,7 +44,7 @@ import Data.Constraint              (Constraint)
 import Data.Swagger                 (ToSchema (..))
 import Data.Type.Equality
 import Futurice.Lucid.Foundation
-       (defPageParams, embedJS, large_, menrvaJS, pageJs, page_, row_)
+       (defPageParams, embedJS, large_, pageJs, page_, row_)
 import Futurice.Peano
 import Generics.SOP                 (All, SList (..), SListI (..))
 import GHC.TypeLits                 (KnownSymbol, Symbol, symbolVal)
@@ -425,9 +425,7 @@ instance (KnownSymbol name, ToHtml params, ToReportRow a, IsReport params a)
         title = symbolVal (Proxy :: Proxy name)
         pageParams = defPageParams
             & pageJs .~
-                [ menrvaJS
-                , $(embedJS "reports.js")
-                ]
+                [ $(embedJS "reports.js") ]
 
         cls' :: Set Text -> [Attribute]
         cls' cs

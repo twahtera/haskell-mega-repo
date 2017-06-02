@@ -60,8 +60,6 @@ module Futurice.Servant (
     Job,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Concurrent.STM               (atomically)
 import Control.Lens                         (LensLike)
 import Control.Monad.Catch                  (fromException, handleAll)
@@ -75,14 +73,17 @@ import Futurice.Cache
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
 import Futurice.EnvConfig                   (Configure, getConfigWithPorts)
+import Futurice.Lucid.Foundation            (vendorServer)
 import Futurice.Periocron
        (Job, defaultOptions, every, mkJob, spawnPeriocron)
+import Futurice.Prelude
 import GHC.Prim                             (coerce)
 import Log.Backend.Logentries               (withLogentriesLogger)
 import Network.Wai
        (Middleware, requestHeaders, responseLBS)
 import Network.Wai.Metrics                  (metrics, registerWaiMetrics)
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
+import Prelude ()
 import Servant
 import Servant.CSV.Cassava                  (CSV)
 import Servant.Futurice.Favicon             (FutuFaviconAPI, serveFutuFavicon)
@@ -106,9 +107,10 @@ import qualified System.Metrics.Json      as Metrics
 
 type FuturiceAPI api colour =
     FutuFaviconAPI colour
-    :<|> SwaggerSchemaUI "swagger-ui" "swagger.json"
-    :<|> StatusAPI
     :<|> api
+    :<|> SwaggerSchemaUI "swagger-ui" "swagger.json"
+    :<|> "vendor" :> Raw
+    :<|> StatusAPI
 
 stats :: DynMapCache -> StatusInfoIO
 stats dmap = gcStatusInfo <> dynmapStats
@@ -144,9 +146,10 @@ futuriceServer
     -> Server (FuturiceAPI api colour)
 futuriceServer t d cache papi server
     = serveFutuFavicon
-    :<|> swaggerSchemaUIServer (swaggerDoc t d papi)
-    :<|> serveStatus (stats cache)
     :<|> server
+    :<|> swaggerSchemaUIServer (swaggerDoc t d papi)
+    :<|> vendorServer
+    :<|> serveStatus (stats cache)
 
 -------------------------------------------------------------------------------
 -- main boilerplate

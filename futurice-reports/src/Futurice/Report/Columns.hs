@@ -254,10 +254,7 @@ instance
 
         -- Page parameters
         pageParams = defPageParams
-            & pageJs .~
-                [ menrvaJS
-                , $(embedJS "report-columns.js")
-                ]
+            & pageJs .~ [ $(embedJS "report-columns.js") ]
 
         -- Proxies
         proxyReportValue = Proxy :: Proxy (ReportValue' params)

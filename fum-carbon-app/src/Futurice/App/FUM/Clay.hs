@@ -6,7 +6,7 @@ import Prelude ()
 import Futurice.Prelude          hiding ((&), (**))
 import Clay
 import Futurice.Lucid.Foundation
-       (PageParams, defPageParams, embedJS, menrvaJS, pageCss, pageJQuery,
+       (PageParams, defPageParams, embedJS, pageCss, pageJQuery,
        pageJs)
 
 import qualified Control.Lens as L
@@ -14,7 +14,7 @@ import qualified Control.Lens as L
 pageParams :: PageParams
 pageParams = defPageParams
     L.& pageCss    .~ [ css ]
-    L.& pageJs     .~ [ menrvaJS, $(embedJS "futu.js"), $(embedJS "lomake.js"), $(embedJS "fum-carbon.js") ]
+    L.& pageJs     .~ [ $(embedJS "futu.js"), $(embedJS "lomake.js"), $(embedJS "fum-carbon.js") ]
     L.& pageJQuery .~ True
 
 css :: Css

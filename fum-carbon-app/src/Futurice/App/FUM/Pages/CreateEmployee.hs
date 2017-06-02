@@ -6,8 +6,11 @@ module Futurice.App.FUM.Pages.CreateEmployee (createEmployeePage) where
 import Futurice.IdMap   (IdMap)
 import Futurice.Lomake
 import Futurice.Prelude
+import Servant.API (safeLink)
 import Prelude ()
 
+import Futurice.App.FUM.API
+import Futurice.App.FUM.Command
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Types  hiding (employeeId)
 
@@ -32,10 +35,15 @@ createEmployeePage _world _es e = fumPage_ "Create employee" () $ do
         dd_ $ maybe "-" (toHtml . show) $ e ^. Personio.employeeEndDate
 
     -- Form
-    lomakeHtml "create-employee-form" lomakeData createEmployeeForm
+    lomakeHtml opts lomakeData createEmployeeLomake
   where
+    opts = FormOptions
+        { foName = "create-employee-form"
+        , foUrl  = safeLink fumCarbonApi createEmployeeCmdEndpoint
+        }
+
     pid = e ^. Personio.employeeId
-    lomakeData :: NP I CEFFields
+    lomakeData :: NP I (LomakeFields CreateEmployee)
     lomakeData =
         I pid :*
         I loginSuggestion :*
@@ -52,19 +60,3 @@ createEmployeePage _world _es e = fumPage_ "Create employee" () $ do
 
     emailSuggestion :: Text
     emailSuggestion = canonicalize (e ^. Personio.employeeFirst <> "." <> e ^. Personio.employeeLast)
-
-data CreateEmployeeForm = CreateEmployeeForm
-    { _cefPersonioId :: !Personio.EmployeeId
-    , _cefLogin      :: !Login
-    , _cefEmail      :: !Email
-    , _cefStatus     :: !Status
-    }
-
-type CEFFields = '[Personio.EmployeeId, Text, Text, Maybe Status]
-
-createEmployeeForm :: Lomake CEFFields '[] CreateEmployeeForm
-createEmployeeForm = CreateEmployeeForm
-    <<$>> hiddenField "Personio.EmployeeId" Personio._EmployeeId
-    <<*>> textField "Login"
-    <<*>> textField "Email"
-    <<*>> enumField "Status" (defaultEnumFieldOpts (toHtml . show))

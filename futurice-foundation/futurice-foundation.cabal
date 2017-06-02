@@ -36,9 +36,12 @@ library
     , language-javascript >= 0.6.0.8 && <0.7
     , lens
     , lucid
+    , servant-server
+    , servant-swagger-ui
     , swagger2
     , template-haskell
     , text
+    , wai-app-static
   exposed-modules:
       Futurice.JavaScript
       Futurice.JavaScript.TH

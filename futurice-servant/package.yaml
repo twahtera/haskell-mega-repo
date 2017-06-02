@@ -36,6 +36,7 @@ library:
     - fum-client
     - futurice-logo
     - futurice-prelude
+    - futurice-foundation
     - ghc-prim
     - gitrev >=1.2.0
     - http-types

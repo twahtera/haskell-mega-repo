@@ -10,6 +10,7 @@ import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
+import Futurice.Lomake
 import Prelude ()
 import Servant
 
@@ -41,9 +42,17 @@ apiServer ctx = rawEmployees
         maybe True (today <=) (e ^. Personio.employeeEndDate) &&
         maybe False (<= today) (e ^. Personio.employeeHireDate)
 
+-- TODO: write command handler
+commandServer :: Ctx -> Server FumCarbonCommandApi
+commandServer ctx (LomakeRequest cmd) = runLogT "command" (ctxLogger ctx) $ do
+    logTrace "input" cmd
+    fail "not-implemented"
+    -- pure LomakeResponseNoop
+
 server :: Ctx -> Server FumCarbonApi
 server ctx = indexPageImpl ctx
     :<|> createEmployeePageImpl ctx
+    :<|> commandServer ctx
     :<|> apiServer ctx
 
 -------------------------------------------------------------------------------
