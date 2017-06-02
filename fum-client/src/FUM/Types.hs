@@ -7,19 +7,20 @@
 {-# LANGUAGE TypeFamilies        #-}
 module FUM.Types where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens      (Getter, to)
 import Data.Aeson.Compat
 import Data.Aeson.Types
        (FromJSONKey (..), ToJSONKey (..), fromJSONKeyCoerce, toJSONKeyText)
-import Data.Swagger      (ToSchema)
+import Data.Swagger      (ToParamSchema (..), ToSchema)
 import Futurice.IdMap    (HasKey (..))
+import Futurice.Prelude
+import Prelude ()
 import Test.QuickCheck   (Arbitrary (..), elements)
 import Web.HttpApiData   (FromHttpApiData (..), ToHttpApiData (..))
 
 import qualified Data.Csv                             as Csv
 import qualified Data.Maybe.Strict                    as S
+import qualified Data.Swagger                         as Swag
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 
@@ -123,6 +124,11 @@ instance ToJSON UserName where
 
 -- | TODO: incorrect
 instance ToSchema UserName where
+
+instance ToParamSchema UserName where
+    toParamSchema _ = mempty
+        & Swag.type_ .~ Swag.SwaggerString
+        & Swag.format ?~ "FUM.UserName"
 
 instance ToJSONKey UserName where
     toJSONKey = toJSONKeyText _getUserName
