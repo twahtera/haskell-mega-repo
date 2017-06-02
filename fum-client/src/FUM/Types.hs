@@ -122,9 +122,10 @@ instance ToJSON UserName where
     toJSON = toJSON . _getUserName
     toEncoding = toEncoding ._getUserName
 
--- | TODO: incorrect
 instance ToSchema UserName where
-
+    declareNamedSchema p = pure $ Swag.NamedSchema (Just "FUM.UserName") $
+        Swag.paramSchemaToSchema p
+            & Swag.example ?~ toJSON (UserName "test")
 instance ToParamSchema UserName where
     toParamSchema _ = mempty
         & Swag.type_ .~ Swag.SwaggerString
