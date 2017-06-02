@@ -69,18 +69,19 @@ _EmployeeId = prism' toUrlPiece (either (const Nothing) Just . parseUrlPiece)
 
 -- | Employee structure. Doesn't contain sensitive information.
 data Employee = Employee
-    { _employeeId       :: !EmployeeId
-    , _employeeFirst    :: !Text
-    , _employeeLast     :: !Text
-    , _employeeHireDate :: !(Maybe Day)
-    , _employeeEndDate  :: !(Maybe Day)
-    , _employeeRole     :: !Text
-    , _employeeEmail    :: !Text
-    , _employeePhone    :: !Text
+    { _employeeId           :: !EmployeeId
+    , _employeeFirst        :: !Text
+    , _employeeLast         :: !Text
+    , _employeeHireDate     :: !(Maybe Day)
+    , _employeeEndDate      :: !(Maybe Day)
+    , _employeeRole         :: !Text
+    , _employeeEmail        :: !Text
+    , _employeePhone        :: !Text
     , _employeeSupervisorId :: !(Maybe EmployeeId)
-    , _employeeTribe    :: !Text
-    , _employeeOffice   :: !Text
-    , _employeeGithub   :: !(Maybe Text)
+    , _employeeTribe        :: !(Maybe Text)
+    , _employeeOffice       :: !(Maybe Text)
+    , _employeeCostCenter   :: !(Maybe Text)
+    , _employeeGithub       :: !(Maybe Text)
     -- use this when debugging
     -- , employeeRest     :: !(HashMap Text Value)
     }
@@ -134,6 +135,7 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> fmap getSupervisorId (parseAttribute obj "supervisor")
         <*> fmap getName (parseAttribute obj "department")
         <*> fmap getName (parseAttribute obj "office")
+        <*> fmap getName (parseAttribute obj "cost_centers")
         <*> fmap getGithubUsername (parseDynamicAttribute "Github")
             -- <*> pure obj -- for employeeRest field
       where
@@ -178,11 +180,17 @@ instance FromJSON SupervisorId where
         parseObject :: HashMap Text Attribute -> Parser SupervisorId
         parseObject obj = SupervisorId <$> parseAttribute obj "id"
 
-newtype NamedAttribute = NamedAttribute { getName :: Text }
+newtype NamedAttribute = NamedAttribute { getName :: Maybe Text }
 
 instance FromJSON NamedAttribute where
-    parseJSON = withObjectDump "NamedAttribute" $ \obj ->
-     NamedAttribute <$> ((obj .: "attributes") >>= (.: "name"))
+    parseJSON v = case v of
+        (Array xs) ->  case toList xs of
+            []    -> pure (NamedAttribute Nothing)
+            (x:_) -> p x  -- take first attribute.
+        _ -> p v
+      where
+        p = withObjectDump "NamedAttribute" $ \obj ->
+            NamedAttribute . Just <$> ((obj .: "attributes") >>= (.: "name"))
 
 newtype GithubUsername = GithubUsername { getGithubUsername :: Maybe Text }
 
