@@ -38,6 +38,8 @@ library
     , http-api-data
     , http-client
     , monad-http
+    , regex-applicative
+    , regex-applicative-text
     , swagger2
     , text
     , time
@@ -66,6 +68,8 @@ test-suite unit-tests
     , http-api-data
     , http-client
     , monad-http
+    , regex-applicative
+    , regex-applicative-text
     , swagger2
     , text
     , time
