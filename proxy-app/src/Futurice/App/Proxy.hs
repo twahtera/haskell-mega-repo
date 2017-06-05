@@ -26,6 +26,7 @@ import Servant.Binary.Tagged           (BINARYTAGGED)
 import Servant.Client
 import Servant.Common.Req              (Req (headers))
 import Servant.Proxy
+import Servant.Excel
 import System.IO                       (hPutStrLn, stderr)
 
 import qualified Database.PostgreSQL.Simple as Postgres
@@ -114,10 +115,10 @@ type FumUserEndpoint = ProxyPair
     (WithFumAuthToken :> "users" :> Capture "uid" Text :> Get '[JSON] Value)
 
 -- Power
-type PowerReportXEndpoint = ProxyPair
-    ("power" :> "report-x" :> Get '[JSON] Value)
+type PowerAdvancedPowerheadEndpoint = ProxyPair
+    ("power" :> "advanced-powerhead" :>  QueryParams "tribes" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> Get '[EXCEL] ExcelBS)
     PowerService
-    ("ui" :> "powerhead" :> Get '[JSON] Value)
+    ("ui" :> "powerhead" :> "adv" :> "adv_export" :> QueryParams "tribes" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> Get '[EXCEL] ExcelBS)
 
 -- | Whole proxy definition
 type ProxyDefinition =
@@ -127,7 +128,7 @@ type ProxyDefinition =
     , GithubProxyEndpoint
     , FumEmployeesEndpoint
     , FumUserEndpoint
-    , PowerReportXEndpoint
+    , PowerAdvancedPowerheadEndpoint
     ]
 
 type ProxyAPI  = Get '[JSON] Text :<|> ProxyServer ProxyDefinition
@@ -162,7 +163,7 @@ server ctx = give (ctxFumAuthToken ctx) $ pure "P-R-O-X-Y"
     :<|> makeProxy (Proxy :: Proxy GithubProxyEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy FumEmployeesEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy FumUserEndpoint) ctx
-    :<|> makeProxy (Proxy :: Proxy PowerReportXEndpoint) ctx
+    :<|> makeProxy (Proxy :: Proxy PowerAdvancedPowerheadEndpoint) ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
