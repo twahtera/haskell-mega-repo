@@ -116,9 +116,9 @@ type FumUserEndpoint = ProxyPair
 
 -- Power
 type PowerAdvancedPowerheadEndpoint = ProxyPair
-    ("power" :> "advanced-powerhead" :>  QueryParams "tribes" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> Get '[EXCEL] ExcelBS)
+    ("power" :> "advanced-powerhead" :>  QueryParams "tribes" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> QueryParam "span" Int :> Get '[EXCEL] ExcelBS)
     PowerService
-    ("ui" :> "powerhead" :> "adv" :> "adv_export" :> QueryParams "tribes" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> Get '[EXCEL] ExcelBS)
+    ("ui" :> "powerhead" :> "adv" :> "adv_export" :> QueryParams "tribes" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> QueryParam "span" Int :> Get '[EXCEL] ExcelBS)
 
 -- | Whole proxy definition
 type ProxyDefinition =
