@@ -7,6 +7,8 @@ set -ex
 
 cd /app/src
 
+ROOTDIR=$(pwd)
+
 # Check that we have somewhat clean working dir
 if [ ! -z "$(git status --porcelain)" ]; then
 	echo "DIRTY WORKINGDIR"
@@ -33,7 +35,7 @@ stack --no-terminal --system-ghc --work-dir $WORK_DIR build -j1 --pedantic --all
 # Copy binaries to ./build/exe/exe
 # We put binaries in separate directories to speed-up docker image creation
 mkdir -p $ROOTDIR/build
-for fullexe in $(stack --work-dir $WORK_DIR path --local-install-root)/bin/*; do
+for fullexe in $(stack --system-ghc --work-dir $WORK_DIR path --local-install-root)/bin/*; do
     exe=$(basename $fullexe)
     mkdir -p  $ROOTDIR/build/$exe
     cp $fullexe $ROOTDIR/build/$exe/$exe
@@ -41,4 +43,4 @@ done
 
 # write current git hash, so we know where we are
 GITHASH=$(git log --pretty=format:'%h' -n 1)
-echo $GITHASH > /app/bin/git-hash.txt
+echo $GITHASH > $ROOTDIR/build/git-hash.txt
