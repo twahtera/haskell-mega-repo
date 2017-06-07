@@ -115,7 +115,7 @@ powerAbsenceReport mmonth = do
     -- Fetch all absences, on purpose
     as0 <- PMQ.absences
     -- Take intervals which overlap our interval of the interest
-    let as1 = V.filter (\ab -> PM.absenceStart ab `I.elem` interval) as0
+    let as1 = V.filter (\ab -> PM.absenceStart ab `I.member` interval) as0
     traverse (powerAbsence fpm) as1
 
 powerAbsence
@@ -127,7 +127,7 @@ powerAbsence idsLookup ab  = do
     let absenceInterval = PM.absenceInterval ab
     uc <- PMQ.capacities absenceInterval (PM.absencePerson ab)
     let uc' = capacities uc
-    pure $ PowerAbsence
+    pure PowerAbsence
         { _powerAbsenceUsername     = HM.lookup (PM.absencePerson ab) revLookup
         , _powerAbsenceStart        = PM.absenceStart ab
         , _powerAbsenceEnd          = PM.absenceFinish ab

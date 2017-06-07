@@ -49,7 +49,7 @@ selectCapacities ctx uid interval = do
         when (fromIntegral i /= length x) $
             logAttention_ $ "Inserted less capacities than we got from planmill"
         -- ... so we trim the result
-        let x' = V.filter (\c -> PM.userCapacityDate c `Interval.elem` interval) x
+        let x' = V.filter (\c -> PM.userCapacityDate c `Interval.member` interval) x
         return $! x'
 
     -- Interval is inclusive on both ends
