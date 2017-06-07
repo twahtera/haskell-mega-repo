@@ -1,4 +1,4 @@
-resolver: nightly-2017-04-01
+resolver: nightly-2017-06-01
 packages:
 - ansi-pretty/
 # - avar/
@@ -55,4 +55,8 @@ packages:
   location:
     git: https://github.com/timbod7/haskell-chart.git
     commit: 564d8672c4217db30032d093a6652edd83f0100d
-extra-deps: []
+extra-deps:
+- generics-sop-0.3.0.0
+- intervals-0.8
+- quickcheck-instances-0.3.14
+- servant-cassava-0.8
