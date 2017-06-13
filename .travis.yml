@@ -34,6 +34,13 @@ before_install:
 - stack +RTS -N1 -RTS --version
 - ghc --version
 
+# Disable hardening
+# https://ghc.haskell.org/trac/ghc/ticket/9007
+# https://wiki.debian.org/Hardening
+- DEB_BUILD_MAINT_OPTIONS=hardening=-all
+- dpkg-buildflags --get LDFLAGS
+- dpkg-buildflags --get CFLAGS
+
 install:
 - JOB_CURR_TIME=$(date +%s)
 - JOB_DURR=$((JOB_START_TIME + 2400 - JOB_CURR_TIME))
