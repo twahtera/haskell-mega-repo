@@ -21,6 +21,8 @@ import qualified Personio
 type FumCarbonApi = IndexPageEndpoint
     -- Employees
     :<|> CreateEmployeePageEndpoint
+    -- reports
+    :<|> "reports" :> "validations" :> Get '[HTML] (HtmlPage "validation-report")
     -- commands
     :<|> "commands" :> FumCarbonCommandApi
     -- machine api

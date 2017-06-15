@@ -139,6 +139,8 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         then obj .: "attributes" >>= parseObject
         else fail $ "Not Employee: " ++ type_ ^. unpacked
   where
+    zonedDay = localDay . zonedTimeToLocalTime
+
     parseObject :: HashMap Text Attribute -> Parser Employee
     parseObject obj = Employee
         <$> parseAttribute obj "id"
@@ -150,15 +152,12 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseAttribute obj "email"
         <*> parseDynamicAttribute obj "Work phone"
         <*> fmap getSupervisorId (parseAttribute obj "supervisor")
-        <*> pure (Just "foo") -- TODO: implemnet me
+        <*> pure (Just "foo") -- TODO: implement me
         <*> fmap getName (parseAttribute obj "department")
         <*> fmap getName (parseAttribute obj "office")
         <*> fmap getName (parseAttribute obj "cost_centers")
         <*> fmap getGithubUsername (parseDynamicAttribute obj "Github")
-            -- <*> pure obj -- for employeeRest field
-      where
-
-        zonedDay =  localDay . zonedTimeToLocalTime
+        -- <*> pure obj -- for employeeRest field
 
 -- | Personio attribute, i.e. labelled value.
 data Attribute = Attribute !Text !Value deriving Show
@@ -364,8 +363,13 @@ data ValidationMessage
 instance ToJSON ValidationMessage
 instance FromJSON ValidationMessage
 
+-- | All fields except 'evMessages' are to help connect the data.
 data EmployeeValidation = EmployeeValidation
     { _evEmployeeId :: !EmployeeId
+    , _evFirst      :: !Text
+    , _evLast       :: !Text
+    , _evHireDate   :: !(Maybe Day)
+    , _evEndDate    :: !(Maybe Day)
     , _evMessages   :: ![ValidationMessage]
     }
   deriving Show
@@ -382,7 +386,13 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
     parseObject :: HashMap Text Attribute -> Parser EmployeeValidation
     parseObject obj = EmployeeValidation
         <$> parseAttribute obj "id"
+        <*> parseAttribute obj "first_name"
+        <*> parseAttribute obj "last_name"
+        <*> fmap (fmap zonedDay) (parseAttribute obj "hire_date")
+        <*> fmap (fmap zonedDay) (parseAttribute obj "contract_end_date")
         <*> validate obj
+
+    zonedDay =  localDay . zonedTimeToLocalTime
 
     validate :: HashMap Text Attribute -> Parser [ValidationMessage]
     validate obj = execWriterT $ sequenceA_
@@ -404,9 +414,10 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
           where
             regexp :: RE' Text
             regexp = string "https://github.com/" *> (T.pack <$> some anySym)
+                <|> pure "" -- or it can be empty!
 
         isSomeText :: Text -> Maybe Text
-        isSomeText val = match (T.pack <$> some anySym :: RE' Text) val
+        isSomeText = match (T.pack <$> some anySym :: RE' Text)
 
         checkAttributeName :: Text -> ValidationMessage -> WriterT [ValidationMessage] Parser ()
         checkAttributeName val msg = case isSomeText val of

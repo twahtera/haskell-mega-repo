@@ -22,7 +22,7 @@ evalPersonioReq
        )
     => PersonioReq a
     -> m a
-evalPersonioReq PersonioEmployees = do
+evalPersonioReq personioReq = do
     Cfg (BaseUrl baseUrl) (ClientId clientId) (ClientSecret clientSecret) <-
         view personioCfg
 
@@ -36,20 +36,30 @@ evalPersonioReq PersonioEmployees = do
     Envelope (AccessToken token) <- decode (H.responseBody tokenRes)
 
     -- Perform request
-    let url = (baseUrl <> "/v1/company/employees") ^. unpacked
-    (dur, req) <- clocked $  H.parseUrlThrow url
-    logTrace "personio employees request" url
-    res <- httpLbs req
-        { H.requestHeaders
-            = ("Authorization", encodeUtf8 $ "Bearer " <> token)
-            : H.requestHeaders req
-        }
-    logTrace "personio response" dur
-    -- logTrace "response" (T.take 10000 $ decodeUtf8Lenient $ H.responseBody res ^. strict)
-    Envelope (E employees) <- decode (H.responseBody res)
-
-    -- Done
-    pure employees
+    case personioReq of
+        PersonioEmployees -> do
+            let url = (baseUrl <> "/v1/company/employees") ^. unpacked
+            bs <- personioHttpLbs token url
+            Envelope (E employees) <- decode bs
+            pure employees
+        PersonioValidations -> do
+            -- We ask for employees, but parse them differently 
+            let url = (baseUrl <> "/v1/company/employees") ^. unpacked
+            bs <- personioHttpLbs token url
+            Envelope (V validations) <- decode bs
+            pure validations
+  where
+    personioHttpLbs token url = do
+        (dur, req) <- clocked $ H.parseUrlThrow url
+        logTrace "personio request" url
+        res <- httpLbs req
+            { H.requestHeaders
+                = ("Authorization", encodeUtf8 $ "Bearer " <> token)
+                : H.requestHeaders req
+            }
+        logTrace "personio response" dur
+        -- logTrace "response" (T.take 10000 $ decodeUtf8Lenient $ H.responseBody res ^. strict)
+        pure (H.responseBody res)
 
 
 -- | A wrapper around list of 'Employee's, using
@@ -58,3 +68,9 @@ newtype E = E [Employee]
 
 instance FromJSON E where
     parseJSON = fmap E . listParser parsePersonioEmployee
+
+
+newtype V = V [EmployeeValidation]
+
+instance FromJSON V where
+    parseJSON = fmap V . listParser validatePersonioEmployee
