@@ -131,14 +131,15 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx           .~ "FUMAPP"
 
 makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-makeCtx Config {..} lgr _cache = do
+makeCtx Config {..} lgr cache = do
     mgr <- newManager tlsManagerSettings
 
     -- employees
     let fetchEmployees = Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioEmployees
     employees <- fetchEmployees
 
-    let fetchValidations = Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioValidations
+    let fetchValidations = cachedIO lgr cache 600 () $
+            Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioValidations
 
     -- context
     ctx <- newCtx
