@@ -17,7 +17,6 @@ module Personio (
     ) where
 
 import Control.Monad.Http (runHttpT)
-import Data.Aeson         (FromJSON)
 import Futurice.EnvConfig (getConfig')
 import Futurice.Prelude
 import Prelude ()
@@ -46,8 +45,7 @@ personioEmployees :: MonadPersonio m => m [Employee]
 personioEmployees = personio personioEmployeesR
 
 evalPersonioReqIO
-    :: FromJSON a
-    => Manager
+    :: Manager
     -> Logger
     -> Cfg
     -> PersonioReq a

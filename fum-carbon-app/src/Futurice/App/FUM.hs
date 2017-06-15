@@ -6,11 +6,11 @@
 module Futurice.App.FUM (defaultMain) where
 
 import Control.Concurrent.STM    (atomically, readTVar, readTVarIO)
+import Futurice.Lomake
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
-import Futurice.Lomake
 import Prelude ()
 import Servant
 
@@ -20,6 +20,7 @@ import Futurice.App.FUM.Ctx
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Pages.CreateEmployee
 import Futurice.App.FUM.Pages.Index
+import Futurice.App.FUM.Report.Validation
 import Futurice.App.FUM.Types
 
 import qualified Futurice.IdMap as IdMap
@@ -52,8 +53,16 @@ commandServer ctx (LomakeRequest cmd) = runLogT "command" (ctxLogger ctx) $ do
 server :: Ctx -> Server FumCarbonApi
 server ctx = indexPageImpl ctx
     :<|> createEmployeePageImpl ctx
+    :<|> validationReportImpl ctx
     :<|> commandServer ctx
     :<|> apiServer ctx
+
+-------------------------------------------------------------------------------
+-- Reports
+-------------------------------------------------------------------------------
+
+validationReportImpl :: Ctx -> Handler (HtmlPage "validation-report")
+validationReportImpl = liftIO . validationReport
 
 -------------------------------------------------------------------------------
 -- Endpoint wrappers
@@ -129,11 +138,14 @@ makeCtx Config {..} lgr _cache = do
     let fetchEmployees = Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioEmployees
     employees <- fetchEmployees
 
+    let fetchValidations = Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioValidations
+
     -- context
     ctx <- newCtx
         lgr
         cfgPostgresConnInfo
         (IdMap.fromFoldable employees)
+        fetchValidations
         emptyWorld
 
     -- jobs

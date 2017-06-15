@@ -85,6 +85,7 @@ library
       Futurice.App.FUM.Markup.Href
       Futurice.App.FUM.Pages.CreateEmployee
       Futurice.App.FUM.Pages.Index
+      Futurice.App.FUM.Report.Validation
       Futurice.App.FUM.Types
       Futurice.App.FUM.Types.Basic
       Futurice.App.FUM.Types.Identifier
