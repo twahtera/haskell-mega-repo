@@ -11,7 +11,7 @@ module Personio.Types where
 import Control.Monad.Writer
 import Data.Aeson.Compat
 import Data.Aeson.Internal (JSONPathElement (Key), (<?>))
-import Data.Aeson.Types    (FromJSON1 (..), explicitParseField, parseJSON1, typeMismatch, Value)
+import Data.Aeson.Types    (FromJSON1 (..), explicitParseField, parseJSON1, typeMismatch)
 import Data.Time           (zonedTimeToLocalTime)
 import Futurice.Aeson
 import Futurice.EnvConfig

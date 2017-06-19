@@ -28,6 +28,7 @@ packages:
 - monad-http/
 - optparse-sop/
 - periocron/
+- personio-client
 - planmill-client/
 - planmill-proxy/
 - postgresql-simple-url/
