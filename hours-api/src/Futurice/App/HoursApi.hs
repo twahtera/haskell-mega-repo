@@ -88,7 +88,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , ctxCryptoPool   = cryptoGenPool
             }
 
-    fetchPlanmillData :: IntegrationsConfig I I Proxy Proxy -> IO PlanmillData
+    fetchPlanmillData :: IntegrationsConfig I I Proxy Proxy Proxy -> IO PlanmillData
     fetchPlanmillData integrConfig = runIntegrations integrConfig $ do
         pmLookupMap <- fumPlanmillMap
         ps <- PMQ.projects
@@ -112,7 +112,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
 
 makeIntegrationsConfig
     :: UTCTime -> Logger -> Manager -> Config
-    -> IntegrationsConfig I I Proxy Proxy
+    -> IntegrationsConfig I I Proxy Proxy Proxy
 makeIntegrationsConfig now lgr mgr Config {..} = MkIntegrationsConfig
     { integrCfgManager                  = mgr
     , integrCfgNow                      = now
@@ -131,4 +131,6 @@ makeIntegrationsConfig now lgr mgr Config {..} = MkIntegrationsConfig
     -- Flowdock
     , integrCfgFlowdockToken            = Proxy
     , integrCfgFlowdockOrgName          = Proxy
+    -- Personio
+    , integrCfgPersonioCfg              = Proxy
     }

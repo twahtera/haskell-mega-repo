@@ -24,6 +24,7 @@ indexPage _world es = fumPage_ "FUM" () $ do
             th_ "id"
             th_ "first"
             th_ "last"
+            th_ "login"
             th_ "hire date"
             th_ "end date"
             th_ "create"
@@ -31,6 +32,7 @@ indexPage _world es = fumPage_ "FUM" () $ do
             td_ $ toHtml $ show _employeeId
             td_ $ toHtml _employeeFirst
             td_ $ toHtml _employeeLast
+            td_ $ traverse_ toHtml _employeeLogin
             td_ $ traverse_ (toHtml . show) _employeeHireDate
             td_ $ traverse_ (toHtml . show) _employeeEndDate
             td_ $ futuLinkButton_ (createEmployeeHref_ _employeeId) "Create"

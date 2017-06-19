@@ -29,6 +29,7 @@ dependencies:
   - http-client
   - http-client-tls
   - parallel-io
+  - personio-client
   - tagged
   - text
   - vector

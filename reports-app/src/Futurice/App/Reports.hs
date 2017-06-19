@@ -13,17 +13,17 @@
 #endif
 module Futurice.App.Reports (defaultMain) where
 
-import Prelude ()
-import Futurice.Prelude
 import Futurice.Integrations
        (Integrations, IntegrationsConfig (..), beginningOfPrev2Month,
        beginningOfPrevMonth, runIntegrations)
 import Futurice.Periocron
+import Futurice.Prelude
 import Futurice.Servant
 import Generics.SOP              (hcmap, hcollapse)
 import GHC.TypeLits              (KnownSymbol, symbolVal)
 import Network.HTTP.Client       (httpLbs, parseUrlThrow, responseBody)
 import Numeric.Interval.NonEmpty ((...))
+import Prelude ()
 import Servant
 import Servant.Chart             (Chart (..))
 
@@ -38,6 +38,8 @@ import Futurice.App.Reports.Config
 import Futurice.App.Reports.FumFlowdock
        (FumFlowdockReport, fumFlowdockReport)
 import Futurice.App.Reports.FumGithub         (FumGitHubReport, fumGithubReport)
+import Futurice.App.Reports.FumPersonio
+       (FumPersonioReport, fumPersonioReport)
 import Futurice.App.Reports.FumPlanmill
        (FumPlanmillReport, fumPlanmillReport)
 import Futurice.App.Reports.GithubIssues
@@ -110,6 +112,13 @@ serveFumPlanmillReport ctx = cachedIO' ctx () $ do
         (ctxToIntegrationsConfig now ctx)
         fumPlanmillReport
 
+serveFumPersonioReport :: Ctx -> IO FumPersonioReport
+serveFumPersonioReport ctx = cachedIO' ctx () $ do
+    now <- currentTime
+    runIntegrations
+        (ctxToIntegrationsConfig now ctx)
+        fumPersonioReport
+
 serveMissingHoursReport
     :: (KnownSymbol title, Typeable title)
     => Bool -> Ctx -> IO (MissingHoursReport title)
@@ -181,6 +190,7 @@ reports =
     ReportEndpoint serveFumGitHubReport :*
     ReportEndpoint serveFumFlowdockReport :*
     ReportEndpoint serveFumPlanmillReport :*
+    ReportEndpoint serveFumPersonioReport :*
     ReportEndpoint serveGithubUsersReport :*
     ReportEndpoint (serveMissingHoursReport True) :*
     ReportEndpoint (serveMissingHoursReport False) :*
@@ -191,7 +201,7 @@ reports =
 
 serveChart
     :: (Typeable key, KnownSymbol key)
-    => Integrations I I I I (Chart key)
+    => Integrations I I I I I (Chart key)
     -> Ctx
     -> IO (Chart key)
 serveChart f ctx = cachedIO' ctx () $ do
@@ -203,7 +213,7 @@ serveChart f ctx = cachedIO' ctx () $ do
 -- TODO: introduce "HasMissingHoursContracts"
 missingHoursChart'
     :: Ctx
-    -> Integrations I I I I (Chart "missing-hours")
+    -> Integrations I I I I I (Chart "missing-hours")
 missingHoursChart' ctx =
     missingHoursChart (cfgMissingHoursContracts (ctxConfig ctx))
 
@@ -246,7 +256,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
       where
         name = "Updating report " <> symbolVal (Proxy :: Proxy (RName r))
 
-ctxToIntegrationsConfig :: UTCTime -> Ctx -> IntegrationsConfig I I I I
+ctxToIntegrationsConfig :: UTCTime -> Ctx -> IntegrationsConfig I I I I I
 ctxToIntegrationsConfig now (_cache, mgr, lgr, Config {..}) = MkIntegrationsConfig
     { integrCfgManager                  = mgr
     , integrCfgNow                      = now
@@ -265,6 +275,8 @@ ctxToIntegrationsConfig now (_cache, mgr, lgr, Config {..}) = MkIntegrationsConf
     -- Flowdock
     , integrCfgFlowdockToken            = I cfgFlowdockAuthToken
     , integrCfgFlowdockOrgName          = I cfgFlowdockOrgName
+    -- Personio
+    , integrCfgPersonioCfg              = I cfgPersonioCfg
     }
 
 -------------------------------------------------------------------------------
