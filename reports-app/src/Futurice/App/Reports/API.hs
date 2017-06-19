@@ -8,18 +8,19 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Reports.API where
 
-import Prelude ()
-import Futurice.Prelude
 import Futurice.Lucid.Foundation
+import Futurice.Prelude
 import Futurice.Report.Columns   (Report)
 import Futurice.Servant
 import GHC.TypeLits              (KnownSymbol, Symbol)
+import Prelude ()
 import Servant
 import Servant.Chart             (Chart (..), SVG)
 
 import Futurice.App.Reports.Balances          (BalanceReport)
 import Futurice.App.Reports.FumFlowdock       (FumFlowdockReport)
 import Futurice.App.Reports.FumGithub         (FumGitHubReport)
+import Futurice.App.Reports.FumPersonio       (FumPersonioReport)
 import Futurice.App.Reports.FumPlanmill       (FumPlanmillReport)
 import Futurice.App.Reports.GithubIssues      (IssueReport)
 import Futurice.App.Reports.GithubUsers       (GithubUsersReport)
@@ -27,8 +28,8 @@ import Futurice.App.Reports.MissingHours
        (MissingHoursReport, MissingHoursTitle, MissingHoursTitleFilt)
 import Futurice.App.Reports.PlanmillEmployees (PlanmillEmployeesReport)
 import Futurice.App.Reports.PowerAbsences     (PowerAbsenceReport)
-import Futurice.App.Reports.PowerUser         (PowerUserReport)
 import Futurice.App.Reports.PowerProjects     (PowerProjectsReport)
+import Futurice.App.Reports.PowerUser         (PowerUserReport)
 import Futurice.App.Reports.TimereportsByTask (TimereportsByTaskReport)
 
 type ReportTypes = '[HTML, CSV, JSON]
@@ -40,6 +41,7 @@ type Reports =
     , R "fum-github"          FumGitHubReport
     , R "fum-flowdock"        FumFlowdockReport
     , R "fum-planmill"        FumPlanmillReport
+    , R "fum-personio"        FumPersonioReport
     , R "github-users"        GithubUsersReport
     , R "missing-hours"       (MissingHoursReport MissingHoursTitle)
     , R "missing-hours-filt"  (MissingHoursReport MissingHoursTitleFilt)
