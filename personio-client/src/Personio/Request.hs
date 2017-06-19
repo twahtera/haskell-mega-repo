@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE GADTs                #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
@@ -6,11 +7,13 @@
 
 module Personio.Request (
     PersonioReq(..),
+    requestDict,
     ) where
 
-import Prelude ()
+import Data.Constraint  (Dict (..))
 import Futurice.Prelude
 import Personio.Types
+import Prelude ()
 
 data PersonioReq a where
     PersonioEmployees   :: PersonioReq [Employee]
@@ -25,3 +28,11 @@ instance Hashable (PersonioReq a) where
         `hashWithSalt` (0 :: Int)
     hashWithSalt salt PersonioValidations = salt
         `hashWithSalt` (1 :: Int)
+
+requestDict
+    :: (c [Employee], c [EmployeeValidation])
+    => Proxy c
+    -> PersonioReq a
+    -> Dict (c a)
+requestDict _ PersonioEmployees = Dict
+requestDict _ PersonioValidations = Dict
