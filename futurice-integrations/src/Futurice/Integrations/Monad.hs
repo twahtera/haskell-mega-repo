@@ -13,18 +13,18 @@ module Futurice.Integrations.Monad (
     loadIntegrationConfig,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Monad.PlanMill    (MonadPlanMillConstraint (..))
 import Data.Constraint
 import Futurice.Constraint.Unit1 (Unit1)
 import Futurice.EnvConfig
 import Futurice.Has              (FlipIn)
+import Futurice.Prelude
 import Futurice.Report.Columns   (HasFUMPublicURL (..))
 import Generics.SOP.Lens         (uni)
 import Network.HTTP.Client
        (Request, responseTimeout, responseTimeoutMicro)
 import PlanMill.Queries.Haxl     (initDataSourceBatch)
+import Prelude ()
 
 import qualified Chat.Flowdock.REST           as FD
 import qualified Flowdock.Haxl                as FD.Haxl
@@ -33,6 +33,8 @@ import qualified FUM.Haxl
 import qualified Futurice.GitHub              as GH
 import qualified Futurice.Integrations.GitHub as GH
 import qualified Haxl.Core                    as H
+import qualified Personio
+import qualified Personio.Haxl
 import qualified PlanMill.Types.Query         as Q
 
 import Futurice.Integrations.Classes
@@ -56,10 +58,16 @@ makeLenses ''Env
 -- type parameters indicate whether that integration is enabled:
 -- 'I' yes, 'Proxy' no
 --
-newtype Integrations (pm :: * -> *) (fum :: * -> *) (gh :: * -> *) (fd :: * -> *) a
+newtype Integrations
+    (pm :: * -> *)
+    (fum :: * -> *)
+    (gh :: * -> *)
+    (fd :: * -> *)
+    (pe :: * -> *)
+    a
     = Integr { unIntegr :: ReaderT (Env fum gh fd) (H.GenHaxl ()) a }
 
-data IntegrationsConfig pm fum gh fd = MkIntegrationsConfig
+data IntegrationsConfig pm fum gh fd pe = MkIntegrationsConfig
     { integrCfgManager                  :: !Manager
     , integrCfgLogger                   :: !Logger
     -- Time
@@ -78,10 +86,12 @@ data IntegrationsConfig pm fum gh fd = MkIntegrationsConfig
     -- Flowdock
     , integrCfgFlowdockToken            :: !(fd FD.AuthToken)
     , integrCfgFlowdockOrgName          :: !(fd :$ FD.ParamName FD.Organisation)
+    -- Personio
+    , integrCfgPersonioCfg              :: !(pe Personio.Cfg)
     }
 
 -- | A helper useful in REPL.
-loadIntegrationConfig :: Logger -> IO (IntegrationsConfig I I I I)
+loadIntegrationConfig :: Logger -> IO (IntegrationsConfig I I I I I)
 loadIntegrationConfig lgr = do
     now <- currentTime
     mgr <- newManager tlsManagerSettings
@@ -96,15 +106,16 @@ loadIntegrationConfig lgr = do
             <*> envVar' "GH_ORG"
             <*> envVar' "FD_AUTH_TOKEN"
             <*> envVar' "FD_ORGANISATION"
+            <*> fmap I Personio.configurePersonioCfg
   where
     f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }
     envVar' :: FromEnvVar a => String -> ConfigParser (I a)
     envVar' = fmap I . envVar
 
 runIntegrations
-    :: (SFunctorI pm, SFunctorI fum, SFunctorI gh, SFunctorI fd)
-    => IntegrationsConfig pm fum gh fd
-    -> Integrations pm fum gh fd a
+    :: (SFunctorI pm, SFunctorI fum, SFunctorI gh, SFunctorI fd, SFunctorI pe)
+    => IntegrationsConfig pm fum gh fd pe
+    -> Integrations pm fum gh fd pe a
     -> IO a
 runIntegrations cfg (Integr m) = do
     let env = Env
@@ -120,6 +131,7 @@ runIntegrations cfg (Integr m) = do
             . fumStateSet
             . fdStateSet
             . ghStateSet
+            . peStateSet
             $ H.stateEmpty
     haxlEnv <- H.initEnv stateStore ()
     H.runHaxl haxlEnv haxl
@@ -135,6 +147,9 @@ runIntegrations cfg (Integr m) = do
         <$> integrCfgFlowdockToken cfg
     ghStateSet  = extractSEndo $ fmap H.stateSet $ GH.initDataSource lgr mgr
         <$> integrCfgGithubProxyBaseRequest cfg
+    peStateSet  = extractSEndo $ fmap H.stateSet $
+        Personio.Haxl.initDataSource mgr lgr
+            <$> integrCfgPersonioCfg cfg
 
 -------------------------------------------------------------------------------S
 -- Functor singletons
@@ -160,15 +175,15 @@ extractSFunctor def f = case sfunctor :: SFunctor f of
 -- Instances
 -------------------------------------------------------------------------------
 
-instance Functor (Integrations pm fum gh fd) where
+instance Functor (Integrations pm fum gh fd pe) where
     fmap f (Integr x) = Integr (fmap f x)
 
-instance Applicative (Integrations pm fum gh fd)  where
+instance Applicative (Integrations pm fum gh fd pe)  where
     pure = Integr . pure
     Integr f <*> Integr x = Integr (f <*> x)
     Integr f  *> Integr x = Integr (f  *> x)
 
-instance Monad (Integrations pm fum gh fd) where
+instance Monad (Integrations pm fum gh fd pe) where
     return = pure
     (>>) = (*>)
     Integr f >>= k = Integr $ f >>= unIntegr . k
@@ -177,32 +192,32 @@ instance Monad (Integrations pm fum gh fd) where
 -- Monad* instances
 -------------------------------------------------------------------------------
 
-instance MonadTime (Integrations pm fum gh fd) where
+instance MonadTime (Integrations pm fum gh fd pe) where
     currentTime = view envNow
 
-instance pm ~ I => MonadPlanMillConstraint (Integrations pm fum gh fd) where
-    type MonadPlanMillC (Integrations pm fum gh fd) = Unit1
+instance pm ~ I => MonadPlanMillConstraint (Integrations pm fum gh fd pe) where
+    type MonadPlanMillC (Integrations pm fum gh fd pe) = Unit1
     entailMonadPlanMillCVector _ _ = Sub Dict
 
-instance pm ~ I => MonadPlanMillQuery (Integrations pm fum gh fd) where
+instance pm ~ I => MonadPlanMillQuery (Integrations pm fum gh fd pe) where
     planmillQuery q = case (showDict, typeableDict) of
         (Dict, Dict) -> Integr (lift $ H.dataFetch q)
       where
         typeableDict = Q.queryDict (Proxy :: Proxy Typeable) q
         showDict     = Q.queryDict (Proxy :: Proxy Show)     q
 
-instance fum ~ I  => MonadFUM (Integrations pm fum gh fd) where
+instance fum ~ I  => MonadFUM (Integrations pm fum gh fd pe) where
     fumAction = Integr . lift . FUM.Haxl.request
 
-instance fd ~ I => MonadFlowdock (Integrations pm fum gh fd) where
+instance fd ~ I => MonadFlowdock (Integrations pm fum gh fd pe) where
     flowdockOrganisationReq = Integr . lift . FD.Haxl.organisation
 
 -------------------------------------------------------------------------------
 -- MonadGitHub
 -------------------------------------------------------------------------------
 
-instance gh ~ I => MonadGitHub (Integrations pm fum gh fd) where
-    type MonadGitHubC (Integrations pm fum gh fd) = FlipIn GH.GHTypes
+instance gh ~ I => MonadGitHub (Integrations pm fum gh fd pe) where
+    type MonadGitHubC (Integrations pm fum gh fd pe) = FlipIn GH.GHTypes
     githubReq req = case (showDict, typeableDict) of
         (Dict, Dict) -> Integr (lift $ H.dataFetch $ GH.GHR tag req)
       where
@@ -211,10 +226,21 @@ instance gh ~ I => MonadGitHub (Integrations pm fum gh fd) where
         typeableDict = GH.tagDict (Proxy :: Proxy Typeable) tag
 
 -------------------------------------------------------------------------------
+-- MonadPersonio
+-------------------------------------------------------------------------------
+
+instance pe ~ I => MonadPersonio (Integrations pm fum gh fd pe) where
+    personio r = case (showDict, typeableDict) of
+        (Dict, Dict) -> Integr . lift . Personio.Haxl.request $ r
+      where
+        showDict     = Personio.requestDict (Proxy :: Proxy Show) r
+        typeableDict = Personio.requestDict (Proxy :: Proxy Typeable) r
+
+-------------------------------------------------------------------------------
 -- Has* instances
 -------------------------------------------------------------------------------
 
-instance MonadReader (Env fum gh fd) (Integrations pm fum gh fd) where
+instance MonadReader (Env fum gh fd) (Integrations pm fum gh fd pe) where
     ask = Integr ask
     local f = Integr . local f . unIntegr
 

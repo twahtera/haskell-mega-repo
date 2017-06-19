@@ -42,6 +42,7 @@ library:
     - lucid
     - monad-logger
     - monad-time
+    - personio-client
     - planmill-client
     - regex-applicative-text
     - text

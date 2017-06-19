@@ -1,8 +1,8 @@
-{-# LANGUAGE CPP  #-}
-{-# LANGUAGE ConstraintKinds  #-}
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE CPP                     #-}
+{-# LANGUAGE ConstraintKinds         #-}
+{-# LANGUAGE DataKinds               #-}
+{-# LANGUAGE FlexibleContexts        #-}
+{-# LANGUAGE TypeFamilies            #-}
 #if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
 #endif
@@ -11,19 +11,21 @@
 -- /TODO:/ add error handling to classes
 module Futurice.Integrations.Classes (
     MonadFUM(..),
-    MonadGitHub(..),
     MonadFlowdock(..),
+    MonadGitHub(..),
+    MonadPersonio(..),
     MonadPlanMillQuery(..),
     MonadTime(..),
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Monad.FUM      (MonadFUM (..))
+import Control.Monad.Personio (MonadPersonio (..))
 import Control.Monad.PlanMill (MonadPlanMillQuery (..))
 import Data.Constraint        (Constraint)
 import Futurice.GitHub        (GHTypes)
+import Futurice.Prelude
 import Generics.SOP           (All)
+import Prelude ()
 
 import qualified Chat.Flowdock.REST as FD
 import qualified GitHub             as GH
