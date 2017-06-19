@@ -357,6 +357,7 @@ data ValidationMessage
     | OfficeMissing
     | RoleMissing
     | PhoneMissing
+    | IbanInvalid
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -398,6 +399,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
     validate obj = execWriterT $ sequenceA_
         [ validateGithub
         , costCenterValidate
+        , ibanValidate
         , attributeMissing "email" EmailMissing
         , attributeObjectMissing "department" TribeMissing
         , attributeObjectMissing "office" OfficeMissing
@@ -463,4 +465,39 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                   then tell [CostCenterMultiple (map textShow xs)] -- TODO: Test this case
                   else pure ()
 
-    -- https://en.wikipedia.org/wiki/International_Bank_Account_Number#Validating_the_IBAN
+        ibanValidate :: WriterT [ValidationMessage] Parser ()
+        ibanValidate = do
+            iban <- lift (parseDynamicAttribute obj "IBAN")
+            case iban of
+                String unparsed -> if isValidIBAN unparsed
+                    then pure ()
+                    else tell [IbanInvalid]
+                i -> lift (typeMismatch "IBAN" i)
+
+isValidIBAN :: Text -> Bool
+isValidIBAN iban = isValidLength preparsed && isValid parsed
+  where
+      preparsed = T.filter (/= ' ') $ T.append (T.drop 4 iban) (T.take 4 iban)
+      parsed    = parse preparsed
+
+      isValid :: Maybe Integer -> Bool
+      isValid ib = case ib of
+          Nothing -> False -- If parameter is false, when parse-function failed to read strint to integer due to invalid characters
+          Just i  -> i `mod` 97 == 1
+
+      charToNum :: Char -> [Char]
+      charToNum c =
+          let letters = T.pack ['A'..'Z']
+          in case T.findIndex (c ==) letters of
+              Nothing -> [c]
+              Just n  -> show (n + 10) -- A == 10, B == 11 etc.
+
+      charsToNums = map charToNum . T.unpack
+
+      parse :: Text -> Maybe Integer
+      parse ib = readMaybe (concat $ charsToNums ib) :: Maybe Integer -- Returns Nothing in case of invalid characters
+
+      -- | Shortest 15 from Norway, longest 31 from Malta
+      -- https://en.wikipedia.org/wiki/International_Bank_Account_Number#IBAN_formats_by_country
+      isValidLength :: Text -> Bool
+      isValidLength i = T.length i >= 15 && T.length i <= 31
