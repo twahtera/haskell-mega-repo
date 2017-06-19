@@ -152,7 +152,7 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseAttribute obj "email"
         <*> parseDynamicAttribute obj "Work phone"
         <*> fmap getSupervisorId (parseAttribute obj "supervisor")
-        <*> pure (Just "foo") -- TODO: implement me
+        <*> fmap getMaybeLogin (parseDynamicAttribute obj "Login name")
         <*> fmap getName (parseAttribute obj "department")
         <*> fmap getName (parseAttribute obj "office")
         <*> fmap getName (parseAttribute obj "cost_centers")
@@ -202,6 +202,15 @@ instance FromJSON GithubUsername where
       where
         regexp :: RE' Text
         regexp = string "https://github.com/" *> (T.pack <$> some anySym)
+
+newtype MaybeLogin = MaybeLogin { getMaybeLogin  :: Maybe Text }
+
+instance FromJSON MaybeLogin where
+    parseJSON = withText "Login" (pure . MaybeLogin . match regexp)
+      where
+        -- TODO: stricter parsing
+        regexp :: RE' Text
+        regexp = T.pack <$> some anySym
 
 -------------------------------------------------------------------------------
 -- Envelope
