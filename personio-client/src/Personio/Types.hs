@@ -23,7 +23,7 @@ import Futurice.Generics
 import Futurice.IdMap              (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
-import Text.Regex.Applicative.Text (RE', anySym, match, string)
+import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text           as T
@@ -371,6 +371,7 @@ data ValidationMessage
     | RoleMissing
     | PhoneMissing
     | IbanInvalid
+    | LoginInvalid Text
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -413,6 +414,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         [ validateGithub
         , costCenterValidate
         , ibanValidate
+        , loginValidate
         , attributeMissing "email" EmailMissing
         , attributeObjectMissing "department" TribeMissing
         , attributeObjectMissing "office" OfficeMissing
@@ -486,6 +488,27 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                     then pure ()
                     else tell [IbanInvalid]
                 i -> lift (typeMismatch "IBAN" i)
+
+        loginValidate :: WriterT [ValidationMessage] Parser ()
+        loginValidate = do
+            login <- lift (parseDynamicAttribute obj "Login name")
+            case match regexp login of
+                Nothing -> tell [LoginInvalid login]
+                Just _  -> pure ()
+          where
+            regexp :: RE' Text
+            regexp = T.pack <$> range 4 5 (psym (`elem` ['a'..'z']))
+
+            -- | First int is minimum length, second is maximum length allowed
+            range :: Alternative f => Int -> Int -> f a -> f [a]
+            range mi ma f = go mi ma
+              where
+                go start end
+                    | start > end || end <= 0 = pure []
+                    | start > 0 = (:) <$> f <*> go (start - 1) (end - 1)
+                    | otherwise = inRange <$> optional f <*> go 0 (end - 1)
+
+                inRange current next = maybe [] (:next) current
 
 -- | Validate IBAN.
 --
