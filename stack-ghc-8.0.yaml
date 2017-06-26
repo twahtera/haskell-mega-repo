@@ -47,6 +47,7 @@ packages:
 # - tdigest/tdigest/
 # - tdigest/tdigest-Chart/
 # - tdigest/tdigest-bench/
+- tajna/
 - tdigest-ekg/
 - theme-app/
 - extra-dep: true
