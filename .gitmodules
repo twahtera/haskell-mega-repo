@@ -25,3 +25,6 @@
 [submodule "tdigest"]
 	path = tdigest
 	url = git@github.com:futurice/haskell-tdigest.git
+[submodule "tajna"]
+	path = tajna
+	url = https://github.com/phadej/tajna.git
