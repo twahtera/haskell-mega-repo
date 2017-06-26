@@ -10,16 +10,20 @@ module Personio.Types where
 
 import Control.Monad.Writer
 import Data.Aeson.Compat
-import Data.Aeson.Internal (JSONPathElement (Key), (<?>))
-import Data.Aeson.Types    (FromJSON1 (..), explicitParseField, parseJSON1, typeMismatch)
-import Data.Time           (zonedTimeToLocalTime)
+import Data.Aeson.Internal         (JSONPathElement (Key), (<?>))
+import Data.Aeson.Types
+       (FromJSON1 (..), explicitParseField, parseJSON1, typeMismatch)
+import Data.Char                   (ord)
+import Data.List                   (foldl')
+import Data.Maybe                  (isJust)
+import Data.Time                   (zonedTimeToLocalTime)
 import Futurice.Aeson
 import Futurice.EnvConfig
 import Futurice.Generics
-import Futurice.IdMap      (HasKey (..))
+import Futurice.IdMap              (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
-import Text.Regex.Applicative.Text (RE', string, match, anySym)
+import Text.Regex.Applicative.Text (RE', anySym, match, string)
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text           as T
@@ -483,30 +487,47 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                     else tell [IbanInvalid]
                 i -> lift (typeMismatch "IBAN" i)
 
+-- | Validate IBAN.
+--
+-- See <https://en.wikipedia.org/wiki/International_Bank_Account_Number#Validating_the_IBAN>
+--
 isValidIBAN :: Text -> Bool
-isValidIBAN iban = isValidLength preparsed && isValid parsed
+isValidIBAN = isValidIBANString . view unpacked
   where
-      preparsed = T.filter (/= ' ') $ T.append (T.drop 4 iban) (T.take 4 iban)
-      parsed    = parse preparsed
+    -- in this case it's way simpler to operate on list of characters!
+    isValidIBANString :: String -> Bool
+    isValidIBANString = validate . rearrange . filter (/= ' ')
 
-      isValid :: Maybe Integer -> Bool
-      isValid ib = case ib of
-          Nothing -> False -- If parameter is false, when parse-function failed to read strint to integer due to invalid characters
-          Just i  -> i `mod` 97 == 1
+    -- Move the four initial characters to the end of the string
+    --
+    -- Note: this preserves the length!
+    rearrange :: [a] -> [a]
+    rearrange xs = drop 4 xs ++ take 4 xs
 
-      charToNum :: Char -> [Char]
-      charToNum c =
-          let letters = T.pack ['A'..'Z']
-          in case T.findIndex (c ==) letters of
-              Nothing -> [c]
-              Just n  -> show (n + 10) -- A == 10, B == 11 etc.
+    -- Replace each letter in the string with two digits
+    --
+    -- We replace characters into 'Integer -> Integer' functions, for example
+    --
+    -- '2' -> (\x -> x * 10 + 2)
+    -- 'a' -> (\x -> x * 100 + 10)
+    --
+    -- etc.
+    --
+    -- Note: we need to fold from the left!
+    --
+    toDigit :: Char -> Maybe (Integer -> Integer)
+    toDigit c
+        | '0' <= c && c <= '9' = Just $ \n -> n * 10 + fromIntegral (ord c - ord '0')
+        | 'A' <= c && c <= 'Z' = Just $ \n -> n * 100 + fromIntegral (ord c - ord 'A' + 10)
+        | otherwise            = Nothing
 
-      charsToNums = map charToNum . T.unpack
-
-      parse :: Text -> Maybe Integer
-      parse ib = readMaybe (concat $ charsToNums ib) :: Maybe Integer -- Returns Nothing in case of invalid characters
-
-      -- | Shortest 15 from Norway, longest 31 from Malta
-      -- https://en.wikipedia.org/wiki/International_Bank_Account_Number#IBAN_formats_by_country
-      isValidLength :: Text -> Bool
-      isValidLength i = T.length i >= 15 && T.length i <= 31
+    -- takes spaceless and re-arranged string
+    validate :: String -> Bool
+    validate xs = isJust $ do
+        ds <- traverse toDigit xs  -- replace characters
+        guard (15 <= length ds && length ds <= 31) -- length check
+        -- Interpret the string as a decimal integer
+        -- and compute the remainder of that number on division by 97
+        let checksum = foldl' (&) 0 ds
+        guard (checksum `mod` 97 == 1)
+        pure ()

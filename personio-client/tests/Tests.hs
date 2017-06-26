@@ -16,6 +16,7 @@ main :: IO ()
 main = defaultMain $ testGroup "tests"
     [ properties
     , examples
+    , isValidIBANTests
     ]
 
 -------------------------------------------------------------------------------
@@ -101,31 +102,23 @@ examples = testGroup "HUnit"
         ev <- either fail pure $ parseEither validatePersonioEmployee contents
         assertBool (show ev) $
             IbanInvalid `elem` ev ^. evMessages
-
-    , testCase "isValidIBAN validates correct IBAN" $ do
-        correct <- pure "MT84 MALT 0110 0001 2345 MTLC AST0 01S"
-        ev <- pure $ isValidIBAN correct
-        assertBool (show correct) $ ev == True
-
-    , testCase "isValidIBAN validates IBAN with invalid characters" $ do
-        invalid <- pure "FI21 Ä234 5600 0007 foo"
-        ev <- pure $ isValidIBAN invalid
-        assertBool (show invalid) $ ev == False
-
-    , testCase "isValidIBAN validates too short IBAN" $ do
-        tooShort <- pure "FI21 1234 5600 00"
-        ev <- pure $ isValidIBAN tooShort
-        assertBool (show tooShort) $ ev == False
-
-    , testCase "isvalidIBAN validates too long IBAN" $ do
-        tooLong <- pure "MT84 MALT 0110 0001 2345 MTLC AST0 01S 00"
-        ev <- pure $ isValidIBAN tooLong
-        assertBool (show tooLong) $ ev == False
-
-    , testCase "isValidIban validates IBAN with incorrect checksum" $ do
-        invalid <- pure "FI21 4321 5600 0007 85"
-        ev <- pure $ isValidIBAN invalid
-        assertBool (show invalid) $ ev == False
     ]
   where
     contentsM = decodeStrict $(makeRelativeToProject "fixtures/employee.json" >>= embedFile)
+
+isValidIBANTests :: TestTree
+isValidIBANTests = testGroup "isValidIBAN"
+    [ validIBAN "MT84 MALT 0110 0001 2345 MTLC AST0 01S"
+    , invalidIBAN "FI21 Ä234 5600 0007 foo" -- invalid chars
+    , invalidIBAN "FI21 1234 5600 00" -- too short
+    , invalidIBAN "MT84 MALT 0110 0001 2345 MTLC AST0 01S 00" -- too long
+    , invalidIBAN "FI21 4321 5600 0007 85" -- wrong checksum
+    ]
+  where
+    validIBAN :: Text -> TestTree
+    validIBAN iban = testCase (iban ^. unpacked ++ " is valid") $
+        assertBool "invalid!" $ isValidIBAN iban
+
+    invalidIBAN :: Text -> TestTree
+    invalidIBAN iban = testCase (iban ^. unpacked ++ " is invalid") $
+        assertBool "valid!" $ not $ isValidIBAN iban
