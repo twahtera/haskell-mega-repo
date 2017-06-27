@@ -102,6 +102,12 @@ examples = testGroup "HUnit"
         ev <- either fail pure $ parseEither validatePersonioEmployee contents
         assertBool (show ev) $
             IbanInvalid `elem` ev ^. evMessages
+
+    , testCase "validatePersonioEmployee validates login name" $ do
+        contents <- decodeStrict $(makeRelativeToProject "fixtures/employee-i-login.json" >>= embedFile)
+        ev <- either fail pure $ parseEither validatePersonioEmployee contents
+        assertBool (show ev) $
+            LoginInvalid "erAt" `elem` ev ^. evMessages
     ]
   where
     contentsM = decodeStrict $(makeRelativeToProject "fixtures/employee.json" >>= embedFile)
