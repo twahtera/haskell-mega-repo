@@ -202,21 +202,35 @@ instance FromJSON NamedAttribute where
 newtype GithubUsername = GithubUsername { getGithubUsername :: Maybe Text }
 
 instance FromJSON GithubUsername where
-    parseJSON = withText "Github" (pure . GithubUsername . match regexp)
-      where
-        regexp :: RE' Text
-        regexp = string "https://github.com/" *> (T.pack <$> some anySym)
+    parseJSON = withText "Github" (pure . GithubUsername . match githubRegexp)
+
+githubRegexp :: RE' Text
+githubRegexp = string "https://github.com/" *> (T.pack <$> some anySym)
 
 newtype MaybeLogin = MaybeLogin { getMaybeLogin  :: Maybe Text }
 
 instance FromJSON MaybeLogin where
-    parseJSON = withText "Login" (pure . MaybeLogin . match regexp)
-      where
-        -- TODO: stricter parsing
-        regexp :: RE' Text
-        regexp = T.pack <$> some anySym
+    parseJSON = withText "Login" (pure . MaybeLogin . match loginRegexp)
 
--------------------------------------------------------------------------------
+loginRegexp :: RE' Text
+loginRegexp = T.pack <$> range 4 5 (psym (`elem` ['a'..'z']))
+  where
+    range
+        :: Alternative f
+        => Int  -- ^ min
+        -> Int  -- ^ max
+        -> f a
+        -> f [a]
+    range mi ma f = go mi ma
+      where
+        go start end
+            | start > end || end <= 0 = pure []
+            | start > 0 = (:) <$> f <*> go (start - 1) (end - 1)
+            | otherwise = inRange <$> optional f <*> go 0 (end - 1)
+
+        inRange current next = maybe [] (:next) current
+
+---------------------------------------------------------------------------
 -- Envelope
 -------------------------------------------------------------------------------
 
@@ -425,13 +439,9 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         validateGithub :: WriterT [ValidationMessage] Parser ()
         validateGithub = do
             githubText <- lift (parseDynamicAttribute obj "Github")
-            case match regexp githubText of
+            case match (githubRegexp <|> pure "") githubText of
                 Nothing -> tell [GithubInvalid githubText]
                 Just _ -> pure ()
-          where
-            regexp :: RE' Text
-            regexp = string "https://github.com/" *> (T.pack <$> some anySym)
-                <|> pure "" -- or it can be empty!
 
         isSomeText :: Text -> Maybe Text
         isSomeText = match (T.pack <$> some anySym :: RE' Text)
@@ -492,23 +502,9 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         loginValidate :: WriterT [ValidationMessage] Parser ()
         loginValidate = do
             login <- lift (parseDynamicAttribute obj "Login name")
-            case match regexp login of
+            case match loginRegexp login of
                 Nothing -> tell [LoginInvalid login]
                 Just _  -> pure ()
-          where
-            regexp :: RE' Text
-            regexp = T.pack <$> range 4 5 (psym (`elem` ['a'..'z']))
-
-            -- | First int is minimum length, second is maximum length allowed
-            range :: Alternative f => Int -> Int -> f a -> f [a]
-            range mi ma f = go mi ma
-              where
-                go start end
-                    | start > end || end <= 0 = pure []
-                    | start > 0 = (:) <$> f <*> go (start - 1) (end - 1)
-                    | otherwise = inRange <$> optional f <*> go 0 (end - 1)
-
-                inRange current next = maybe [] (:next) current
 
 -- | Validate IBAN.
 --

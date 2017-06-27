@@ -55,62 +55,63 @@ examples = testGroup "HUnit"
         Just "Helsinki" @=? e ^. employeeOffice
         Just "gitMastur" @=? e ^. employeeGithub
 
-    , testCase "validatePersonioEmployee validates GitHub" $ do
-        contents <-  decodeStrict $(makeRelativeToProject "fixtures/employee-i-github.json" >>= embedFile)
-        ev <- either fail pure $ parseEither validatePersonioEmployee contents
-        assertBool (show ev) $
-            GithubInvalid "http://github.com/gitMastur" `elem` ev ^. evMessages
-
-    , testCase "validatePersonioEmployee validates email" $ do
-        contents <-  decodeStrict $(makeRelativeToProject "fixtures/employee-m-email.json" >>= embedFile)
-        ev <- either fail pure $ parseEither validatePersonioEmployee contents
-        assertBool (show ev) $
-            EmailMissing `elem` ev ^. evMessages
-
-    , testCase "validatePersonioEmployee validates tribe" $ do
-        contents <- decodeStrict $(makeRelativeToProject "fixtures/employee-m-tribe.json" >>= embedFile)
-        ev <- either fail pure $ parseEither validatePersonioEmployee contents
-        assertBool (show ev) $
-            TribeMissing `elem` ev ^. evMessages
-
-    , testCase "validatePeronioEmployee validates missing cost center" $ do
-        contents <- contentsM
-        ev <- either fail pure $ parseEither validatePersonioEmployee contents
-        assertBool (show ev) $
-            CostCenterMissing `elem` ev ^. evMessages
-
-    , testCase "validatePersonioEmployee validates missing office" $ do
-        contents <- decodeStrict $(makeRelativeToProject "fixtures/employee-m-office.json" >>= embedFile)
-        ev <- either fail pure $ parseEither validatePersonioEmployee contents
-        assertBool (show ev) $
-            OfficeMissing `elem` ev ^. evMessages
-
-    , testCase "validatePersonioEmployee validates missing Work phone" $ do
-        contents <- decodeStrict $(makeRelativeToProject "fixtures/employee-m-phone.json" >>= embedFile)
-        ev <- either fail pure $ parseEither validatePersonioEmployee contents
-        assertBool (show ev) $
-            PhoneMissing `elem` ev ^. evMessages
-
-    , testCase "validatePersonioEmployee validates missing role" $ do
-        contents <- decodeStrict $(makeRelativeToProject "fixtures/employee-m-role.json" >>= embedFile)
-        ev <- either fail pure $ parseEither validatePersonioEmployee contents
-        assertBool (show ev) $
-            RoleMissing `elem` ev ^. evMessages
-
-    , testCase "validatePersonioEmployee validates invalid IBAN" $ do
-        contents <- decodeStrict $(makeRelativeToProject "fixtures/employee-i-iban.json" >>= embedFile)
-        ev <- either fail pure $ parseEither validatePersonioEmployee contents
-        assertBool (show ev) $
-            IbanInvalid `elem` ev ^. evMessages
-
-    , testCase "validatePersonioEmployee validates login name" $ do
-        contents <- decodeStrict $(makeRelativeToProject "fixtures/employee-i-login.json" >>= embedFile)
-        ev <- either fail pure $ parseEither validatePersonioEmployee contents
-        assertBool (show ev) $
-            LoginInvalid "erAt" `elem` ev ^. evMessages
+    , validations
     ]
   where
     contentsM = decodeStrict $(makeRelativeToProject "fixtures/employee.json" >>= embedFile)
+
+-------------------------------------------------------------------------------
+-- Validations
+-------------------------------------------------------------------------------
+
+validations :: TestTree
+validations = testGroup "Validations"
+    [ testValidation
+        "GitHub"
+        $(makeRelativeToProject "fixtures/employee-i-github.json" >>= embedFile)
+        $ GithubInvalid "http://github.com/gitMastur"
+    , testValidation
+        "email"
+        $(makeRelativeToProject "fixtures/employee-m-email.json" >>= embedFile)
+        EmailMissing
+    , testValidation
+        "tribe"
+        $(makeRelativeToProject "fixtures/employee-m-tribe.json" >>= embedFile)
+        TribeMissing
+    , testValidation
+        "cost center"
+        $(makeRelativeToProject "fixtures/employee.json" >>= embedFile)
+        CostCenterMissing
+    , testValidation
+        "office"
+        $(makeRelativeToProject "fixtures/employee-m-office.json" >>= embedFile)
+        OfficeMissing
+    , testValidation
+        "phone"
+        $(makeRelativeToProject "fixtures/employee-m-phone.json" >>= embedFile)
+        PhoneMissing
+    , testValidation
+        "role"
+        $(makeRelativeToProject "fixtures/employee-m-role.json" >>= embedFile)
+        RoleMissing
+    , testValidation
+        "IBAN"
+        $(makeRelativeToProject "fixtures/employee-i-iban.json" >>= embedFile)
+        IbanInvalid
+    , testValidation
+        "login name"
+        $(makeRelativeToProject "fixtures/employee-i-login.json" >>= embedFile)
+        $ LoginInvalid "erAt"
+    ]
+  where
+    testValidation name source warning = testCase name $ do
+        contents <- decodeStrict source
+        ev <- either fail pure $ parseEither validatePersonioEmployee contents
+        assertBool (show ev) $ warning `elem` ev ^. evMessages
+
+-------------------------------------------------------------------------------
+-- IBAN
+-------------------------------------------------------------------------------
 
 isValidIBANTests :: TestTree
 isValidIBANTests = testGroup "isValidIBAN"
