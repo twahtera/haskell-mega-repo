@@ -4,7 +4,12 @@
 module Futurice.App.FUM.Types.World (
     World,
     emptyWorld,
-    mkWorld,
+    validateWorld,
+    -- * Lenses
+    worldEmployees,
+    worldCustomers,
+    worldMailboxes,
+    worldGroups,
     ) where
 
 import Prelude ()
@@ -23,19 +28,21 @@ data World = World
     , _worldGroups     :: !(IdMap Group)
     }
 
--- | Create a world.
---
--- /TODO/:
---
--- * validate input
---
-mkWorld
-    :: IdMap Employee
-    -> IdMap Customer
-    -> IdMap Mailbox
-    -> IdMap Group
-    -> World -- ^ todo make Either
-mkWorld = World
+makeLenses ''World
 
 emptyWorld :: World
-emptyWorld = mkWorld mempty mempty mempty mempty
+emptyWorld = World mempty mempty mempty mempty
+
+-------------------------------------------------------------------------------
+-- Validation
+-------------------------------------------------------------------------------
+
+-- | TODO: perform "GC"
+validateWorld :: World -> World
+validateWorld = id
+
+-------------------------------------------------------------------------------
+-- ToJSON / ToSchema
+-------------------------------------------------------------------------------
+
+-- TODO

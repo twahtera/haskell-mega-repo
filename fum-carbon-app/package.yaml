@@ -57,6 +57,7 @@ dependencies:
   - time
   - trifecta
   - uuid
+  - uuid-types
 
 library:
   source-dirs: src

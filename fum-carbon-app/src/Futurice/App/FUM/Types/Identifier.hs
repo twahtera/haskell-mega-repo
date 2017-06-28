@@ -4,27 +4,32 @@
 {-# LANGUAGE ScopedTypeVariables    #-}
 module Futurice.App.FUM.Types.Identifier (
     Identifier (..),
+    _IdentifierText,
     identifierToText,
     Entity(..),
     HasIdentifier (..),
     identifierText,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens      (Getter, to)
 import Data.Swagger
        (SwaggerType (SwaggerString), ToParamSchema (..), format, type_)
 import Futurice.Generics
+import Futurice.Prelude
+import Prelude ()
 
-import qualified Data.UUID as UUID
-import qualified Database.PostgreSQL.Simple.ToField   as Postgres
+import qualified Data.Swagger.Internal.Schema       as Swagger
+import qualified Data.UUID                          as UUID
+import qualified Database.PostgreSQL.Simple.ToField as Postgres
 
 newtype Identifier a = Identifier UUID
     deriving (Eq, Ord, Show, Typeable, Generic)
 
 identifierToText :: Identifier a -> Text
 identifierToText (Identifier u) = UUID.toText u
+
+_IdentifierText :: Prism' Text (Identifier a)
+_IdentifierText = prism' identifierToText (fmap Identifier . UUID.fromText)
 
 instance NFData (Identifier a)
 
@@ -77,3 +82,14 @@ instance Entity e => HasIdentifier (Identifier e) e where
 -- | Class of entities.
 class Entity a where
     entityName :: Proxy a -> Text
+
+-------------------------------------------------------------------------------
+-- ToSchema
+-------------------------------------------------------------------------------
+
+instance Entity a => ToSchema (Identifier a) where
+    declareNamedSchema _ = do
+        s <- declareNamedSchema (Proxy :: Proxy UUID)
+        return (Swagger.rename (Just $ "Identifier " <> entityName p) s)
+      where
+        p = Proxy :: Proxy a
