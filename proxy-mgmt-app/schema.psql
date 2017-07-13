@@ -1,4 +1,5 @@
 -- CREATE SCHEMA proxyapp;
+CREATE EXTENSION pgcrypto;
 
 CREATE TABLE proxyapp.credentials (
   username TEXT PRIMARY KEY,
@@ -12,8 +13,6 @@ CREATE TABLE proxyapp.accesslog (
   updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
   endpoint TEXT NOT NULL
 );
-
-CREATE EXTENSION pgcrypto;
 
 CREATE FUNCTION pass_crypt() RETURNS trigger AS $pass_crypt$
   BEGIN
