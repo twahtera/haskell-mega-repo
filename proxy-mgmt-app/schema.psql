@@ -16,7 +16,8 @@ CREATE TABLE proxyapp.accesslog (
 CREATE EXTENSION pgcrypto;
 
 CREATE FUNCTION pass_crypt() RETURNS trigger AS $pass_crypt$
-  BEGIN-- If given passtext is non-empty, encrypt it
+  BEGIN
+    -- If given passtext is non-empty, encrypt it
     IF NEW.passtext IS NOT NULL AND NEW.passtext NOT LIKE '' THEN
       NEW.passtext = crypt(NEW.passtext, gen_salt('md5'));
     END IF;
