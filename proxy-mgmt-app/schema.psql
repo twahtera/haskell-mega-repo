@@ -14,16 +14,13 @@ CREATE TABLE proxyapp.accesslog (
   endpoint TEXT NOT NULL
 );
 
-CREATE FUNCTION pass_crypt() RETURNS trigger AS $pass_crypt$
+CREATE FUNCTION proxyapp.pass_crypt() RETURNS trigger AS $pass_crypt$
   BEGIN
-    -- If given passtext is non-empty, encrypt it
-    IF NEW.passtext IS NOT NULL AND NEW.passtext NOT LIKE '' THEN
-      NEW.passtext = crypt(NEW.passtext, gen_salt('md5'));
-    END IF;
+    NEW.passtext = crypt(NEW.passtext, gen_salt('bf'));
 
     RETURN NEW;
   END;
  $pass_crypt$ LANGUAGE plpgsql;
 
 CREATE TRIGGER pass_crypt BEFORE INSERT OR UPDATE ON proxyapp.credentials
-  FOR EACH ROW EXECUTE PROCEDURE pass_crypt();
+  FOR EACH ROW EXECUTE PROCEDURE proxyapp.pass_crypt();
