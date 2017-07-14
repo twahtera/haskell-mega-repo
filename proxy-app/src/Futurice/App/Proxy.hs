@@ -27,7 +27,6 @@ import Servant.Binary.Tagged           (BINARYTAGGED)
 import Servant.Client
 import Servant.Common.Req              (Req (headers))
 import Servant.Proxy
-import Servant.Excel
 import Text.Regex.Applicative.Text     (RE', anySym, match, string)
 
 import qualified Data.Text                  as T
@@ -117,10 +116,10 @@ type FumUserEndpoint = ProxyPair
     (WithFumAuthToken :> "users" :> Capture "uid" Text :> Get '[JSON] Value)
 
 -- Power
-type PowerAdvancedPowerheadEndpoint = ProxyPair
-    ("power" :> "advanced-powerhead.xls" :>  QueryParams "tribes" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> QueryParam "span" Int :> Get '[EXCEL] ExcelBS)
+type PowerBiEndpoint = ProxyPair
+    ("power" :> "api" :> "power_bi" :> QueryParam "month" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> QueryParam "span" Int :> QueryParam "tribe" Text :> Get '[JSON] Value)
     PowerService
-    ("ui" :> "powerhead" :> "adv" :> "adv_export" :> QueryParams "tribes" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> QueryParam "span" Int :> Get '[EXCEL] ExcelBS)
+    ("api" :> "v2" :> "power_bi" :> QueryParam "month" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> QueryParam "span" Int:> QueryParam "tribe" Text :> Get '[JSON] Value)
 
 -- | Whole proxy definition
 type ProxyDefinition =
@@ -130,7 +129,7 @@ type ProxyDefinition =
     , GithubProxyEndpoint
     , FumEmployeesEndpoint
     , FumUserEndpoint
-    , PowerAdvancedPowerheadEndpoint
+    , PowerBiEndpoint
     ]
 
 type ProxyAPI  = Get '[JSON] Text :<|> ProxyServer ProxyDefinition
@@ -165,7 +164,7 @@ server ctx = give (ctxFumAuthToken ctx) $ pure "P-R-O-X-Y"
     :<|> makeProxy (Proxy :: Proxy GithubProxyEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy FumEmployeesEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy FumUserEndpoint) ctx
-    :<|> makeProxy (Proxy :: Proxy PowerAdvancedPowerheadEndpoint) ctx
+    :<|> makeProxy (Proxy :: Proxy PowerBiEndpoint) ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
