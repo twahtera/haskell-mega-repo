@@ -200,7 +200,7 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
     let u' = decodeLatin1 u
         p' = decodeLatin1 p
     res <- Postgres.query conn
-        "select 1 from proxyapp.credentials where username = ? and passtext = ?;"
+        credentialCheckQuery
         (u', p') :: IO [Postgres.Only Int]
     case res of
         [] -> runLogT "checkCreds" (ctxLogger ctx) $ do
@@ -221,3 +221,10 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
 
     isSwaggerReg :: RE' Text
     isSwaggerReg = string "/swagger.json" <|> string "/swagger-ui" *> (T.pack <$> many anySym)
+
+    credentialCheckQuery :: Postgres.Query
+    credentialCheckQuery = fromString $ unwords $
+        [ "SELECT 1 FROM proxyapp.credentials"
+        , "WHERE username = ? AND passtext = crypt(?, passtext)"
+        , ";"
+        ]
