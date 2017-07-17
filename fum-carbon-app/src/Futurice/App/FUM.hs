@@ -46,7 +46,7 @@ apiServer ctx = rawEmployees
 -- TODO: write command handler
 commandServer :: Ctx -> Server FumCarbonCommandApi
 commandServer ctx (LomakeRequest cmd) = runLogT "command" (ctxLogger ctx) $ do
-    logTrace "input" cmd
+    logTrace "input" $ (error "not implemented" cmd :: Value)
     fail "not-implemented"
     -- pure LomakeResponseNoop
 

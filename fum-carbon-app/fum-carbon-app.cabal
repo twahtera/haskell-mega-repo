@@ -72,6 +72,7 @@ library
     , time
     , trifecta
     , uuid
+    , uuid-types
   exposed-modules:
       Futurice.App.FUM
       Futurice.App.FUM.Ack
@@ -93,6 +94,7 @@ library
       Futurice.App.FUM.Types.World
       Futurice.Generics.Enum
       Futurice.Lomake
+      Futurice.MonadTrans
   default-language: Haskell2010
 
 executable fum-carbon-server
@@ -147,6 +149,7 @@ executable fum-carbon-server
     , time
     , trifecta
     , uuid
+    , uuid-types
     , fum-carbon-app
   default-language: Haskell2010
 
@@ -203,6 +206,7 @@ test-suite unit-tests
     , time
     , trifecta
     , uuid
+    , uuid-types
     , tasty
     , tasty-quickcheck
     , fum-carbon-app

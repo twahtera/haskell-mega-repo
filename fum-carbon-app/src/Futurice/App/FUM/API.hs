@@ -42,7 +42,7 @@ fumCarbonApi = Proxy
 -------------------------------------------------------------------------------
 
 type CreateEmployeeCmdEndpoint = "create-employee"
-    :> ReqBody '[JSON] (LomakeRequest CreateEmployee)
+    :> ReqBody '[JSON] (LomakeRequest CommandM CreateEmployee)
     :> Post '[JSON] LomakeResponse
 
 createEmployeeCmdEndpoint :: Proxy ("commands" :> CreateEmployeeCmdEndpoint)

@@ -4,10 +4,9 @@
 create sequence fumcarbon.command_id_seq;
 
 create table fumcarbon.commands (
-  cid int not null default nextval('fumcarbon.command_id_seq') primary key,
-  username text not null,
-  updated timestamp with time zone not null default current_timestamp,
-  cmddata text not null
+  command_id int not null default nextval('fumcarbon.command_id_seq') primary key,
+  username text not null,  -- the initiator of command, used for audit
+  created timestamp with time zone not null default current_timestamp,
+  command text not null,   -- command name "create-user" or "add-group"
+  payload jsonb not null   -- command data, the payload
 );
-
--- create index commands_cid_idx ON fumcarbon.commands ((cmddata :: json ->> 'employecid'));

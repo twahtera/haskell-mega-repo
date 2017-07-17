@@ -45,7 +45,7 @@ data Employee = Employee
     , _employeeStatus         :: !Status                 -- ^ "futurice status", importantly not directly the google status.
     , _employeeEmailAliases   :: ![Email]
     , _employeeSshKeys        :: ![SshKey]
-    , _employeePicture        :: !Picture
+    , _employeePicture        :: !(Maybe Picture)
     , _employeePasswordExp    :: !UTCTime                -- ^ password expiration date, does LDAP expires?
 --    , _employeePassword :: FORMAT?       -- ^ will make LDAP server easy, SHA-512
     }
