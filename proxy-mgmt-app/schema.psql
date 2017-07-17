@@ -8,14 +8,20 @@ CREATE TABLE proxyapp.credentials (
   createdat TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-ALTER TABLE proxyapp.credentials
-  ADD COLUMN endpoint TEXT NOT NULL DEFAULT '/';
-
 CREATE TABLE proxyapp.accesslog (
   username TEXT NOT NULL references proxyapp.credentials(username),
   updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
   endpoint TEXT NOT NULL
 );
+
+-- Endpoint and credential changes (2017-07)
+--
+-- To update existing data, after setting up the trigger.
+--
+-- UPDATE proxyapp.crendentials SET passtext = passtext;
+
+ALTER TABLE proxyapp.credentials
+  ADD COLUMN endpoint TEXT NOT NULL DEFAULT '/';
 
 CREATE FUNCTION proxyapp.pass_crypt() RETURNS trigger AS $pass_crypt$
   BEGIN

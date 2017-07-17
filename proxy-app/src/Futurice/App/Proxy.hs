@@ -13,15 +13,16 @@ module Futurice.App.Proxy (
     defaultMain,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
+import Data.Aeson.Compat               (object, (.=))
 import Data.Maybe                      (isNothing)
 import Data.Pool                       (createPool, withResource)
 import Data.Reflection                 (Given (..), give)
 import Data.Text.Encoding              (decodeLatin1)
+import Futurice.Prelude
 import Futurice.Servant
 import Network.Wai                     (Request, rawPathInfo)
 import Network.Wai.Middleware.HttpAuth (basicAuth')
+import Prelude ()
 import Servant
 import Servant.Binary.Tagged           (BINARYTAGGED)
 import Servant.Client
@@ -37,7 +38,8 @@ import qualified PlanMill.Types.Query       as PM (SomeQuery, SomeResponse)
 
 import Futurice.App.Proxy.Config
 import Futurice.App.Proxy.Ctx
-import Futurice.App.Reports.MissingHours      (MissingHoursReport, MissingHoursTitle)
+import Futurice.App.Reports.MissingHours
+       (MissingHoursReport, MissingHoursTitle)
 import Futurice.App.Reports.TimereportsByTask (TimereportsByTaskReport)
 
 -------------------------------------------------------------------------------
@@ -204,7 +206,10 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
         (u', p', endpoint) :: IO [Postgres.Only Int]
     case res of
         [] -> runLogT "checkCreds" (ctxLogger ctx) $ do
-            logAttention "Invalid login with" $ u' <> " to endpoint " <> endpoint
+            logAttention "Invalid login with" $ object
+                [ "username" .= u'
+                , "endpoint" .= endpoint
+                ]
             pure False
         _ : _ -> do
             _ <- logAccess conn u' endpoint
