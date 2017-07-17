@@ -18,7 +18,7 @@ CREATE TABLE proxyapp.accesslog (
 --
 -- To update existing data, after setting up the trigger.
 --
--- UPDATE proxyapp.crendentials SET passtext = passtext;
+-- UPDATE proxyapp.credentials SET passtext = passtext;
 
 ALTER TABLE proxyapp.credentials
   ADD COLUMN endpoint TEXT NOT NULL DEFAULT '/';

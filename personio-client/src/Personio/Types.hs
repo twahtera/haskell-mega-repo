@@ -468,7 +468,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         attributeObjectMissing attrName errMsg = do
           attribute <- lift (parseAttribute obj attrName)
           case attribute of
-              Array _ -> tell [errMsg] -- | Should not be an array!
+              Array _ -> tell [errMsg] -- Should not be an array!
               _       -> pure ()
 
         -- | Attribute should be fetchable with parseDynamicAttribute and error

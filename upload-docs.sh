@@ -20,7 +20,7 @@ aws help > /dev/null
 export STACK_YAML=stack-ghc-8.0.yaml
 
 # Generate documentation
-stack build --test --no-run-tests --haddock --ghc-options='+RTS -M1G -RTS' -j 2
+stack build --test --no-run-tests --haddock --ghc-options='+RTS -M4G -RTS' -j 1
 
 aws s3 --profile docs.futurice.com --region eu-west-1 sync --delete \
     $(stack path --local-doc-root) \
