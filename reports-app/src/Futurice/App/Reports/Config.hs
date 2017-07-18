@@ -11,7 +11,6 @@ import Prelude ()
 import qualified Chat.Flowdock.REST as FD
 import qualified FUM
 import qualified GitHub             as GH
-import qualified Personio
 import qualified PlanMill           as PM
 
 data Config = Config
@@ -24,7 +23,7 @@ data Config = Config
     , cfgFlowdockAuthToken        :: !FD.AuthToken
     , cfgFlowdockOrgName          :: !(FD.ParamName FD.Organisation)
     , cfgPlanmillProxyBaseRequest :: !Request
-    , cfgPersonioCfg              :: !Personio.Cfg
+    , cfgPersonioProxyBaseRequest :: !Request
     -- Single reports configurations:
     , cfgReposUrl                 :: !Text
     , cfgMissingHoursContracts    :: !(Set (PM.EnumValue PM.User "contractType"))
@@ -42,7 +41,7 @@ instance Configure Config where
         <*> envVar "FD_AUTH_TOKEN"
         <*> envVar "FD_ORGANISATION"
         <*> (f <$> envVar "PLANMILLPROXY_HAXLURL")
-        <*> Personio.configurePersonioCfg
+        <*> (f <$> envVar "PERSONIOPROXY_REQUESTURL")
         <*> envVar "REPORTS_GH_REPOSURL" -- TODO: change to REPORTSAPP_GH_REPOSURL
         <*> envVar "MISSINGHOURS_CONTRACTS"
       where

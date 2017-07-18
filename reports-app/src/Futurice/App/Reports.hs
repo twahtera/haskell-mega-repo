@@ -276,7 +276,7 @@ ctxToIntegrationsConfig now (_cache, mgr, lgr, Config {..}) = MkIntegrationsConf
     , integrCfgFlowdockToken            = I cfgFlowdockAuthToken
     , integrCfgFlowdockOrgName          = I cfgFlowdockOrgName
     -- Personio
-    , integrCfgPersonioCfg              = I cfgPersonioCfg
+    , integrCfgPersonioProxyBaseRequest = I cfgPersonioProxyBaseRequest
     }
 
 -------------------------------------------------------------------------------

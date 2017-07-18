@@ -18,6 +18,7 @@ library:
   dependencies:
     - base                  >=4.7   && <4.10
     - aeson
+    - aeson-compat
     - async
     - binary-tagged
     - bytestring

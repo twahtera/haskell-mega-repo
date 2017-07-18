@@ -87,7 +87,7 @@ data IntegrationsConfig pm fum gh fd pe = MkIntegrationsConfig
     , integrCfgFlowdockToken            :: !(fd FD.AuthToken)
     , integrCfgFlowdockOrgName          :: !(fd :$ FD.ParamName FD.Organisation)
     -- Personio
-    , integrCfgPersonioCfg              :: !(pe Personio.Cfg)
+    , integrCfgPersonioProxyBaseRequest :: !(pe Request)
     }
 
 -- | A helper useful in REPL.
@@ -106,7 +106,7 @@ loadIntegrationConfig lgr = do
             <*> envVar' "GH_ORG"
             <*> envVar' "FD_AUTH_TOKEN"
             <*> envVar' "FD_ORGANISATION"
-            <*> fmap I Personio.configurePersonioCfg
+            <*> (f <$$> envVar' "PERSONIOPROXY_REQUESTURL")
   where
     f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }
     envVar' :: FromEnvVar a => String -> ConfigParser (I a)
@@ -147,9 +147,8 @@ runIntegrations cfg (Integr m) = do
         <$> integrCfgFlowdockToken cfg
     ghStateSet  = extractSEndo $ fmap H.stateSet $ GH.initDataSource lgr mgr
         <$> integrCfgGithubProxyBaseRequest cfg
-    peStateSet  = extractSEndo $ fmap H.stateSet $
-        Personio.Haxl.initDataSource mgr lgr
-            <$> integrCfgPersonioCfg cfg
+    peStateSet  = extractSEndo $ fmap H.stateSet $ Personio.Haxl.initDataSource lgr mgr
+        <$> integrCfgPersonioProxyBaseRequest cfg
 
 -------------------------------------------------------------------------------S
 -- Functor singletons
