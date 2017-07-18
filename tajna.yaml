@@ -52,13 +52,14 @@ envs:
     REPORTSAPP_MISSINGHOURS_CONTRACTS: 0,2,90
     PLANMILLPROXY_HAXLURL: "http://localhost:8808/planmill-haxl"
     GITHUBPROXY_HAXLURL: "http://localhost:8811/github-haxl"
+    PERSONIOPROXY_REQUESTURL: "http://localhost:8812/api/personio-request"
 
     # proxy-app
     REPORTSAPP_BASEURL: http://localhost:8807
     PLANMILLPROXY_BASEURL: http://localhost:8808
     GITHUBPROXY_BASEURL: http://localhost:8811
-    POWER_BASEURL: http://localhost:8000
     PERSONIOPROXY_BASEURL: http://localhost:8812
+    POWER_BASEURL: http://localhost:8000
 
     # tribes
     TRIBES:
