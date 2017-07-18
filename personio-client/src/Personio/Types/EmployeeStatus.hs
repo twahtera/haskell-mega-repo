@@ -1,17 +1,18 @@
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE DeriveGeneric         #-}
-module Personio.EmployeeStatus (
-    Status(..)) where
+module Personio.Types.EmployeeStatus (
+    Status(..),
+    ) where
 
 import Data.Aeson.Compat (Value (String), withText)
+import Data.Swagger      (NamedSchema (..))
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
-import Data.Swagger               (NamedSchema (..))
 
 import qualified Data.Map  as Map
 import qualified Data.Text as T

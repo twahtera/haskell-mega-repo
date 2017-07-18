@@ -50,10 +50,10 @@ library
   exposed-modules:
       Control.Monad.Personio
       Personio
-      Personio.EmployeeStatus
       Personio.Eval
       Personio.Request
       Personio.Types
+      Personio.Types.EmployeeStatus
   default-language: Haskell2010
 
 test-suite unit-tests

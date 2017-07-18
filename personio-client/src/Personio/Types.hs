@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeFamilies        #-}
 module Personio.Types (
     module Personio.Types,
-    module Personio.EmployeeStatus
+    module Personio.Types.EmployeeStatus,
     ) where
 
 import Control.Monad.Writer
@@ -28,7 +28,7 @@ import Futurice.Prelude
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
-import Personio.EmployeeStatus (Status(..))
+import Personio.Types.EmployeeStatus (Status (..))
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text           as T
