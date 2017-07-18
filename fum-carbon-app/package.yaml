@@ -27,6 +27,7 @@ dependencies:
   - distributive
   - DRBG
   - env-config
+  - fum-client # temporary
   - futurice-foundation
   - futurice-prelude
   - futurice-servant

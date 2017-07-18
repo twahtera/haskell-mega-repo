@@ -42,6 +42,7 @@ library
     , distributive
     , DRBG
     , env-config
+    , fum-client
     , futurice-foundation
     , futurice-prelude
     , futurice-servant
@@ -119,6 +120,7 @@ executable fum-carbon-server
     , distributive
     , DRBG
     , env-config
+    , fum-client
     , futurice-foundation
     , futurice-prelude
     , futurice-servant
@@ -176,6 +178,7 @@ test-suite unit-tests
     , distributive
     , DRBG
     , env-config
+    , fum-client
     , futurice-foundation
     , futurice-prelude
     , futurice-servant

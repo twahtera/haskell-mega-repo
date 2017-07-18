@@ -5,7 +5,7 @@
 {-# LANGUAGE RecordWildCards   #-}
 module Futurice.App.FUM (defaultMain) where
 
-import Control.Concurrent.STM    (atomically, readTVar, readTVarIO)
+import Control.Concurrent.STM    (atomically, readTVar, readTVarIO, writeTVar)
 import Futurice.Lomake
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Periocron
@@ -26,22 +26,35 @@ import Futurice.App.FUM.Types
 import qualified Futurice.IdMap as IdMap
 import qualified Personio
 
+import qualified FUM
+
 -------------------------------------------------------------------------------
 -- Server
 -------------------------------------------------------------------------------
 
 apiServer :: Ctx -> Server FumCarbonMachineApi
-apiServer ctx = rawEmployees
+apiServer ctx = personioRequest :<|> rawEmployees :<|> rawValidations
   where
     -- TODO: eventually move to the Logic module
+    personioRequest (Personio.SomePersonioReq res) = case res of
+        Personio.PersonioEmployees   -> Personio.SomePersonioRes res <$> rawEmployees
+        Personio.PersonioValidations -> Personio.SomePersonioRes res <$> rawValidations
+        Personio.PersonioAll         -> do
+            es <- rawEmployees
+            vs <- rawValidations
+            pure (Personio.SomePersonioRes res (es, vs))
+
     rawEmployees = do
         today <- currentDay
         es <- liftIO $ readTVarIO $ ctxPersonio ctx
         pure $ filter (isCurrentEmployee today) $ toList es
 
+    rawValidations = liftIO $ readTVarIO $ ctxPersonioValidations ctx
+
     isCurrentEmployee today e =
         maybe True (today <=) (e ^. Personio.employeeEndDate) &&
         maybe False (<= today) (e ^. Personio.employeeHireDate)
+
 
 -- TODO: write command handler
 commandServer :: Ctx -> Server FumCarbonCommandApi
@@ -70,7 +83,7 @@ validationReportImpl = liftIO . validationReport
 
 indexPageImpl
     :: Ctx
-    -> a
+    -> Maybe FUM.UserName
     -> Handler (HtmlPage "indexpage")
 indexPageImpl ctx fu = withAuthUser ctx fu impl
   where
@@ -78,7 +91,7 @@ indexPageImpl ctx fu = withAuthUser ctx fu impl
 
 createEmployeePageImpl
     :: Ctx
-    -> a
+    -> Maybe FUM.UserName
     -> Personio.EmployeeId
     -> Handler (HtmlPage "create-employee")
 createEmployeePageImpl ctx fu pid = withAuthUser ctx fu impl
@@ -91,6 +104,10 @@ notFoundPage :: HtmlPage sym
 notFoundPage = fumPage_ "Not found" ()
     ":("
 
+forbiddenPage :: HtmlPage sym
+forbiddenPage = fumPage_ "Forbidden" ()
+    ":("
+
 -------------------------------------------------------------------------------
 -- Auth
 -------------------------------------------------------------------------------
@@ -99,24 +116,27 @@ notFoundPage = fumPage_ "Not found" ()
 withAuthUser
     :: (MonadIO m, MonadBase IO m, MonadTime m)
     => Ctx
-    -> auth
+    -> Maybe FUM.UserName
     -> (World -> IdMap.IdMap Personio.Employee -> m (HtmlPage a))
     -> m (HtmlPage a)
 withAuthUser ctx fu f = runLogT "withAuthUser" (ctxLogger ctx) $
-    withAuthUser' (error "forbiddenPage") ctx fu (\w es -> lift $ f w es)
+    withAuthUser' forbiddenPage ctx fu (\w es -> lift $ f w es)
 
 withAuthUser'
     :: (MonadIO m, MonadBase IO m, MonadTime m)
     => a                           -- ^ Response to unauthenticated users
     -> Ctx
-    -> auth
+    -> Maybe FUM.UserName
     -> (World -> IdMap.IdMap Personio.Employee -> LogT m a)
     -> LogT m a
-withAuthUser' _def ctx _fu f = do
-     (world, es) <- liftIO $ atomically $ (,)
-          <$> readTVar (ctxWorld ctx)
-          <*> readTVar (ctxPersonio ctx)
-     f world es
+withAuthUser' def ctx fu f
+    -- TODO: make proper ACL
+    | fu /= Nothing = pure def
+    | otherwise = do
+         (world, es) <- liftIO $ atomically $ (,)
+              <$> readTVar (ctxWorld ctx)
+              <*> readTVar (ctxPersonio ctx)
+         f world es
 
 -------------------------------------------------------------------------------
 -- Main
@@ -131,25 +151,29 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx           .~ "FUMAPP"
 
 makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-makeCtx Config {..} lgr cache = do
+makeCtx Config {..} lgr _cache = do
     mgr <- newManager tlsManagerSettings
 
     -- employees
-    let fetchEmployees = Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioEmployees
-    employees <- fetchEmployees
-
-    let fetchValidations = cachedIO lgr cache 600 () $
-            Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioValidations
+    let fetchEmployees = Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioAll
+    (employees, validations) <- fetchEmployees
 
     -- context
     ctx <- newCtx
         lgr
         cfgPostgresConnInfo
         (IdMap.fromFoldable employees)
-        fetchValidations
+        validations
         emptyWorld
 
     -- jobs
-    let employeesJob = mkJob "Update personio data" fetchEmployees $ tail $ every 300
+    let employeesJob = mkJob "Update personio data" (updateJob ctx fetchEmployees) $ tail $ every 300
 
     pure (ctx, [ employeesJob ])
+  where
+    updateJob :: Ctx -> IO ([Personio.Employee], [Personio.EmployeeValidation]) -> IO ()
+    updateJob ctx fetchEmployees = do
+        (employees, validations) <- fetchEmployees
+        atomically $ do
+            writeTVar (ctxPersonio ctx) (IdMap.fromFoldable employees)
+            writeTVar (ctxPersonioValidations ctx) validations

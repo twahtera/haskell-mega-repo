@@ -16,6 +16,7 @@ data Ctx = Ctx
     , ctxReportsAppBaseurl    :: !BaseUrl
     , ctxPlanmillProxyBaseurl :: !BaseUrl
     , ctxGithubProxyBaseurl   :: !BaseUrl
+    , ctxPersonioProxyBaseurl :: !BaseUrl
     , ctxFumBaseurl           :: !BaseUrl
     , ctxFumAuthToken         :: !FUM.AuthToken
     , ctxPowerBaseurl         :: !BaseUrl

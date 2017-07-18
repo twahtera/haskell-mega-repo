@@ -15,6 +15,7 @@ data Config = Config
     , cfgReportsAppBaseurl    :: !BaseUrl
     , cfgPlanmillProxyBaseurl :: !BaseUrl
     , cfgGithubProxyBaseurl   :: !BaseUrl
+    , cfgPersonioProxyBaseurl :: !BaseUrl
     , cfgFumBaseurl           :: !BaseUrl
     , cfgFumAuthToken         :: !FUM.AuthToken
     , cfgPowerBaseurl         :: !BaseUrl
@@ -26,6 +27,7 @@ instance Configure Config where
         <*> envVar "REPORTSAPP_BASEURL"
         <*> envVar "PLANMILLPROXY_BASEURL"
         <*> envVar "GITHUBPROXY_BASEURL"
+        <*> envVar "PERSONIOPROXY_BASEURL"
         <*> envVar "FUM_BASEURL"
         <*> envVar "FUM_TOKEN"
         <*> envVar "POWER_BASEURL"
