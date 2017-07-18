@@ -6,7 +6,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
-module Personio.Types where
+module Personio.Types (
+    module Personio.Types,
+    module Personio.EmployeeStatus
+    ) where
 
 import Control.Monad.Writer
 import Data.Aeson.Compat
@@ -24,6 +27,8 @@ import Futurice.IdMap              (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
+
+import Personio.EmployeeStatus (Status(..))
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text           as T
@@ -88,6 +93,8 @@ data Employee = Employee
     , _employeeOffice       :: !(Maybe Text)
     , _employeeCostCenter   :: !(Maybe Text) -- exactly 1
     , _employeeGithub       :: !(Maybe Text)
+    , _employeeStatus       :: !Status
+    , _employeeHRNumber     :: !(Maybe Int)
     -- use this when debugging
     -- , employeeRest     :: !(HashMap Text Value)
     }
@@ -161,6 +168,8 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> fmap getName (parseAttribute obj "office")
         <*> fmap getName (parseAttribute obj "cost_centers")
         <*> fmap getGithubUsername (parseDynamicAttribute obj "Github")
+        <*> parseAttribute obj "status"
+        <*> parseDynamicAttribute obj "HR number"
         -- <*> pure obj -- for employeeRest field
 
 -- | Personio attribute, i.e. labelled value.
@@ -175,6 +184,7 @@ newtype SupervisorId = SupervisorId { getSupervisorId :: Maybe EmployeeId }
 
 instance FromJSON SupervisorId where
     -- no supervisor: empty array
+    parseJSON (Null) = pure (SupervisorId Nothing)
     parseJSON (Array xs) | null xs = pure (SupervisorId Nothing)
     parseJSON v = p v
       where
@@ -191,10 +201,11 @@ newtype NamedAttribute = NamedAttribute { getName :: Maybe Text }
 
 instance FromJSON NamedAttribute where
     parseJSON v = case v of
-        (Array xs) ->  case toList xs of
+        (Null)     -> pure (NamedAttribute Nothing)
+        (Array xs) -> case toList xs of
             []    -> pure (NamedAttribute Nothing)
             (x:_) -> p x  -- take first attribute.
-        _ -> p v
+        _          -> p v
       where
         p = withObjectDump "NamedAttribute" $ \obj ->
             NamedAttribute . Just <$> ((obj .: "attributes") >>= (.: "name"))

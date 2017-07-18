@@ -19,6 +19,7 @@ dependencies:
   - aeson-compat
   - base
   - constraints
+  - containers
   - env-config
   - futurice-prelude
   - http-api-data

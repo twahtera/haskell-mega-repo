@@ -54,6 +54,8 @@ examples = testGroup "HUnit"
         Just "A Tribe" @=? e ^. employeeTribe
         Just "Helsinki" @=? e ^. employeeOffice
         Just "gitMastur" @=? e ^. employeeGithub
+        Active @=? e ^. employeeStatus
+        Just 0 @=? e ^. employeeHRNumber
 
     , validations
     ]
