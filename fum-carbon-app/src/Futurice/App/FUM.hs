@@ -33,9 +33,17 @@ import qualified FUM
 -------------------------------------------------------------------------------
 
 apiServer :: Ctx -> Server FumCarbonMachineApi
-apiServer ctx = rawEmployees :<|> rawValidations
+apiServer ctx = personioRequest :<|> rawEmployees :<|> rawValidations
   where
     -- TODO: eventually move to the Logic module
+    personioRequest (Personio.SomePersonioReq res) = case res of
+        Personio.PersonioEmployees   -> Personio.SomePersonioRes res <$> rawEmployees
+        Personio.PersonioValidations -> Personio.SomePersonioRes res <$> rawValidations
+        Personio.PersonioAll         -> do
+            es <- rawEmployees
+            vs <- rawValidations
+            pure (Personio.SomePersonioRes res (es, vs))
+
     rawEmployees = do
         today <- currentDay
         es <- liftIO $ readTVarIO $ ctxPersonio ctx

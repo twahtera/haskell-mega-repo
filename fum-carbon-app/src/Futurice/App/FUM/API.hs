@@ -32,7 +32,8 @@ type FumCarbonCommandApi =
     CreateEmployeeCmdEndpoint
 
 type FumCarbonMachineApi =
-    "raw-employees" :> Get '[JSON] [Personio.Employee]
+    "personio-request" :> ReqBody '[JSON] Personio.SomePersonioReq :> Post '[JSON] Personio.SomePersonioRes
+    :<|> "raw-employees" :> Get '[JSON] [Personio.Employee]
     :<|> "raw-employee-validations" :> Get '[JSON] [Personio.EmployeeValidation]
 
 fumCarbonApi :: Proxy FumCarbonApi
