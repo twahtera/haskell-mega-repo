@@ -5,7 +5,7 @@
 {-# LANGUAGE RecordWildCards   #-}
 module Futurice.App.FUM (defaultMain) where
 
-import Control.Concurrent.STM    (atomically, readTVar, readTVarIO)
+import Control.Concurrent.STM    (atomically, readTVar, readTVarIO, writeTVar)
 import Futurice.Lomake
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Periocron
@@ -33,7 +33,7 @@ import qualified FUM
 -------------------------------------------------------------------------------
 
 apiServer :: Ctx -> Server FumCarbonMachineApi
-apiServer ctx = rawEmployees
+apiServer ctx = rawEmployees :<|> rawValidations
   where
     -- TODO: eventually move to the Logic module
     rawEmployees = do
@@ -41,9 +41,12 @@ apiServer ctx = rawEmployees
         es <- liftIO $ readTVarIO $ ctxPersonio ctx
         pure $ filter (isCurrentEmployee today) $ toList es
 
+    rawValidations = liftIO $ readTVarIO $ ctxPersonioValidations ctx
+
     isCurrentEmployee today e =
         maybe True (today <=) (e ^. Personio.employeeEndDate) &&
         maybe False (<= today) (e ^. Personio.employeeHireDate)
+
 
 -- TODO: write command handler
 commandServer :: Ctx -> Server FumCarbonCommandApi
@@ -140,25 +143,29 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx           .~ "FUMAPP"
 
 makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-makeCtx Config {..} lgr cache = do
+makeCtx Config {..} lgr _cache = do
     mgr <- newManager tlsManagerSettings
 
     -- employees
-    let fetchEmployees = Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioEmployees
-    employees <- fetchEmployees
-
-    let fetchValidations = cachedIO lgr cache 600 () $
-            Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioValidations
+    let fetchEmployees = Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioAll
+    (employees, validations) <- fetchEmployees
 
     -- context
     ctx <- newCtx
         lgr
         cfgPostgresConnInfo
         (IdMap.fromFoldable employees)
-        fetchValidations
+        validations
         emptyWorld
 
     -- jobs
-    let employeesJob = mkJob "Update personio data" fetchEmployees $ tail $ every 300
+    let employeesJob = mkJob "Update personio data" (updateJob ctx fetchEmployees) $ tail $ every 300
 
     pure (ctx, [ employeesJob ])
+  where
+    updateJob :: Ctx -> IO ([Personio.Employee], [Personio.EmployeeValidation]) -> IO ()
+    updateJob ctx fetchEmployees = do
+        (employees, validations) <- fetchEmployees
+        atomically $ do
+            writeTVar (ctxPersonio ctx) (IdMap.fromFoldable employees)
+            writeTVar (ctxPersonioValidations ctx) validations

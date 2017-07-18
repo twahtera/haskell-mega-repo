@@ -3,6 +3,7 @@
 {-# LANGUAGE RecordWildCards   #-}
 module Futurice.App.FUM.Report.Validation (validationReport) where
 
+import Control.Concurrent.STM    (readTVarIO)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Prelude ()
@@ -14,7 +15,7 @@ import qualified Personio
 validationReport :: Ctx -> IO (HtmlPage "validation-report")
 validationReport ctx = do
     today <- currentDay
-    validations0 <- ctxPersonioValidations ctx
+    validations0 <- liftIO $ readTVarIO $ ctxPersonioValidations ctx
     let validations = filter (isCurrentEmployee today) validations0
     pure $ page_ "Personio data validation" $ do
         row_ $ large_ 12 $ toHtml $

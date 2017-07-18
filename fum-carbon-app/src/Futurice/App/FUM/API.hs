@@ -33,6 +33,7 @@ type FumCarbonCommandApi =
 
 type FumCarbonMachineApi =
     "raw-employees" :> Get '[JSON] [Personio.Employee]
+    :<|> "raw-employee-validations" :> Get '[JSON] [Personio.EmployeeValidation]
 
 fumCarbonApi :: Proxy FumCarbonApi
 fumCarbonApi = Proxy
