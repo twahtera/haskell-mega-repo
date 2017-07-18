@@ -36,18 +36,21 @@ evalPersonioReq personioReq = do
     Envelope (AccessToken token) <- decode (H.responseBody tokenRes)
 
     -- Perform request
+    let url = (baseUrl <> "/v1/company/employees") ^. unpacked
+    bs <- personioHttpLbs token url
+
     case personioReq of
         PersonioEmployees -> do
-            let url = (baseUrl <> "/v1/company/employees") ^. unpacked
-            bs <- personioHttpLbs token url
             Envelope (E employees) <- decode bs
             pure employees
         PersonioValidations -> do
             -- We ask for employees, but parse them differently 
-            let url = (baseUrl <> "/v1/company/employees") ^. unpacked
-            bs <- personioHttpLbs token url
             Envelope (V validations) <- decode bs
             pure validations
+        PersonioAll -> do
+            Envelope (E employees) <- decode bs
+            Envelope (V validations) <- decode bs
+            pure (employees, validations)
   where
     personioHttpLbs token url = do
         (dur, req) <- clocked $ H.parseUrlThrow url
