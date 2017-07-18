@@ -26,6 +26,8 @@ import Futurice.App.FUM.Types
 import qualified Futurice.IdMap as IdMap
 import qualified Personio
 
+import qualified FUM
+
 -------------------------------------------------------------------------------
 -- Server
 -------------------------------------------------------------------------------
@@ -70,7 +72,7 @@ validationReportImpl = liftIO . validationReport
 
 indexPageImpl
     :: Ctx
-    -> a
+    -> Maybe FUM.UserName
     -> Handler (HtmlPage "indexpage")
 indexPageImpl ctx fu = withAuthUser ctx fu impl
   where
@@ -78,7 +80,7 @@ indexPageImpl ctx fu = withAuthUser ctx fu impl
 
 createEmployeePageImpl
     :: Ctx
-    -> a
+    -> Maybe FUM.UserName
     -> Personio.EmployeeId
     -> Handler (HtmlPage "create-employee")
 createEmployeePageImpl ctx fu pid = withAuthUser ctx fu impl
@@ -91,6 +93,10 @@ notFoundPage :: HtmlPage sym
 notFoundPage = fumPage_ "Not found" ()
     ":("
 
+forbiddenPage :: HtmlPage sym
+forbiddenPage = fumPage_ "Forbidden" ()
+    ":("
+
 -------------------------------------------------------------------------------
 -- Auth
 -------------------------------------------------------------------------------
@@ -99,24 +105,27 @@ notFoundPage = fumPage_ "Not found" ()
 withAuthUser
     :: (MonadIO m, MonadBase IO m, MonadTime m)
     => Ctx
-    -> auth
+    -> Maybe FUM.UserName
     -> (World -> IdMap.IdMap Personio.Employee -> m (HtmlPage a))
     -> m (HtmlPage a)
 withAuthUser ctx fu f = runLogT "withAuthUser" (ctxLogger ctx) $
-    withAuthUser' (error "forbiddenPage") ctx fu (\w es -> lift $ f w es)
+    withAuthUser' forbiddenPage ctx fu (\w es -> lift $ f w es)
 
 withAuthUser'
     :: (MonadIO m, MonadBase IO m, MonadTime m)
     => a                           -- ^ Response to unauthenticated users
     -> Ctx
-    -> auth
+    -> Maybe FUM.UserName
     -> (World -> IdMap.IdMap Personio.Employee -> LogT m a)
     -> LogT m a
-withAuthUser' _def ctx _fu f = do
-     (world, es) <- liftIO $ atomically $ (,)
-          <$> readTVar (ctxWorld ctx)
-          <*> readTVar (ctxPersonio ctx)
-     f world es
+withAuthUser' def ctx fu f
+    -- TODO: make proper ACL
+    | fu /= Nothing = pure def
+    | otherwise = do
+         (world, es) <- liftIO $ atomically $ (,)
+              <$> readTVar (ctxWorld ctx)
+              <*> readTVar (ctxPersonio ctx)
+         f world es
 
 -------------------------------------------------------------------------------
 -- Main
