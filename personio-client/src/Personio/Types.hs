@@ -402,6 +402,7 @@ data ValidationMessage
 
 instance ToJSON ValidationMessage
 instance FromJSON ValidationMessage
+instance ToSchema ValidationMessage
 
 -- | All fields except 'evMessages' are to help connect the data.
 data EmployeeValidation = EmployeeValidation
@@ -415,6 +416,17 @@ data EmployeeValidation = EmployeeValidation
   deriving Show
 
 makeLenses ''EmployeeValidation
+deriveGeneric ''EmployeeValidation
+
+instance ToSchema EmployeeValidation where
+    declareNamedSchema = sopDeclareNamedSchema
+
+instance FromJSON EmployeeValidation where
+    parseJSON = sopParseJSON
+
+instance ToJSON EmployeeValidation where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
 
 validatePersonioEmployee :: Value -> Parser EmployeeValidation
 validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
