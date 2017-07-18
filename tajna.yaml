@@ -58,6 +58,7 @@ envs:
     PLANMILLPROXY_BASEURL: http://localhost:8808
     GITHUBPROXY_BASEURL: http://localhost:8811
     POWER_BASEURL: http://localhost:8000
+    PERSONIOPROXY_BASEURL: http://localhost:8812
 
     # tribes
     TRIBES:

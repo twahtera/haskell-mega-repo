@@ -34,6 +34,7 @@ import qualified Data.Text                  as T
 import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM
 import qualified Futurice.GitHub            as GH (SomeRequest, SomeResponse)
+import qualified Personio
 import qualified PlanMill.Types.Query       as PM (SomeQuery, SomeResponse)
 
 import Futurice.App.Proxy.Config
@@ -51,6 +52,7 @@ data PlanmillProxyService
 data GithubProxyService
 data FumService
 data PowerService
+data PersonioProxyService
 
 instance HasClientBaseurl Ctx ReportsAppService where
     clientBaseurl _ = lens ctxReportsAppBaseurl $ \ctx x ->
@@ -71,6 +73,10 @@ instance HasClientBaseurl Ctx FumService where
 instance HasClientBaseurl Ctx PowerService where
     clientBaseurl _ = lens ctxPowerBaseurl $ \ctx x ->
         ctx { ctxPowerBaseurl = x }
+
+instance HasClientBaseurl Ctx PersonioProxyService where
+    clientBaseurl _ = lens ctxPersonioProxyBaseurl $ \ctx x ->
+        ctx { ctxPersonioProxyBaseurl = x }
 
 -------------------------------------------------------------------------------
 -- Endpoints
@@ -123,12 +129,23 @@ type PowerBiEndpoint = ProxyPair
     PowerService
     ("api" :> "v2" :> "power_bi" :> QueryParam "month" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> QueryParam "span" Int:> QueryParam "tribe" Text :> Get '[JSON] Value)
 
+-- Personio via FUM
+type PersonioProxyEndpoint' =
+    ReqBody '[JSON] Personio.SomePersonioReq :>
+    Post '[JSON] Personio.SomePersonioRes
+
+type PersonioProxyEndpoint = ProxyPair
+    ("personio-request" :> PersonioProxyEndpoint')
+    PersonioProxyService
+    ("api" :> "personio-request" :> PersonioProxyEndpoint')
+
 -- | Whole proxy definition
 type ProxyDefinition =
     '[ MissingReportsEndpoint
     , TimereportsByTaskReportEndpoint
     , PlanmillProxyEndpoint
     , GithubProxyEndpoint
+    , PersonioProxyEndpoint
     , FumEmployeesEndpoint
     , FumUserEndpoint
     , PowerBiEndpoint
@@ -164,6 +181,7 @@ server ctx = give (ctxFumAuthToken ctx) $ pure "P-R-O-X-Y"
     :<|> makeProxy (Proxy :: Proxy TimereportsByTaskReportEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy PlanmillProxyEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy GithubProxyEndpoint) ctx
+    :<|> makeProxy (Proxy :: Proxy PersonioProxyEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy FumEmployeesEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy FumUserEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy PowerBiEndpoint) ctx
@@ -184,12 +202,13 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             (Postgres.connect cfgPostgresConnInfo)
             Postgres.close
             1 10 5
-        pure $ flip (,) [] $ Ctx
+        pure $ flip (,) [] Ctx
             { ctxManager              = mgr
             , ctxPostgresPool         = postgresPool
             , ctxReportsAppBaseurl    = cfgReportsAppBaseurl
             , ctxPlanmillProxyBaseurl = cfgPlanmillProxyBaseurl
             , ctxGithubProxyBaseurl   = cfgGithubProxyBaseurl
+            , ctxPersonioProxyBaseurl = cfgPersonioProxyBaseurl
             , ctxFumBaseurl           = cfgFumBaseurl
             , ctxFumAuthToken         = cfgFumAuthToken
             , ctxPowerBaseurl         = cfgPowerBaseurl
