@@ -12,6 +12,9 @@ apps:
   contacts-api:
     docker: contacts-api
     executable: contacts-api-server
+  fum-carbon:
+    docker: fum-carbon
+    executable: fum-carbon-server
   favicon:
     docker: favicon
     executable: favicon

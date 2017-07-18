@@ -7,7 +7,6 @@ module Futurice.App.FUM (defaultMain) where
 
 import Control.Concurrent.STM    (atomically, readTVar, readTVarIO, writeTVar)
 import Futurice.Lomake
-import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant

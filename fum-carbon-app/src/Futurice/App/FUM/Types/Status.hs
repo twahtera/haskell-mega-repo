@@ -19,7 +19,6 @@ import Futurice.Generics.Enum
 import Futurice.Lucid.Foundation (ToHtml (..))
 import Futurice.Prelude
 import Prelude ()
-import Servant                   (FromHttpApiData (..), ToHttpApiData (..))
 
 -- | User status
 data Status

@@ -11,6 +11,7 @@ packages:
 - env-config/
 - favicon-app/
 - flowdock-rest/
+- fum-carbon-app/
 - fum-client/
 - futurice-foundation/
 - futurice-github/

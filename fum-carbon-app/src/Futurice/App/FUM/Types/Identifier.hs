@@ -12,8 +12,7 @@ module Futurice.App.FUM.Types.Identifier (
     ) where
 
 import Control.Lens      (Getter, to)
-import Data.Swagger
-       (SwaggerType (SwaggerString), ToParamSchema (..), format, type_)
+import Data.Swagger      (SwaggerType (SwaggerString), format, type_)
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()

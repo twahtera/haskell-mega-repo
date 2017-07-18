@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                    #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -28,7 +29,6 @@ import Futurice.MonadTrans
 import Futurice.Prelude
 import Prelude ()
 import Servant.API                (Link)
-import Web.HttpApiData            (ToHttpApiData (..))
 
 import qualified Data.Aeson.Compat as Aeson
 import qualified Data.Text         as T
@@ -125,6 +125,9 @@ lowerLomakeWithNp nt np = getCompose . go np where
     go :: forall ys b. NP h ys -> Lomake m ys '[] b -> Compose g m b
     go Nil       (LomakePure x)          = pure x
     go (h :* hs) (LomakeAp field rest)   = flip id <$> Compose (nt h field) <*> go hs rest
+#if __GLASGOW_HASKELL__ < 800
+    go _ _ = error "shouldn't happen"
+#endif
 
 lowerLomakeWithNp_
     :: forall m g h xs z a. (Applicative g, Applicative m)
@@ -134,6 +137,9 @@ lowerLomakeWithNp_ nt np = getCompose . go np where
     go :: forall ys b. NP h ys -> Lomake m ys '[] b -> Compose g m ()
     go Nil       (LomakePure _)          = pure ()
     go (h :* hs) (LomakeAp field rest)   = Compose (nt h field) *> go hs rest
+#if __GLASGOW_HASKELL__ < 800
+    go _ _ = error "shouldn't happen"
+#endif
 
 lowerLomakeWithNpTrans_
     :: forall m t h xs z a. (MonadTrans' t, Monad m)
@@ -143,6 +149,9 @@ lowerLomakeWithNpTrans_ nt np = go np \\ (transform' :: Monad m :- Monad (t m)) 
     go :: forall ys b. Monad (t m) => NP h ys -> Lomake m ys '[] b -> t m ()
     go Nil       (LomakePure _)          = return ()
     go (h :* hs) (LomakeAp field rest)   = nt h field >> go hs rest
+#if __GLASGOW_HASKELL__ < 800
+    go _ _ = error "shouldn't happen"
+#endif
 
 -------------------------------------------------------------------------------
 -- Markup
