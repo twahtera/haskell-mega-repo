@@ -28,6 +28,8 @@ library:
     - aeson
     - aeson-compat
     - base-compat
+    - Chart
+    - containers
     - env-config
     - fum-client
     - futurice-foundation
@@ -38,11 +40,13 @@ library:
     - http-client
     - http-client-tls
     - http-types
+    - lens
     - lucid
     - planmill-client
     - postgresql-simple
     - resource-pool
     - servant
+    - servant-Chart
     - servant-lucid
     - servant-server
     - swagger2

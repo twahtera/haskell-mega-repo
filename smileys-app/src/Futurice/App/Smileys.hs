@@ -19,6 +19,7 @@ import qualified Database.PostgreSQL.Simple as Postgres
 
 -- Smileys modules
 import Futurice.App.Smileys.API
+import Futurice.App.Smileys.Charts
 import Futurice.App.Smileys.Config (Config (..))
 import Futurice.App.Smileys.Ctx
 import Futurice.App.Smileys.Logic
@@ -28,6 +29,8 @@ server ctx = pure "smileys backend"
     :<|> postOwnSmileys ctx
     :<|> getOwnSmileys ctx
     :<|> getSmileys ctx
+    :<|> absoluteChartHandler ctx
+    :<|> relativeChartHandler ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
