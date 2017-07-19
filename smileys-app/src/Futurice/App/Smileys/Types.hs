@@ -8,7 +8,8 @@
 module Futurice.App.Smileys.Types (
     PostSmiley(..),
     Res(..),
-    Smileys(..)
+    Smileys(..),
+    SmileyValue(..),
     ) where
 
 import Futurice.Generics
