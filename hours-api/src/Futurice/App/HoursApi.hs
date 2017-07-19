@@ -132,5 +132,5 @@ makeIntegrationsConfig now lgr mgr Config {..} = MkIntegrationsConfig
     , integrCfgFlowdockToken            = Proxy
     , integrCfgFlowdockOrgName          = Proxy
     -- Personio
-    , integrCfgPersonioCfg              = Proxy
+    , integrCfgPersonioProxyBaseRequest = Proxy
     }
