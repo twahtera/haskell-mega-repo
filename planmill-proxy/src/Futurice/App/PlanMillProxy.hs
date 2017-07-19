@@ -8,13 +8,12 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.PlanMillProxy (defaultMain) where
 
-import Prelude ()
-import Futurice.Prelude
-
 import Data.Pool            (createPool)
 import Futurice.Periocron
+import Futurice.Prelude
 import Futurice.Servant
 import PlanMill.Types.Query (SomeQuery (..))
+import Prelude ()
 import Servant
 
 import qualified Database.PostgreSQL.Simple as Postgres
@@ -23,8 +22,8 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import Futurice.App.PlanMillProxy.API
 import Futurice.App.PlanMillProxy.Config (Config (..))
 import Futurice.App.PlanMillProxy.Logic
-       (cleanupCache, haxlEndpoint, updateAllTimereports, updateCache,
-       updateCapacities, updateWithoutTimereports)
+       (cleanupCache, haxlEndpoint, statsEndpoint, updateAllTimereports,
+       updateCache, updateCapacities, updateWithoutTimereports)
 import Futurice.App.PlanMillProxy.Types  (Ctx (..))
 
 import qualified PlanMill.Queries as PMQ
@@ -33,6 +32,7 @@ import qualified PlanMill.Queries as PMQ
 server :: Ctx -> Server PlanMillProxyAPI
 server ctx = pure "Try /swagger-ui/"
     :<|> liftIO . haxlEndpoint ctx
+    :<|> liftIO (statsEndpoint ctx)
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig

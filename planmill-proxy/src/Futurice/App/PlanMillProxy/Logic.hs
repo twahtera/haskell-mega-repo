@@ -17,6 +17,8 @@ module Futurice.App.PlanMillProxy.Logic (
     -- * Timereports
     updateAllTimereports,
     updateWithoutTimereports,
+    -- * Stats
+    statsEndpoint,
     ) where
 
 import Prelude ()
@@ -36,7 +38,34 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import Futurice.App.PlanMillProxy.Logic.Capacities
 import Futurice.App.PlanMillProxy.Logic.Common
 import Futurice.App.PlanMillProxy.Logic.Timereports
-import Futurice.App.PlanMillProxy.Types             (Ctx (..))
+import Futurice.App.PlanMillProxy.Types             (Ctx (..), Stats (..))
+
+-------------------------------------------------------------------------------
+-- Stats
+-------------------------------------------------------------------------------
+
+statsEndpoint :: Ctx -> IO Stats
+statsEndpoint ctx = do
+    -- let's fail if we get not exactly one result
+    [(cAvg, cMin, cMax, cTotal)] <- poolQuery_ ctx $ fromString $ unwords
+        [ "SELECT"
+        , "extract(epoch from avg(current_timestamp - updated)),"
+        , "extract(epoch from min(current_timestamp - updated)),"
+        , "extract(epoch from max(current_timestamp - updated)),"
+        , "count(*)"
+        , "FROM planmillproxy.cache;"
+        ]
+
+    [(trAvg, trMin, trMax, trTotal)] <- poolQuery_ ctx $ fromString $ unwords
+        [ "SELECT"
+        , "extract(epoch from avg(current_timestamp - updated)),"
+        , "extract(epoch from min(current_timestamp - updated)),"
+        , "extract(epoch from max(current_timestamp - updated)),"
+        , "count(*)"
+        , "FROM planmillproxy.timereports;"
+        ]
+
+    return $ Stats cAvg cMin cMax cTotal trAvg trMin trMax trTotal
 
 -------------------------------------------------------------------------------
 -- Type synonyms

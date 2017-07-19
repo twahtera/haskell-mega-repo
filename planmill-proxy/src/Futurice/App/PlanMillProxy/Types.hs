@@ -1,17 +1,21 @@
+{-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Futurice.App.PlanMillProxy.Types (
     Ctx (..),
+    Stats (..),
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Data.Pool                  (Pool)
 import Database.PostgreSQL.Simple (Connection)
+import Futurice.Generics
 import Futurice.PostgresPool
+import Futurice.Prelude
 import Futurice.Servant           (DynMapCache)
 import PlanMill                   (Cfg)
+import Prelude ()
 
 -------------------------------------------------------------------------------
 -- Context
@@ -26,3 +30,28 @@ data Ctx = Ctx
 
 instance HasPostgresPool Ctx where
     postgresPool = ctxPostgresPool
+
+-------------------------------------------------------------------------------
+-- Stats
+-------------------------------------------------------------------------------
+
+data Stats = Stats
+    { statsCachedAvgAge  :: Double
+    , statsCachedMinAge  :: Double
+    , statsCachedMaxAge  :: Double
+    , statsCachedTotal   :: Int
+    , statsTimereportsAvgAge  :: Double
+    , statsTimereportsMinAge  :: Double
+    , statsTimereportsMaxAge  :: Double
+    , statsTimereportsTotal   :: Int
+    }
+  deriving Show
+
+deriveGeneric ''Stats
+
+instance ToJSON Stats where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
+
+instance ToSchema Stats where
+    declareNamedSchema = sopDeclareNamedSchema
