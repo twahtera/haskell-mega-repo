@@ -54,6 +54,7 @@ data Cmd
     | CmdProject PM.ProjectId
     | CmdAccounts
     | CmdAccount PM.AccountId
+    | CmdAbsencesInterval (PM.Interval Day)
 
 deriveGeneric ''Cmd
 
@@ -176,6 +177,12 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
     CmdEnumeration enum -> reifyTextSymbol enum $ \p -> do
         x <- PM.planmillAction $ PM.enumerations p
         putPretty x
+    CmdAbsencesInterval interval -> do
+        x <- PM.planmillAction $ PM.absencesFromInterval
+            (PM.ResultInterval PM.IntervalStart interval)
+        putPretty $ if optsShowAll opts
+            then x ^.. folded
+            else x ^.. taking 10 traverse
 
 -------------------------------------------------------------------------------
 -- M - monad with custom instances
