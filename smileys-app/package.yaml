@@ -30,6 +30,7 @@ library:
     - base-compat
     - Chart
     - containers
+    - dynmap-cache
     - env-config
     - fum-client
     - futurice-foundation
