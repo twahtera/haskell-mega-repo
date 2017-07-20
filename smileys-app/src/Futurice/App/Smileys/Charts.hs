@@ -5,7 +5,9 @@ module Futurice.App.Smileys.Charts where
 
 import Control.Lens     (to, (.=), (^@..))
 import Data.Pool        (withResource)
+import Futurice.Cache   (cachedIO)
 import Futurice.Prelude
+import GHC.TypeLits     (KnownSymbol, symbolVal)
 import Prelude ()
 import Servant.Chart    (Chart (..))
 
@@ -20,7 +22,7 @@ import qualified Graphics.Rendering.Chart.Easy as C
 -- Absolute
 -------------------------------------------------------------------------------
 
-absoluteChartHandler :: MonadBaseControl IO m => Ctx -> m (Chart "absolute")
+absoluteChartHandler :: MonadIO m => Ctx -> m (Chart "absolute")
 absoluteChartHandler = chartHandler chart
   where
     chart values = Chart . C.toRenderable $ do
@@ -44,7 +46,7 @@ absoluteChartHandler = chartHandler chart
 -- Relative
 -------------------------------------------------------------------------------
 
-relativeChartHandler :: MonadBaseControl IO m => Ctx -> m (Chart "relative")
+relativeChartHandler :: MonadIO m => Ctx -> m (Chart "relative")
 relativeChartHandler = chartHandler chart
   where
     chart values = Chart . C.toRenderable $ do
@@ -69,12 +71,13 @@ relativeChartHandler = chartHandler chart
 -------------------------------------------------------------------------------
 
 chartHandler
-    :: MonadBaseControl IO m
+    :: forall a m. (KnownSymbol a, MonadIO m)
     => (Map Day SmileyAcc -> Chart a)
     -> Ctx -> m (Chart a)
 chartHandler chart ctx = do
-    input <- withResource (ctxPostgresPool ctx) $ \conn ->
-        liftBase $ Postgres.query_ conn "SELECT day, smiley FROM smileys.trail"
+    input <- liftIO $ cachedIO (ctxLogger ctx) (ctxCache ctx) 600 (symbolVal (Proxy :: Proxy a)) $
+        withResource (ctxPostgresPool ctx) $ \conn ->
+            Postgres.query_ conn "SELECT day, smiley FROM smileys.trail"
     pure $ chart $
         Map.fromListWith (<>) $ fmap (second smileyAcc) input
 

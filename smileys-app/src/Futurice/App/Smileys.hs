@@ -41,7 +41,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx           .~ "SMILEYS"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-    makeCtx Config {..} _logger _cache = do
+    makeCtx Config {..} logger cache = do
         postgresPool <- createPool
             (Postgres.connect cfgPostgresConnInfo)
             Postgres.close
@@ -49,5 +49,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         let ctx = Ctx
                   { ctxPostgresPool = postgresPool
                   , ctxMockUser     = cfgMockUser
+                  , ctxLogger       = logger
+                  , ctxCache        = cache
                   }
         pure (ctx, [])
