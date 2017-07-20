@@ -14,23 +14,24 @@ module Futurice.App.HoursApi.Logic (
     entryDeleteEndpoint,
     ) where
 
-import Control.Concurrent.STM (readTVarIO)
+import Control.Concurrent.STM    (readTVarIO)
 import Control.Lens
        (Getter, filtered, firstOf, foldOf, maximumOf, sumOf, to, withIndex,
        (<&>))
-import Data.Fixed             (Centi)
-import Data.List              (nubBy)
-import Data.Set.Lens          (setOf)
-import Data.Time              (addDays)
-import Futurice.Cache         (DynMapCache, cached)
-import Futurice.CryptoRandom  (CryptoGenError)
-import Futurice.Monoid        (Average (..))
+import Data.Fixed                (Centi)
+import Data.List                 (nubBy)
+import Data.Set.Lens             (setOf)
+import Data.Time                 (addDays)
+import Futurice.Cache            (DynMapCache, cached)
+import Futurice.CryptoRandom     (CryptoGenError)
+import Futurice.Monoid           (Average (..))
 import Futurice.Prelude
 import Futurice.Time
        (NDT (..), TimeUnit (..), ndtConvert, ndtConvert', ndtDivide)
 import Futurice.Trans.PureT
+import Numeric.Interval.NonEmpty ((...))
 import Prelude ()
-import Servant                (Handler, ServantErr (..), err400, err403)
+import Servant                   (Handler, ServantErr (..), err400, err403)
 
 import Control.Concurrent.Async.Lifted (Concurrently (..))
 
@@ -42,18 +43,73 @@ import qualified Data.Set as Set
 import qualified FUM
 import qualified PlanMill as PM
 
--- import Futurice.Generics
+-- Note: we don't import .Monad!
+import qualified Futurice.App.HoursApi.Class as H
 
 -------------------------------------------------------------------------------
 -- Endpoints
 -------------------------------------------------------------------------------
 
 -- | @GET /projects@
-projectEndpoint
+projectEndpoint :: H.MonadHours m => m [Project ReportableTask]
+projectEndpoint = newReportableProjects
+
+newReportableProjects :: H.MonadHours m => m [Project ReportableTask]
+newReportableProjects = do
+    now <- currentTime
+    today <- currentDay
+
+    -- Ask Planmill for reportable assignments
+    reportable <- filter (\ra -> now < ra ^. H.raFinish) <$> H.reportableAssignments
+
+    -- Tasks per project
+    let tasksPerProject :: Map PM.ProjectId (NonEmpty PM.TaskId)
+        tasksPerProject = Map.fromListWith (<>) $
+            reportable ^.. folded . to reportableAcc
+
+    projects <- for (Map.toList tasksPerProject) $ uncurry $ \pid tids -> do
+        project <- H.project pid
+        let tasks = sortBy compareTasks [] -- TODO
+        pure Project
+            { _projectId     = pid
+            , _projectName   = project ^. H.projectName
+            , _projectTasks  = tasks
+            , _projectClosed = False
+            }
+
+    pure $ sortBy compareProjects projects
+  where
+    reportableAcc :: H.ReportableAssignment -> (PM.ProjectId, NonEmpty PM.TaskId)
+    reportableAcc ra = (ra ^. H.raProjectId, pure $ ra ^. H.raTaskId)
+
+    -- compare latest entries dates
+    compareProjects :: Project ReportableTask -> Project ReportableTask -> Ordering
+    compareProjects a b = compareMaybes (maximumOf l a) (maximumOf l b)
+      where
+        l = projectTasks . folded . rtaskLatestEntry . folded . latestEntryDate
+
+    compareTasks :: ReportableTask -> ReportableTask -> Ordering
+    compareTasks a b = compareMaybes (maximumOf l a) (maximumOf l b)
+      where
+        l = rtaskLatestEntry . folded . latestEntryDate
+
+    -- 'Just' values are smaller. Note: reversed
+    compareMaybes :: Ord a => Maybe a -> Maybe a -> Ordering
+    compareMaybes (Just a) (Just b) = compare b a
+    compareMaybes (Just _) Nothing  = LT
+    compareMaybes Nothing  (Just _) = GT
+    compareMaybes Nothing  Nothing  = EQ
+
+-------------------------------------------------------------------------------
+-- Old Endpoints
+-------------------------------------------------------------------------------
+
+-- | @GET /projects@
+oldProjectEndpoint
     :: Ctx
     -> Maybe FUM.UserName
     -> Handler [Project ReportableTask]
-projectEndpoint ctx mfum = do
+oldProjectEndpoint ctx mfum = do
     now <- currentTime
     authorisedUser ctx mfum $ reportableProjects (ctxCache ctx) now
 

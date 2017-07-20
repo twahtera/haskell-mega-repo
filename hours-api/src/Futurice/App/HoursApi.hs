@@ -9,7 +9,7 @@
 module Futurice.App.HoursApi (defaultMain) where
 
 import Control.Concurrent.MVar (newMVar)
-import Control.Concurrent.STM  (atomically, newTVarIO, writeTVar)
+import Control.Concurrent.STM  (atomically, newTVarIO, writeTVar, readTVarIO)
 import Data.Pool               (createPool)
 import Futurice.CryptoRandom   (mkCryptoGen)
 import Futurice.Integrations
@@ -27,20 +27,33 @@ import Futurice.App.HoursApi.Ctx
 import Futurice.App.HoursApi.Logic
        (entryDeleteEndpoint, entryEditEndpoint, entryEndpoint, hoursEndpoint,
        projectEndpoint, userEndpoint)
+import Futurice.App.HoursApi.Monad (Hours, runHours)
 
 import qualified Data.HashMap.Strict as HM
 import qualified PlanMill            as PM
 import qualified PlanMill.Queries    as PMQ
+import qualified FUM
 
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours api"
-    :<|> projectEndpoint ctx
+    :<|> (\mfum -> authorisedUser ctx mfum projectEndpoint)
     :<|> userEndpoint ctx
     :<|> hoursEndpoint ctx
     :<|> entryEndpoint ctx
     :<|> entryEditEndpoint ctx
     :<|> entryDeleteEndpoint ctx
 
+authorisedUser
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> Hours a
+    -> Handler a
+authorisedUser ctx mfum action =
+    mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
+        pmData <- liftIO $ readTVarIO $ ctxPlanmillData ctx
+        (_fumUser, pmUser) <- maybe (throwError err403) pure $
+            pmData ^. planmillUserLookup . at fumUsername
+        runHours ctx pmUser action
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
