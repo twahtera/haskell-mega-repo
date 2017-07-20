@@ -72,6 +72,7 @@ dependencies:
   - scientific
   - semigroups
   - singleton-bool >= 0.1.2.0 # We need sboolEqRefl
+  - stm
   - swagger2
   - tdigest-ekg
   - text

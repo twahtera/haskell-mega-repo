@@ -13,6 +13,7 @@ import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
 import PlanMill.Types.Query (SomeQuery (..))
+import PlanMill.Worker      (workers)
 import Prelude ()
 import Servant
 
@@ -49,11 +50,14 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             (Postgres.connect connectionInfo)
             Postgres.close
             2 (10 :: NominalDiffTime) 20 -- stripes, ttl, resources
+        mgr <- newManager tlsManagerSettings
+        ws <- workers logger mgr cfg ["worker1", "worker2", "worker3"]
         let ctx = Ctx
                 { ctxCache        = cache
                 , ctxPlanmillCfg  = cfg
                 , ctxPostgresPool = postgresPool
                 , ctxLogger       = logger
+                , ctxWorkers      = ws
                 }
         let jobs =
                 -- See every 5 minutes, if there's something to update in cache

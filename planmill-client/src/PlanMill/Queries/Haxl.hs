@@ -10,6 +10,7 @@
 -- 'DataSource', we pass actual 'fetch' implementation in a 'State'
 module PlanMill.Queries.Haxl (
     initDataSourceSimpleIO,
+    initDataSourceWorkers,
     initDataSourceBatch,
     maxBatchSize,
     PlanmillBatchError (..),
@@ -28,6 +29,7 @@ import Data.Constraint           (Dict (..))
 import Futurice.CryptoRandom     (evalCRandTThrow', mkCryptoGen)
 import Numeric.Interval.NonEmpty (clamp)
 import PlanMill.Eval             (evalPlanMill)
+import PlanMill.Worker           (Workers, submitPlanMillE)
 
 -- For initDataSourceBatch
 import qualified Codec.Compression.GZip   as GZip
@@ -73,6 +75,15 @@ initDataSourceSimpleIO lgr cfg = QueryFunction $ \blockedFetches -> SyncFetch $ 
         . runLogT "planmill-simple" lgr
         . flip runReaderT cfg
         . evalCRandTThrow' prng
+
+-- | Query function using 'Workers'.
+initDataSourceWorkers :: Workers -> State Query
+initDataSourceWorkers w = QueryFunction $ \blockedFetches -> SyncFetch $
+    for_ blockedFetches $ \(BlockedFetch q v) ->
+        case (queryDict (Proxy :: Proxy FromJSON) q, queryDict (Proxy :: Proxy NFData) q) of
+            (Dict, Dict) -> do
+                res <- submitPlanMillE w (queryToRequest q)
+                putResult v res
 
 -- | This is batched query function.
 --

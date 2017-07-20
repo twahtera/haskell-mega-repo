@@ -72,7 +72,6 @@ library
       Futurice.App.PlanMillProxy
       Futurice.App.PlanMillProxy.API
       Futurice.App.PlanMillProxy.Config
-      Futurice.App.PlanMillProxy.H
       Futurice.App.PlanMillProxy.Logic
       Futurice.App.PlanMillProxy.Logic.Capacities
       Futurice.App.PlanMillProxy.Logic.Common
