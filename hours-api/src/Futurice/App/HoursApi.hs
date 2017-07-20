@@ -31,6 +31,7 @@ import Futurice.App.HoursApi.Monad (Hours, runHours)
 
 import qualified Data.HashMap.Strict as HM
 import qualified PlanMill            as PM
+import qualified PlanMill.Worker     as PM
 import qualified PlanMill.Queries    as PMQ
 import qualified FUM
 
@@ -38,7 +39,7 @@ server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours api"
     :<|> (\mfum -> authorisedUser ctx mfum projectEndpoint)
     :<|> userEndpoint ctx
-    :<|> hoursEndpoint ctx
+    :<|> (\mfum a b -> authorisedUser ctx mfum (hoursEndpoint a b))
     :<|> entryEndpoint ctx
     :<|> entryEditEndpoint ctx
     :<|> entryDeleteEndpoint ctx
@@ -74,7 +75,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         let integrConfig = makeIntegrationsConfig now lgr mgr config
 
         -- We start with empty planmill data
-        pmDataTVar <- newTVarIO $ PlanmillData
+        pmDataTVar <- newTVarIO PlanmillData
             { _planmillUserLookup   = mempty
             , _planmillProjects     = mempty
             , _planmillTasks        = mempty
@@ -88,17 +89,22 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             (\_ -> pure ())
             2 (3600 :: NominalDiffTime) 2
 
+        let pmCfg =(cfgPlanmillCfg config)
+        ws <- PM.workers lgr mgr pmCfg ["worker1", "worker2", "worker3"]
+
         let action = fetchPlanmillData integrConfig >>= atomically . writeTVar pmDataTVar
         let job = mkJob "update planmill data" action $ every 600
 
-        pure $ flip (,) [job] $ Ctx
-            { ctxPlanmillData = pmDataTVar
-            , ctxPlanmillCfg  = cfgPlanmillCfg config
-            , ctxMockUser     = cfgMockUser config
-            , ctxManager      = mgr
-            , ctxLoggerEnv    = mkLoggerEnv "hours-api" lgr
-            , ctxCache        = cache
-            , ctxCryptoPool   = cryptoGenPool
+        pure $ flip (,) [job] Ctx
+            { ctxPlanmillData        = pmDataTVar
+            , ctxPlanmillCfg         = cfgPlanmillCfg config
+            , ctxMockUser            = cfgMockUser config
+            , ctxManager             = mgr
+            , ctxLoggerEnv           = mkLoggerEnv "hours-api" lgr
+            , ctxCache               = cache
+            , ctxCryptoPool          = cryptoGenPool
+            , ctxPlanMillHaxlBaseReq = cfgPlanmillProxyReq config
+            , ctxWorkers             = ws
             }
 
     fetchPlanmillData :: IntegrationsConfig I I Proxy Proxy Proxy -> IO PlanmillData
@@ -113,7 +119,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             PMQ.capacitycalendars
         let taskProjects = HM.unions $ flip map ps'  $ \(_, (pr, ts')) ->
                 HM.fromList $ flip map ts' $ \t -> (t ^. PM.identifier, pr)
-        pure $ PlanmillData
+        pure PlanmillData
             { _planmillUserLookup   = pmLookupMap
             , _planmillProjects     = ps''
             , _planmillTasks        = ts

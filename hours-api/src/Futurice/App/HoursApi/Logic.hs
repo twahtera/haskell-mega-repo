@@ -29,7 +29,7 @@ import Futurice.Prelude
 import Futurice.Time
        (NDT (..), TimeUnit (..), ndtConvert, ndtConvert', ndtDivide)
 import Futurice.Trans.PureT
-import Numeric.Interval.NonEmpty ((...))
+import Numeric.Interval.NonEmpty (Interval, (...))
 import Prelude ()
 import Servant                   (Handler, ServantErr (..), err400, err403)
 
@@ -53,6 +53,54 @@ import qualified Futurice.App.HoursApi.Class as H
 -- | @GET /projects@
 projectEndpoint :: H.MonadHours m => m [Project ReportableTask]
 projectEndpoint = newReportableProjects
+
+-- | @GET /hours@
+hoursEndpoint :: H.MonadHours m => Maybe Day -> Maybe Day -> m HoursResponse
+hoursEndpoint ma mb = do
+    today <- currentDay
+    let a = fromMaybe today ma
+        b = fromMaybe today mb
+        interval = a ... b
+    newHoursResponse interval
+
+-------------------------------------------------------------------------------
+-- Logic
+-------------------------------------------------------------------------------
+
+newHoursResponse :: H.MonadHours m => Interval Day -> m HoursResponse
+newHoursResponse interval = do
+    reports <- H.timereports interval
+
+    let marked = undefined
+    let entries = undefined
+
+    -- reportable projects; the ones we can report
+    reportable <- newReportableProjects
+
+    -- holiday names
+    holidayNames <- mkHolidayNames <$> H.capacities interval
+
+    -- working hours
+    wh <- H.workingHours
+
+    pure HoursResponse
+        { _hoursResponseDefaultWorkHours   = wh
+        , _hoursResponseReportableProjects = reportable
+        , _hoursResponseMarkedProjects     = marked
+        , _hoursResponseMonths             = mkHoursMonth interval holidayNames entries
+        }
+  where
+    mkHolidayNames :: Foldable f => f H.Capacity -> Map Day DayType
+    mkHolidayNames = toMapOf (folded . to mk . folded . ifolded)
+      where
+        mk :: H.Capacity -> Maybe (Day, DayType)
+        mk c
+            | Just desc <- c ^. H.capacityDescription
+                                            = mk' (DayTypeHoliday desc)
+            | (c ^. H.capacityAmount) <= 0  = mk' DayTypeZero
+            | otherwise                     = Nothing
+          where
+            mk' x = Just (c ^. H.capacityDay, x)
 
 newReportableProjects :: H.MonadHours m => m [Project ReportableTask]
 newReportableProjects = do
@@ -100,6 +148,10 @@ newReportableProjects = do
     compareMaybes Nothing  (Just _) = GT
     compareMaybes Nothing  Nothing  = EQ
 
+-- | TODO: document
+isAbsence :: PM.Project -> Bool
+isAbsence p = PM.pCategory p == Just 900
+
 -------------------------------------------------------------------------------
 -- Old Endpoints
 -------------------------------------------------------------------------------
@@ -122,21 +174,6 @@ userEndpoint ctx mfum = do
     now <- currentTime
     -- liftIO $ threadDelay 1000000
     authorisedUser ctx mfum $ userResponse (ctxCache ctx) now
-
--- | @GET /hours@
-hoursEndpoint
-    :: Ctx
-    -> Maybe FUM.UserName
-    -> Maybe Day
-    -> Maybe Day
-    -> Handler HoursResponse
-hoursEndpoint ctx mfum start end = do
-    now <- currentTime
-    interval <- maybe (throwError err400 { errBody = "Interval parameters are required" }) pure interval'
-    authorisedUser ctx mfum $ \_fumUser pmUser pmData ->
-        hoursResponse (ctxCache ctx) now interval pmUser pmData
-  where
-    interval'    = (PM....) <$> start <*> end
 
 -- | Create new entry: @POST /entry@
 entryEndpoint
@@ -473,10 +510,6 @@ hoursResponse cache now interval pmUser pmData = do
         , _hoursResponseMonths             = mkHoursMonth interval holidayNames entries
         }
   where
-    -- TODO: hardcoded value
-    isAbsence :: PM.Project -> Bool
-    isAbsence p = PM.pCategory p == Just 900
-
     markedProject :: PM.ProjectId -> Set (PM.TaskId) -> ImplM (Project MarkedTask)
     markedProject pid tids = do
         (pname, closed, absence) <- case pmData ^? planmillProjects . ix pid . _1 of

@@ -37,6 +37,7 @@ library:
     - futurice-reports
     - futurice-servant
     - generics-sop
+    - haxl
     - http-client
     - http-client-tls
     - intervals

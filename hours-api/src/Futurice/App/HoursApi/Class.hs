@@ -44,7 +44,9 @@ import qualified PlanMill                    as PM
 -- We don't reuse "PlanMill" records, to make mocking simpler
 -- (i.e. we omit unrelevant fields).
 --
-class (MonadTime m, MonadLog m) => MonadHours m where
+-- /TODO:/ add 'MonadLog' pre-req
+--
+class (MonadTime m) => MonadHours m where
     -- Volatile things, we probably ask from PlanMill
 
     -- | Profile picture url.
@@ -141,7 +143,7 @@ data NewTimereport = NewTimereport
 data Capacity = Capacity
     { _capacityDay          :: !Day
     , _capacityAmount       :: !(NDT 'Hours Centi)
-    , _capacityDescription  :: !Text  -- ^ name of the day
+    , _capacityDescription  :: !(Maybe Text)  -- ^ name of the day
     }
   deriving (Eq, Show, Generic)
 

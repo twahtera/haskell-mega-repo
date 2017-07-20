@@ -1,85 +1,136 @@
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
 module Futurice.App.HoursApi.Monad (
     Hours,
     runHours,
     ) where
 
-import Control.Concurrent.STM (readTVarIO)
-import Control.Lens           (Getting, to)
-import Data.Monoid            (First)
-import Futurice.Cache         (DynMapCache, cached)
-import Futurice.CryptoRandom  (CryptoGenError)
+import Control.Concurrent.STM    (readTVarIO)
+import Control.Lens              (Getting, to)
+import Data.Aeson.Compat         (FromJSON)
+import Data.Constraint
+import Data.Monoid               (First)
+import Futurice.Cache            (DynMapCache, cachedIO)
+import Futurice.Constraint.Unit1 (Unit1)
+import Futurice.CryptoRandom     (CryptoGenError)
 import Futurice.Prelude
 import Futurice.Trans.PureT
 import Prelude ()
-import Servant                (Handler)
+import Servant                   (Handler)
+
+import qualified Haxl.Core as Haxl
 
 import Futurice.App.HoursApi.Class
 import Futurice.App.HoursApi.Ctx
 
-import qualified PlanMill as PM
+import qualified PlanMill              as PM
+import qualified PlanMill.Queries      as PMQ
+import qualified PlanMill.Queries.Haxl as PMQ
+import qualified PlanMill.Types.Query  as Q
+import qualified PlanMill.Worker       as PM
 
 data Env = Env
     { _envNow    :: !UTCTime
     , _envPmUser :: !PM.User
-    , _envCtx    :: !Ctx
-    , _envPmData :: !PlanmillData
     }
 
 makeLenses ''Env
-
-instance HasLoggerEnv      Env where loggerEnv      = envCtx . loggerEnv
-instance HasCryptoPool     Env where cryptoPool     = envCtx . cryptoPool
-instance PM.HasPlanMillCfg Env where planmillCfg    = envCtx . PM.planmillCfg
-instance HasHttpManager    Env where getHttpManager = view (envCtx . to getHttpManager)
 
 -- | A "real" implementation of 'MonadHours'.
 --
 -- /TODO:/ :)
 --
-newtype Hours a = Hours { unHours :: PureT CryptoGenError Env Handler a }
-  deriving (Functor, Applicative, Monad, MonadLog)
+newtype Hours a = Hours { unHours :: ReaderT Env (Haxl.GenHaxl ()) a }
+  deriving (Functor, Applicative, Monad)
 
 runHours :: Ctx -> PM.User -> Hours a -> Handler a
-runHours ctx pmUser m = do
+runHours ctx pmUser (Hours m) = liftIO $ do
     -- We ask current time only once.
     now <- currentTime
-    pmData <- liftIO $ readTVarIO (ctxPlanmillData ctx)
-    runPureT (unHours m) (env' now pmData)
+    let env = Env now pmUser
+    let haxl = runReaderT m env
+    let stateStore
+            = Haxl.stateSet (PMQ.initDataSourceBatch lgr mgr pmReq)
+            . Haxl.stateSet (PlanMillDataState (ctx ^. logger) (ctxCache ctx) (ctxWorkers ctx))
+            $ Haxl.stateEmpty
+    haxlEnv <- Haxl.initEnv stateStore ()
+    -- TODO: catch ServantErr
+    Haxl.runHaxl haxlEnv haxl
   where
-    env' :: UTCTime -> PlanmillData -> Env
-    env' now pmData = Env
-        { _envNow    = now
-        , _envPmUser = pmUser
-        , _envCtx    = ctx
-        , _envPmData = pmData
-        }
+    lgr   = ctx ^. logger
+    mgr   = ctxManager ctx
+    pmReq = ctxPlanMillHaxlBaseReq ctx
+    ws    = ctxWorkers ctx
 
 -------------------------------------------------------------------------------
 -- Utilities
 -------------------------------------------------------------------------------
 
 viewHours :: Getting a Env a -> Hours a
-viewHours l = Hours $ view l
+viewHours = Hours . view
 
 previewHours :: Getting (First a) Env a -> Hours (Maybe a)
-previewHours l = Hours $ preview l
+previewHours = Hours . preview
 
-cachedPlanmillAction
-    :: (Typeable a, PM.MonadPlanMillC (PureT CryptoGenError Env Handler) a)
-    => PM.PlanMill a
-    -> Hours a
-cachedPlanmillAction pm = Hours $ do
-    cache <- view (envCtx . to ctxCache)
-    cached cache 300 {- 5 minutes -} pm $ PM.planmillAction pm
+cachedPlanmillAction :: (Typeable a, FromJSON a, NFData a, Show a) => PM.PlanMill a -> Hours a
+cachedPlanmillAction = Hours . lift . Haxl.dataFetch . PlanMillRequestCached
 
-planmillAction
-    :: (Typeable a, PM.MonadPlanMillC ( PureT CryptoGenError Env Handler) a)
-    => PM.PlanMill a
-    -> Hours a
-planmillAction = Hours . PM.planmillAction
+planmillAction :: (Typeable a, FromJSON a, NFData a, Show a) => PM.PlanMill a -> Hours a
+planmillAction = Hours . lift . Haxl.dataFetch . PlanMillRequest
+
+instance PM.MonadPlanMillConstraint Hours where
+    type MonadPlanMillC Hours = Unit1
+    entailMonadPlanMillCVector _ _ = Sub Dict
+
+instance PM.MonadPlanMillQuery Hours where
+    planmillQuery q = case (showDict, typeableDict) of
+        (Dict, Dict) -> Hours $ lift $ Haxl.dataFetch q
+      where
+        typeableDict = Q.queryDict (Proxy :: Proxy Typeable) q
+        showDict     = Q.queryDict (Proxy :: Proxy Show)     q
+
+
+-------------------------------------------------------------------------------
+-- Haxl
+-------------------------------------------------------------------------------
+
+data PlanMillRequest a where
+    -- TODO: uncachedAction?
+    PlanMillRequest       :: (FromJSON a, NFData a, Show a, Typeable a) => PM.PlanMill a -> PlanMillRequest a
+    PlanMillRequestCached :: (FromJSON a, NFData a, Show a, Typeable a) => PM.PlanMill a -> PlanMillRequest a
+
+deriving instance Show (PlanMillRequest a)
+deriving instance Typeable PlanMillRequest
+deriving instance Eq (PlanMillRequest a)
+
+instance Haxl.ShowP PlanMillRequest where showp = show
+
+instance Hashable (PlanMillRequest a) where
+  hashWithSalt salt (PlanMillRequest r) =
+      salt `hashWithSalt` (0 :: Int) `hashWithSalt` r
+  hashWithSalt salt (PlanMillRequestCached r) =
+      salt `hashWithSalt` (1 :: Int) `hashWithSalt` r
+
+instance Haxl.StateKey PlanMillRequest where
+    data State PlanMillRequest = PlanMillDataState Logger DynMapCache PM.Workers
+
+instance Haxl.DataSourceName PlanMillRequest where
+  dataSourceName _ = "PlanMillRequest"
+
+instance Haxl.DataSource u PlanMillRequest where
+    fetch (PlanMillDataState lgr cache workers) _f _u blockedFetches = Haxl.SyncFetch $
+        for_ blockedFetches $ \(Haxl.BlockedFetch r v) -> case r of
+            PlanMillRequest pm -> PM.submitPlanMillE workers pm >>= Haxl.putResult v
+            PlanMillRequestCached pm -> do
+                let res' = PM.submitPlanMillE workers pm
+                res <- cachedIO lgr cache 300 {- 5 minutes #-} pm res'
+                Haxl.putResult v res
 
 -------------------------------------------------------------------------------
 -- Instance
@@ -102,14 +153,16 @@ instance MonadHours Hours where
             }
 
     project pid = do
-        mp <- previewHours $ envPmData . planmillProjects . ix pid . _1
-        case mp of
-            Nothing -> error "no project" -- TODO: make cachedIO pm request!
-            Just p -> pure Project
-                { _projectId     = p ^. PM.identifier
-                , _projectName   = p ^. to PM.pName
-                , _projectClosed = False -- TODO: make closed if absence!
-                }
+        mp <- Just <$> PMQ.project pid -- TODO: variant to catch PMQ exceptions
+        p <- case mp of
+            Nothing -> cachedPlanmillAction $ PM.project pid
+            Just p -> pure p
+
+        pure Project
+            { _projectId     = p ^. PM.identifier
+            , _projectName   = p ^. to PM.pName
+            , _projectClosed = False -- TODO: make closed if absence!
+            }
 {-
 
 -------------------------------------------------------------------------------

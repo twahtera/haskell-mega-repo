@@ -1,14 +1,16 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Futurice.App.HoursApi.Ctx where
 
-import Prelude ()
+import Control.Concurrent.STM (TVar)
+import Futurice.Cache         (DynMapCache)
 import Futurice.Prelude
-import Control.Concurrent.STM  (TVar)
-import Futurice.Cache          (DynMapCache)
 import Futurice.Trans.PureT
+import Prelude ()
 
 import qualified FUM
-import qualified PlanMill as PM
+import qualified Network.HTTP.Client as HTTP
+import qualified PlanMill            as PM
+import qualified PlanMill.Worker     as PM
 
 -------------------------------------------------------------------------------
 -- Planmill data
@@ -44,13 +46,15 @@ makeLenses ''PlanmillData
 -------------------------------------------------------------------------------
 
 data Ctx = Ctx
-    { ctxPlanmillData :: !(TVar PlanmillData)
-    , ctxMockUser     :: !(Maybe FUM.UserName)
-    , ctxCache        :: !DynMapCache
-    , ctxLoggerEnv    :: !LoggerEnv
-    , ctxManager      :: !Manager
-    , ctxPlanmillCfg  :: !PM.Cfg
-    , ctxCryptoPool   :: !CryptoPool
+    { ctxPlanmillData        :: !(TVar PlanmillData) -- todo remove?
+    , ctxMockUser            :: !(Maybe FUM.UserName)
+    , ctxCache               :: !DynMapCache
+    , ctxLoggerEnv           :: !LoggerEnv -- todo change to Logger?
+    , ctxManager             :: !Manager
+    , ctxWorkers             :: !PM.Workers
+    , ctxPlanMillHaxlBaseReq :: !HTTP.Request
+    , ctxPlanmillCfg         :: !PM.Cfg -- remove?
+    , ctxCryptoPool          :: !CryptoPool -- remove?
     }
 
 instance PM.HasPlanMillCfg Ctx where
@@ -69,4 +73,4 @@ instance HasCryptoPool Ctx where
         ctx { ctxCryptoPool = x }
 
 instance HasHttpManager Ctx where
-    getHttpManager = ctxManager 
+    getHttpManager = ctxManager
