@@ -75,9 +75,11 @@ library
   exposed-modules:
       Futurice.App.HoursApi
       Futurice.App.HoursApi.API
+      Futurice.App.HoursApi.Class
       Futurice.App.HoursApi.Config
       Futurice.App.HoursApi.Ctx
       Futurice.App.HoursApi.Logic
+      Futurice.App.HoursApi.Monad
       Futurice.App.HoursApi.Types
       Futurice.App.HoursMock
       Futurice.App.HoursMock.Config
