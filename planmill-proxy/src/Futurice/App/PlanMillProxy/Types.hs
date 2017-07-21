@@ -15,6 +15,7 @@ import Futurice.PostgresPool
 import Futurice.Prelude
 import Futurice.Servant           (DynMapCache)
 import PlanMill                   (Cfg)
+import PlanMill.Worker            (Workers)
 import Prelude ()
 
 -------------------------------------------------------------------------------
@@ -26,6 +27,7 @@ data Ctx = Ctx
     , ctxPlanmillCfg  :: !Cfg
     , ctxPostgresPool :: !(Pool Connection)  -- TODO: write a lib to handle these
     , ctxLogger       :: !Logger
+    , ctxWorkers      :: !Workers
     }
 
 instance HasPostgresPool Ctx where

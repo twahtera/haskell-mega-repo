@@ -81,6 +81,7 @@ library
     , scientific
     , semigroups
     , singleton-bool >= 0.1.2.0
+    , stm
     , swagger2
     , tdigest-ekg
     , text
@@ -137,6 +138,7 @@ library
       PlanMill.Types.User
       PlanMill.Types.UserCapacity
       PlanMill.Types.Vacation
+      PlanMill.Worker
   default-language: Haskell2010
 
 executable planmill-client
@@ -196,6 +198,7 @@ executable planmill-client
     , scientific
     , semigroups
     , singleton-bool >= 0.1.2.0
+    , stm
     , swagger2
     , tdigest-ekg
     , text
@@ -276,6 +279,7 @@ executable pm-cli
     , scientific
     , semigroups
     , singleton-bool >= 0.1.2.0
+    , stm
     , swagger2
     , tdigest-ekg
     , text
@@ -356,6 +360,7 @@ test-suite integration
     , scientific
     , semigroups
     , singleton-bool >= 0.1.2.0
+    , stm
     , swagger2
     , tdigest-ekg
     , text
@@ -431,6 +436,7 @@ test-suite test
     , scientific
     , semigroups
     , singleton-bool >= 0.1.2.0
+    , stm
     , swagger2
     , tdigest-ekg
     , text

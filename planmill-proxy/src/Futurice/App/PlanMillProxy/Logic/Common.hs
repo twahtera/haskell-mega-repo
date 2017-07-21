@@ -6,24 +6,23 @@
 #endif
 module Futurice.App.PlanMillProxy.Logic.Common where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Monad.Catch    (handle)
-import Control.Monad.PlanMill (planmillQuery)
+import Data.Aeson.Compat      (FromJSON)
 import Data.Binary.Get        (Get, runGetOrFail)
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, SemanticVersion, Version,
        structuralInfo, structuralInfoSha1ByteStringDigest)
 import Data.Constraint
+import Futurice.Prelude
 import Futurice.Servant       (CachePolicy (..), genCachedIO)
 import GHC.TypeLits           (natVal)
+import Prelude ()
 
-import PlanMill.Types.Query
-       (Query (..), queryDict)
+import PlanMill.Types.Query (Query (..), queryDict, queryToRequest)
+import PlanMill.Worker      (submitPlanMill)
 
 import qualified Database.PostgreSQL.Simple as Postgres
 
-import Futurice.App.PlanMillProxy.H
 import Futurice.App.PlanMillProxy.Types (Ctx (..))
 
 -------------------------------------------------------------------------------
@@ -46,7 +45,7 @@ capacityAge = "'12 hours'"
 type LIO = LogT IO
 
 runLIO :: Ctx -> LIO a -> IO a
-runLIO ctx =  runLogT' ctx 
+runLIO =  runLogT'
 
 -------------------------------------------------------------------------------
 -- Utiltities
@@ -54,17 +53,18 @@ runLIO ctx =  runLogT' ctx
 
 -- | Run query on real planmill backend.
 fetchFromPlanMill :: Ctx -> Query a -> LIO a
-fetchFromPlanMill ctx q = case typeableDict of
-    Dict -> liftIO
-        -- TODO: add cache cleanup
-        $ genCachedIO RequestNew logger cache (10 * 60) q
-        $ runH lgr cfg $ planmillQuery q
+fetchFromPlanMill ctx q = case (typeableDict, fromJsonDict, nfdataDict) of
+    (Dict, Dict, Dict) -> liftIO $
+        genCachedIO RequestNew logger cache (10 * 60) q $
+            submitPlanMill ws (queryToRequest q)
   where
     typeableDict = queryDict (Proxy :: Proxy Typeable) q
-    logger       = ctxLogger ctx
-    cache        = ctxCache ctx
-    cfg          = ctxPlanmillCfg ctx
-    lgr          = ctxLogger ctx
+    fromJsonDict = queryDict (Proxy :: Proxy FromJSON) q
+    nfdataDict   = queryDict (Proxy :: Proxy NFData) q
+
+    ws     = ctxWorkers ctx
+    logger = ctxLogger ctx
+    cache  = ctxCache ctx
 
 handleSqlError :: a -> IO a -> LIO a
 handleSqlError x action = handle (omitSqlError x) $ liftIO action
