@@ -1,9 +1,13 @@
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# LANGUAGE ApplicativeDo        #-}
+#endif
 module Futurice.App.HoursApi.Logic (
     projectEndpoint,
     userEndpoint,
@@ -130,13 +134,13 @@ hoursResponse interval = do
                 { _mtaskId      = tid
                 , _mtaskName    = t ^. H.taskName
                 , _mtaskClosed  = now > t ^. H.taskFinish
-                , _mtaskAbsence = False -- TODO
+                , _mtaskAbsence = p ^. H.projectAbsence
                 }
         pure Project
             { _projectId     = pid
             , _projectName   = p ^. H.projectName
             , _projectTasks  = tasks
-            , _projectClosed = False -- TODO
+            , _projectClosed = p ^. H.projectClosed
             }
 
 reportableProjects :: H.MonadHours m => m [Project ReportableTask]
@@ -154,11 +158,20 @@ reportableProjects = do
 
     projects <- for (Map.toList tasksPerProject) $ uncurry $ \pid tids -> do
         project <- H.project pid
-        let tasks = sortBy compareTasks [] -- TODO
+        tasks <- for (toList tids) $ \tid -> do
+            t <- H.task tid
+            le <- H.latestEntry tid
+            pure ReportableTask
+                { _rtaskId             = t ^. H.taskId
+                , _rtaskName           = t ^. H.taskName
+                , _rtaskClosed         = False
+                , _rtaskLatestEntry    = le
+                , _rtaskHoursRemaining = Nothing
+                }
         pure Project
             { _projectId     = pid
             , _projectName   = project ^. H.projectName
-            , _projectTasks  = tasks
+            , _projectTasks  = sortBy compareTasks tasks
             , _projectClosed = False
             }
 
@@ -184,10 +197,6 @@ reportableProjects = do
     compareMaybes (Just _) Nothing  = LT
     compareMaybes Nothing  (Just _) = GT
     compareMaybes Nothing  Nothing  = EQ
-
--- | TODO: document
-isAbsence :: PM.Project -> Bool
-isAbsence p = PM.pCategory p == Just 900
 
 userResponse :: forall m. H.MonadHours m => m User
 userResponse = User

@@ -10,6 +10,7 @@ module Futurice.App.HoursApi.Class (
     Project (..),
     projectName,
     projectClosed,
+    projectAbsence,
     -- ** Tasks
     Task (..),
     taskId,
@@ -140,9 +141,10 @@ data Task = Task
   deriving (Eq, Show, Generic)
 
 data Project = Project
-    { _projectId     :: !PM.ProjectId
-    , _projectName   :: !Text
-    , _projectClosed :: !Bool
+    { _projectId      :: !PM.ProjectId
+    , _projectName    :: !Text
+    , _projectClosed  :: !Bool
+    , _projectAbsence :: !Bool
     }
   deriving (Eq, Show, Generic)
 

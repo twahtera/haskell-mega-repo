@@ -189,7 +189,9 @@ instance MonadHours Hours where
         pure Project
             { _projectId     = p ^. PM.identifier
             , _projectName   = p ^. to PM.pName
-            , _projectClosed = False -- TODO: make closed if absence!
+            , _projectClosed = isAbsence p
+              -- TODO: closed if it's absence, but maybe be closed othersie
+            , _projectAbsence = isAbsence p
             }
 
     task tid = do
@@ -198,6 +200,7 @@ instance MonadHours Hours where
             { _taskId        = t ^. PM.identifier
             , _taskName      = PM.taskName t
             -- TODO: task should have project!
+            -- Investigate when PM returns tasks without projectId
             , _taskProjectId = fromMaybe (PM.Ident 0) (PM.taskProject t)
             , _taskFinish    = PM.taskFinish t
             }
@@ -236,13 +239,16 @@ instance MonadHours Hours where
             , _timereportType      = billableStatus (PM.trProject tr) (PM.trBillableStatus tr)
             }
 
-
 -- TODO: we hard code the non-billable enumeration value.
 -- TODO: absences should be EntryTypeOther, seems that Nothing projectId is the thing there.
 billableStatus :: Maybe PM.ProjectId -> Int -> T.EntryType
 billableStatus Nothing 3 = T.EntryTypeOther
 billableStatus _ 3       = T.EntryTypeNotBillable
 billableStatus _ _       = T.EntryTypeBillable
+
+-- | Absences go into magic project.
+isAbsence :: PM.Project -> Bool
+isAbsence p = PM.pCategory p == Just 900
 
 -- | Asks from Planmill Proxy, if it doesn't know ask from PlanMill directly.
 withFallback
