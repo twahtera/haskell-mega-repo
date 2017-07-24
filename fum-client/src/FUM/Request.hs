@@ -17,7 +17,6 @@ import Prelude ()
 import Control.Monad.Http.Class (MonadHttp, httpLbs)
 import Data.Aeson.Compat        (FromJSON (..), decode, withObject, (.:))
 
-import qualified Data.Text.Encoding  as TE (encodeUtf8)
 import qualified Data.Vector         as V (empty)
 import qualified Network.HTTP.Client as H
                  (Request (..), parseUrlThrow, responseBody)
@@ -63,7 +62,7 @@ mkReq url = do
     AuthToken token <- view authToken
     BaseUrl base <- view baseUrl
     baseReq <- H.parseUrlThrow $ base <> url
-    let authHeader = ("Authorization", TE.encodeUtf8 $ "Token " <> token)
+    let authHeader = ("Authorization", encodeUtf8 $ "Token " <> token)
     return $ baseReq { H.requestHeaders = authHeader : H.requestHeaders baseReq }
 
 getMulti

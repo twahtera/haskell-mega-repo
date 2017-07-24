@@ -37,6 +37,7 @@ import Data.Aeson                (encode, pairs, (.=))
 import Data.Aeson.Encoding       (encodingToLazyByteString, list, pair)
 import Data.Constraint           (Constraint)
 import Data.Swagger              (NamedSchema (..))
+import Data.Text.Encoding        (decodeUtf8)
 import Futurice.Constraint.Unit1 (Unit1)
 import Futurice.Generics
 import Futurice.IsMaybe
@@ -51,7 +52,6 @@ import Servant.CSV.Cassava       (CSV', EncodeOpts (..))
 
 import qualified Data.Csv           as Csv
 import qualified Data.Set           as Set
-import qualified Data.Text.Encoding as TE
 import qualified Data.Tuple.Strict  as S
 import qualified Generics.SOP       as SOP
 import qualified PlanMill           as PM
@@ -163,7 +163,7 @@ columnControl (ColumnData colname xs) = largemed_ 6 $ div_ [ class_ "futu-report
         "Filter values"
         select_ [ class_ "futu-report-filter", multiple_ "multiple" ] $
             for_ xs' $ \x->
-                option_ [ value_ $ TE.decodeUtf8 $ encode x ^. strict ] $
+                option_ [ value_ $ decodeUtf8 $ encode x ^. strict ] $
                     reportValueHtml x
   where
     colType    = reportValueType (Proxy :: Proxy a)

@@ -10,6 +10,7 @@ import PlanMill.Internal.Prelude
 import Control.Monad.Http   (MonadHttp (..), httpLbs)
 import Data.Aeson.Compat    (eitherDecode)
 import Data.TDigest.Metrics (MonadMetrics (..))
+import Data.Text.Encoding   (decodeUtf8)
 import Data.Unique          (hashUnique, newUnique)
 import Network.HTTP.Client
        (Request, RequestBody (..), method, parseRequest, path, queryString,
@@ -23,7 +24,6 @@ import qualified Data.ByteString.Char8  as BS8
 import qualified Data.ByteString.Lazy   as LBS
 import qualified Data.Map               as Map
 import qualified Data.Text              as T
-import qualified Data.Text.Encoding     as TE
 import qualified Data.Vector            as V
 
 -- PlanMill import
@@ -89,7 +89,7 @@ evalPlanMill pm = do
             writeMetric "pmreq" dur'
             if isn't _Empty (responseBody res)
                 then
-                    -- logTrace_ $ "response body: " <> TE.decodeUtf8 (responseBody res ^. strict)
+                    -- logTrace_ $ "response body: " <> decodeUtf8 (responseBody res ^. strict)
                     if statusIsSuccessful (responseStatus res)
                         then parseResult url $ responseBody res
                         else throwM $ parseError url $ responseBody res
@@ -100,7 +100,7 @@ evalPlanMill pm = do
     setQueryString' :: QueryString -> Request -> Request
     setQueryString' qs = setQueryString (f <$> Map.toList qs)
       where
-        f (a, b) = (TE.encodeUtf8 a, Just $ TE.encodeUtf8 b)
+        f (a, b) = (encodeUtf8 a, Just $ encodeUtf8 b)
 
     parseResult :: forall b .(FromJSON b) => String -> LBS.ByteString -> m b
     parseResult url body =

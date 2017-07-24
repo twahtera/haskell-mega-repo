@@ -26,10 +26,10 @@ import Numeric.Interval.NonEmpty ((...))
 import Prelude ()
 import Servant
 import Servant.Chart             (Chart (..))
+import Data.Text.Encode          (decodeUtf8)
 
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text            as T
-import qualified Data.Text.Encoding   as TE
 import qualified GitHub               as GH
 
 import Futurice.App.Reports.API
@@ -287,7 +287,7 @@ ctxToIntegrationsConfig now (_cache, mgr, lgr, Config {..}) = MkIntegrationsConf
 repos :: Manager -> Text -> IO [GitHubRepo]
 repos mgr url = do
     req <- parseUrlThrow $ T.unpack url
-    res <- TE.decodeUtf8 . LBS.toStrict . responseBody <$> httpLbs req mgr
+    res <- decodeUtf8 . LBS.toStrict . responseBody <$> httpLbs req mgr
     return $ mapMaybe f $ T.lines res
   where
     f line = case T.words line of

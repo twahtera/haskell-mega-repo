@@ -12,7 +12,6 @@ import PlanMill.Internal.Prelude
 import Futurice.EnvConfig        (FromEnvVar (..))
 
 import qualified Data.ByteString    as BS
-import qualified Data.Text.Encoding as TE
 
 
 -- | Unique 4-8 characters long string composed of upper and lower case letters
@@ -34,7 +33,7 @@ instance IsString ApiKey where
     fromString = ApiKey . fromString
 
 instance FromJSON ApiKey where
-    parseJSON = withText "Planmill apikey" $ pure . ApiKey . TE.encodeUtf8
+    parseJSON = withText "Planmill apikey" $ pure . ApiKey . encodeUtf8
 
 instance FromEnvVar ApiKey where
     fromEnvVar = fmap ApiKey . fromEnvVar
