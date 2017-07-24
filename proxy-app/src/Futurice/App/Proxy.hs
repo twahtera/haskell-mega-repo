@@ -220,20 +220,36 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
     let u' = decodeLatin1 u
         p' = decodeLatin1 p
         endpoint = decodeLatin1 $ rawPathInfo req
-    res <- Postgres.query conn
-        credentialCheckQuery
-        (u', p', endpoint) :: IO [Postgres.Only Int]
-    case res of
-        [] -> runLogT "checkCreds" (ctxLogger ctx) $ do
-            logAttention "Invalid login with" $ object
-                [ "username" .= u'
-                , "endpoint" .= endpoint
-                ]
-            pure False
-        _ : _ -> do
-            _ <- logAccess conn u' endpoint
-            pure True
+    case match isSwaggerReg endpoint of
+        Nothing -> regularCheck conn u' p' endpoint
+        Just _  -> swaggerCheck conn u' p' endpoint
   where
+    regularCheck :: Postgres.Connection -> Text -> Text -> Text -> IO Bool
+    regularCheck conn u' p' endpoint = do
+        res <- Postgres.query conn (fromString credentialAndEndpointCheck)
+            (u', p', endpoint) :: IO [Postgres.Only Int]
+        case res of
+            []    -> logInvalidLogin u' endpoint
+            _ : _ -> do
+                _ <- logAccess conn u' endpoint
+                pure True
+
+    swaggerCheck :: Postgres.Connection -> Text -> Text -> Text -> IO Bool
+    swaggerCheck conn u' p' endpoint = do
+        res <- Postgres.query conn (fromString credentialCheck)
+            (u', p') :: IO [Postgres.Only Int]
+        case res of
+            []    -> logInvalidLogin u' endpoint
+            _ : _ -> pure True
+
+    logInvalidLogin :: Text -> Text -> IO Bool
+    logInvalidLogin u' endpoint = runLogT "checkCreds" (ctxLogger ctx) $ do
+        logAttention "Invalid login with " $ object
+            [ "username" .= u'
+            , "endpoint" .= endpoint
+            ]
+        pure False
+
     -- | Logs user, and requested endpoint if endpoint is not swagger-related.
     logAccess :: Postgres.Connection -> Text -> Text -> IO ()
     logAccess conn user endp =
@@ -245,10 +261,13 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
     isSwaggerReg :: RE' Text
     isSwaggerReg = string "/swagger.json" <|> string "/swagger-ui" *> (T.pack <$> many anySym)
 
-    credentialCheckQuery :: Postgres.Query
-    credentialCheckQuery = fromString $ unwords $
+    credentialCheck :: String
+    credentialCheck = unwords
         [ "SELECT 1 FROM proxyapp.credentials"
         , "WHERE username = ? AND passtext = crypt(?, passtext)"
-        , "AND ? LIKE endpoint || '%'"
         , ";"
         ]
+
+    credentialAndEndpointCheck :: String
+    credentialAndEndpointCheck = init credentialCheck
+        ++ " AND ? LIKE endpoint || '%';"
