@@ -38,7 +38,7 @@ import qualified FUM
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours api"
     :<|> (\mfum -> authorisedUser ctx mfum projectEndpoint)
-    :<|> userEndpoint ctx
+    :<|> (\mfum -> authorisedUser ctx mfum userEndpoint)
     :<|> (\mfum a b -> authorisedUser ctx mfum (hoursEndpoint a b))
     :<|> entryEndpoint ctx
     :<|> entryEditEndpoint ctx
@@ -52,9 +52,9 @@ authorisedUser
 authorisedUser ctx mfum action =
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
         pmData <- liftIO $ readTVarIO $ ctxPlanmillData ctx
-        (_fumUser, pmUser) <- maybe (throwError err403) pure $
+        (fumUser, pmUser) <- maybe (throwError err403) pure $
             pmData ^. planmillUserLookup . at fumUsername
-        runHours ctx pmUser action
+        runHours ctx pmUser (fromMaybe "" $ fumUser ^. FUM.userThumbUrl . lazy) action
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig

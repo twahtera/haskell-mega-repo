@@ -15,14 +15,23 @@ module Futurice.App.HoursApi.Class (
     taskId,
     taskName,
     taskProjectId,
+    taskFinish,
     -- ** Timereports
     Timereport (..),
+    timereportId,
+    timereportTaskId,
+    timereportProjectId,
+    timereportDay,
+    timereportComment,
+    timereportAmount,
+    timereportType,
+    -- ** New timereport
     NewTimereport (..),
     -- ** Capacity
     Capacity (..),
     capacityDay,
     capacityAmount,
-    capacityDescription, 
+    capacityDescription,
     -- ** Reportable assignment
     ReportableAssignment (..),
     raFinish,
@@ -51,6 +60,12 @@ class (MonadTime m) => MonadHours m where
 
     -- | Profile picture url.
     profilePictureUrl :: m Text
+
+    -- | Profile first name.
+    profileFirstName :: m Text
+
+    -- | Profile last name.
+    profileLastName :: m Text
 
     -- | My remaining vacations.
     vacationRemaining :: m (NDT 'Days Centi)
@@ -120,6 +135,7 @@ data Task = Task
     { _taskId        :: !PM.TaskId
     , _taskName      :: !Text
     , _taskProjectId :: !PM.ProjectId
+    , _taskFinish    :: !UTCTime
     }
   deriving (Eq, Show, Generic)
 
@@ -131,12 +147,21 @@ data Project = Project
   deriving (Eq, Show, Generic)
 
 data Timereport = Timereport
-    {
+    { _timereportId        :: !PM.TimereportId
+    , _timereportTaskId    :: !PM.TaskId
+    , _timereportProjectId :: !PM.ProjectId
+    , _timereportDay       :: !Day
+    , _timereportComment   :: !Text
+    , _timereportAmount    :: !(NDT 'Hours Centi)
+    , _timereportType      :: !T.EntryType
     }
   deriving (Eq, Show, Generic)
 
 data NewTimereport = NewTimereport
-    {
+    { newTimereportTaskId  :: !PM.Task
+    , newTimereportDay     :: !Day
+    , newTimereportAmount  :: !(NDT 'Hours Centi)
+    , newTimereportComment :: !Text
     }
   deriving (Eq, Show, Generic)
 
