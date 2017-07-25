@@ -44,7 +44,6 @@ import Futurice.Time
 import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
 
 import qualified Data.Aeson.Extra   as Aeson
-import qualified Data.Text.Encoding as TE
 
 dayFromZ :: Aeson.Z -> Day
 dayFromZ = zonedTimeDay . Aeson.getZ
@@ -53,7 +52,7 @@ zonedTimeDay :: ZonedTime -> Day
 zonedTimeDay = localDay . zonedTimeToLocalTime
 
 bsShow :: Show a => a -> ByteString
-bsShow = TE.encodeUtf8 . textShow
+bsShow = encodeUtf8 . textShow
 
 utcTimeToInteger :: UTCTime -> Integer
 utcTimeToInteger = round . utcTimeToPOSIXSeconds

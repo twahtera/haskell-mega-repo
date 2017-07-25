@@ -19,7 +19,6 @@ import Futurice.Lucid.Foundation (HtmlT, ToHtml (..), class_, em_, span_)
 import Text.Trifecta
 
 import qualified Data.Text                    as T
-import qualified Data.Text.Encoding           as TE
 import qualified Text.PrettyPrint.ANSI.Leijen as PP
 
 import Futurice.App.Checklist.Types.ContractType
@@ -118,7 +117,7 @@ parseTaskAppliance = p . T.toLower . T.strip
     p :: Text -> Either String TaskAppliance
     p ""    = Right TAAll
     p "all" = Right TAAll
-    p t     = case parseByteString taP mempty (TE.encodeUtf8 t) of
+    p t     = case parseByteString taP mempty (encodeUtf8 t) of
         Success q -> Right q
         Failure e -> Left $ PP.displayS (PP.renderCompact  $ _errDoc e) ""
 

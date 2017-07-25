@@ -17,7 +17,6 @@ import System.IO           (hPutStrLn, stderr)
 
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text            as T
-import qualified Data.Text.Encoding   as TE
 
 -- Avatar modules
 import Futurice.App.Avatar.API
@@ -62,7 +61,7 @@ mkAvatar (logger, cache, mgr) (Just url) msize grey = mk $ do
     f err = ServantErr
         500
         "Avatar conversion error"
-        (LBS.fromStrict . TE.encodeUtf8 . T.pack $ err)
+        (LBS.fromStrict . encodeUtf8 . T.pack $ err)
         []
 
 server :: Ctx -> Server AvatarAPI

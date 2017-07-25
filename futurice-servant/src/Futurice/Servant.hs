@@ -67,6 +67,7 @@ import Data.Char                            (isAlpha)
 import Data.Constraint                      (Dict (..))
 import Data.Swagger                         hiding (port)
 import Data.TDigest.Metrics                 (registerTDigest)
+import Data.Text.Encoding                   (decodeLatin1)
 import Development.GitRev                   (gitCommitDate, gitHash)
 import Futurice.Cache
        (CachePolicy (..), DynMapCache, cachedIO, genCachedIO)
@@ -96,7 +97,6 @@ import System.Remote.Monitoring             (forkServer, serverMetricStore)
 
 import qualified Data.Aeson               as Aeson
 import qualified Data.Text                as T
-import qualified Data.Text.Encoding       as TE
 import qualified Data.UUID.Types          as UUID
 import qualified FUM
 import qualified Futurice.DynMap          as DynMap
@@ -288,7 +288,7 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
         & Warp.setPort p
         & Warp.setOnException (onException logger)
         & Warp.setOnExceptionResponse onExceptionResponse
-        & Warp.setServerName (TE.encodeUtf8 t)
+        & Warp.setServerName (encodeUtf8 t)
 
     onException logger mreq e = do
         runLogT "warp" logger $ do
@@ -331,7 +331,7 @@ instance HasServer api context => HasServer (SSOUser :> api) context where
     route Proxy context subserver =
         route (Proxy :: Proxy api) context (passToServer subserver ssoUser)
       where
-        ssoUser req = FUM.UserName . T.filter isAlpha . TE.decodeLatin1 <$>
+        ssoUser req = FUM.UserName . T.filter isAlpha . decodeLatin1 <$>
             lookup "REMOTE-USER" (requestHeaders req)
 
 instance HasLink api => HasLink (SSOUser :> api) where
