@@ -10,7 +10,6 @@ import PlanMill.Internal.Prelude
 import Control.Monad.Http   (MonadHttp (..), httpLbs)
 import Data.Aeson.Compat    (eitherDecode)
 import Data.TDigest.Metrics (MonadMetrics (..))
-import Data.Text.Encoding   (decodeUtf8)
 import Data.Unique          (hashUnique, newUnique)
 import Network.HTTP.Client
        (Request, RequestBody (..), method, parseRequest, path, queryString,
@@ -89,7 +88,7 @@ evalPlanMill pm = do
             writeMetric "pmreq" dur'
             if isn't _Empty (responseBody res)
                 then
-                    -- logTrace_ $ "response body: " <> decodeUtf8 (responseBody res ^. strict)
+                    -- logTrace_ $ "response body: " <> decodeUtf8Lenient (responseBody res ^. strict)
                     if statusIsSuccessful (responseStatus res)
                         then parseResult url $ responseBody res
                         else throwM $ parseError url $ responseBody res
