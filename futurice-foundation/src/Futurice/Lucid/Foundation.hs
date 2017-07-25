@@ -168,4 +168,4 @@ vendorFiles :: [(FilePath, ByteString)]
 vendorFiles = $(mkRecursiveEmbedded "vendor")
 
 vendorServer :: Server Raw
-vendorServer = staticApp $ embeddedSettings vendorFiles
+vendorServer = Tagged $ staticApp $ embeddedSettings vendorFiles

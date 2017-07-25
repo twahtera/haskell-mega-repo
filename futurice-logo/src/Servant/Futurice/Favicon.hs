@@ -12,7 +12,7 @@ module Servant.Futurice.Favicon (
     serveFutuFavicon,
     ) where
 
-import Prelude        ()
+import Prelude ()
 import Prelude.Compat
 
 import Codec.Picture       (encodePng)
@@ -21,9 +21,9 @@ import Data.Tagged         (Tagged (..), untag)
 import Data.Typeable       (Typeable)
 import Futurice.Colour     (Colour, SColour (..))
 import Futurice.Logo       (makeLogo)
-import Servant.API
+import Servant.API         (MimeRender (..), (:>), Get)
 import Servant.JuicyPixels (PNG)
-import Servant.Server
+import Servant.Server      (Server)
 
 type FutuFaviconAPI (c :: Colour) = "favicon.ico" :> Get '[PNG] (FutuFavicon c)
 

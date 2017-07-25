@@ -70,6 +70,22 @@ hoursEndpoint ma mb = do
 userEndpoint :: H.MonadHours m => m User
 userEndpoint = userResponse
 
+
+-- | Create new entry: @POST /entry@
+entryEndpoint :: H.MonadHours m => EntryUpdate -> m EntryUpdateResponse
+entryEndpoint eu = do
+        task <- H.task (eu ^. euTaskId) -- there should be a task
+
+        H.addTimereport H.NewTimereport
+            { H._newTimereportTaskId  = eu ^. euTaskId
+            , H._newTimereportDay     = eu ^. euDate
+            , H._newTimereportAmount  = eu ^. euHours
+            , H._newTimereportComment = fromMaybe "" $ eu ^. euDescription
+            }
+
+        -- Building the response
+        entryUpdateResponse (eu ^. euDate)
+
 -------------------------------------------------------------------------------
 -- Logic
 -------------------------------------------------------------------------------
@@ -210,45 +226,15 @@ userResponse = User
     utzResponse :: m Float
     utzResponse = pure 110 -- TODO
 
+entryUpdateResponse :: H.MonadHours m => Day -> m EntryUpdateResponse
+entryUpdateResponse d =
+    EntryUpdateResponse <$> userResponse <*> hoursResponse interval
+  where
+    interval = d ... d
+
 -------------------------------------------------------------------------------
 -- Old Endpoints
 -------------------------------------------------------------------------------
-
-
--- | Create new entry: @POST /entry@
-entryEndpoint
-    :: Ctx
-    -> Maybe FUM.UserName
-    -> EntryUpdate
-    -> Handler EntryUpdateResponse
-entryEndpoint ctx mfum eu = do
-    now <- currentTime
-    authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
-        let task' = pmData ^? planmillTasks . ix (eu ^. euTaskId)
-        task <- maybe (logAttention_ "cannot find task" >> lift (throwError err400 { errBody = "Unknown task" })) pure task'
-
-        {-
-        when (PM.taskProject task /= Just (eu ^. euProjectId)) $ do
-            logAttention "Task and project ids don't match" (PM.taskProject task, eu ^. euProjectId, eu)
-            throwError err400 { errBody = "ProjectId and TaskId don't agree" }
-        -}
-
-        let newTimeReport = PM.NewTimereport
-              { PM.ntrTask    = eu ^. euTaskId
-              , PM.ntrStart   = eu ^. euDate
-              , PM.ntrAmount  = fmap truncate $ ndtConvert $ eu ^. euHours
-              , PM.ntrComment = fromMaybe "" $ eu ^. euDescription
-              , PM.ntrUser    = pmUser ^. PM.identifier
-              }
-
-        _ <- PM.planmillAction $ PM.addTimereport newTimeReport
-
-        -- TODO: remove
-        logTrace_ (textShow task)
-        logTrace_ (textShow newTimeReport)
-
-        -- Building the response
-        entryUpdateResponse (ctxCache ctx) now fumUser pmUser pmData (eu ^. euDate)
 
 -- | @PUT /entry/#id@
 entryEditEndpoint
@@ -275,7 +261,7 @@ entryEditEndpoint ctx mfum eid eu = do
                 doCreate pmUser
 
         -- Building the response
-        entryUpdateResponse (ctxCache ctx) now fumUser pmUser pmData (eu ^. euDate)
+        entryUpdateResponse' (ctxCache ctx) now fumUser pmUser pmData (eu ^. euDate)
   where
     doEdit pmUser = do
         logTrace_ "endryEditEndpoint: editTimereport"
@@ -318,7 +304,7 @@ entryDeleteEndpoint ctx mfum eid = do
 
         _ <- PM.planmillAction $ PM.deleteTimereport eid
 
-        entryUpdateResponse (ctxCache ctx) now fumUser pmUser pmData d
+        entryUpdateResponse' (ctxCache ctx) now fumUser pmUser pmData d
 
 -------------------------------------------------------------------------------
 -- Implementation
@@ -326,7 +312,7 @@ entryDeleteEndpoint ctx mfum eid = do
 
 type ImplM = PureT CryptoGenError Ctx Handler
 
-entryUpdateResponse
+entryUpdateResponse'
     :: DynMapCache
     -> UTCTime
     -> FUM.User
@@ -334,7 +320,7 @@ entryUpdateResponse
     -> PlanmillData
     -> Day
     -> ImplM EntryUpdateResponse
-entryUpdateResponse cache now fumUser pmUser pmData d = do
+entryUpdateResponse' cache now fumUser pmUser pmData d = do
     let interval = d PM.... d
     let user = Concurrently undefined
     let hr = Concurrently undefined

@@ -12,17 +12,14 @@ module Futurice.App.HoursApi.Monad (
     runHours,
     ) where
 
-import Control.Concurrent.STM    (readTVarIO)
 import Control.Lens              (Getting, filtered, firstOf, sumOf, to)
 import Data.Aeson.Compat         (FromJSON)
 import Data.Constraint
 import Data.Fixed                (Centi)
-import Data.Monoid               (First)
 import Futurice.Cache            (DynMapCache, cachedIO)
 import Futurice.Constraint.Unit1 (Unit1)
-import Futurice.CryptoRandom     (CryptoGenError)
 import Futurice.Prelude
-import Futurice.Time             (NDT (..), ndtConvert', ndtDivide)
+import Futurice.Time             (NDT (..), ndtConvert, ndtConvert', ndtDivide)
 import Futurice.Trans.PureT
 import Prelude ()
 import Servant                   (Handler)
@@ -51,7 +48,7 @@ makeLenses ''Env
 --
 -- /TODO:/ :)
 --
-newtype Hours a = Hours { unHours :: ReaderT Env (Haxl.GenHaxl ()) a }
+newtype Hours a = Hours { _unHours :: ReaderT Env (Haxl.GenHaxl ()) a }
   deriving (Functor, Applicative, Monad)
 
 runHours :: Ctx -> PM.User -> Text -> Hours a -> Handler a
@@ -62,7 +59,7 @@ runHours ctx pmUser profilePic (Hours m) = liftIO $ do
     let haxl = runReaderT m env
     let stateStore
             = Haxl.stateSet (PMQ.initDataSourceBatch lgr mgr pmReq)
-            . Haxl.stateSet (PlanMillDataState (ctx ^. logger) (ctxCache ctx) (ctxWorkers ctx))
+            . Haxl.stateSet (PlanMillDataState (ctx ^. logger) cache ws)
             $ Haxl.stateEmpty
     haxlEnv <- Haxl.initEnv stateStore ()
     -- TODO: catch ServantErr
@@ -71,6 +68,7 @@ runHours ctx pmUser profilePic (Hours m) = liftIO $ do
     lgr   = ctx ^. logger
     mgr   = ctxManager ctx
     pmReq = ctxPlanMillHaxlBaseReq ctx
+    cache = ctxCache ctx
     ws    = ctxWorkers ctx
 
 -------------------------------------------------------------------------------
@@ -80,14 +78,21 @@ runHours ctx pmUser profilePic (Hours m) = liftIO $ do
 viewHours :: Getting a Env a -> Hours a
 viewHours = Hours . view
 
-previewHours :: Getting (First a) Env a -> Hours (Maybe a)
-previewHours = Hours . preview
+-- previewHours :: Getting (First a) Env a -> Hours (Maybe a)
+-- previewHours = Hours . preview
 
 cachedPlanmillAction :: (Typeable a, FromJSON a, NFData a, Show a) => PM.PlanMill a -> Hours a
 cachedPlanmillAction = Hours . lift . Haxl.dataFetch . PlanMillRequestCached
 
 planmillAction :: (Typeable a, FromJSON a, NFData a, Show a) => PM.PlanMill a -> Hours a
 planmillAction = Hours . lift . Haxl.dataFetch . PlanMillRequest
+
+-- | Uncached planmill write action.
+--
+-- Note: that the write results aren't visible via read 'planmillAction' if
+-- it's performed first!
+--writePlanmillAction :: (Typeable a, FromJSON a, NFData a, Show a) => PM.PlanMill a -> Hours a
+--writePlanmillAction = Hours . lift . Haxl.uncachedRequest . PlanMillRequest
 
 instance PM.MonadPlanMillConstraint Hours where
     type MonadPlanMillC Hours = Unit1
@@ -99,7 +104,6 @@ instance PM.MonadPlanMillQuery Hours where
       where
         typeableDict = Q.queryDict (Proxy :: Proxy Typeable) q
         showDict     = Q.queryDict (Proxy :: Proxy Show)     q
-
 
 -------------------------------------------------------------------------------
 -- Haxl
@@ -223,21 +227,46 @@ instance MonadHours Hours where
         let resultInterval = PM.ResultInterval PM.IntervalStart interval
 
         reports <- planmillAction (PM.timereportsFromIntervalFor resultInterval pmUid)
-        for (toList reports) $ \tr -> case PM.trProject tr of
-            Just pid -> pure (mk pid tr)
-            Nothing -> do
-                t <- task (PM.trTask tr)
-                pure (mk (t ^. taskProjectId) tr)
-      where
-        mk pid tr = Timereport
-            { _timereportId        = tr ^. PM.identifier
-            , _timereportTaskId    = PM.trTask tr
-            , _timereportProjectId = pid
-            , _timereportDay       = PM.trStart tr
-            , _timereportComment   = fromMaybe "" (PM.trComment tr)
-            , _timereportAmount    = ndtConvert' (PM.trAmount tr)
-            , _timereportType      = billableStatus (PM.trProject tr) (PM.trBillableStatus tr)
+        traverse convertTimereport (toList reports)
+
+    timereport pid = do
+        report <- planmillAction (PM.timereport pid)
+        convertTimereport report
+
+    addTimereport tr = do
+        pmUid <- viewHours (envPmUser . PM.identifier)
+        void $ planmillAction $ PM.addTimereport PM.NewTimereport
+            { PM.ntrTask    = tr ^. newTimereportTaskId
+            , PM.ntrStart   = tr ^. newTimereportDay
+            , PM.ntrAmount  = fmap truncate $ ndtConvert $ tr ^. newTimereportAmount
+            , PM.ntrComment = tr ^. newTimereportComment
+            , PM.ntrUser    = pmUid
             }
+
+    editTimereport _tid _tr = error "editTimereport: not-implemented"
+    deleteTimereport _tid = error "deleteTimereport:  not-implemented"
+
+-------------------------------------------------------------------------------
+-- Helpers
+-------------------------------------------------------------------------------
+
+convertTimereport :: PM.Timereport -> Hours Timereport
+convertTimereport tr = case PM.trProject tr of
+    Just pid -> pure (makeTimereport pid tr)
+    Nothing -> do
+        t <- task (PM.trTask tr)
+        pure (makeTimereport (t ^. taskProjectId) tr)
+
+makeTimereport :: PM.ProjectId -> PM.Timereport -> Timereport
+makeTimereport pid tr = Timereport
+    { _timereportId        = tr ^. PM.identifier
+    , _timereportTaskId    = PM.trTask tr
+    , _timereportProjectId = pid
+    , _timereportDay       = PM.trStart tr
+    , _timereportComment   = fromMaybe "" (PM.trComment tr)
+    , _timereportAmount    = ndtConvert' (PM.trAmount tr)
+    , _timereportType      = billableStatus (PM.trProject tr) (PM.trBillableStatus tr)
+    }
 
 -- TODO: we hard code the non-billable enumeration value.
 -- TODO: absences should be EntryTypeOther, seems that Nothing projectId is the thing there.

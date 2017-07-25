@@ -37,10 +37,10 @@ import qualified FUM
 
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours api"
-    :<|> (\mfum -> authorisedUser ctx mfum projectEndpoint)
-    :<|> (\mfum -> authorisedUser ctx mfum userEndpoint)
+    :<|> (\mfum     -> authorisedUser ctx mfum projectEndpoint)
+    :<|> (\mfum     -> authorisedUser ctx mfum userEndpoint)
     :<|> (\mfum a b -> authorisedUser ctx mfum (hoursEndpoint a b))
-    :<|> entryEndpoint ctx
+    :<|> (\mfum eu  -> authorisedUser ctx mfum (entryEndpoint eu))
     :<|> entryEditEndpoint ctx
     :<|> entryDeleteEndpoint ctx
 

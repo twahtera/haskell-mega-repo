@@ -64,7 +64,7 @@ dependencies:
   - resource-pool
   - semigroups
   - servant
-  - servant-cassava ==0.8.*
+  - servant-cassava ==0.9.*
   - servant-Chart
   - servant-lucid
   - servant-server

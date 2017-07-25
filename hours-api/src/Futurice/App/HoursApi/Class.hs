@@ -28,6 +28,10 @@ module Futurice.App.HoursApi.Class (
     timereportType,
     -- ** New timereport
     NewTimereport (..),
+    newTimereportTaskId,
+    newTimereportDay,
+    newTimereportAmount,
+    newTimereportComment,
     -- ** Capacity
     Capacity (..),
     capacityDay,
@@ -160,10 +164,10 @@ data Timereport = Timereport
   deriving (Eq, Show, Generic)
 
 data NewTimereport = NewTimereport
-    { newTimereportTaskId  :: !PM.Task
-    , newTimereportDay     :: !Day
-    , newTimereportAmount  :: !(NDT 'Hours Centi)
-    , newTimereportComment :: !Text
+    { _newTimereportTaskId  :: !PM.TaskId
+    , _newTimereportDay     :: !Day
+    , _newTimereportAmount  :: !(NDT 'Hours Centi)
+    , _newTimereportComment :: !Text
     }
   deriving (Eq, Show, Generic)
 
