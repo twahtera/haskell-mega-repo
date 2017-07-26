@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.HoursApi (defaultMain) where
 
-import Control.Concurrent.STM  (atomically, newTVarIO, writeTVar, readTVarIO)
+import Control.Concurrent.STM  (newTVarIO, readTVarIO)
 import Futurice.Integrations
 import Futurice.Periocron
 import Futurice.Prelude
@@ -25,10 +25,7 @@ import Futurice.App.HoursApi.Logic
        projectEndpoint, userEndpoint)
 import Futurice.App.HoursApi.Monad (Hours, runHours)
 
-import qualified Data.HashMap.Strict as HM
-import qualified PlanMill            as PM
 import qualified PlanMill.Worker     as PM
-import qualified PlanMill.Queries    as PMQ
 import qualified FUM
 
 server :: Ctx -> Server FutuhoursAPI
@@ -47,9 +44,8 @@ authorisedUser
     -> Handler a
 authorisedUser ctx mfum action =
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
-        pmData <- liftIO $ readTVarIO $ ctxPlanmillData ctx
-        (fumUser, pmUser) <- maybe (throwError err403) pure $
-            pmData ^. planmillUserLookup . at fumUsername
+        pmData <- liftIO $ readTVarIO $ ctxFumPlanmillMap ctx
+        (fumUser, pmUser) <- maybe (throwError err403) pure $ pmData ^. at fumUsername
         runHours ctx pmUser (fromMaybe "" $ fumUser ^. FUM.userThumbUrl . lazy) action
 
 defaultMain :: IO ()
@@ -68,25 +64,19 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         mgr <- newManager tlsManagerSettings
             { managerConnCount = 100
             }
+
         let integrConfig = makeIntegrationsConfig now lgr mgr config
+        let getFumPlanmillMap = runIntegrations integrConfig fumPlanmillMap
+        let job = mkJob "Update Planmill <- FUM map"  getFumPlanmillMap $ every 600
 
-        -- We start with empty planmill data
-        pmDataTVar <- newTVarIO PlanmillData
-            { _planmillUserLookup   = mempty
-            , _planmillProjects     = mempty
-            , _planmillTasks        = mempty
-            , _planmillCalendars    = mempty
-            , _planmillTaskProjects = mempty
-            }
+        fpm <- getFumPlanmillMap
+        fpmTVar <- newTVarIO fpm
 
-        let pmCfg =(cfgPlanmillCfg config)
+        let pmCfg = cfgPlanmillCfg config
         ws <- PM.workers lgr mgr pmCfg ["worker1", "worker2", "worker3"]
 
-        let action = fetchPlanmillData integrConfig >>= atomically . writeTVar pmDataTVar
-        let job = mkJob "update planmill data" action $ every 600
-
         pure $ flip (,) [job] Ctx
-            { ctxPlanmillData        = pmDataTVar
+            { ctxFumPlanmillMap      = fpmTVar
             , ctxPlanmillCfg         = cfgPlanmillCfg config
             , ctxMockUser            = cfgMockUser config
             , ctxManager             = mgr
@@ -95,28 +85,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , ctxPlanMillHaxlBaseReq = cfgPlanmillProxyReq config
             , ctxWorkers             = ws
             }
-
-    fetchPlanmillData :: IntegrationsConfig I I Proxy Proxy Proxy -> IO PlanmillData
-    fetchPlanmillData integrConfig = runIntegrations integrConfig $ do
-        pmLookupMap <- fumPlanmillMap
-        ps <- PMQ.projects
-        ps' <- for (toList ps) $ \p -> mkP p <$> PMQ.projectTasks (p ^. PM.identifier)
-        let ps'' = HM.fromList ps'
-        let ts = HM.fromList $ (\t -> (t ^. PM.identifier, t)) <$>
-                ps' ^.. folded . _2 ._2 . folded
-        cs <- HM.fromList . map (\c -> (c ^. PM.identifier, c)) . toList <$>
-            PMQ.capacitycalendars
-        let taskProjects = HM.unions $ flip map ps'  $ \(_, (pr, ts')) ->
-                HM.fromList $ flip map ts' $ \t -> (t ^. PM.identifier, pr)
-        pure PlanmillData
-            { _planmillUserLookup   = pmLookupMap
-            , _planmillProjects     = ps''
-            , _planmillTasks        = ts
-            , _planmillCalendars    = cs
-            , _planmillTaskProjects = taskProjects
-            }
-      where
-        mkP p ts = (p ^. PM.identifier, (p, toList ts))
 
 makeIntegrationsConfig
     :: UTCTime -> Logger -> Manager -> Config
