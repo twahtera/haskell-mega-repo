@@ -8,15 +8,11 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.HoursApi (defaultMain) where
 
-import Control.Concurrent.MVar (newMVar)
-import Control.Concurrent.STM  (atomically, newTVarIO, writeTVar)
-import Data.Pool               (createPool)
-import Futurice.CryptoRandom   (mkCryptoGen)
+import Control.Concurrent.STM  (newTVarIO, readTVarIO)
 import Futurice.Integrations
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
-import Futurice.Trans.PureT
 import Network.HTTP.Client     (managerConnCount)
 import Prelude ()
 import Servant
@@ -27,20 +23,30 @@ import Futurice.App.HoursApi.Ctx
 import Futurice.App.HoursApi.Logic
        (entryDeleteEndpoint, entryEditEndpoint, entryEndpoint, hoursEndpoint,
        projectEndpoint, userEndpoint)
+import Futurice.App.HoursApi.Monad (Hours, runHours)
 
-import qualified Data.HashMap.Strict as HM
-import qualified PlanMill            as PM
-import qualified PlanMill.Queries    as PMQ
+import qualified PlanMill.Worker     as PM
+import qualified FUM
 
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours api"
-    :<|> projectEndpoint ctx
-    :<|> userEndpoint ctx
-    :<|> hoursEndpoint ctx
-    :<|> entryEndpoint ctx
-    :<|> entryEditEndpoint ctx
-    :<|> entryDeleteEndpoint ctx
+    :<|> (\mfum        -> authorisedUser ctx mfum projectEndpoint)
+    :<|> (\mfum        -> authorisedUser ctx mfum userEndpoint)
+    :<|> (\mfum a b    -> authorisedUser ctx mfum (hoursEndpoint a b))
+    :<|> (\mfum eu     -> authorisedUser ctx mfum (entryEndpoint eu))
+    :<|> (\mfum eid eu -> authorisedUser ctx mfum (entryEditEndpoint eid eu))
+    :<|> (\mfum eid    -> authorisedUser ctx mfum (entryDeleteEndpoint eid))
 
+authorisedUser
+    :: Ctx
+    -> Maybe FUM.UserName
+    -> Hours a
+    -> Handler a
+authorisedUser ctx mfum action =
+    mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
+        pmData <- liftIO $ readTVarIO $ ctxFumPlanmillMap ctx
+        (fumUser, pmUser) <- maybe (throwError err403) pure $ pmData ^. at fumUsername
+        runHours ctx pmUser (fromMaybe "" $ fumUser ^. FUM.userThumbUrl . lazy) action
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
@@ -58,57 +64,27 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         mgr <- newManager tlsManagerSettings
             { managerConnCount = 100
             }
+
         let integrConfig = makeIntegrationsConfig now lgr mgr config
+        let getFumPlanmillMap = runIntegrations integrConfig fumPlanmillMap
+        let job = mkJob "Update Planmill <- FUM map"  getFumPlanmillMap $ every 600
 
-        -- We start with empty planmill data
-        pmDataTVar <- newTVarIO $ PlanmillData
-            { _planmillUserLookup   = mempty
-            , _planmillProjects     = mempty
-            , _planmillTasks        = mempty
-            , _planmillCalendars    = mempty
-            , _planmillTaskProjects = mempty
+        fpm <- getFumPlanmillMap
+        fpmTVar <- newTVarIO fpm
+
+        let pmCfg = cfgPlanmillCfg config
+        ws <- PM.workers lgr mgr pmCfg ["worker1", "worker2", "worker3"]
+
+        pure $ flip (,) [job] Ctx
+            { ctxFumPlanmillMap      = fpmTVar
+            , ctxPlanmillCfg         = cfgPlanmillCfg config
+            , ctxMockUser            = cfgMockUser config
+            , ctxManager             = mgr
+            , ctxLogger              = lgr
+            , ctxCache               = cache
+            , ctxPlanMillHaxlBaseReq = cfgPlanmillProxyReq config
+            , ctxWorkers             = ws
             }
-
-        -- pool of crypto prngs
-        cryptoGenPool <- createPool
-            (mkCryptoGen >>= newMVar)
-            (\_ -> pure ())
-            2 (3600 :: NominalDiffTime) 2
-
-        let action = fetchPlanmillData integrConfig >>= atomically . writeTVar pmDataTVar
-        let job = mkJob "update planmill data" action $ every 600
-
-        pure $ flip (,) [job] $ Ctx
-            { ctxPlanmillData = pmDataTVar
-            , ctxPlanmillCfg  = cfgPlanmillCfg config
-            , ctxMockUser     = cfgMockUser config
-            , ctxManager      = mgr
-            , ctxLoggerEnv    = mkLoggerEnv "hours-api" lgr
-            , ctxCache        = cache
-            , ctxCryptoPool   = cryptoGenPool
-            }
-
-    fetchPlanmillData :: IntegrationsConfig I I Proxy Proxy Proxy -> IO PlanmillData
-    fetchPlanmillData integrConfig = runIntegrations integrConfig $ do
-        pmLookupMap <- fumPlanmillMap
-        ps <- PMQ.projects
-        ps' <- for (toList ps) $ \p -> mkP p <$> PMQ.projectTasks (p ^. PM.identifier)
-        let ps'' = HM.fromList ps'
-        let ts = HM.fromList $ (\t -> (t ^. PM.identifier, t)) <$>
-                ps' ^.. folded . _2 ._2 . folded
-        cs <- HM.fromList . map (\c -> (c ^. PM.identifier, c)) . toList <$>
-            PMQ.capacitycalendars
-        let taskProjects = HM.unions $ flip map ps'  $ \(_, (pr, ts')) ->
-                HM.fromList $ flip map ts' $ \t -> (t ^. PM.identifier, pr)
-        pure $ PlanmillData
-            { _planmillUserLookup   = pmLookupMap
-            , _planmillProjects     = ps''
-            , _planmillTasks        = ts
-            , _planmillCalendars    = cs
-            , _planmillTaskProjects = taskProjects
-            }
-      where
-        mkP p ts = (p ^. PM.identifier, (p, toList ts))
 
 makeIntegrationsConfig
     :: UTCTime -> Logger -> Manager -> Config

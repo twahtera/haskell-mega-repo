@@ -448,7 +448,7 @@ reportToCsvRecordList (Report params a) =
     g = runIdentityT . sequence . toList . getReportCsv
 
 instance (ToReportRow a, IsReport params a, EncodeOpts opt)
-    => MimeRender (CSV', opt) (Report name params a)
+    => MimeRender (CSV' hasHeader opt) (Report name params a)
   where
     mimeRender _ = Csv.encodeWith (encodeOpts p) . reportToCsvRecordList
       where p = Proxy :: Proxy opt

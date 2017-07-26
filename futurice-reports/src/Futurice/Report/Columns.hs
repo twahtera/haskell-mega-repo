@@ -47,7 +47,7 @@ import Futurice.Time
 import Generics.SOP              ((:.:) (..), All, SListI (..))
 import GHC.TypeLits              (KnownSymbol, Symbol, symbolVal)
 import Servant.API               (MimeRender (..))
-import Servant.CSV.Cassava       (CSV', EncodeOpts (..))
+import Servant.CSV.Cassava       (CSV', EncodeOpts, SHasHeaderI, encodeOpts')
 
 import qualified Data.Csv           as Csv
 import qualified Data.Set           as Set
@@ -120,11 +120,16 @@ instance (ToSchema a, ToSchema params, KnownSymbol name)
 -- Report + cassava + servant
 -------------------------------------------------------------------------------
 
-instance (ToColumns a, All Csv.ToField (Columns a), EncodeOpts opt)
-    => MimeRender (CSV', opt) (Report name params a)
+instance
+    ( ToColumns a
+    , All Csv.ToField (Columns a)
+    , EncodeOpts opt
+    , SHasHeaderI hasHeader
+    )
+    => MimeRender (CSV' hasHeader opt) (Report name params a)
   where
     mimeRender _
-        = Csv.encodeWith (encodeOpts (Proxy :: Proxy opt))
+        = Csv.encodeWith (encodeOpts' (Proxy :: Proxy opt) (Proxy :: Proxy hasHeader))
         . toColumns . _reportData
 
 -------------------------------------------------------------------------------

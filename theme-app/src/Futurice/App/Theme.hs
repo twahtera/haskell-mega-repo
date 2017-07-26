@@ -19,9 +19,9 @@ import Futurice.App.Theme.Markup
 -- | API server
 server :: () -> Server ThemeAPI
 server _ = pure indexPage :<|> static
-  where
-    -- | TODO: move to own file
-    static = staticApp $ embeddedSettings $(mkRecursiveEmbedded "images")
+
+static :: Server Raw
+static = Tagged $ staticApp $ embeddedSettings $(mkRecursiveEmbedded "images")
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
