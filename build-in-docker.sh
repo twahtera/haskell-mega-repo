@@ -16,7 +16,7 @@ if [ ! -z "$(git status --porcelain)" ]; then
 fi
 
 # Don't trust stack.yaml
-export STACK_YAML=stack-lts-6.yaml
+export STACK_YAML=stack-ghc-7.10.3.yaml
 
 # Different stack root (on docker volume!)
 export STACK_ROOT=/stack-root

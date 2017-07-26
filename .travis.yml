@@ -73,7 +73,7 @@ script:
 matrix:
   fast_finish: true
   include:
-  - env: GHCVER=7.10.3 STACK_YAML=stack-lts-6.yaml PEDANTIC=YES
+  - env: GHCVER=7.10.3 STACK_YAML=stack-ghc-7.10.3.yaml PEDANTIC=YES
     compiler: ghc-7.10.3
     addons:
       apt:
@@ -85,7 +85,7 @@ matrix:
         - happy-1.19.5
         - ghc-7.10.3
         - libgmp-dev
-  - env: GHCVER=8.0.2 STACK_YAML=stack-ghc-8.0.yaml PEDANTIC=YES
+  - env: GHCVER=8.0.2 STACK_YAML=stack-ghc-8.0.2.yaml PEDANTIC=YES
     compiler: ghc-8.0.2
     addons:
       apt:
