@@ -14,21 +14,20 @@ import Futurice.Servant
 import Servant
 
 import Futurice.App.HoursApi.API
+import Futurice.App.HoursApi.Logic
+
 import Futurice.App.HoursMock.Config (Config (..))
 import Futurice.App.HoursMock.Ctx
-import Futurice.App.HoursMock.Logic
-       (entryDeleteEndpoint, entryEndpoint, entryIdEndpoint, hoursEndpoint,
-       projectEndpoint, userEndpoint)
+import Futurice.App.HoursMock.Monad
 
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours mock api"
-    :<|> projectEndpoint ctx
-    :<|> userEndpoint ctx
-    :<|> hoursEndpoint ctx
-    :<|> entryEndpoint ctx
-    :<|> entryIdEndpoint ctx
-    :<|> entryDeleteEndpoint ctx
-
+    :<|> (\_        -> runHours ctx projectEndpoint)
+    :<|> (\_        -> runHours ctx userEndpoint)
+    :<|> (\_ a b    -> runHours ctx (hoursEndpoint a b))
+    :<|> (\_ eu     -> runHours ctx (entryEndpoint eu))
+    :<|> (\_ eid eu -> runHours ctx (entryEditEndpoint eid eu))
+    :<|> (\_ eid    -> runHours ctx (entryDeleteEndpoint eid))
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName            .~ "Futuhours MOCK api"
@@ -39,4 +38,5 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
     makeCtx _ _ _ = do
-        pure (Ctx, [])
+        ctx <- newCtx
+        pure (ctx, [])

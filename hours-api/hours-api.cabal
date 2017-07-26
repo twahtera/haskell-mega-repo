@@ -85,8 +85,9 @@ library
       Futurice.App.HoursMock
       Futurice.App.HoursMock.Config
       Futurice.App.HoursMock.Ctx
-      Futurice.App.HoursMock.Logic
       Futurice.App.HoursMock.MockData
+      Futurice.App.HoursMock.Monad
+      Futurice.App.HoursMock.World
   default-language: Haskell2010
 
 executable hours-api-server
