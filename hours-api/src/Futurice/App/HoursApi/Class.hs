@@ -8,6 +8,7 @@ module Futurice.App.HoursApi.Class (
 
     -- ** Project
     Project (..),
+    projectId,
     projectName,
     projectClosed,
     projectAbsence,
@@ -45,9 +46,10 @@ module Futurice.App.HoursApi.Class (
     ) where
 
 import Data.Fixed                (Centi)
+import Data.Time                 (addDays)
 import Futurice.Prelude
 import Futurice.Time
-import Numeric.Interval.NonEmpty (Interval)
+import Numeric.Interval.NonEmpty (Interval, (...))
 import Prelude ()
 
 import qualified Futurice.App.HoursApi.Types as T
@@ -124,6 +126,16 @@ class (MonadTime m) => MonadHours m where
     --
     -- /Note:/ we reuse 'LatestEntry' as a result type.
     latestEntry :: PM.TaskId -> m (Maybe T.LatestEntry)
+    latestEntry _ = return Nothing
+
+    -- | Return timereports from last 28 days
+    --
+    -- Concrete implementations are free to provide own variants
+    -- (e.g. use more aggressive caching!)
+    timereportsLast28 :: m [Timereport]
+    timereportsLast28 = do
+        today <- currentDay
+        timereports (addDays (-28) today ... today)
 
 -------------------------------------------------------------------------------
 -- Data

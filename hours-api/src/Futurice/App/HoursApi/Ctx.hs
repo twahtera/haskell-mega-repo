@@ -4,7 +4,6 @@ module Futurice.App.HoursApi.Ctx where
 import Control.Concurrent.STM (TVar)
 import Futurice.Cache         (DynMapCache)
 import Futurice.Prelude
-import Futurice.Trans.PureT
 import Prelude ()
 
 import qualified FUM
@@ -49,28 +48,9 @@ data Ctx = Ctx
     { ctxPlanmillData        :: !(TVar PlanmillData) -- todo remove?
     , ctxMockUser            :: !(Maybe FUM.UserName)
     , ctxCache               :: !DynMapCache
-    , ctxLoggerEnv           :: !LoggerEnv -- todo change to Logger?
+    , ctxLogger              :: !Logger
     , ctxManager             :: !Manager
     , ctxWorkers             :: !PM.Workers
     , ctxPlanMillHaxlBaseReq :: !HTTP.Request
     , ctxPlanmillCfg         :: !PM.Cfg -- remove?
-    , ctxCryptoPool          :: !CryptoPool -- remove?
     }
-
-instance PM.HasPlanMillCfg Ctx where
-    planmillCfg = lens ctxPlanmillCfg $ \ctx x ->
-        ctx { ctxPlanmillCfg = x }
-
-instance HasLoggerEnv Ctx where
-    loggerEnv = lens ctxLoggerEnv $ \ctx x ->
-        ctx { ctxLoggerEnv = x }
-
-instance HasLogger Ctx where
-    logger = loggerEnvLogger
-
-instance HasCryptoPool Ctx where
-    cryptoPool = lens ctxCryptoPool $ \ctx x ->
-        ctx { ctxCryptoPool = x }
-
-instance HasHttpManager Ctx where
-    getHttpManager = ctxManager

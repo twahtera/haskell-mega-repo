@@ -16,11 +16,14 @@ import Control.Lens              (Getting, filtered, firstOf, sumOf, to)
 import Data.Aeson.Compat         (FromJSON)
 import Data.Constraint
 import Data.Fixed                (Centi)
+import Data.List                 (maximumBy)
+import Data.Ord                  (comparing)
+import Data.Time                 (addDays)
 import Futurice.Cache            (DynMapCache, cachedIO)
 import Futurice.Constraint.Unit1 (Unit1)
 import Futurice.Prelude
 import Futurice.Time             (NDT (..), ndtConvert, ndtConvert', ndtDivide)
-import Futurice.Trans.PureT
+import Numeric.Interval.NonEmpty ((...))
 import Prelude ()
 import Servant                   (Handler)
 
@@ -59,13 +62,13 @@ runHours ctx pmUser profilePic (Hours m) = liftIO $ do
     let haxl = runReaderT m env
     let stateStore
             = Haxl.stateSet (PMQ.initDataSourceBatch lgr mgr pmReq)
-            . Haxl.stateSet (PlanMillDataState (ctx ^. logger) cache ws)
+            . Haxl.stateSet (PlanMillDataState lgr cache ws)
             $ Haxl.stateEmpty
     haxlEnv <- Haxl.initEnv stateStore ()
     -- TODO: catch ServantErr
     Haxl.runHaxl haxlEnv haxl
   where
-    lgr   = ctx ^. logger
+    lgr   = ctxLogger ctx
     mgr   = ctxManager ctx
     pmReq = ctxPlanMillHaxlBaseReq ctx
     cache = ctxCache ctx
@@ -110,7 +113,6 @@ instance PM.MonadPlanMillQuery Hours where
 -------------------------------------------------------------------------------
 
 data PlanMillRequest a where
-    -- TODO: uncachedAction?
     PlanMillRequest       :: (FromJSON a, NFData a, Show a, Typeable a) => PM.PlanMill a -> PlanMillRequest a
     PlanMillRequestCached :: (FromJSON a, NFData a, Show a, Typeable a) => PM.PlanMill a -> PlanMillRequest a
 
@@ -138,7 +140,7 @@ instance Haxl.DataSource u PlanMillRequest where
             PlanMillRequest pm -> PM.submitPlanMillE workers pm >>= Haxl.putResult v
             PlanMillRequestCached pm -> do
                 let res' = PM.submitPlanMillE workers pm
-                res <- cachedIO lgr cache 300 {- 5 minutes #-} pm res'
+                res <- cachedIO lgr cache 300 {- 5 minutes -} pm res'
                 Haxl.putResult v res
 
 -------------------------------------------------------------------------------
@@ -209,8 +211,21 @@ instance MonadHours Hours where
             , _taskFinish    = PM.taskFinish t
             }
 
-    -- TODO
-    latestEntry _ = pure Nothing
+    latestEntry tid = do
+        reports <- timereportsLast28
+        pure $ case filter ((tid == ) . view timereportTaskId) reports of
+            []       -> Nothing
+            reports' -> Just $
+                maximumBy cmp (map mk reports')
+      where
+        cmp = comparing (view T.latestEntryDate)
+
+        mk :: Timereport -> T.LatestEntry
+        mk tr = T.LatestEntry
+            { T._latestEntryDescription = tr ^. timereportComment
+            , T._latestEntryDate        = tr ^. timereportDay
+            , T._latestEntryHours       = tr ^. timereportAmount
+            }
 
     capacities interval = do
         pmUid <- viewHours (envPmUser . PM.identifier)
@@ -243,8 +258,30 @@ instance MonadHours Hours where
             , PM.ntrUser    = pmUid
             }
 
-    editTimereport _tid _tr = error "editTimereport: not-implemented"
-    deleteTimereport _tid = error "deleteTimereport:  not-implemented"
+    -- Note: we don't do magic here. We just edit the timereport!
+    editTimereport tid tr = do
+        pmUid <- viewHours (envPmUser . PM.identifier)
+        void $ planmillAction $ PM.editTimereport PM.EditTimereport
+            { PM._etrId     = tid
+            , PM.etrTask    = tr ^. newTimereportTaskId
+            , PM.etrStart   = tr ^. newTimereportDay
+            , PM.etrAmount  = fmap truncate $ ndtConvert $ tr ^. newTimereportAmount
+            , PM.etrComment = tr ^. newTimereportComment
+            , PM.etrUser    = pmUid
+            }
+
+    deleteTimereport tid =
+        void $ planmillAction $ PM.deleteTimereport tid
+
+    timereportsLast28 = do
+        today <- currentDay
+        pmUid <- viewHours (envPmUser . PM.identifier)
+
+        let interval = addDays (-28) today ... today
+        let resultInterval = PM.ResultInterval PM.IntervalStart interval
+
+        reports <- cachedPlanmillAction (PM.timereportsFromIntervalFor resultInterval pmUid)
+        traverse convertTimereport (toList reports)
 
 -------------------------------------------------------------------------------
 -- Helpers

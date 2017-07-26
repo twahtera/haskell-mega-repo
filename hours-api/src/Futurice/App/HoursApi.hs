@@ -8,15 +8,11 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.HoursApi (defaultMain) where
 
-import Control.Concurrent.MVar (newMVar)
 import Control.Concurrent.STM  (atomically, newTVarIO, writeTVar, readTVarIO)
-import Data.Pool               (createPool)
-import Futurice.CryptoRandom   (mkCryptoGen)
 import Futurice.Integrations
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
-import Futurice.Trans.PureT
 import Network.HTTP.Client     (managerConnCount)
 import Prelude ()
 import Servant
@@ -37,12 +33,12 @@ import qualified FUM
 
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours api"
-    :<|> (\mfum     -> authorisedUser ctx mfum projectEndpoint)
-    :<|> (\mfum     -> authorisedUser ctx mfum userEndpoint)
-    :<|> (\mfum a b -> authorisedUser ctx mfum (hoursEndpoint a b))
-    :<|> (\mfum eu  -> authorisedUser ctx mfum (entryEndpoint eu))
-    :<|> entryEditEndpoint ctx
-    :<|> entryDeleteEndpoint ctx
+    :<|> (\mfum        -> authorisedUser ctx mfum projectEndpoint)
+    :<|> (\mfum        -> authorisedUser ctx mfum userEndpoint)
+    :<|> (\mfum a b    -> authorisedUser ctx mfum (hoursEndpoint a b))
+    :<|> (\mfum eu     -> authorisedUser ctx mfum (entryEndpoint eu))
+    :<|> (\mfum eid eu -> authorisedUser ctx mfum (entryEditEndpoint eid eu))
+    :<|> (\mfum eid    -> authorisedUser ctx mfum (entryDeleteEndpoint eid))
 
 authorisedUser
     :: Ctx
@@ -83,12 +79,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , _planmillTaskProjects = mempty
             }
 
-        -- pool of crypto prngs
-        cryptoGenPool <- createPool
-            (mkCryptoGen >>= newMVar)
-            (\_ -> pure ())
-            2 (3600 :: NominalDiffTime) 2
-
         let pmCfg =(cfgPlanmillCfg config)
         ws <- PM.workers lgr mgr pmCfg ["worker1", "worker2", "worker3"]
 
@@ -100,9 +90,8 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , ctxPlanmillCfg         = cfgPlanmillCfg config
             , ctxMockUser            = cfgMockUser config
             , ctxManager             = mgr
-            , ctxLoggerEnv           = mkLoggerEnv "hours-api" lgr
+            , ctxLogger              = lgr
             , ctxCache               = cache
-            , ctxCryptoPool          = cryptoGenPool
             , ctxPlanMillHaxlBaseReq = cfgPlanmillProxyReq config
             , ctxWorkers             = ws
             }

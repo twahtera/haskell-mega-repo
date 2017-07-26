@@ -5,9 +5,6 @@
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
-#if __GLASGOW_HASKELL__ >= 800
-{-# LANGUAGE ApplicativeDo        #-}
-#endif
 module Futurice.App.HoursApi.Logic (
     projectEndpoint,
     userEndpoint,
@@ -17,33 +14,17 @@ module Futurice.App.HoursApi.Logic (
     entryDeleteEndpoint,
     ) where
 
-import Control.Concurrent.STM    (readTVarIO)
-import Control.Lens
-       (Getter, filtered, firstOf, foldOf, maximumOf, sumOf, to, withIndex,
-       (<&>))
-import Data.Fixed                (Centi)
-import Data.List                 (nubBy)
-import Data.Set.Lens             (setOf)
-import Data.Time                 (addDays)
-import Futurice.Cache            (DynMapCache, cached)
-import Futurice.CryptoRandom     (CryptoGenError)
+import Control.Lens              (maximumOf, to, (<&>))
 import Futurice.Monoid           (Average (..))
 import Futurice.Prelude
-import Futurice.Time
-       (NDT (..), TimeUnit (..), ndtConvert, ndtConvert', ndtDivide)
-import Futurice.Trans.PureT
+import Futurice.Time             (NDT (..), TimeUnit (..))
 import Numeric.Interval.NonEmpty (Interval, (...))
 import Prelude ()
-import Servant                   (Handler, ServantErr (..), err400, err403)
 
-import Control.Concurrent.Async.Lifted (Concurrently (..))
-
-import Futurice.App.HoursApi.Ctx
 import Futurice.App.HoursApi.Types
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import qualified FUM
 import qualified PlanMill as PM
 
 -- Note: we don't import .Monad!
@@ -74,17 +55,44 @@ userEndpoint = userResponse
 -- | Create new entry: @POST /entry@
 entryEndpoint :: H.MonadHours m => EntryUpdate -> m EntryUpdateResponse
 entryEndpoint eu = do
-        task <- H.task (eu ^. euTaskId) -- there should be a task
+    _ <- H.task (eu ^. euTaskId) -- there should be a task
+    _ <- H.addTimereport H.NewTimereport
+        { H._newTimereportTaskId  = eu ^. euTaskId
+        , H._newTimereportDay     = eu ^. euDate
+        , H._newTimereportAmount  = eu ^. euHours
+        , H._newTimereportComment = fromMaybe "" $ eu ^. euDescription
+        }
 
-        H.addTimereport H.NewTimereport
-            { H._newTimereportTaskId  = eu ^. euTaskId
-            , H._newTimereportDay     = eu ^. euDate
-            , H._newTimereportAmount  = eu ^. euHours
-            , H._newTimereportComment = fromMaybe "" $ eu ^. euDescription
-            }
+    -- Building the response
+    entryUpdateResponse (eu ^. euDate)
 
-        -- Building the response
-        entryUpdateResponse (eu ^. euDate)
+
+-- | @PUT /entry/#id@
+entryEditEndpoint
+    :: forall m. H.MonadHours m
+    => PM.TimereportId -> EntryUpdate -> m EntryUpdateResponse
+entryEditEndpoint eid eu = do
+    tr <- H.timereport eid
+    if tr ^. H.timereportTaskId == eu ^. euTaskId
+    then H.editTimereport eid newTr
+    else do
+        H.deleteTimereport eid
+        H.addTimereport newTr
+    entryUpdateResponse (tr ^. H.timereportDay)
+  where
+    newTr = H.NewTimereport
+        { H._newTimereportTaskId  = eu ^. euTaskId
+        , H._newTimereportDay     = eu ^. euDate
+        , H._newTimereportAmount  = eu ^. euHours
+        , H._newTimereportComment = fromMaybe "" $ eu ^. euDescription
+        }
+
+-- | @DELETE /entry/#id@
+entryDeleteEndpoint :: H.MonadHours m => PM.TimereportId -> m EntryUpdateResponse
+entryDeleteEndpoint eid = do
+    tr <- H.timereport eid
+    _ <- H.deleteTimereport eid
+    entryUpdateResponse (tr ^. H.timereportDay)
 
 -------------------------------------------------------------------------------
 -- Logic
@@ -162,7 +170,6 @@ hoursResponse interval = do
 reportableProjects :: H.MonadHours m => m [Project ReportableTask]
 reportableProjects = do
     now <- currentTime
-    today <- currentDay
 
     -- Ask Planmill for reportable assignments
     reportable <- filter (\ra -> now < ra ^. H.raFinish) <$> H.reportableAssignments
@@ -224,128 +231,19 @@ userResponse = User
     <*> H.profilePictureUrl
   where
     utzResponse :: m Float
-    utzResponse = pure 110 -- TODO
+    utzResponse = do
+        reports <- H.timereportsLast28
+        let Average _hours utz = foldMap timereportAverageUtz reports
+        pure utz
+      where
+        timereportAverageUtz :: H.Timereport -> Average Float
+        timereportAverageUtz report = case report ^. H.timereportType of
+            EntryTypeBillable    -> Average hours 100
+            EntryTypeNotBillable -> Average hours 0
+            EntryTypeOther       -> mempty
+          where
+            NDT hours = fmap realToFrac (report ^. H.timereportAmount) :: NDT 'Hours Float
 
 entryUpdateResponse :: H.MonadHours m => Day -> m EntryUpdateResponse
 entryUpdateResponse d =
-    EntryUpdateResponse <$> userResponse <*> hoursResponse interval
-  where
-    interval = d ... d
-
--------------------------------------------------------------------------------
--- Old Endpoints
--------------------------------------------------------------------------------
-
--- | @PUT /entry/#id@
-entryEditEndpoint
-    :: Ctx
-    -> Maybe FUM.UserName
-    -> PM.TimereportId
-    -> EntryUpdate
-    -> Handler EntryUpdateResponse
-entryEditEndpoint ctx mfum eid eu = do
-    now <- currentTime
-    authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
-        let task' = pmData ^? planmillTasks . ix (eu ^. euTaskId)
-        _ <- maybe (logAttention_ "cannot find task" >> lift (throwError err400 { errBody = "Unknown task" })) pure task'
-
-        timereport <- PM.planmillAction $ PM.timereport eid
-
-        -- If new taskId is different from old one:
-        -- remove marking, and create new one
-        -- https://github.com/futurice/hours-ui/issues/70
-        if PM.trTask timereport == eu ^. euTaskId
-            then doEdit pmUser
-            else do
-                _ <- PM.planmillAction $ PM.deleteTimereport eid
-                doCreate pmUser
-
-        -- Building the response
-        entryUpdateResponse' (ctxCache ctx) now fumUser pmUser pmData (eu ^. euDate)
-  where
-    doEdit pmUser = do
-        logTrace_ "endryEditEndpoint: editTimereport"
-
-        let editTimereport = PM.EditTimereport
-              { PM._etrId     = eid
-              , PM.etrTask    = eu ^. euTaskId
-              , PM.etrStart   = eu ^. euDate
-              , PM.etrAmount  = fmap truncate $ ndtConvert $ eu ^. euHours
-              , PM.etrComment = fromMaybe "" $ eu ^. euDescription
-              , PM.etrUser    = pmUser ^. PM.identifier
-              }
-
-        void $ PM.planmillAction $ PM.editTimereport editTimereport
-
-    doCreate pmUser = do
-        logTrace_ "endryEditEndpoint: delete >> create"
-
-        let newTimeReport = PM.NewTimereport
-              { PM.ntrTask    = eu ^. euTaskId
-              , PM.ntrStart   = eu ^. euDate
-              , PM.ntrAmount  = fmap truncate $ ndtConvert $ eu ^. euHours
-              , PM.ntrComment = fromMaybe "" $ eu ^. euDescription
-              , PM.ntrUser    = pmUser ^. PM.identifier
-              }
-
-        void $ PM.planmillAction $ PM.addTimereport newTimeReport
-
--- | @DELETE /entry/#id@
-entryDeleteEndpoint
-    :: Ctx
-    -> Maybe FUM.UserName
-    -> PM.TimereportId
-    -> Handler EntryUpdateResponse
-entryDeleteEndpoint ctx mfum eid = do
-    now <- currentTime
-    authorisedUser ctx mfum $ \fumUser pmUser pmData -> do
-        tr <- PM.planmillAction $ PM.timereport eid
-        let d = PM.trStart tr
-
-        _ <- PM.planmillAction $ PM.deleteTimereport eid
-
-        entryUpdateResponse' (ctxCache ctx) now fumUser pmUser pmData d
-
--------------------------------------------------------------------------------
--- Implementation
--------------------------------------------------------------------------------
-
-type ImplM = PureT CryptoGenError Ctx Handler
-
-entryUpdateResponse'
-    :: DynMapCache
-    -> UTCTime
-    -> FUM.User
-    -> PM.User
-    -> PlanmillData
-    -> Day
-    -> ImplM EntryUpdateResponse
-entryUpdateResponse' cache now fumUser pmUser pmData d = do
-    let interval = d PM.... d
-    let user = Concurrently undefined
-    let hr = Concurrently undefined
-    runConcurrently $ EntryUpdateResponse <$> user <*> hr
-
-------------------------------------------------------------------------------
--- Utilities
--------------------------------------------------------------------------------
-
-cachedPlanmillAction
-    :: (Typeable a, PM.MonadPlanMill m, PM.MonadPlanMillC m a, MonadBaseControl IO m)
-    => DynMapCache
-    -> PM.PlanMill a
-    -> m a
-cachedPlanmillAction cache pm = cached cache 300 {- 5 minutes -} pm $
-    PM.planmillAction pm
-
-authorisedUser
-    :: Ctx -> Maybe FUM.UserName
-    -> (FUM.User -> PM.User -> PlanmillData -> ImplM a)
-    -> Handler a
-authorisedUser ctx mfum f = do
-    mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
-        pmData <- liftIO $ readTVarIO $ ctxPlanmillData ctx
-        (fumUser, pmUser) <- maybe (throwError err403) pure $
-            pmData ^. planmillUserLookup . at fumUsername
-        f fumUser pmUser pmData
-            & flip runPureT ctx
+    EntryUpdateResponse <$> userResponse <*> hoursResponse (d ... d)
