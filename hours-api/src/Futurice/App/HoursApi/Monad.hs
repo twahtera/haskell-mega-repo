@@ -260,6 +260,7 @@ instance MonadHours Hours where
 
     -- Note: we don't do magic here. We just edit the timereport!
     editTimereport tid tr = do
+        -- TODO: check that we don't edit 'taskId` ?
         pmUid <- viewHours (envPmUser . PM.identifier)
         void $ planmillAction $ PM.editTimereport PM.EditTimereport
             { PM._etrId     = tid
