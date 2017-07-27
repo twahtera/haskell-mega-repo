@@ -11,6 +11,16 @@ cache:
   # packages' .stack-work
   - futurice-prelude/.stack-work/
   - ansi-pretty/.stack-work/
+  # more packages
+  - dynmap-cache/.stack-work
+  - futurice-logo/.stack-work
+  - futurice-pure-trans/.stack-work/
+  - log-logentries/.stack-work/
+  - mega-repo-tool/.stack-work
+  - monad-http/.stack-work/
+  - optparse-sop/.stack-work
+  - periocron/.stack-work
+  - servant-status/.stack-work/
 
 before_cache:
 - rm -rf $(stack --no-terminal --system-ghc --skip-ghc-check path --local-install-root)/bin/*
