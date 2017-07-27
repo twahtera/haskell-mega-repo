@@ -31,7 +31,7 @@ library:
     - constraints
     - futurice-prelude
     - generics-sop
-    - github >=0.15 && <0.16
+    - github >=0.15 && <0.17
     - haxl
     - lens
     - postgresql-simple

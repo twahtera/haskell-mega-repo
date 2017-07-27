@@ -1,30 +1,30 @@
 [submodule "flowdock-rest"]
 	path = flowdock-rest
-	url = git@github.com:futurice/haskell-flowdock-rest
+	url = https://github.com/futurice/haskell-flowdock-rest
 [submodule "ansi-pretty"]
 	path = ansi-pretty
-	url = git@github.com:futurice/haskell-ansi-pretty
+	url = https://github.com/futurice/haskell-ansi-pretty
 [submodule "flowdock-grep"]
 	path = flowdock-grep
-	url = git@github.com:futurice/haskell-flowdock-grep
+	url = https://github.com/futurice/haskell-flowdock-grep
 [submodule "flowdock-cli"]
 	path = flowdock-cli
-	url = git@github.com:futurice/haskell-flowdock-cli.git
+	url = https://github.com/futurice/haskell-flowdock-cli.git
 [submodule "monad-http"]
 	path = monad-http
-	url = git@github.com:futurice/haskell-monad-http.git
+	url = https://github.com/futurice/haskell-monad-http.git
 [submodule "postgresql-simple-url"]
 	path = postgresql-simple-url
-	url = git@github.com:futurice/postgresql-simple-url.git
+	url = https://github.com/futurice/postgresql-simple-url.git
 [submodule "base64-bytestring-type"]
 	path = base64-bytestring-type
-	url = git@github.com:futurice/haskell-base64-bytestring-type.git
+	url = https://github.com/futurice/haskell-base64-bytestring-type.git
 [submodule "futurice-prelude"]
 	path = futurice-prelude
-	url = git@github.com:futurice/haskell-futurice-prelude.git
+	url = https://github.com/futurice/haskell-futurice-prelude.git
 [submodule "tdigest"]
 	path = tdigest
-	url = git@github.com:futurice/haskell-tdigest.git
+	url = https://github.com/futurice/haskell-tdigest.git
 [submodule "tajna"]
 	path = tajna
 	url = https://github.com/phadej/tajna.git

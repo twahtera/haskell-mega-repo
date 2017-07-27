@@ -17,7 +17,7 @@ set -ex
 # Check that we have aws
 aws help > /dev/null
 
-export STACK_YAML=stack-ghc-8.0.yaml
+export STACK_YAML=stack-ghc-8.0.2.yaml
 
 # Generate documentation
 stack build --test --no-run-tests --haddock --ghc-options='+RTS -M4G -RTS' -j 1
