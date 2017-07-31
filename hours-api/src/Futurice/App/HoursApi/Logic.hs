@@ -12,6 +12,7 @@ module Futurice.App.HoursApi.Logic (
     entryEndpoint,
     entryEditEndpoint,
     entryDeleteEndpoint,
+    preferencesEndpoint,
     ) where
 
 import Control.Lens              (maximumOf, to, (<&>))
@@ -93,6 +94,10 @@ entryDeleteEndpoint eid = do
     tr <- H.timereport eid
     _ <- H.deleteTimereport eid
     entryUpdateResponse (tr ^. H.timereportDay)
+
+-- | @GET /preferences@
+preferencesEndpoint :: H.MonadHours m => m Preferences
+preferencesEndpoint = pure Preferences {_preferencesIsItOn = True}
 
 -------------------------------------------------------------------------------
 -- Logic

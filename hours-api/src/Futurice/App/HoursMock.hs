@@ -28,6 +28,7 @@ server ctx = pure "This is futuhours mock api"
     :<|> (\_ eu     -> runHours ctx (entryEndpoint eu))
     :<|> (\_ eid eu -> runHours ctx (entryEditEndpoint eid eu))
     :<|> (\_ eid    -> runHours ctx (entryDeleteEndpoint eid))
+    :<|> (\_        -> runHours ctx preferencesEndpoint)
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName            .~ "Futuhours MOCK api"

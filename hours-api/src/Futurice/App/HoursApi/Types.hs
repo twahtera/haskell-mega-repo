@@ -174,6 +174,10 @@ data HoursResponse = HoursResponse
     }
   deriving (Eq, Show, Typeable, Generic)
 
+data Preferences = Preferences
+    { _preferencesIsItOn :: !Bool }
+    deriving (Eq, Show, Typeable, Generic)
+
 -------------------------------------------------------------------------------
 -- Generics and Lenses
 -------------------------------------------------------------------------------
@@ -212,6 +216,9 @@ deriveGeneric ''HoursMonth
 
 makeLenses ''HoursResponse
 deriveGeneric ''HoursResponse
+
+makeLenses ''Preferences
+deriveGeneric ''Preferences
 
 -------------------------------------------------------------------------------
 -- Smart constructors
@@ -426,3 +433,14 @@ instance ToJSON HoursResponse where
     toEncoding = sopToEncoding
 instance FromJSON HoursResponse where parseJSON = sopParseJSON
 instance ToSchema HoursResponse where declareNamedSchema = sopDeclareNamedSchema
+
+
+instance Arbitrary Preferences where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
+
+instance ToJSON Preferences where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
+instance FromJSON Preferences where parseJSON = sopParseJSON
+instance ToSchema Preferences where declareNamedSchema = sopDeclareNamedSchema

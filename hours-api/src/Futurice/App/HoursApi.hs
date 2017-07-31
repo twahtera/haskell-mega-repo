@@ -22,7 +22,7 @@ import Futurice.App.HoursApi.Config
 import Futurice.App.HoursApi.Ctx
 import Futurice.App.HoursApi.Logic
        (entryDeleteEndpoint, entryEditEndpoint, entryEndpoint, hoursEndpoint,
-       projectEndpoint, userEndpoint)
+       projectEndpoint, userEndpoint, preferencesEndpoint)
 import Futurice.App.HoursApi.Monad (Hours, runHours)
 
 import qualified PlanMill.Worker     as PM
@@ -36,6 +36,7 @@ server ctx = pure "This is futuhours api"
     :<|> (\mfum eu     -> authorisedUser ctx mfum (entryEndpoint eu))
     :<|> (\mfum eid eu -> authorisedUser ctx mfum (entryEditEndpoint eid eu))
     :<|> (\mfum eid    -> authorisedUser ctx mfum (entryDeleteEndpoint eid))
+    :<|> (\mfum        -> authorisedUser ctx mfum preferencesEndpoint)
 
 authorisedUser
     :: Ctx
